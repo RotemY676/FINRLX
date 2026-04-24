@@ -18,9 +18,42 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+def build_cors_origins() -> list[str]:
+    """
+    Explicit CORS allowlist.
+
+    The Railway frontend calls the Railway backend directly from the browser.
+    Therefore the backend must explicitly allow the frontend public origin.
+    """
+
+    origins: list[str] = [
+        "https://frontend-production-7e8b1.up.railway.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+    configured_origins = getattr(settings, "cors_origins", None)
+
+    if isinstance(configured_origins, str):
+        for origin in configured_origins.split(","):
+            origin = origin.strip()
+            if origin and origin not in origins:
+                origins.append(origin)
+
+    elif isinstance(configured_origins, list):
+        for origin in configured_origins:
+            if isinstance(origin, str):
+                origin = origin.strip()
+                if origin and origin not in origins:
+                    origins.append(origin)
+
+    return origins
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=build_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
