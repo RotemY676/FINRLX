@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
 from app.api.router import api_router
+from app.core.config import settings
 
 
 @asynccontextmanager
@@ -26,9 +26,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+@app.get("/")
+async def root():
+    return {
+        "service": "finrlx-backend",
+        "status": "ok",
+        "version": settings.app_version,
+    }
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": settings.app_version}
+    return {
+        "service": "finrlx-backend",
+        "status": "ok",
+        "version": settings.app_version,
+    }
+
+
+@app.get("/api/health")
+async def api_health():
+    return {
+        "service": "finrlx-backend",
+        "status": "ok",
+        "version": settings.app_version,
+    }
+
+
+app.include_router(api_router, prefix=settings.api_v1_prefix)
