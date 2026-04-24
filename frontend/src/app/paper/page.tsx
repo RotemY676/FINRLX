@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchCurrentPaper, PaperPortfolioData } from "@/services/api";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
+import { fmtDateTime, fmtDate } from "@/lib/format";
 import { DriftBarChart } from "@/components/charts/DriftBarChart";
 import { usePaneContext } from "@/components/shell/ContextPane";
 import { PageLoading } from "@/components/feedback/PageLoading";
@@ -60,7 +61,7 @@ export default function PaperPage() {
           <p className="text-[15px] font-semibold text-ink font-mono">{data.total_rebalances}</p>
           {data.last_rebalance_at && (
             <p className="text-[11px] text-ink-4 mt-1">
-              Last: {new Date(data.last_rebalance_at).toLocaleDateString()}
+              Last: {fmtDate(data.last_rebalance_at)}
             </p>
           )}
         </div>
@@ -168,7 +169,7 @@ export default function PaperPage() {
                 <div className="flex-1">
                   <p className="text-ink-2">{ev.description}</p>
                   <p className="text-[11px] text-ink-4">
-                    {new Date(ev.timestamp).toLocaleString()}
+                    {fmtDateTime(ev.timestamp)}
                   </p>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchOverview, fetchRegime, fetchActivity, OverviewData, RegimeData, ActivityFeedData } from "@/services/api";
+import { fetchOverview, fetchRegime, fetchActivity, OverviewData, RegimeData, ActivityFeedData, ApiResponse } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { RecommendationCard } from "@/components/recommendation/RecommendationCard";
 import { HealthPanel } from "@/components/overview/HealthPanel";
@@ -28,6 +28,7 @@ export default function OverviewPage() {
   const [activity, setActivity] = useState<ActivityFeedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiWarnings, setApiWarnings] = useState<string[]>([]);
 
   useEffect(() => {
     Promise.all([fetchOverview(), fetchRegime(), fetchActivity()])
@@ -35,6 +36,7 @@ export default function OverviewPage() {
         setData(ov.data);
         setRegime(rg.data);
         setActivity(act.data);
+        setApiWarnings(ov.meta?.warnings || []);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -52,6 +54,18 @@ export default function OverviewPage() {
         <h1 className="text-[20px] font-semibold text-ink">Overview</h1>
         <p className="text-[12px] text-ink-3 mt-0.5">Morning triage · portfolio health · activity</p>
       </div>
+
+      {/* Pipeline warnings banner */}
+      {apiWarnings.length > 0 && (
+        <div className="rounded-lg border border-caution bg-caution-soft p-3">
+          {apiWarnings.map((w, i) => (
+            <p key={i} className="text-[12.5px] text-caution-soft-ink flex items-center gap-2">
+              <Icon name="info" size={14} />
+              {w}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-gap">
@@ -79,8 +93,8 @@ export default function OverviewPage() {
         <div className="lg:col-span-2">
           {rec ? <RecommendationCard rec={rec} /> : (
             <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-              <h2 className="text-[15px] font-semibold text-ink-2">No Published Recommendation</h2>
-              <p className="text-[13px] text-ink-3 mt-1">Run the seed script to create one.</p>
+              <h2 className="text-[15px] font-semibold text-ink-2">No Recommendation Available</h2>
+              <p className="text-[13px] text-ink-3 mt-1">Run the pipeline to generate one, then publish.</p>
             </div>
           )}
         </div>
@@ -90,7 +104,7 @@ export default function OverviewPage() {
             <h3 className="text-[13px] font-semibold text-ink mb-2">Activity</h3>
             <p className="text-[12.5px] text-ink-2">{data.recent_recommendation_count} published</p>
             {data.last_published_at && (
-              <p className="text-[11px] text-ink-4 mt-1">Last: {new Date(data.last_published_at).toLocaleString()}</p>
+              <p className="text-[11px] text-ink-4 mt-1">Last: {data.last_published_at?.slice(0, 16).replace("T", " ") ?? "—"}</p>
             )}
           </div>
         </div>

@@ -9,9 +9,10 @@ interface MetadataProps {
   policyVersionId: string | null;
 }
 
+import { fmtDateTime } from "@/lib/format";
+
 function fmt(d: string | null): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleString();
+  return fmtDateTime(d);
 }
 
 export function MetadataBlock(props: MetadataProps) {

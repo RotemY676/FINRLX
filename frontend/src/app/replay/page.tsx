@@ -8,6 +8,7 @@ import {
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { ConfidenceBlock } from "@/components/recommendation/ConfidenceBlock";
 import { WeightsTable } from "@/components/recommendation/WeightsTable";
+import { fmtDateTime, fmtDate, fmtTime } from "@/lib/format";
 import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
@@ -23,7 +24,7 @@ function StageSnapshotCard({ stage, data, capturedAt }: {
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-[13px] font-semibold text-ink capitalize">{stage.replace(/_/g, " ")}</h4>
         <span className="text-[11px] text-ink-4">
-          {new Date(capturedAt).toLocaleTimeString()}
+          {fmtTime(capturedAt)}
         </span>
       </div>
       <div className="space-y-1 text-[11px]">
@@ -99,7 +100,7 @@ export default function ReplayPage() {
             <div className="flex items-center gap-2">
               <StatusBadge status={item.status} />
               <span className="text-[11px] text-ink-4">
-                {new Date(item.captured_at).toLocaleDateString()}
+                {fmtDate(item.captured_at)}
               </span>
             </div>
           </div>
@@ -113,8 +114,8 @@ export default function ReplayPage() {
             <div>
               <h2 className="text-[15px] font-semibold text-ink">Replay Detail</h2>
               <p className="text-[11px] text-ink-4 mt-1">
-                Captured {new Date(detail.captured_at).toLocaleString()}
-                {detail.data_as_of && ` · data as of ${new Date(detail.data_as_of).toLocaleString()}`}
+                Captured {fmtDateTime(detail.captured_at)}
+                {detail.data_as_of && ` · data as of ${fmtDateTime(detail.data_as_of)}`}
               </p>
             </div>
             <StatusBadge status={detail.status} />

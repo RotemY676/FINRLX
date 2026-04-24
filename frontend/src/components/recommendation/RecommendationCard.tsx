@@ -1,6 +1,7 @@
 import { RecommendationSummary } from "@/services/api";
 import { ConfidenceBlock } from "./ConfidenceBlock";
 import { StatusBadge } from "./StatusBadge";
+import { fmtDateTime } from "@/lib/format";
 
 export function RecommendationCard({ rec }: { rec: RecommendationSummary }) {
   return (
@@ -10,7 +11,7 @@ export function RecommendationCard({ rec }: { rec: RecommendationSummary }) {
           <h2 className="text-[15px] font-semibold text-ink">Current Recommendation</h2>
           <p className="text-[12px] text-ink-3 mt-0.5">
             {rec.total_positions} positions
-            {rec.published_at && ` · published ${new Date(rec.published_at).toLocaleString()}`}
+            {rec.published_at && ` · published ${fmtDateTime(rec.published_at)}`}
           </p>
         </div>
         <StatusBadge status={rec.status} />

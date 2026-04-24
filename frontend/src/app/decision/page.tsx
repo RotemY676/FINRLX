@@ -65,7 +65,7 @@ export default function DecisionPage() {
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-[11px] font-mono text-ink-3">{rec.id.slice(0, 16)}…</span>
           <StatusBadge status={rec.status} />
-          {rec.data_as_of && <span className="text-[11px] text-ink-4 ml-auto">Data as of {new Date(rec.data_as_of).toLocaleString()}</span>}
+          {rec.data_as_of && <span className="text-[11px] text-ink-4 ml-auto">Data as of {rec.data_as_of.slice(0, 16).replace("T", " ")}</span>}
         </div>
         {rec.rationale_summary && <p className="text-[14px] text-ink-2 leading-relaxed mb-4">{rec.rationale_summary}</p>}
         <div className="flex items-center gap-6 mb-4 flex-wrap">

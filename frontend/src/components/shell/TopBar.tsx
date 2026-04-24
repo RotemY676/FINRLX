@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -31,12 +31,19 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
   const { theme, toggleTheme } = useTheme();
   const scope = useScope();
 
-  const [density, setDensity] = useState<Density>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("finrlx-density") as Density) || "default";
+  const [density, setDensity] = useState<Density>("default");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("finrlx-density") as Density | null;
+    if (saved && DENSITIES.includes(saved)) {
+      setDensity(saved);
+      if (saved !== "default") {
+        document.documentElement.setAttribute("data-density", saved);
+      }
     }
-    return "default";
-  });
+  }, []);
 
   const cycleDensity = useCallback(() => {
     const idx = DENSITIES.indexOf(density);

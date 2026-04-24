@@ -8,6 +8,7 @@ import {
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { EquityCurveChart } from "@/components/charts/EquityCurveChart";
 import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
+import { fmtDate } from "@/lib/format";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
@@ -78,7 +79,7 @@ export default function BacktestsPage() {
               <span className="text-[13px] font-medium">{item.name}</span>
               {item.start_date && item.end_date && (
                 <span className="text-[11px] text-ink-4 ml-2">
-                  {new Date(item.start_date).toLocaleDateString()} — {new Date(item.end_date).toLocaleDateString()}
+                  {fmtDate(item.start_date)} — {fmtDate(item.end_date)}
                 </span>
               )}
             </div>
@@ -107,8 +108,8 @@ export default function BacktestsPage() {
               <h2 className="text-[15px] font-semibold text-ink">{detail.name}</h2>
               <p className="text-[11px] text-ink-4 mt-1">
                 {detail.universe_name || "Unknown universe"}
-                {detail.start_date && ` · ${new Date(detail.start_date).toLocaleDateString()}`}
-                {detail.end_date && ` — ${new Date(detail.end_date).toLocaleDateString()}`}
+                {detail.start_date && ` · ${fmtDate(detail.start_date)}`}
+                {detail.end_date && ` — ${fmtDate(detail.end_date)}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
