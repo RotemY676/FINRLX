@@ -30,6 +30,11 @@ from app.schemas.feature import (
 from app.schemas.pipeline import (
     PipelineRunRequest, PipelineRunResult, PipelineStageResult, PipelineStatusResponse,
 )
+from app.schemas.publication import (
+    PublicationGateCheck, PublicationGateResult,
+    PublicationActionRequest, PublicationTransitionResponse,
+    PublicationStatusResponse, PublicationHistoryEntry,
+)
 from app.schemas.ingestion import (
     MarketBarResponse, MarketBarListResponse,
     NewsEventResponse, NewsEventListResponse,

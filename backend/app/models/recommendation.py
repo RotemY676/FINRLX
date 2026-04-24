@@ -17,9 +17,12 @@ import enum
 class PublicationStatus(str, enum.Enum):
     DRAFT = "draft"
     STAGED = "staged"
+    APPROVED = "approved"
     PUBLISHED = "published"
     PUBLISHED_WITH_WARNING = "published_with_warning"
+    DEFERRED = "deferred"
     SUPPRESSED = "suppressed"
+    SUPERSEDED = "superseded"
     STALE = "stale"
     RETIRED = "retired"
 

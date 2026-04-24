@@ -1,11 +1,11 @@
 """Action bar endpoints for the Decision Workspace.
 
-POST /api/v1/actions/save-thesis      — save recommendation as current thesis
-POST /api/v1/actions/promote-paper    — promote to paper portfolio
-POST /api/v1/actions/defer            — defer decision
-"""
-from datetime import datetime, timezone
+Compatibility wrappers that route through PublicationService.
 
+POST /api/v1/actions/save-thesis  — stages the latest recommendation (draft -> staged)
+POST /api/v1/actions/promote-paper — defers with reason "promoted to paper"
+POST /api/v1/actions/defer         — defers the latest recommendation
+"""
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +15,7 @@ from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.action import ActionResult, DeferRequest
 from app.models.recommendation import Recommendation
-from app.models.ops import AuditEvent
+from app.services.publication import PublicationService
 
 router = APIRouter()
 
@@ -27,16 +27,6 @@ async def _get_latest_rec(db: AsyncSession) -> Recommendation | None:
     return result.scalar_one_or_none()
 
 
-async def _audit(db: AsyncSession, action: str, description: str) -> None:
-    db.add(AuditEvent(
-        actor="current_user",
-        action=action,
-        object_type="recommendation",
-        details={"description": description, "ago": "now"},
-        occurred_at=datetime.now(timezone.utc),
-    ))
-
-
 @router.post("/actions/save-thesis", response_model=ApiResponse[ActionResult])
 async def save_thesis(db: AsyncSession = Depends(get_db)):
     rec = await _get_latest_rec(db)
@@ -46,13 +36,16 @@ async def save_thesis(db: AsyncSession = Depends(get_db)):
             data=ActionResult(action="save_thesis", success=False, new_status="", message="No recommendation to save"),
         )
 
-    rec.status = "staged"
-    await _audit(db, "save_thesis", f"Saved recommendation as current thesis")
-    await db.commit()
+    svc = PublicationService(db)
+    result = await svc.stage(rec.id, "operator", "Saved as current thesis via action bar")
 
     return ApiResponse(
         meta=make_meta(),
-        data=ActionResult(action="save_thesis", success=True, new_status="staged", message="Recommendation saved as current thesis"),
+        data=ActionResult(
+            action="save_thesis", success=result["allowed"],
+            new_status=result["new_status"],
+            message=result["message"],
+        ),
     )
 
 
@@ -65,14 +58,16 @@ async def promote_paper(db: AsyncSession = Depends(get_db)):
             data=ActionResult(action="promote_paper", success=False, new_status="", message="No recommendation to promote"),
         )
 
-    previous_status = rec.status
-    rec.status = "paper"
-    await _audit(db, "promote_paper", f"Promoted recommendation to paper portfolio (was {previous_status})")
-    await db.commit()
+    svc = PublicationService(db)
+    result = await svc.defer(rec.id, "operator", "Promoted to paper portfolio for shadow tracking")
 
     return ApiResponse(
         meta=make_meta(),
-        data=ActionResult(action="promote_paper", success=True, new_status="paper", message="Recommendation promoted to paper portfolio"),
+        data=ActionResult(
+            action="promote_paper", success=result["allowed"],
+            new_status=result["new_status"],
+            message=result["message"],
+        ),
     )
 
 
@@ -85,12 +80,15 @@ async def defer_decision(body: DeferRequest | None = None, db: AsyncSession = De
             data=ActionResult(action="defer", success=False, new_status="", message="No recommendation to defer"),
         )
 
-    rec.status = "deferred"
-    reason = (body.reason if body and body.reason else "No reason given")
-    await _audit(db, "defer", f"Deferred decision: {reason}")
-    await db.commit()
+    reason = (body.reason if body and body.reason else "Deferred via action bar")
+    svc = PublicationService(db)
+    result = await svc.defer(rec.id, "operator", reason)
 
     return ApiResponse(
         meta=make_meta(),
-        data=ActionResult(action="defer", success=True, new_status="deferred", message=f"Decision deferred: {reason}"),
+        data=ActionResult(
+            action="defer", success=result["allowed"],
+            new_status=result["new_status"],
+            message=result["message"],
+        ),
     )

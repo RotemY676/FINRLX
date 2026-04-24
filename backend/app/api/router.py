@@ -17,6 +17,7 @@ from app.api.v1.pricechart import router as pricechart_router
 from app.api.v1.ingest import router as ingest_router
 from app.api.v1.features import router as features_router
 from app.api.v1.pipeline import router as pipeline_router
+from app.api.v1.publication import router as publication_router
 from app.api.v1.health import router as health_router
 
 api_router = APIRouter()
@@ -37,4 +38,5 @@ api_router.include_router(pricechart_router, tags=["pricechart"])
 api_router.include_router(ingest_router, tags=["ingestion"])
 api_router.include_router(features_router, tags=["features"])
 api_router.include_router(pipeline_router, tags=["pipeline"])
+api_router.include_router(publication_router, tags=["publication"])
 api_router.include_router(health_router, tags=["health"])
