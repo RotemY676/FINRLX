@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   fetchCurrentRecommendation, fetchDecisionStages, fetchEvidence, fetchDisagreement,
+  actionSaveThesis, actionPromotePaper, actionDefer,
   RecommendationDetail, DecisionStagesData, EvidenceNarrativeData, DisagreementData,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -19,6 +20,7 @@ import { RiskOverlayStage } from "@/components/decision/RiskOverlayStage";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { ScenarioCard } from "@/components/decision/ScenarioCard";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
 
@@ -29,6 +31,8 @@ export default function DecisionPage() {
   const [disagreement, setDisagreement] = useState<DisagreementData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchCurrentRecommendation()
@@ -75,12 +79,30 @@ export default function DecisionPage() {
         </div>
         <ConfidenceBlock confidence={rec.confidence} />
         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-line flex-wrap">
-          <button className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[12.5px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-colors"><Icon name="check" size={13} /> Save as current thesis</button>
-          <button className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors"><Icon name="paper" size={13} /> Promote to paper</button>
-          <button className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors"><Icon name="clock" size={13} /> Defer decision</button>
+          <button
+            disabled={actionLoading}
+            onClick={async () => { setActionLoading(true); try { const r = await actionSaveThesis(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[12.5px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-colors disabled:opacity-50"
+          ><Icon name="check" size={13} /> Save as current thesis</button>
+          <button
+            disabled={actionLoading}
+            onClick={async () => { setActionLoading(true); try { const r = await actionPromotePaper(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+            className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors disabled:opacity-50"
+          ><Icon name="paper" size={13} /> Promote to paper</button>
+          <button
+            disabled={actionLoading}
+            onClick={async () => { setActionLoading(true); try { const r = await actionDefer(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+            className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors disabled:opacity-50"
+          ><Icon name="clock" size={13} /> Defer decision</button>
           <div className="flex-1" />
+          {actionMsg && (
+            <span className="text-[11px] text-pos font-medium animate-pulse">{actionMsg}</span>
+          )}
+          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="bookmark" size={12} /></button>
+          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="share" size={12} /></button>
           <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="compare" size={12} /> Compare</button>
           <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="replay" size={12} /> Replay</button>
+          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="dots" size={12} /></button>
         </div>
       </section>
 
@@ -204,15 +226,8 @@ export default function DecisionPage() {
         ) : <p className="text-[12.5px] text-ink-3">Risk data not available.</p>}
       </section>
 
-      {/* ── Scenario — pending ── */}
-      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <Icon name="filter" size={14} className="text-primary" />
-          <h3 className="text-[13px] font-semibold text-ink">Scenario controls</h3>
-          <StatusBadge status="pending" />
-        </div>
-        <p className="text-[12.5px] text-ink-3">Scenario simulation requires backend engine support. UI shell ready.</p>
-      </section>
+      {/* ── Scenario controls — interactive ── */}
+      <ScenarioCard />
 
       {/* ── Pipeline stages ── */}
       <div>

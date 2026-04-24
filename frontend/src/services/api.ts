@@ -634,3 +634,68 @@ export async function challengeQueueItem(id: string): Promise<ApiResponse<QueueA
 export async function fetchWorkspaceCounts(): Promise<ApiResponse<WorkspaceCountsData>> {
   return apiFetch<WorkspaceCountsData>("/api/v1/workspace-counts");
 }
+
+// Scenario simulation types
+
+export interface ScenarioParamsData {
+  horizon_days: number;
+  rate_shock_bps: number;
+  correlation: number;
+  earnings_revision_weight: number;
+  momentum_engine_on: boolean;
+  flow_engine_on: boolean;
+  policy_constraints_on: boolean;
+}
+
+export interface ScenarioDeltaData {
+  metric: string;
+  baseline: string;
+  modified: string;
+  direction: string;
+}
+
+export interface ScenarioResultData {
+  is_modified: boolean;
+  deltas: ScenarioDeltaData[];
+  weight_impact: number;
+  confidence_impact: number;
+  expected_return_impact: number;
+  warnings: string[];
+}
+
+export async function simulateScenario(params: ScenarioParamsData): Promise<ApiResponse<ScenarioResultData>> {
+  return apiFetch<ScenarioResultData>("/api/v1/scenario/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+}
+
+export async function fetchScenarioBaseline(): Promise<ApiResponse<ScenarioParamsData>> {
+  return apiFetch<ScenarioParamsData>("/api/v1/scenario/baseline");
+}
+
+// Action bar types
+
+export interface ActionResultData {
+  action: string;
+  success: boolean;
+  new_status: string;
+  message: string;
+}
+
+export async function actionSaveThesis(): Promise<ApiResponse<ActionResultData>> {
+  return apiFetch<ActionResultData>("/api/v1/actions/save-thesis", { method: "POST" });
+}
+
+export async function actionPromotePaper(): Promise<ApiResponse<ActionResultData>> {
+  return apiFetch<ActionResultData>("/api/v1/actions/promote-paper", { method: "POST" });
+}
+
+export async function actionDefer(reason?: string): Promise<ApiResponse<ActionResultData>> {
+  return apiFetch<ActionResultData>("/api/v1/actions/defer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: reason || null }),
+  });
+}

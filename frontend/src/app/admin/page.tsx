@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  OpsData, OpsQueueItem, OpsAuditEntry,
+  OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
+import { IncidentDrawer } from "@/components/ops/IncidentDrawer";
 
 const STANCE_STYLE: Record<string, string> = {
   LONG: "text-pos-soft-ink bg-pos-soft", SHORT: "text-breach-soft-ink bg-breach-soft",
@@ -57,6 +58,9 @@ export default function AdminPage() {
 
   // Action loading
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Incident drawer
+  const [drawerIncident, setDrawerIncident] = useState<OpsIncident | null>(null);
 
   useEffect(() => {
     fetchOps()
@@ -318,7 +322,7 @@ export default function AdminPage() {
           </div>
           <div className="space-y-3">
             {ops.incidents.map((inc) => (
-              <div key={inc.id} className="border border-line/50 rounded-lg p-3">
+              <div key={inc.id} className="border border-line/50 rounded-lg p-3 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setDrawerIncident(inc)}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-[11px] text-ink-4">{inc.id}</span>
                   <span className={`text-[11px] ${SEVERITY_STYLE[inc.severity] || ""}`}>{inc.severity}</span>
@@ -370,6 +374,11 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
+
+      {/* Incident drawer */}
+      {drawerIncident && (
+        <IncidentDrawer incident={drawerIncident} onClose={() => setDrawerIncident(null)} />
+      )}
     </div>
   );
 }
