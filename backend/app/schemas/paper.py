@@ -89,6 +89,10 @@ class PaperPerformanceSummary(BaseModel):
     total_rebalances: int = 0
     snapshot_count: int = 0
     days: int = 0
+    performance_basis: str | None = None
+    basis_start_date: str | None = None
+    basis_end_date: str | None = None
+    warnings: list[str] = Field(default_factory=list)
     message: str | None = None
 
 
@@ -99,6 +103,9 @@ class PaperAssetAttribution(BaseModel):
     current_weight: float
     asset_return: float
     contribution: float
+    quality: str = "ok"  # ok, partial
+    start_price: float | None = None
+    end_price: float | None = None
 
 
 class PaperDecisionAttribution(BaseModel):

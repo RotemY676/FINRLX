@@ -276,26 +276,47 @@ class PaperPortfolioService:
 
     # ── Trades ────────────────────────────────────────────────────────
 
-    async def _create_trades_for_creation(self, pp: PaperPortfolio) -> int:
-        """Create simulated buy trades for initial portfolio creation."""
+    async def _create_trades_for_creation(self, pp: PaperPortfolio, backfill: bool = False) -> int:
+        """Create simulated buy trades for initial portfolio creation.
+
+        If backfill=True, checks for existing trades first to avoid duplicates.
+        """
+        # Check if trades already exist for this portfolio
+        existing = (await self.db.execute(
+            select(func.count()).select_from(PaperTrade)
+            .where(PaperTrade.portfolio_id == pp.id)
+        )).scalar() or 0
+        if existing > 0:
+            return 0  # already has trades
+
         holdings = pp.current_holdings or {}
-        now = datetime.now(timezone.utc)
+        trade_date = pp.created_at or datetime.now(timezone.utc)
+
+        # For backfill, try to get actual prices from market_bars
+        asset_ids = list(holdings.keys())
+        bar_prices = await self._get_latest_prices(asset_ids) if backfill else {}
+
         count = 0
         for aid, info in holdings.items():
             qty = info.get("quantity", 0)
-            price = info.get("last_price", 0)
-            if qty > 0:
+            price = bar_prices.get(aid) or info.get("last_price", 0)
+            if qty > 0 or info.get("target_weight", 0) > 0:
+                if qty == 0 and price > 0:
+                    # Estimate quantity from target value
+                    target_val = (pp.portfolio_value or 100000) * info.get("target_weight", 0)
+                    qty = int(target_val / price) if price > 0 else 0
                 self.db.add(PaperTrade(
                     id=gen_uuid(), portfolio_id=pp.id,
                     recommendation_id=pp.source_recommendation_id,
-                    trade_date=now, asset_id=aid, ticker=info.get("ticker", "?"),
-                    side="buy", quantity=qty, price=price,
-                    notional=round(qty * price, 2),
+                    trade_date=trade_date, asset_id=aid, ticker=info.get("ticker", "?"),
+                    side="buy", quantity=max(qty, 0), price=price,
+                    notional=round(max(qty, 0) * price, 2),
                     weight_delta=info.get("target_weight", 0),
-                    reason="Initial allocation from recommendation",
+                    reason="backfilled_initial_holding" if backfill else "Initial allocation from recommendation",
                 ))
                 count += 1
-        await self.db.commit()
+        if count > 0:
+            await self.db.commit()
         return count
 
     async def get_trades(self, portfolio_id: str) -> list[PaperTrade]:
@@ -323,12 +344,15 @@ class PaperPortfolioService:
     async def generate_valuation_snapshots(
         self, portfolio_id: str, start_date: date | None = None, end_date: date | None = None,
     ) -> list[PaperValuationSnapshot]:
-        """Generate daily valuation snapshots from market_bars."""
+        """Generate daily valuation snapshots from market_bars. Backfills trades if missing."""
         pp = (await self.db.execute(
             select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
         )).scalar_one_or_none()
         if not pp:
             raise ValueError("Portfolio not found")
+
+        # Backfill trades if holdings exist but no trades
+        await self._create_trades_for_creation(pp, backfill=True)
 
         holdings = pp.current_holdings or {}
         if not holdings:
@@ -441,6 +465,17 @@ class PaperPortfolioService:
             .where(PaperTrade.portfolio_id == portfolio_id)
         )).scalar() or 0
 
+        # Performance basis
+        original_start = pp.portfolio_value if pp else 100000
+        basis_warnings = []
+        if abs(starting - original_start) > 1.0:
+            basis_warnings.append(
+                "Performance is measured from first available valuation snapshot, not original starting cash."
+            )
+
+        start_date_str = snaps[0].valuation_date.isoformat()[:10] if snaps else None
+        end_date_str = snaps[-1].valuation_date.isoformat()[:10] if snaps else None
+
         return {
             "status": "computed",
             "total_return": round(total_ret, 4),
@@ -455,12 +490,21 @@ class PaperPortfolioService:
             "total_rebalances": pp.total_rebalances if pp else 0,
             "snapshot_count": len(snaps),
             "days": days,
+            "performance_basis": "first_available_snapshot",
+            "basis_start_date": start_date_str,
+            "basis_end_date": end_date_str,
+            "warnings": basis_warnings,
         }
 
     # ── Attribution ───────────────────────────────────────────────────
 
     async def get_asset_attribution(self, portfolio_id: str) -> list[dict]:
-        """Per-asset contribution to portfolio return."""
+        """Per-asset contribution to portfolio return.
+
+        Uses valuation snapshots to determine start/end dates, then queries
+        market_bars for actual start/end prices per asset. This produces
+        real attribution — not zeros from stale holdings JSON.
+        """
         pp = (await self.db.execute(
             select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
         )).scalar_one_or_none()
@@ -469,25 +513,50 @@ class PaperPortfolioService:
 
         holdings = pp.current_holdings or {}
         asset_ids = list(holdings.keys())
-        latest_prices = await self._get_latest_prices(asset_ids)
 
-        starting_value = pp.portfolio_value or 100000
+        # Determine attribution window from snapshots or portfolio dates
+        snaps = await self.get_valuation_snapshots(portfolio_id)
+        if snaps:
+            start_dt = snaps[0].valuation_date
+            end_dt = snaps[-1].valuation_date
+            start_d = start_dt.date() if hasattr(start_dt, 'date') else start_dt
+            end_d = end_dt.date() if hasattr(end_dt, 'date') else end_dt
+        else:
+            end_d = date.today()
+            start_d = end_d - timedelta(days=30)
+
+        # Get actual prices from market_bars at start and end of window
+        start_prices = await self._get_prices_on_date(asset_ids, start_d)
+        end_prices = await self._get_prices_on_date(asset_ids, end_d)
+
         attrib = []
+        warnings = []
         for aid, info in holdings.items():
-            qty = info.get("quantity", 0)
-            entry_price = info.get("last_price", 0)
-            current_price = latest_prices.get(aid, entry_price)
-            asset_return = (current_price - entry_price) / entry_price if entry_price > 0 else 0
+            ticker = info.get("ticker", "?")
             weight = info.get("target_weight", 0)
-            contribution = weight * asset_return
+            sp = start_prices.get(aid)
+            ep = end_prices.get(aid)
+
+            if sp and ep and sp > 0:
+                asset_return = (ep - sp) / sp
+                contribution = weight * asset_return
+                quality = "ok"
+            else:
+                asset_return = 0.0
+                contribution = 0.0
+                quality = "partial"
+                warnings.append(f"{ticker}: missing price data for attribution")
 
             attrib.append({
                 "asset_id": aid,
-                "ticker": info.get("ticker", "?"),
+                "ticker": ticker,
                 "starting_weight": weight,
                 "current_weight": info.get("current_weight", weight),
                 "asset_return": round(asset_return, 4),
                 "contribution": round(contribution, 4),
+                "quality": quality,
+                "start_price": round(sp, 2) if sp else None,
+                "end_price": round(ep, 2) if ep else None,
             })
 
         return attrib

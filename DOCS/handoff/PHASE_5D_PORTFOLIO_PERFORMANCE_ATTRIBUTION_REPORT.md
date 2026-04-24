@@ -97,3 +97,33 @@ $ python -m pytest tests/ -v
 5. **Integer quantities** — fractional shares not supported.
 6. **Engine attribution** not implemented — would require deeper signal-to-weight lineage.
 7. **Valuation snapshots require manual recompute** — not auto-generated on price update.
+
+---
+
+## Phase 5D.1 Truthfulness Hardening Addendum
+
+**Date:** 2026-04-25
+
+### Fixes
+
+1. **Trade backfill.** `recompute` now detects portfolios with holdings but no trades and creates backfilled initial buy trades (reason="backfilled_initial_holding"). Repeated recompute does not duplicate trades.
+
+2. **Asset attribution fixed.** Now queries market_bars for actual start/end prices using the valuation snapshot window, not stale `last_price` from holdings JSON. Returns `quality="partial"` with `start_price`/`end_price` when data is missing.
+
+3. **Performance basis.** Summary now includes `performance_basis`, `basis_start_date`, `basis_end_date`, and `warnings` when the measurement window differs from original starting cash.
+
+### Tests Added (5)
+
+| Test | What It Verifies |
+|---|---|
+| `test_recompute_backfills_trades` | Recompute creates trades for holdings-only portfolios |
+| `test_repeated_recompute_no_duplicate_trades` | No duplicate trades on repeated recompute |
+| `test_create_from_recommendation_creates_trades` | New portfolio has initial buy trades |
+| `test_attribution_non_zero_with_price_data` | Attribution includes quality/start_price/end_price |
+| `test_performance_includes_basis` | Performance has basis fields |
+
+### Test Output
+
+```
+171 passed, 2 skipped, 1 warning in 12.70s
+```
