@@ -19,6 +19,8 @@ from app.models import (
     BacktestExperiment, PaperPortfolio, ReplaySnapshot,
     SignalRun, SignalOutput, AuditEvent,
     DataFeed, PolicyBreach, PublicationQueueEntry, Incident,
+    MarketBar, NewsEvent, IngestionManifest,
+    FeatureDefinition, FeatureSet, FeatureValue,
 )
 
 random.seed(42)
@@ -388,15 +390,79 @@ async def seed():
                 source=inc["source"],
             ))
 
+        # ── Ingestion: Market Bars (90 days daily OHLCV for all 10 assets) ──
+        from app.services.ingest import _generate_bars, _generate_news
+        bar_end = now.date()
+        bar_start = bar_end - timedelta(days=90)
+        total_bars = 0
+        for ticker, aid in asset_ids.items():
+            bars = _generate_bars(ticker, aid, bar_start, bar_end, "seed")
+            for b in bars:
+                db.add(MarketBar(**b))
+            total_bars += len(bars)
+
+        # Manifest for bar ingestion
+        bar_manifest_id = uid()
+        db.add(IngestionManifest(
+            id=bar_manifest_id, source="seed", kind="bars",
+            status="completed", asset_count=len(asset_ids), row_count=total_bars,
+            date_from=bar_start, date_to=bar_end,
+            started_at=now, completed_at=now,
+        ))
+
+        # ── Ingestion: News Events (30 days) ──
+        news_end = now.date()
+        news_start = news_end - timedelta(days=30)
+        news_events = _generate_news(list(asset_ids.keys()), news_start, news_end, "seed")
+        for ne in news_events:
+            db.add(NewsEvent(**ne))
+
+        # Manifest for news ingestion
+        news_manifest_id = uid()
+        db.add(IngestionManifest(
+            id=news_manifest_id, source="seed", kind="news",
+            status="completed", asset_count=len(asset_ids), row_count=len(news_events),
+            date_from=news_start, date_to=news_end,
+            started_at=now, completed_at=now,
+        ))
+
         await db.commit()
-        print(
-            f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
-            f"{len(ENGINE_DEFS)} engines × 5 assets = {len(ENGINE_DEFS)*5} signal outputs, "
-            f"{len(EVIDENCE_ITEMS)} evidence items, {len(ACTIVITY_EVENTS)} audit events, "
-            f"5 replay snapshots, 1 backtest, 1 paper portfolio, "
-            f"{len(OPS_FEEDS)} data feeds, {len(OPS_BREACHES)} breaches, "
-            f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents"
-        )
+
+    # ── Feature computation (needs committed ingestion data) ──
+    async with async_session_factory() as db:
+        from app.services.features import FeatureService
+        from app.models.reference import Universe as UniverseModel
+        from sqlalchemy import select
+        svc = FeatureService(db)
+        await svc.ensure_default_definitions()
+
+        # Re-read universe_id from DB (previous session is closed)
+        uni_row = (await db.execute(select(UniverseModel.id).limit(1))).scalar()
+
+        # Check if a feature set already exists (idempotency)
+        existing_fs = (await db.execute(
+            select(FeatureSet).limit(1)
+        )).scalar_one_or_none()
+        if existing_fs:
+            feature_msg = f"Feature set already exists ({existing_fs.id[:8]}…). Skipping."
+        else:
+            fs = await svc.compute_features(universe_id=uni_row)
+            feature_msg = (
+                f"1 feature set ({fs.feature_count} values, "
+                f"completeness {fs.completeness_score:.0%})"
+            )
+
+    print(
+        f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
+        f"{len(ENGINE_DEFS)} engines × 5 assets = {len(ENGINE_DEFS)*5} signal outputs, "
+        f"{len(EVIDENCE_ITEMS)} evidence items, {len(ACTIVITY_EVENTS)} audit events, "
+        f"5 replay snapshots, 1 backtest, 1 paper portfolio, "
+        f"{len(OPS_FEEDS)} data feeds, {len(OPS_BREACHES)} breaches, "
+        f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents, "
+        f"{total_bars} market bars (90d × {len(asset_ids)} assets), "
+        f"{len(news_events)} news events (30d), 2 ingestion manifests, "
+        f"{feature_msg}"
+    )
 
 
 if __name__ == "__main__":

@@ -15,6 +15,8 @@ from app.models import (
     SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
     AuditEvent, DataFeed, PolicyBreach, PublicationQueueEntry, Incident,
     SignalRun, SignalOutput,
+    MarketBar, NewsEvent, IngestionManifest,
+    FeatureDefinition, FeatureSet, FeatureValue,
 )
 
 TEST_DB_URL = "sqlite+aiosqlite://"  # in-memory
@@ -125,6 +127,41 @@ async def setup_db():
         run_id = uid()
         db.add(SignalRun(id=run_id, engine_name="momentum", engine_version="v3.2", run_started_at=now - timedelta(minutes=3), run_completed_at=now - timedelta(minutes=2), status="completed", data_as_of=now - timedelta(minutes=2)))
         db.add(SignalOutput(id=uid(), signal_run_id=run_id, asset_id=asset_ids["AAPL"], score=0.7, stance="buy", confidence=0.82, rationale="Test", artifacts={}))
+
+        # Ingestion seed: 30 days of market bars for both assets + news
+        bar_count = 0
+        for ticker, aid in asset_ids.items():
+            base_price = 195.0 if ticker == "AAPL" else 420.0
+            for i in range(30):
+                d = (now - timedelta(days=30 - i)).date()
+                if d.weekday() >= 5:
+                    continue
+                price = base_price + i * 0.5
+                db.add(MarketBar(
+                    id=uid(), asset_id=aid, ticker=ticker,
+                    bar_date=d, interval="1d",
+                    open=round(price - 0.5, 2), high=round(price + 1.5, 2),
+                    low=round(price - 1.5, 2), close=round(price, 2),
+                    volume=20000000 + i * 100000, source="test",
+                ))
+                bar_count += 1
+
+        # A few news events for sentiment features
+        for i in range(5):
+            d = now - timedelta(days=i + 1)
+            db.add(NewsEvent(
+                id=uid(), headline=f"AAPL test news {i}", source="test",
+                published_at=d, tickers=["AAPL"],
+                sentiment_score=0.3 + i * 0.1, sentiment_label="positive",
+                category="test",
+            ))
+
+        db.add(IngestionManifest(
+            id=uid(), source="test", kind="bars", status="completed",
+            asset_count=2, row_count=bar_count,
+            date_from=(now - timedelta(days=30)).date(), date_to=now.date(),
+            started_at=now, completed_at=now,
+        ))
 
         await db.commit()
 

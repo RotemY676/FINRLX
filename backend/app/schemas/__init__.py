@@ -18,3 +18,14 @@ from app.schemas.ops import (
 )
 from app.schemas.scenario import ScenarioParams, ScenarioResult, ScenarioDelta
 from app.schemas.action import ActionResult, DeferRequest
+from app.schemas.feature import (
+    FeatureDefinitionResponse, FeatureValueResponse, FeatureSetResponse,
+    FeatureComputeRequest, FeatureComputeResult, FeatureStatusResponse,
+)
+from app.schemas.ingestion import (
+    MarketBarResponse, MarketBarListResponse,
+    NewsEventResponse, NewsEventListResponse,
+    ManifestResponse, ManifestListResponse,
+    IngestionStatusResponse, SourceFreshness,
+    IngestBarsRequest, IngestNewsRequest, IngestTriggerResult,
+)

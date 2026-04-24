@@ -9,6 +9,8 @@ from app.models.ops import (
     AuditEvent, Incident, SystemHealthSnapshot,
     DataFeed, PolicyBreach, PublicationQueueEntry,
 )
+from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
+from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -18,4 +20,6 @@ __all__ = [
     "BacktestExperiment", "PaperPortfolio", "ReplaySnapshot",
     "AuditEvent", "Incident", "SystemHealthSnapshot",
     "DataFeed", "PolicyBreach", "PublicationQueueEntry",
+    "MarketBar", "NewsEvent", "IngestionManifest",
+    "FeatureDefinition", "FeatureSet", "FeatureValue",
 ]
