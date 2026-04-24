@@ -41,6 +41,14 @@ DEFAULT_ENGINES = [
         "version": "v1", "output_kind": "signal",
         "required_feature_keys": ["news_sentiment_7d", "news_count_7d"],
     },
+    {
+        "key": "ml_return_forecaster", "name": "ML Return Forecaster (Baseline)", "category": "ml",
+        "description": "Baseline ML engine — reads model_predictions from ml_return_forecaster model. "
+                       "Experimental/shadow — does not dominate allocation. Clearly labeled baseline.",
+        "version": "v1", "output_kind": "signal",
+        "required_feature_keys": ["return_5d", "return_20d", "return_60d", "volatility_20d",
+                                   "drawdown_20d", "relative_volume_20d", "news_sentiment_7d", "news_count_7d"],
+    },
 ]
 
 
@@ -304,6 +312,16 @@ class EngineService:
 
         results = []
         for eng in engines:
+            # ML engines read from model_predictions instead of feature_values
+            if eng.category == "ml":
+                signal_count = await self._run_ml_engine(eng, run, fs)
+                run.status = "completed"
+                run.run_completed_at = datetime.now(timezone.utc)
+                results.append({"run_id": run.id, "engine_key": eng.key, "status": "completed",
+                                "signal_count": signal_count, "message": f"{signal_count} ML signals",
+                                "feature_set_id": fs.id})
+                continue
+
             engine_fn = ENGINE_FUNCTIONS.get(eng.key)
             if not engine_fn:
                 results.append({"run_id": "", "engine_key": eng.key, "status": "skipped",
@@ -368,6 +386,70 @@ class EngineService:
         return (await self.db.execute(
             select(SignalRun).order_by(SignalRun.run_completed_at.desc()).limit(1)
         )).scalar_one_or_none()
+
+    async def _run_ml_engine(self, eng: EngineDefinition, run: SignalRun, fs: FeatureSet) -> int:
+        """Run ML engine by reading latest model_predictions."""
+        from app.models.modeling import ModelPrediction, ModelRun as MRun
+
+        # Find latest completed predict run for this model key
+        latest_run = (await self.db.execute(
+            select(MRun)
+            .where(MRun.model_key == eng.key)
+            .where(MRun.run_type == "predict")
+            .where(MRun.status == "completed")
+            .order_by(MRun.completed_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
+
+        if not latest_run:
+            # No predictions available — produce hold signals with low confidence
+            self.db.add(SignalOutput(
+                id=gen_uuid(), signal_run_id=run.id, asset_id="",
+                score=0.0, stance="hold", confidence=0.05,
+                rationale="No ML predictions available — model not yet trained/predicted",
+                artifacts={"engine_key": eng.key, "engine_name": eng.name,
+                           "caveats": ["No model predictions available"], "drivers": [],
+                           "risk_level": "Moderate", "ticker": "ALL",
+                           "source_feature_set_id": fs.id if fs else None},
+            ))
+            return 1
+
+        preds = (await self.db.execute(
+            select(ModelPrediction).where(ModelPrediction.model_run_id == latest_run.id)
+        )).scalars().all()
+
+        count = 0
+        for p in preds:
+            score = p.prediction_score or 0
+            conf = p.confidence or 0.2
+            if score >= 0.25:
+                stance = "buy"
+            elif score <= -0.25:
+                stance = "sell"
+            else:
+                stance = "hold"
+
+            risk = "Low" if abs(score) < 0.2 else "Moderate" if abs(score) < 0.5 else "Elevated"
+            drivers = p.drivers or []
+            caveats = ["ML baseline / experimental / shadow"]
+            if p.quality != "ok":
+                caveats.append(f"Prediction quality: {p.quality}")
+
+            self.db.add(SignalOutput(
+                id=gen_uuid(), signal_run_id=run.id, asset_id=p.asset_id,
+                score=score, stance=stance, confidence=conf,
+                rationale="; ".join(drivers[:3]) if drivers else "ML baseline prediction",
+                artifacts={
+                    "engine_key": eng.key, "engine_name": eng.name,
+                    "ticker": p.ticker, "risk_level": risk,
+                    "drivers": drivers, "caveats": caveats,
+                    "source_feature_set_id": fs.id if fs else None,
+                    "source_model_run_id": latest_run.id,
+                },
+            ))
+            count += 1
+
+        return count
 
     async def _get_registered_keys(self) -> set[str]:
         """Return the set of active engine definition keys."""

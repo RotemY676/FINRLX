@@ -35,6 +35,10 @@ from app.schemas.publication import (
     PublicationActionRequest, PublicationTransitionResponse,
     PublicationStatusResponse, PublicationHistoryEntry,
 )
+from app.schemas.modeling import (
+    ModelDefinitionResponse, ModelRunResponse, ModelPredictionResponse,
+    ModelTrainRequest, ModelPredictRequest, ModelStatusResponse,
+)
 from app.schemas.ingestion import (
     MarketBarResponse, MarketBarListResponse,
     NewsEventResponse, NewsEventListResponse,

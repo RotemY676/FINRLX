@@ -279,6 +279,13 @@ async def _seed_pipeline_stages():
             created = await replay_svc.ensure_replay_exists(latest.id)
             print(f"  Replay: snapshots {'created' if created else 'already exist'} for {latest.id[:8]}…")
 
+    # ── ML model definition (Phase 6A) ──
+    async with async_session_factory() as db:
+        from app.services.modeling import ModelingService
+        ml_svc = ModelingService(db)
+        inserted = await ml_svc.ensure_default_definitions()
+        print(f"  Models: {inserted} new definition(s) registered" if inserted else "  Models: definitions already exist")
+
 
 async def seed():
     async with async_session_factory() as db:

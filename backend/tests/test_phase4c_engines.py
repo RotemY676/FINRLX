@@ -44,7 +44,7 @@ async def test_run_engines(client):
     assert data["failed"] == 0
     for result in data["results"]:
         assert result["status"] == "completed"
-        assert result["signal_count"] >= 2  # at least AAPL + MSFT
+        assert result["signal_count"] >= 1  # at least 1 signal per engine
 
 
 @pytest.mark.asyncio
@@ -215,7 +215,7 @@ async def test_evidence_not_hardcoded(client):
 
 # ── Phase 4C.1 hardening tests ────────────────────────────────────────
 
-REGISTERED_KEYS = {"technical_momentum", "risk_quality", "news_sentiment"}
+REGISTERED_KEYS = {"technical_momentum", "risk_quality", "news_sentiment", "ml_return_forecaster"}
 
 
 @pytest.mark.asyncio
@@ -347,4 +347,4 @@ async def test_evidence_no_signals_returns_none(client):
         # Signals exist → evidence derived from real engines, no EVIDENCE_ITEMS
         for item in data["items"]:
             source_engine = item.get("source_engine")
-            assert source_engine in ("technical_momentum", "risk_quality", "news_sentiment", None)
+            assert source_engine in ("technical_momentum", "risk_quality", "news_sentiment", "ml_return_forecaster", None)
