@@ -56,15 +56,27 @@ class DecisionPipelineService:
         )).all()
         return universe_id, [(r.id, r.ticker) for r in rows]
 
-    async def _get_registered_signals(self, signal_run_ids: list[str] | None = None, feature_set_id: str | None = None) -> tuple[list[SignalOutput], list[str], str | None]:
+    async def _get_live_engine_keys(self) -> set[str]:
+        """Return engine keys that are non-shadow (category != 'ml' or explicitly active non-experimental)."""
+        from app.models.engine import EngineDefinition
+        rows = (await self.db.execute(
+            select(EngineDefinition.key)
+            .where(EngineDefinition.is_active == True)  # noqa: E712
+            .where(EngineDefinition.category != "ml")
+        )).scalars().all()
+        return set(rows)
+
+    async def _get_registered_signals(self, signal_run_ids: list[str] | None = None, feature_set_id: str | None = None, include_shadow: bool = False) -> tuple[list[SignalOutput], list[str], str | None]:
         """Get signals from engine runs. Returns (outputs, run_ids, feature_set_id).
 
-        If feature_set_id is provided, uses runs linked to that specific feature set.
-        Otherwise, finds the best feature set that has registered engine runs.
+        By default excludes shadow/ML engines. Set include_shadow=True to include them.
         """
         from app.models.engine import EngineDefinition
         eng_svc = EngineService(self.db)
-        registered_keys = await eng_svc._get_registered_keys()
+        if include_shadow:
+            registered_keys = await eng_svc._get_registered_keys()
+        else:
+            registered_keys = await self._get_live_engine_keys()
 
         # If explicit signal_run_ids provided, validate and use them
         if signal_run_ids:
@@ -464,13 +476,17 @@ class DecisionPipelineService:
         signal_run_ids: list[str] | None = None,
         universe_id: str | None = None,
         feature_set_id: str | None = None,
+        include_shadow_engines: bool = False,
     ) -> dict:
         """Run the complete decision pipeline: Selection → Allocation → Timing → Risk → Recommendation."""
         warnings = []
         stages = []
 
-        # 1. Get signals
-        outputs, run_ids, fs_id = await self._get_registered_signals(signal_run_ids, feature_set_id)
+        if include_shadow_engines:
+            warnings.append("Shadow/experimental ML signals included in this pipeline run.")
+
+        # 1. Get signals (exclude shadow by default)
+        outputs, run_ids, fs_id = await self._get_registered_signals(signal_run_ids, feature_set_id, include_shadow=include_shadow_engines)
         if not outputs:
             return {
                 "recommendation_id": None, "status": "failed",

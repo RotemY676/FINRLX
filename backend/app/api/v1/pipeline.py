@@ -32,6 +32,7 @@ async def run_pipeline(body: PipelineRunRequest, db: AsyncSession = Depends(get_
         signal_run_ids=body.signal_run_ids,
         universe_id=body.universe_id,
         feature_set_id=body.feature_set_id,
+        include_shadow_engines=body.include_shadow_engines,
     )
     return ApiResponse(
         meta=make_meta(warnings=result.get("warnings")),

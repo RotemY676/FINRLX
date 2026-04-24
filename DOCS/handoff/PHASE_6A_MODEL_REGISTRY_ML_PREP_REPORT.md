@@ -134,3 +134,31 @@ Flow: `features → ModelingService.predict() → model_predictions → EngineSe
 4. **No model versioning workflow** — single v1 only.
 5. **No model promotion gates** — no validation-before-production lifecycle yet.
 6. **No RL/FINRL-X** — deferred to future phase.
+
+---
+
+## Phase 6A.1 Shadow ML Isolation Addendum
+
+**Date:** 2026-04-25
+
+### Changes
+
+1. **Pipeline excludes shadow/ML by default.** `_get_registered_signals` now filters to `category != "ml"` engines unless `include_shadow_engines=True` is passed.
+
+2. **Opt-in flag.** `PipelineRunRequest.include_shadow_engines` (default `false`). When true, ML signals are included and a warning is added: "Shadow/experimental ML signals included in this pipeline run."
+
+3. **ML signals still generated.** `POST /engines/run` still produces `ml_return_forecaster` signal outputs for comparison/monitoring. They just don't feed into live pipeline scoring by default.
+
+### Tests Added (3)
+
+| Test | What It Verifies |
+|---|---|
+| `test_default_pipeline_excludes_ml` | Default pipeline has no shadow warning |
+| `test_pipeline_with_shadow_includes_ml` | include_shadow=true produces shadow warning |
+| `test_ml_signals_still_generated` | ML engine still creates signal_outputs |
+
+### Test Output
+
+```
+184 passed, 2 skipped, 1 warning in 14.44s
+```

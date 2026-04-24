@@ -10,6 +10,7 @@ class PipelineRunRequest(BaseModel):
     universe_id: str | None = None
     signal_run_ids: list[str] | None = None  # None = use latest registered signals
     feature_set_id: str | None = None  # None = auto-resolve best feature set
+    include_shadow_engines: bool = False  # default: exclude shadow/experimental ML engines
 
 
 class PipelineStageResult(BaseModel):

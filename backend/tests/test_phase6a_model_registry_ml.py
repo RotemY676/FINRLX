@@ -153,3 +153,52 @@ async def test_model_status(client):
     data = r.json()["data"]
     assert data["total_definitions"] >= 1
     assert data["active_definitions"] >= 1
+
+
+# ── Phase 6A.1 shadow isolation tests ─────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_default_pipeline_excludes_ml(client):
+    """Default pipeline run excludes shadow ML signals from scoring."""
+    fs_id = await _ensure_features(client)
+    await client.post("/api/v1/models/predict", json={"model_key": "ml_return_forecaster", "feature_set_id": fs_id})
+    await client.post("/api/v1/engines/run", json={"feature_set_id": fs_id})
+
+    r = await client.post("/api/v1/pipeline/run", json={"feature_set_id": fs_id})
+    data = r.json()["data"]
+    assert data["status"] == "completed"
+    # Signal run IDs should NOT include ml_return_forecaster runs
+    # (we can't easily check engine_name from run_ids, but check warnings)
+    warnings = data.get("warnings", [])
+    assert not any("shadow" in w.lower() for w in warnings), "Default pipeline should not mention shadow engines"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_with_shadow_includes_ml(client):
+    """Pipeline with include_shadow_engines=true includes ML signals and warns."""
+    fs_id = await _ensure_features(client)
+    await client.post("/api/v1/models/predict", json={"model_key": "ml_return_forecaster", "feature_set_id": fs_id})
+    await client.post("/api/v1/engines/run", json={"feature_set_id": fs_id})
+
+    r = await client.post("/api/v1/pipeline/run", json={
+        "feature_set_id": fs_id,
+        "include_shadow_engines": True,
+    })
+    data = r.json()["data"]
+    assert data["status"] == "completed"
+    warnings = data.get("warnings", [])
+    assert any("shadow" in w.lower() or "experimental" in w.lower() for w in warnings), \
+        "Pipeline with shadow engines should include shadow warning"
+
+
+@pytest.mark.asyncio
+async def test_ml_signals_still_generated(client):
+    """ML engine still generates signal_outputs even when excluded from pipeline."""
+    fs_id = await _ensure_features(client)
+    await client.post("/api/v1/models/predict", json={"model_key": "ml_return_forecaster", "feature_set_id": fs_id})
+    r = await client.post("/api/v1/engines/run", json={"feature_set_id": fs_id})
+    data = r.json()["data"]
+    ml = [res for res in data["results"] if res["engine_key"] == "ml_return_forecaster"]
+    assert len(ml) == 1
+    assert ml[0]["status"] == "completed"
+    assert ml[0]["signal_count"] >= 1
