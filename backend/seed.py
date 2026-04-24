@@ -268,6 +268,17 @@ async def _seed_pipeline_stages():
             result = await pipe_svc.run_pipeline()
             print(f"  Pipeline: {result['status']} — {result['message']}")
 
+    # ── Replay snapshots for pipeline recommendation ──
+    async with async_session_factory() as db:
+        from app.services.replay import ReplayService
+        from app.services.pipeline import DecisionPipelineService
+        replay_svc = ReplayService(db)
+        pipe_svc = DecisionPipelineService(db)
+        latest = await pipe_svc.get_latest_pipeline_recommendation()
+        if latest:
+            created = await replay_svc.ensure_replay_exists(latest.id)
+            print(f"  Replay: snapshots {'created' if created else 'already exist'} for {latest.id[:8]}…")
+
 
 async def seed():
     async with async_session_factory() as db:

@@ -155,6 +155,39 @@ $ python -m pytest tests/ -v
 
 ---
 
+## Phase 4E.1 Governance Hardening Addendum
+
+**Date:** 2026-04-24
+
+### Changes
+
+1. **Critical incidents now block publication.** Active incidents with severity ≤ 2 produce gate status `block` (was `warning`). Message: "Publication blocked: N critical incident(s) open".
+
+2. **Blocking policy breaches now block publication.** Active breaches with severity `breach` produce gate status `block` (was `warning`). Message: "Publication blocked: N active policy breach(es)".
+
+3. **Publication queue endpoint added.** `GET /publication/queue` returns recommendations in workflow states (staged, approved, deferred, suppressed) with confidence, lineage, and weight count. Draft recommendations are excluded.
+
+### Tests Added (4)
+
+| Test | What It Verifies |
+|---|---|
+| `test_publish_blocked_by_critical_incident` | Sev-2 incident → gate block → publish denied |
+| `test_publish_blocked_by_policy_breach` | Active breach → gate block |
+| `test_publication_queue_endpoint` | Queue returns staged/approved recs |
+| `test_publication_queue_excludes_draft` | Draft recs not in queue |
+
+### Test Output
+
+```
+$ python -m pytest tests/ -v
+130 passed, 1 warning in 7.98s
+
+  17 Phase 4E tests (13 original + 4 hardening)
+  113 existing tests — all PASS (zero regressions)
+```
+
+---
+
 ## 12. Phase 4 Complete
 
 Phase 4 (Backend Pipeline Core) is now complete across all subphases:

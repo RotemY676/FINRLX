@@ -52,3 +52,17 @@ class BacktestListItem(BaseModel):
 class BacktestListResponse(BaseModel):
     items: list[BacktestListItem]
     total: int
+
+
+class BacktestRunRequest(BaseModel):
+    name: str = "Walk-Forward Backtest"
+    start_date: str | None = None  # ISO date
+    end_date: str | None = None
+    universe_id: str | None = None
+    rebalance_frequency: str = "monthly"  # weekly or monthly
+    cost_bps: int = 10
+
+
+class BacktestStatusResponse(BaseModel):
+    total: int = 0
+    completed: int = 0

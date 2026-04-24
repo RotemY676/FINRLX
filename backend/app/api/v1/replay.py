@@ -1,7 +1,7 @@
 """Replay endpoints.
 
-GET /api/v1/replay — list replay snapshots
-GET /api/v1/replay/{recommendation_id} — full replay for a recommendation
+GET /api/v1/replay                         — list replay snapshots
+GET /api/v1/replay/{recommendation_id}     — full replay for a recommendation
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func
@@ -17,13 +17,26 @@ from app.schemas.recommendation import ConfidenceTriplet, WeightEntry
 from app.models.validation import ReplaySnapshot
 from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.reference import Asset
+from app.services.replay import ReplayService
 
 router = APIRouter()
 
 
 @router.get("/replay", response_model=ApiResponse[ReplayListResponse])
 async def list_replays(db: AsyncSession = Depends(get_db)):
-    """List distinct recommendations that have replay snapshots."""
+    """List recommendations that have replay snapshots. Auto-create for pipeline recs."""
+    replay_svc = ReplayService(db)
+
+    # Auto-create replay snapshots for pipeline-generated recommendations that lack them
+    pipeline_recs = (await db.execute(
+        select(Recommendation.id)
+        .where(Recommendation.source_feature_set_id.is_not(None))
+        .order_by(Recommendation.created_at.desc())
+        .limit(20)
+    )).scalars().all()
+    for rec_id in pipeline_recs:
+        await replay_svc.ensure_replay_exists(rec_id)
+
     # Get distinct recommendation_ids with their latest snapshot
     stmt = (
         select(
@@ -64,12 +77,16 @@ async def list_replays(db: AsyncSession = Depends(get_db)):
 
 @router.get("/replay/{recommendation_id}", response_model=ApiResponse[ReplayDetail | None])
 async def get_replay(recommendation_id: str, db: AsyncSession = Depends(get_db)):
-    """Full replay for a specific recommendation."""
+    """Full replay for a specific recommendation. Auto-creates snapshots if missing."""
     rec = (await db.execute(
         select(Recommendation).where(Recommendation.id == recommendation_id)
     )).scalar_one_or_none()
     if not rec:
         return ApiResponse(meta=make_meta(warnings=["Recommendation not found"]), data=None)
+
+    # Auto-create replay if pipeline-generated and no snapshots exist
+    replay_svc = ReplayService(db)
+    await replay_svc.ensure_replay_exists(recommendation_id)
 
     # Get snapshots
     snapshots = (await db.execute(
@@ -99,6 +116,9 @@ async def get_replay(recommendation_id: str, db: AsyncSession = Depends(get_db))
     ]
 
     warning_list = rec.warnings if isinstance(rec.warnings, list) else []
+    is_pipeline = rec.source_feature_set_id is not None
+    if not is_pipeline:
+        warning_list = warning_list + ["This replay is from seeded/demo data, not a real pipeline run"]
 
     return ApiResponse(
         meta=make_meta(),
@@ -118,8 +138,7 @@ async def get_replay(recommendation_id: str, db: AsyncSession = Depends(get_db))
             data_as_of=rec.data_as_of,
             stages=[
                 ReplayStageSnapshot(
-                    stage=s.stage,
-                    snapshot_data=s.snapshot_data or {},
+                    stage=s.stage, snapshot_data=s.snapshot_data or {},
                     captured_at=s.captured_at,
                 )
                 for s in snapshots

@@ -133,7 +133,7 @@ class PublicationService:
         if critical_incidents == 0:
             gates.append({"gate": "incidents", "status": "pass", "message": "No critical incidents"})
         else:
-            gates.append({"gate": "incidents", "status": "warning", "message": f"{critical_incidents} critical incident(s) open"})
+            gates.append({"gate": "incidents", "status": "block", "message": f"Publication blocked: {critical_incidents} critical incident(s) open"})
 
         # 8. No blocking policy breaches
         blocking_breaches = (await self.db.execute(
@@ -144,7 +144,7 @@ class PublicationService:
         if blocking_breaches == 0:
             gates.append({"gate": "policy_breaches", "status": "pass", "message": "No blocking breaches"})
         else:
-            gates.append({"gate": "policy_breaches", "status": "warning", "message": f"{blocking_breaches} active breach(es)"})
+            gates.append({"gate": "policy_breaches", "status": "block", "message": f"Publication blocked: {blocking_breaches} active policy breach(es)"})
 
         # Compute overall
         has_block = any(g["status"] == "block" for g in gates)
@@ -314,3 +314,33 @@ class PublicationService:
              "details": (e.details or {}).get("reason") or (e.details or {}).get("description")}
             for e in events
         ]
+
+    async def get_queue(self) -> list[dict]:
+        """Return recommendations in active workflow states (staged, approved, deferred, suppressed)."""
+        recs = (await self.db.execute(
+            select(Recommendation)
+            .where(Recommendation.status.in_(["staged", "approved", "deferred", "suppressed"]))
+            .order_by(Recommendation.updated_at.desc())
+        )).scalars().all()
+
+        result = []
+        for r in recs:
+            wt_count = (await self.db.execute(
+                select(func.count()).select_from(RecommendationWeight)
+                .where(RecommendationWeight.recommendation_id == r.id)
+            )).scalar() or 0
+            warning_list = r.warnings if isinstance(r.warnings, list) else []
+            result.append({
+                "recommendation_id": r.id,
+                "status": r.status,
+                "created_at": r.created_at,
+                "updated_at": r.updated_at,
+                "model_confidence": r.model_confidence,
+                "data_confidence": r.data_confidence,
+                "operational_confidence": r.operational_confidence,
+                "warning_count": len(warning_list),
+                "weight_count": wt_count,
+                "source_feature_set_id": r.source_feature_set_id,
+                "source_signal_run_ids": r.source_signal_run_ids,
+            })
+        return result

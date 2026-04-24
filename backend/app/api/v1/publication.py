@@ -38,6 +38,13 @@ def _to_transition_response(result: dict) -> PublicationTransitionResponse:
     )
 
 
+@router.get("/publication/queue", response_model=ApiResponse[list[dict]])
+async def get_publication_queue(db: AsyncSession = Depends(get_db)):
+    svc = PublicationService(db)
+    queue = await svc.get_queue()
+    return ApiResponse(meta=make_meta(), data=queue)
+
+
 @router.get("/publication/status", response_model=ApiResponse[PublicationStatusResponse])
 async def get_publication_status(db: AsyncSession = Depends(get_db)):
     svc = PublicationService(db)
