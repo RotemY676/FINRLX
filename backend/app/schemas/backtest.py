@@ -18,14 +18,33 @@ class BacktestResultSummary(BaseModel):
 
 
 class EquityCurvePoint(BaseModel):
-    date: str  # ISO date
-    value: float  # portfolio value, base=100
+    date: str
+    value: float
+
+
+class BacktestDecisionPoint(BaseModel):
+    date: str
+    recommendation_id: str | None = None
+    positions: int = 0
+    turnover: float = 0.0
+
+
+class BacktestProvenance(BaseModel):
+    recommendation_ids: list[str] = Field(default_factory=list)
+    source_feature_set_ids: list[str] = Field(default_factory=list)
+    source_signal_run_ids: list[str] = Field(default_factory=list)
+    market_bar_window: dict | None = None
+    rebalance_dates: list[str] = Field(default_factory=list)
+    created_by_service: str | None = None
 
 
 class BacktestDetail(BaseModel):
     id: str
     name: str
     status: str
+    source_type: str = "unknown"  # pipeline_backtest, seed_demo, unknown
+    is_demo: bool = True
+    lineage_available: bool = False
     universe_name: str | None = None
     policy_version_id: str | None = None
     start_date: datetime | None = None
@@ -34,6 +53,8 @@ class BacktestDetail(BaseModel):
     config: dict = Field(default_factory=dict)
     results: BacktestResultSummary
     equity_curve: list[EquityCurvePoint] = Field(default_factory=list)
+    decision_points: list[BacktestDecisionPoint] = Field(default_factory=list)
+    provenance: BacktestProvenance | None = None
     warnings: list[str] = Field(default_factory=list)
     created_at: datetime
 
@@ -42,6 +63,11 @@ class BacktestListItem(BaseModel):
     id: str
     name: str
     status: str
+    source_type: str = "unknown"
+    is_demo: bool = True
+    lineage_available: bool = False
+    decision_count: int = 0
+    warning_count: int = 0
     start_date: datetime | None = None
     end_date: datetime | None = None
     is_promoted: bool
@@ -56,10 +82,10 @@ class BacktestListResponse(BaseModel):
 
 class BacktestRunRequest(BaseModel):
     name: str = "Walk-Forward Backtest"
-    start_date: str | None = None  # ISO date
+    start_date: str | None = None
     end_date: str | None = None
     universe_id: str | None = None
-    rebalance_frequency: str = "monthly"  # weekly or monthly
+    rebalance_frequency: str = "monthly"
     cost_bps: int = 10
 
 

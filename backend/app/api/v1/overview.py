@@ -21,18 +21,20 @@ router = APIRouter()
 async def get_overview(db: AsyncSession = Depends(get_db)):
     meta_warnings = []
 
-    # Get the most recently published recommendation
+    # Get the most recently published recommendation (live context only)
     rec = (await db.execute(
         select(Recommendation)
         .where(Recommendation.status.in_(["published", "published_with_warning"]))
+        .where(Recommendation.context != "backtest")
         .order_by(Recommendation.published_at.desc())
         .limit(1)
     )).scalar_one_or_none()
 
-    # Check for newer pipeline draft
+    # Check for newer pipeline draft (live context only)
     latest_draft = (await db.execute(
         select(Recommendation)
         .where(Recommendation.source_feature_set_id.is_not(None))
+        .where(Recommendation.context != "backtest")
         .order_by(Recommendation.created_at.desc())
         .limit(1)
     )).scalar_one_or_none()

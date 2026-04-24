@@ -1,9 +1,11 @@
-"""Backtest endpoints.
+"""Backtest endpoints with provenance.
 
-POST /api/v1/backtests/run    — trigger a new backtest
-GET  /api/v1/backtests        — list experiments
-GET  /api/v1/backtests/status — backtest layer status
-GET  /api/v1/backtests/{id}   — experiment detail
+POST /api/v1/backtests/run            — trigger walk-forward backtest
+GET  /api/v1/backtests                — list with source_type/is_demo
+GET  /api/v1/backtests/status         — counts
+GET  /api/v1/backtests/{id}           — detail with provenance
+GET  /api/v1/backtests/{id}/equity-curve — equity curve only
+GET  /api/v1/backtests/{id}/decisions  — decision points only
 """
 from datetime import date
 
@@ -16,8 +18,8 @@ from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.backtest import (
     BacktestDetail, BacktestListItem, BacktestListResponse,
-    BacktestResultSummary, EquityCurvePoint,
-    BacktestRunRequest, BacktestStatusResponse,
+    BacktestResultSummary, EquityCurvePoint, BacktestDecisionPoint,
+    BacktestProvenance, BacktestRunRequest, BacktestStatusResponse,
 )
 from app.models.validation import BacktestExperiment
 from app.models.reference import Universe
@@ -26,46 +28,77 @@ from app.services.backtesting import BacktestService
 router = APIRouter()
 
 
+def _classify_backtest(bt: BacktestExperiment) -> tuple[str, bool, bool]:
+    """Return (source_type, is_demo, lineage_available) for a backtest."""
+    rs = bt.results_summary or {}
+    source_type = rs.get("source_type", "unknown")
+    if source_type == "pipeline_backtest":
+        return "pipeline_backtest", False, bool(rs.get("recommendation_ids"))
+    # Legacy seeded backtests have no source_type field
+    if source_type == "unknown" and not rs.get("recommendation_ids"):
+        return "seed_demo", True, False
+    return source_type, source_type != "pipeline_backtest", bool(rs.get("recommendation_ids"))
+
+
+def _build_detail(bt: BacktestExperiment, universe_name: str | None = None) -> BacktestDetail:
+    rs = bt.results_summary or {}
+    source_type, is_demo, lineage_available = _classify_backtest(bt)
+
+    equity_curve = [EquityCurvePoint(date=p["date"], value=p["value"]) for p in rs.get("equity_curve", [])]
+    decision_points = [BacktestDecisionPoint(**dp) for dp in rs.get("decision_points", [])]
+    warnings = list(rs.get("warnings", []))
+
+    if is_demo:
+        warnings.insert(0, "This backtest has no pipeline lineage and should be treated as seed/demo or unverified.")
+
+    provenance = None
+    if lineage_available:
+        provenance = BacktestProvenance(
+            recommendation_ids=rs.get("recommendation_ids", []),
+            source_feature_set_ids=rs.get("source_feature_set_ids", []),
+            source_signal_run_ids=rs.get("source_signal_run_ids", []),
+            market_bar_window=rs.get("market_bar_window"),
+            rebalance_dates=rs.get("rebalance_dates", []),
+            created_by_service=rs.get("created_by_service"),
+        )
+
+    return BacktestDetail(
+        id=bt.id, name=bt.name, status=bt.status,
+        source_type=source_type, is_demo=is_demo, lineage_available=lineage_available,
+        universe_name=universe_name,
+        policy_version_id=bt.policy_version_id,
+        start_date=bt.start_date, end_date=bt.end_date,
+        is_promoted=bt.is_promoted,
+        config=bt.config or {},
+        results=BacktestResultSummary(
+            total_return=rs.get("total_return"),
+            annualized_return=rs.get("annualized_return"),
+            max_drawdown=rs.get("max_drawdown"),
+            sharpe_ratio=rs.get("sharpe_ratio"),
+            volatility=rs.get("volatility"),
+            total_trades=rs.get("total_trades"),
+            avg_turnover=rs.get("avg_turnover"),
+        ),
+        equity_curve=equity_curve,
+        decision_points=decision_points,
+        provenance=provenance,
+        warnings=warnings,
+        created_at=bt.created_at,
+    )
+
+
 @router.post("/backtests/run", response_model=ApiResponse[BacktestDetail])
 async def run_backtest(body: BacktestRunRequest, db: AsyncSession = Depends(get_db)):
     svc = BacktestService(db)
-
     start = date.fromisoformat(body.start_date) if body.start_date else None
     end = date.fromisoformat(body.end_date) if body.end_date else None
-
     bt = await svc.run_backtest(
-        name=body.name,
-        start_date=start,
-        end_date=end,
-        universe_id=body.universe_id,
-        rebalance_frequency=body.rebalance_frequency,
+        name=body.name, start_date=start, end_date=end,
+        universe_id=body.universe_id, rebalance_frequency=body.rebalance_frequency,
         cost_bps=body.cost_bps,
     )
-
-    rs = bt.results_summary or {}
-    equity_curve = [EquityCurvePoint(date=p["date"], value=p["value"]) for p in rs.get("equity_curve", [])]
-
-    return ApiResponse(
-        meta=make_meta(warnings=rs.get("warnings")),
-        data=BacktestDetail(
-            id=bt.id, name=bt.name, status=bt.status,
-            start_date=bt.start_date, end_date=bt.end_date,
-            is_promoted=bt.is_promoted,
-            config=bt.config or {},
-            results=BacktestResultSummary(
-                total_return=rs.get("total_return"),
-                annualized_return=rs.get("annualized_return"),
-                max_drawdown=rs.get("max_drawdown"),
-                sharpe_ratio=rs.get("sharpe_ratio"),
-                volatility=rs.get("volatility"),
-                total_trades=rs.get("total_trades"),
-                avg_turnover=rs.get("avg_turnover"),
-            ),
-            equity_curve=equity_curve,
-            warnings=rs.get("warnings", []),
-            created_at=bt.created_at,
-        ),
-    )
+    detail = _build_detail(bt)
+    return ApiResponse(meta=make_meta(warnings=detail.warnings if detail.warnings else None), data=detail)
 
 
 @router.get("/backtests/status", response_model=ApiResponse[BacktestStatusResponse])
@@ -84,8 +117,13 @@ async def list_backtests(db: AsyncSession = Depends(get_db)):
     items = []
     for bt in rows:
         rs = bt.results_summary or {}
+        source_type, is_demo, lineage_available = _classify_backtest(bt)
         items.append(BacktestListItem(
             id=bt.id, name=bt.name, status=bt.status,
+            source_type=source_type, is_demo=is_demo,
+            lineage_available=lineage_available,
+            decision_count=len(rs.get("decision_points", [])),
+            warning_count=len(rs.get("warnings", [])),
             start_date=bt.start_date, end_date=bt.end_date,
             is_promoted=bt.is_promoted,
             total_return=rs.get("total_return"),
@@ -103,35 +141,34 @@ async def get_backtest(backtest_id: str, db: AsyncSession = Depends(get_db)):
     if not bt:
         raise HTTPException(status_code=404, detail="Backtest not found")
 
-    rs = bt.results_summary or {}
     universe_name = None
     if bt.universe_id:
         uni = (await db.execute(select(Universe).where(Universe.id == bt.universe_id))).scalar_one_or_none()
         if uni:
             universe_name = uni.name
 
-    equity_curve = [EquityCurvePoint(date=p["date"], value=p["value"]) for p in rs.get("equity_curve", [])]
+    return ApiResponse(meta=make_meta(), data=_build_detail(bt, universe_name))
 
-    return ApiResponse(
-        meta=make_meta(),
-        data=BacktestDetail(
-            id=bt.id, name=bt.name, status=bt.status,
-            universe_name=universe_name,
-            policy_version_id=bt.policy_version_id,
-            start_date=bt.start_date, end_date=bt.end_date,
-            is_promoted=bt.is_promoted,
-            config=bt.config or {},
-            results=BacktestResultSummary(
-                total_return=rs.get("total_return"),
-                annualized_return=rs.get("annualized_return"),
-                max_drawdown=rs.get("max_drawdown"),
-                sharpe_ratio=rs.get("sharpe_ratio"),
-                volatility=rs.get("volatility"),
-                total_trades=rs.get("total_trades"),
-                avg_turnover=rs.get("avg_turnover"),
-            ),
-            equity_curve=equity_curve,
-            warnings=rs.get("warnings", []),
-            created_at=bt.created_at,
-        ),
-    )
+
+@router.get("/backtests/{backtest_id}/equity-curve", response_model=ApiResponse[list[EquityCurvePoint]])
+async def get_equity_curve(backtest_id: str, db: AsyncSession = Depends(get_db)):
+    bt = (await db.execute(
+        select(BacktestExperiment).where(BacktestExperiment.id == backtest_id)
+    )).scalar_one_or_none()
+    if not bt:
+        raise HTTPException(status_code=404, detail="Backtest not found")
+    rs = bt.results_summary or {}
+    curve = [EquityCurvePoint(date=p["date"], value=p["value"]) for p in rs.get("equity_curve", [])]
+    return ApiResponse(meta=make_meta(), data=curve)
+
+
+@router.get("/backtests/{backtest_id}/decisions", response_model=ApiResponse[list[BacktestDecisionPoint]])
+async def get_decisions(backtest_id: str, db: AsyncSession = Depends(get_db)):
+    bt = (await db.execute(
+        select(BacktestExperiment).where(BacktestExperiment.id == backtest_id)
+    )).scalar_one_or_none()
+    if not bt:
+        raise HTTPException(status_code=404, detail="Backtest not found")
+    rs = bt.results_summary or {}
+    points = [BacktestDecisionPoint(**dp) for dp in rs.get("decision_points", [])]
+    return ApiResponse(meta=make_meta(), data=points)

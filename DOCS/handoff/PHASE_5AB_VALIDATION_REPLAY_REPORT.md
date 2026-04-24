@@ -109,3 +109,54 @@ $ python -m pytest tests/ -v
 4. **Seed does not auto-run backtest** — too expensive. Must call `POST /backtests/run` manually.
 5. **Replay is point-in-time** — no temporal replay scrubber or animation.
 6. **Paper portfolio** not yet realized — still uses old seeded data.
+
+---
+
+## Phase 5A+B.1 Provenance & Isolation Addendum
+
+**Date:** 2026-04-24
+
+### Changes
+
+1. **source_type classification.** Every backtest response includes `source_type` ("pipeline_backtest" or "seed_demo"/"unknown"), `is_demo`, `lineage_available`, `decision_count`, `warning_count`. Legacy seeded backtests are labeled as "seed_demo" with warning.
+
+2. **Pipeline backtest provenance.** `POST /backtests/run` results include full provenance: `recommendation_ids`, `source_feature_set_ids`, `source_signal_run_ids`, `market_bar_window`, `rebalance_dates`, `created_by_service`.
+
+3. **Backtest/live recommendation isolation.** Added `context` column to `recommendations` (migration 007). Backtest-created recs get `context="backtest"`. `/recommendations/current` and `/overview` filter by `context != "backtest"`.
+
+4. **Sub-endpoints.** `GET /backtests/{id}/equity-curve` and `GET /backtests/{id}/decisions` added.
+
+5. **Frontend badges.** Backtests page shows "Pipeline" (green) or "Seed/Demo" / "Unverified" (yellow) badges. Demo backtests show a caution banner in detail view.
+
+### Files Changed
+
+```
+backend/app/models/recommendation.py     — added context field
+backend/migrations/versions/007_recommendation_context.py — migration
+backend/app/services/backtesting.py      — backtest recs tagged context="backtest", provenance stored
+backend/app/schemas/backtest.py          — provenance/decision/list schemas
+backend/app/api/v1/backtests.py          — provenance in responses + sub-endpoints
+backend/app/api/v1/recommendations.py    — exclude backtest context
+backend/app/api/v1/overview.py           — exclude backtest context
+frontend/src/app/backtests/page.tsx       — source badges + demo warning banner
+```
+
+### Tests Added (8)
+
+| Test | What It Verifies |
+|---|---|
+| `test_legacy_backtest_labeled_demo` | Seeded backtest shows source_type=seed_demo |
+| `test_pipeline_backtest_has_provenance` | POST run creates pipeline_backtest with lineage |
+| `test_backtest_list_has_provenance_fields` | List items include source_type/is_demo/decision_count |
+| `test_backtest_detail_includes_decision_points` | Detail includes decision_points |
+| `test_backtest_decisions_endpoint` | GET decisions sub-endpoint works |
+| `test_backtest_equity_curve_endpoint` | GET equity-curve sub-endpoint works |
+| `test_backtest_recs_not_in_current` | Backtest recs excluded from /current |
+| `test_backtest_recs_not_in_overview` | Backtest recs excluded from /overview |
+
+### Test Output
+
+```
+Backend: 150 passed, 1 warning in 10.10s
+Frontend build: PASS (all pages compiled)
+```

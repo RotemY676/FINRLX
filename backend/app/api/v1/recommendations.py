@@ -69,18 +69,20 @@ async def _build_recommendation_detail(
 async def get_current_recommendation(db: AsyncSession = Depends(get_db)):
     warnings = []
 
-    # 1. Try published recommendation first
+    # 1. Try published recommendation first (live context only)
     published = (await db.execute(
         select(Recommendation)
         .where(Recommendation.status.in_(["published", "published_with_warning"]))
+        .where(Recommendation.context != "backtest")
         .order_by(Recommendation.published_at.desc())
         .limit(1)
     )).scalar_one_or_none()
 
-    # 2. Check for newer pipeline-generated draft
+    # 2. Check for newer pipeline-generated draft (live context only)
     latest_draft = (await db.execute(
         select(Recommendation)
         .where(Recommendation.source_feature_set_id.is_not(None))
+        .where(Recommendation.context != "backtest")
         .order_by(Recommendation.created_at.desc())
         .limit(1)
     )).scalar_one_or_none()

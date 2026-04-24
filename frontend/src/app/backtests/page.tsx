@@ -90,6 +90,14 @@ export default function BacktestsPage() {
                 </span>
               )}
               <StatusBadge status={item.status} />
+              {(item as any).source_type === "pipeline_backtest" && (
+                <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
+              )}
+              {((item as any).source_type === "seed_demo" || (item as any).source_type === "unknown") && (
+                <span className="px-2 py-0.5 bg-caution-soft text-caution-soft-ink rounded-md text-[10px] font-medium">
+                  {(item as any).source_type === "seed_demo" ? "Seed/Demo" : "Unverified"}
+                </span>
+              )}
               {item.is_promoted && (
                 <span className="px-2 py-0.5 bg-primary-soft text-primary rounded-md text-[11px] font-medium">
                   promoted
@@ -102,6 +110,13 @@ export default function BacktestsPage() {
 
       {detail && (
         <>
+          {/* Demo/unverified warning */}
+          {((detail as any).is_demo || (detail as any).source_type === "unknown") && (
+            <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+              This backtest has no pipeline lineage and should be treated as seed/demo or unverified.
+            </div>
+          )}
+
           {/* Experiment header */}
           <div className="flex items-start justify-between">
             <div>

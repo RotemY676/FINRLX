@@ -187,7 +187,14 @@ class BacktestService:
                 pipe_result = await pipe_svc.run_pipeline(feature_set_id=fs.id, universe_id=universe_id)
 
                 if pipe_result["status"] == "completed" and pipe_result.get("recommendation_id"):
-                    from app.models.recommendation import RecommendationWeight
+                    # Tag backtest recommendation so it doesn't pollute live current
+                    from app.models.recommendation import Recommendation as RecModel, RecommendationWeight
+                    bt_rec = (await self.db.execute(
+                        select(RecModel).where(RecModel.id == pipe_result["recommendation_id"])
+                    )).scalar_one_or_none()
+                    if bt_rec:
+                        bt_rec.context = "backtest"
+
                     wt_rows = (await self.db.execute(
                         select(RecommendationWeight)
                         .where(RecommendationWeight.recommendation_id == pipe_result["recommendation_id"])
@@ -248,6 +255,20 @@ class BacktestService:
             wins = sum(1 for r in period_returns if r > 0)
             win_rate = round(wins / len(period_returns), 2)
 
+        # Collect provenance from decision points
+        rec_ids = [dp["recommendation_id"] for dp in decision_points if dp.get("recommendation_id")]
+        feat_set_ids = set()
+        sig_run_ids = set()
+        for dp in decision_points:
+            rid = dp.get("recommendation_id")
+            if rid:
+                from app.models.recommendation import Recommendation as RecModel
+                r = (await self.db.execute(select(RecModel).where(RecModel.id == rid))).scalar_one_or_none()
+                if r and r.source_feature_set_id:
+                    feat_set_ids.add(r.source_feature_set_id)
+                if r and r.source_signal_run_ids:
+                    sig_run_ids.update(r.source_signal_run_ids)
+
         bt.status = "completed"
         bt.results_summary = {
             "total_return": round(total_return, 4),
@@ -262,6 +283,15 @@ class BacktestService:
             "equity_curve": equity_curve,
             "decision_points": decision_points,
             "warnings": warnings,
+            # Provenance
+            "source_type": "pipeline_backtest",
+            "is_demo": False,
+            "recommendation_ids": rec_ids,
+            "source_feature_set_ids": list(feat_set_ids),
+            "source_signal_run_ids": list(sig_run_ids),
+            "market_bar_window": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+            "rebalance_dates": [d.isoformat() for d in rebalance_dates],
+            "created_by_service": "BacktestService.run_backtest",
         }
         await self.db.commit()
         return bt

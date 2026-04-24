@@ -62,6 +62,9 @@ class Recommendation(Base, TimestampMixin):
     source_feature_set_id: Mapped[str | None] = mapped_column(String(36))
     source_signal_run_ids: Mapped[list | None] = mapped_column(JSON)
 
+    # Context isolation (Phase 5A+B.1): "live" or "backtest"
+    context: Mapped[str] = mapped_column(String(20), default="live")
+
 
 class RecommendationWeight(Base):
     """Per-asset target weight within a recommendation."""
