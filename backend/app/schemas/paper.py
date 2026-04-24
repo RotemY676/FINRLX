@@ -53,3 +53,57 @@ class PaperDriftResponse(BaseModel):
 class PaperCreateRequest(BaseModel):
     starting_value: float = 100000.0
     allow_unpublished: bool = False
+
+
+class PaperValuationPoint(BaseModel):
+    date: str
+    portfolio_value: float
+    daily_return: float | None = None
+    cumulative_return: float | None = None
+    max_drawdown_to_date: float | None = None
+
+
+class PaperTradeResponse(BaseModel):
+    id: str
+    trade_date: str
+    ticker: str
+    side: str
+    quantity: int
+    price: float
+    notional: float
+    weight_delta: float | None = None
+    reason: str | None = None
+
+
+class PaperPerformanceSummary(BaseModel):
+    status: str
+    total_return: float | None = None
+    annualized_return: float | None = None
+    max_drawdown: float | None = None
+    volatility: float | None = None
+    sharpe_ratio: float | None = None
+    starting_value: float | None = None
+    ending_value: float | None = None
+    cash_drag: float | None = None
+    trade_count: int = 0
+    total_rebalances: int = 0
+    snapshot_count: int = 0
+    days: int = 0
+    message: str | None = None
+
+
+class PaperAssetAttribution(BaseModel):
+    asset_id: str
+    ticker: str
+    starting_weight: float
+    current_weight: float
+    asset_return: float
+    contribution: float
+
+
+class PaperDecisionAttribution(BaseModel):
+    event_type: str | None = None
+    recommendation_id: str | None = None
+    date: str | None = None
+    turnover: float = 0
+    trade_count: int = 0

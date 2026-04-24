@@ -4,7 +4,10 @@ from app.models.decision_pipeline import (
     SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
 )
 from app.models.signal import SignalRun, SignalOutput
-from app.models.validation import BacktestExperiment, PaperPortfolio, ReplaySnapshot
+from app.models.validation import (
+    BacktestExperiment, PaperPortfolio, ReplaySnapshot,
+    PaperValuationSnapshot, PaperTrade,
+)
 from app.models.ops import (
     AuditEvent, Incident, SystemHealthSnapshot,
     DataFeed, PolicyBreach, PublicationQueueEntry,
@@ -24,4 +27,5 @@ __all__ = [
     "MarketBar", "NewsEvent", "IngestionManifest",
     "FeatureDefinition", "FeatureSet", "FeatureValue",
     "EngineDefinition",
+    "PaperValuationSnapshot", "PaperTrade",
 ]

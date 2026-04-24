@@ -47,6 +47,43 @@ class PaperPortfolio(Base, TimestampMixin):
     events_log: Mapped[list | None] = mapped_column(JSON)
 
 
+class PaperValuationSnapshot(Base):
+    __tablename__ = "paper_valuation_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    portfolio_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    valuation_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    portfolio_value: Mapped[float] = mapped_column(Float, default=0.0)
+    cash_value: Mapped[float] = mapped_column(Float, default=0.0)
+    invested_value: Mapped[float] = mapped_column(Float, default=0.0)
+    daily_return: Mapped[float | None] = mapped_column(Float)
+    cumulative_return: Mapped[float | None] = mapped_column(Float)
+    max_drawdown_to_date: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class PaperTrade(Base):
+    __tablename__ = "paper_trades"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    portfolio_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    recommendation_id: Mapped[str | None] = mapped_column(String(36))
+    trade_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    asset_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    ticker: Mapped[str] = mapped_column(String(20), nullable=False)
+    side: Mapped[str] = mapped_column(String(10), nullable=False)  # buy, sell
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    price: Mapped[float] = mapped_column(Float, default=0.0)
+    notional: Mapped[float] = mapped_column(Float, default=0.0)
+    weight_delta: Mapped[float | None] = mapped_column(Float)
+    reason: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class ReplaySnapshot(Base, TimestampMixin):
     __tablename__ = "replay_snapshots"
 

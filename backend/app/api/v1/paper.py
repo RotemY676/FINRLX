@@ -18,6 +18,8 @@ from app.schemas.common import ApiResponse
 from app.schemas.paper import (
     PaperPortfolioDetail, PaperHolding, PaperEvent,
     PaperDriftResponse, PaperCreateRequest,
+    PaperValuationPoint, PaperTradeResponse, PaperPerformanceSummary,
+    PaperAssetAttribution, PaperDecisionAttribution,
 )
 from app.models.validation import PaperPortfolio
 from app.models.reference import Asset
@@ -161,3 +163,61 @@ async def get_events(portfolio_id: str, db: AsyncSession = Depends(get_db)):
         for ev in (pp.events_log or [])
     ]
     return ApiResponse(meta=make_meta(), data=events)
+
+
+@router.post("/paper/{portfolio_id}/performance/recompute", response_model=ApiResponse[PaperPerformanceSummary])
+async def recompute_performance(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    await svc.generate_valuation_snapshots(portfolio_id)
+    summary = await svc.get_performance_summary(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=PaperPerformanceSummary(**summary))
+
+
+@router.get("/paper/{portfolio_id}/performance", response_model=ApiResponse[PaperPerformanceSummary])
+async def get_performance(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    summary = await svc.get_performance_summary(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=PaperPerformanceSummary(**summary))
+
+
+@router.get("/paper/{portfolio_id}/valuations", response_model=ApiResponse[list[PaperValuationPoint]])
+async def get_valuations(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    snaps = await svc.get_valuation_snapshots(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=[
+        PaperValuationPoint(
+            date=s.valuation_date.isoformat()[:10] if s.valuation_date else "",
+            portfolio_value=s.portfolio_value,
+            daily_return=s.daily_return,
+            cumulative_return=s.cumulative_return,
+            max_drawdown_to_date=s.max_drawdown_to_date,
+        ) for s in snaps
+    ])
+
+
+@router.get("/paper/{portfolio_id}/trades", response_model=ApiResponse[list[PaperTradeResponse]])
+async def get_trades(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    trades = await svc.get_trades(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=[
+        PaperTradeResponse(
+            id=t.id, trade_date=t.trade_date.isoformat() if t.trade_date else "",
+            ticker=t.ticker, side=t.side, quantity=t.quantity,
+            price=t.price, notional=t.notional,
+            weight_delta=t.weight_delta, reason=t.reason,
+        ) for t in trades
+    ])
+
+
+@router.get("/paper/{portfolio_id}/attribution/assets", response_model=ApiResponse[list[PaperAssetAttribution]])
+async def get_asset_attribution(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    attrib = await svc.get_asset_attribution(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=[PaperAssetAttribution(**a) for a in attrib])
+
+
+@router.get("/paper/{portfolio_id}/attribution/decisions", response_model=ApiResponse[list[PaperDecisionAttribution]])
+async def get_decision_attribution(portfolio_id: str, db: AsyncSession = Depends(get_db)):
+    svc = PaperPortfolioService(db)
+    attrib = await svc.get_decision_attribution(portfolio_id)
+    return ApiResponse(meta=make_meta(), data=[PaperDecisionAttribution(**a) for a in attrib])

@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.validation import PaperPortfolio
+import math
+from datetime import date, timedelta
+
+from app.models.validation import PaperPortfolio, PaperValuationSnapshot, PaperTrade
 from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.ingestion import MarketBar
 from app.models.reference import Asset
@@ -129,6 +132,10 @@ class PaperPortfolioService:
         ))
 
         await self.db.commit()
+
+        # Generate initial buy trades
+        await self._create_trades_for_creation(pp)
+
         return pp
 
     async def compute_drift(self, portfolio_id: str) -> dict:
@@ -266,3 +273,242 @@ class PaperPortfolioService:
             .order_by(PaperPortfolio.created_at.desc())
             .limit(1)
         )).scalar_one_or_none()
+
+    # ── Trades ────────────────────────────────────────────────────────
+
+    async def _create_trades_for_creation(self, pp: PaperPortfolio) -> int:
+        """Create simulated buy trades for initial portfolio creation."""
+        holdings = pp.current_holdings or {}
+        now = datetime.now(timezone.utc)
+        count = 0
+        for aid, info in holdings.items():
+            qty = info.get("quantity", 0)
+            price = info.get("last_price", 0)
+            if qty > 0:
+                self.db.add(PaperTrade(
+                    id=gen_uuid(), portfolio_id=pp.id,
+                    recommendation_id=pp.source_recommendation_id,
+                    trade_date=now, asset_id=aid, ticker=info.get("ticker", "?"),
+                    side="buy", quantity=qty, price=price,
+                    notional=round(qty * price, 2),
+                    weight_delta=info.get("target_weight", 0),
+                    reason="Initial allocation from recommendation",
+                ))
+                count += 1
+        await self.db.commit()
+        return count
+
+    async def get_trades(self, portfolio_id: str) -> list[PaperTrade]:
+        return list((await self.db.execute(
+            select(PaperTrade).where(PaperTrade.portfolio_id == portfolio_id)
+            .order_by(PaperTrade.trade_date.desc())
+        )).scalars().all())
+
+    # ── Valuation snapshots ───────────────────────────────────────────
+
+    async def _get_prices_on_date(self, asset_ids: list[str], on_date: date) -> dict[str, float]:
+        prices = {}
+        for aid in asset_ids:
+            row = (await self.db.execute(
+                select(MarketBar.close)
+                .where(MarketBar.asset_id == aid)
+                .where(MarketBar.bar_date <= on_date)
+                .order_by(MarketBar.bar_date.desc())
+                .limit(1)
+            )).scalar()
+            if row is not None:
+                prices[aid] = row
+        return prices
+
+    async def generate_valuation_snapshots(
+        self, portfolio_id: str, start_date: date | None = None, end_date: date | None = None,
+    ) -> list[PaperValuationSnapshot]:
+        """Generate daily valuation snapshots from market_bars."""
+        pp = (await self.db.execute(
+            select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
+        )).scalar_one_or_none()
+        if not pp:
+            raise ValueError("Portfolio not found")
+
+        holdings = pp.current_holdings or {}
+        if not holdings:
+            return []
+
+        asset_ids = list(holdings.keys())
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=30)
+
+        # Check existing snapshots to avoid duplicates
+        existing = (await self.db.execute(
+            select(PaperValuationSnapshot.valuation_date)
+            .where(PaperValuationSnapshot.portfolio_id == portfolio_id)
+        )).scalars().all()
+        existing_dates = {d.date() if hasattr(d, 'date') else d for d in existing}
+
+        starting_value = pp.portfolio_value or 100000.0
+        cash_value = starting_value * pp.cash_weight
+        snapshots = []
+        prev_value = None
+        peak = 0.0
+
+        d = start_date
+        while d <= end_date:
+            if d.weekday() >= 5:
+                d += timedelta(days=1)
+                continue
+            if d in existing_dates:
+                d += timedelta(days=1)
+                continue
+
+            prices = await self._get_prices_on_date(asset_ids, d)
+            invested = 0.0
+            for aid, info in holdings.items():
+                qty = info.get("quantity", 0)
+                price = prices.get(aid, info.get("last_price", 0))
+                invested += qty * price
+
+            total = invested + cash_value
+            daily_ret = None
+            if prev_value and prev_value > 0:
+                daily_ret = round((total - prev_value) / prev_value, 6)
+            cum_ret = round((total - starting_value) / starting_value, 6)
+
+            if total > peak:
+                peak = total
+            dd = round((peak - total) / peak, 6) if peak > 0 else 0.0
+
+            snap = PaperValuationSnapshot(
+                id=gen_uuid(), portfolio_id=portfolio_id,
+                valuation_date=datetime(d.year, d.month, d.day, tzinfo=timezone.utc),
+                portfolio_value=round(total, 2),
+                cash_value=round(cash_value, 2),
+                invested_value=round(invested, 2),
+                daily_return=daily_ret,
+                cumulative_return=cum_ret,
+                max_drawdown_to_date=round(-dd, 6),
+            )
+            self.db.add(snap)
+            snapshots.append(snap)
+            prev_value = total
+            d += timedelta(days=1)
+
+        await self.db.commit()
+        return snapshots
+
+    async def get_valuation_snapshots(self, portfolio_id: str) -> list[PaperValuationSnapshot]:
+        return list((await self.db.execute(
+            select(PaperValuationSnapshot)
+            .where(PaperValuationSnapshot.portfolio_id == portfolio_id)
+            .order_by(PaperValuationSnapshot.valuation_date)
+        )).scalars().all())
+
+    async def get_performance_summary(self, portfolio_id: str) -> dict:
+        """Compute performance metrics from valuation snapshots."""
+        snaps = await self.get_valuation_snapshots(portfolio_id)
+        if not snaps:
+            return {"status": "no_data", "message": "No valuation snapshots. Call recompute first."}
+
+        values = [s.portfolio_value for s in snaps]
+        returns = [s.daily_return for s in snaps if s.daily_return is not None]
+        starting = values[0] if values else 100000
+        ending = values[-1] if values else starting
+        total_ret = (ending - starting) / starting if starting > 0 else 0
+        days = len(snaps)
+
+        ann_ret = None
+        if days > 20:
+            ann_ret = round((1 + total_ret) ** (252 / max(days, 1)) - 1, 4)
+
+        vol = None
+        sharpe = None
+        if len(returns) >= 5:
+            mean_r = sum(returns) / len(returns)
+            var = sum((r - mean_r) ** 2 for r in returns) / len(returns)
+            daily_std = math.sqrt(var)
+            vol = round(daily_std * math.sqrt(252), 4)
+            if vol > 0:
+                sharpe = round((mean_r * 252) / vol, 2)
+
+        max_dd = min((s.max_drawdown_to_date or 0) for s in snaps) if snaps else 0
+
+        pp = (await self.db.execute(
+            select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
+        )).scalar_one_or_none()
+        trade_count = (await self.db.execute(
+            select(func.count()).select_from(PaperTrade)
+            .where(PaperTrade.portfolio_id == portfolio_id)
+        )).scalar() or 0
+
+        return {
+            "status": "computed",
+            "total_return": round(total_ret, 4),
+            "annualized_return": ann_ret,
+            "max_drawdown": round(max_dd, 4),
+            "volatility": vol,
+            "sharpe_ratio": sharpe,
+            "starting_value": round(starting, 2),
+            "ending_value": round(ending, 2),
+            "cash_drag": round(pp.cash_weight if pp else 0, 4),
+            "trade_count": trade_count,
+            "total_rebalances": pp.total_rebalances if pp else 0,
+            "snapshot_count": len(snaps),
+            "days": days,
+        }
+
+    # ── Attribution ───────────────────────────────────────────────────
+
+    async def get_asset_attribution(self, portfolio_id: str) -> list[dict]:
+        """Per-asset contribution to portfolio return."""
+        pp = (await self.db.execute(
+            select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
+        )).scalar_one_or_none()
+        if not pp:
+            return []
+
+        holdings = pp.current_holdings or {}
+        asset_ids = list(holdings.keys())
+        latest_prices = await self._get_latest_prices(asset_ids)
+
+        starting_value = pp.portfolio_value or 100000
+        attrib = []
+        for aid, info in holdings.items():
+            qty = info.get("quantity", 0)
+            entry_price = info.get("last_price", 0)
+            current_price = latest_prices.get(aid, entry_price)
+            asset_return = (current_price - entry_price) / entry_price if entry_price > 0 else 0
+            weight = info.get("target_weight", 0)
+            contribution = weight * asset_return
+
+            attrib.append({
+                "asset_id": aid,
+                "ticker": info.get("ticker", "?"),
+                "starting_weight": weight,
+                "current_weight": info.get("current_weight", weight),
+                "asset_return": round(asset_return, 4),
+                "contribution": round(contribution, 4),
+            })
+
+        return attrib
+
+    async def get_decision_attribution(self, portfolio_id: str) -> list[dict]:
+        """Per-decision (rebalance) contribution."""
+        pp = (await self.db.execute(
+            select(PaperPortfolio).where(PaperPortfolio.id == portfolio_id)
+        )).scalar_one_or_none()
+        if not pp:
+            return []
+
+        events = pp.events_log or []
+        result = []
+        for ev in events:
+            meta = ev.get("metadata", {})
+            result.append({
+                "event_type": ev.get("event_type"),
+                "recommendation_id": meta.get("recommendation_id"),
+                "date": ev.get("timestamp"),
+                "turnover": meta.get("turnover", 0),
+                "trade_count": meta.get("trade_count", 0),
+            })
+        return result
