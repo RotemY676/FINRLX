@@ -70,3 +70,25 @@ class ModelPrediction(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class ModelValidationReport(Base):
+    __tablename__ = "model_validation_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    model_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    model_version: Mapped[str] = mapped_column(String(20), nullable=False, default="v1")
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    horizon_days: Mapped[int] = mapped_column(Integer, default=20)
+    sample_count: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    directional_accuracy: Mapped[float | None] = mapped_column(Float)
+    mean_absolute_error: Mapped[float | None] = mapped_column(Float)
+    rank_correlation: Mapped[float | None] = mapped_column(Float)
+    hit_rate: Mapped[float | None] = mapped_column(Float)
+    avg_confidence: Mapped[float | None] = mapped_column(Float)
+    calibration_error: Mapped[float | None] = mapped_column(Float)
+    baseline_comparison: Mapped[dict | None] = mapped_column(JSON)
+    confidence_buckets: Mapped[dict | None] = mapped_column(JSON)
+    promotion_readiness: Mapped[str] = mapped_column(String(30), default="not_ready")
+    warnings: Mapped[list | None] = mapped_column(JSON)

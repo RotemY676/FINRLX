@@ -58,3 +58,7 @@ class ModelStatusResponse(BaseModel):
     total_predictions: int = 0
     latest_run_id: str | None = None
     latest_run_status: str | None = None
+    latest_validation_status: str | None = None
+    directional_accuracy: float | None = None
+    validation_sample_count: int | None = None
+    promotion_readiness: str | None = None

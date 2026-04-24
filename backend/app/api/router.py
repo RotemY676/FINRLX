@@ -19,6 +19,7 @@ from app.api.v1.features import router as features_router
 from app.api.v1.pipeline import router as pipeline_router
 from app.api.v1.publication import router as publication_router
 from app.api.v1.models import router as models_router
+from app.api.v1.model_validation import router as model_validation_router
 from app.api.v1.health import router as health_router
 
 api_router = APIRouter()
@@ -41,4 +42,5 @@ api_router.include_router(features_router, tags=["features"])
 api_router.include_router(pipeline_router, tags=["pipeline"])
 api_router.include_router(publication_router, tags=["publication"])
 api_router.include_router(models_router, tags=["models"])
+api_router.include_router(model_validation_router, tags=["model-validation"])
 api_router.include_router(health_router, tags=["health"])

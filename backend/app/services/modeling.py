@@ -302,6 +302,12 @@ class ModelingService:
         latest = (await self.db.execute(
             select(ModelRun).order_by(ModelRun.created_at.desc()).limit(1)
         )).scalar_one_or_none()
+        # Latest validation report
+        from app.models.modeling import ModelValidationReport
+        val_report = (await self.db.execute(
+            select(ModelValidationReport).order_by(ModelValidationReport.evaluated_at.desc()).limit(1)
+        )).scalar_one_or_none()
+
         return {
             "total_definitions": total_defs,
             "active_definitions": active,
@@ -309,4 +315,8 @@ class ModelingService:
             "total_predictions": total_preds,
             "latest_run_id": latest.id if latest else None,
             "latest_run_status": latest.status if latest else None,
+            "latest_validation_status": val_report.status if val_report else None,
+            "directional_accuracy": val_report.directional_accuracy if val_report else None,
+            "validation_sample_count": val_report.sample_count if val_report else None,
+            "promotion_readiness": val_report.promotion_readiness if val_report else None,
         }

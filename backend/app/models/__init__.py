@@ -15,7 +15,7 @@ from app.models.ops import (
 from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
 from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
 from app.models.engine import EngineDefinition
-from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction
+from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction, ModelValidationReport
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -29,5 +29,5 @@ __all__ = [
     "FeatureDefinition", "FeatureSet", "FeatureValue",
     "EngineDefinition",
     "PaperValuationSnapshot", "PaperTrade",
-    "ModelDefinition", "ModelRun", "ModelPrediction",
+    "ModelDefinition", "ModelRun", "ModelPrediction", "ModelValidationReport",
 ]
