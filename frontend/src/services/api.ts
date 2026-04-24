@@ -699,3 +699,39 @@ export async function actionDefer(reason?: string): Promise<ApiResponse<ActionRe
     body: JSON.stringify({ reason: reason || null }),
   });
 }
+
+// Price chart types
+
+export interface PricePointData {
+  date: string;
+  price: number;
+  benchmark: number | null;
+  band_upper: number | null;
+  band_lower: number | null;
+}
+
+export interface ChartEventData {
+  date: string;
+  label: string;
+  kind: string;
+}
+
+export interface PriceChartDataType {
+  ticker: string;
+  current_price: number;
+  price_return_pct: number;
+  benchmark_return_pct: number | null;
+  benchmark_name: string;
+  points: PricePointData[];
+  events: ChartEventData[];
+}
+
+export async function fetchPriceChart(ticker: string = "NVDA"): Promise<ApiResponse<PriceChartDataType>> {
+  return apiFetch<PriceChartDataType>(`/api/v1/pricechart?ticker=${ticker}`);
+}
+
+// Incident resolve
+
+export async function resolveIncident(id: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
+  return apiFetch<{ success: boolean; message: string }>(`/api/v1/ops/incidents/${id}/resolve`, { method: "POST" });
+}

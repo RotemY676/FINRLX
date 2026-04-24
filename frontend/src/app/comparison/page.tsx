@@ -187,7 +187,7 @@ export default function ComparisonPage() {
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
           <h3 className="text-[13px] font-semibold text-ink mb-4">Engine Alignment</h3>
           <p className="text-[11px] text-ink-4 mb-3">Bubble size = engine portfolio weight. X = stance direction. Y = confidence.</p>
-          <AlignmentChart engines={engines.engines} />
+          <AlignmentChart engines={engines.engines} synthesisStance={engines.synthesis_stance} synthesisConfidence={engines.synthesis_confidence} />
         </section>
       )}
 

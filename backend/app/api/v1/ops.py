@@ -62,7 +62,9 @@ async def _query_feeds(db: AsyncSession) -> list[OpsFeed]:
 
 
 async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
-    """Compute engine health from the latest SignalRun per engine."""
+    """Compute engine health from the latest SignalRun per engine, including drift."""
+    from app.models.signal import SignalOutput
+
     now = datetime.now(timezone.utc)
     # Get the latest run per engine
     subq = (
@@ -80,6 +82,33 @@ async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
     )
     rows = (await db.execute(stmt)).scalars().all()
 
+    # Pre-compute drift: avg confidence of latest run vs previous run per engine
+    drift_map: dict[str, float] = {}
+    for r in rows:
+        # Get avg confidence for this run
+        latest_avg_result = await db.execute(
+            select(func.avg(SignalOutput.confidence)).where(SignalOutput.signal_run_id == r.id)
+        )
+        latest_avg = latest_avg_result.scalar() or 0.0
+
+        # Get the previous run for this engine
+        prev_run_result = await db.execute(
+            select(SignalRun.id)
+            .where(SignalRun.engine_name == r.engine_name, SignalRun.status == "completed", SignalRun.id != r.id)
+            .order_by(SignalRun.run_completed_at.desc())
+            .limit(1)
+        )
+        prev_run_id = prev_run_result.scalar()
+
+        if prev_run_id:
+            prev_avg_result = await db.execute(
+                select(func.avg(SignalOutput.confidence)).where(SignalOutput.signal_run_id == prev_run_id)
+            )
+            prev_avg = prev_avg_result.scalar() or 0.0
+            drift_map[r.engine_name] = round(latest_avg - prev_avg, 2)
+        else:
+            drift_map[r.engine_name] = 0.0
+
     engines = []
     for r in rows:
         latency_ms = 0
@@ -95,10 +124,12 @@ async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
         else:
             status = "ok"
 
+        drift = drift_map.get(r.engine_name, 0.0)
+
         engines.append(OpsEngine(
             name=r.engine_name.replace("_", " ").title(),
             latency=f"{latency_ms}ms",
-            drift=0.0,  # drift requires comparing two runs; stubbed at 0
+            drift=drift,
             last_run=f"{mins_ago}m",
             status=status,
         ))
@@ -277,6 +308,29 @@ async def defer_queue_item(item_id: str, db: AsyncSession = Depends(get_db)):
 async def challenge_queue_item(item_id: str, db: AsyncSession = Depends(get_db)):
     data = await _queue_action(db, item_id, "challenged", "challenge")
     return ApiResponse(meta=make_meta(), data=data)
+
+
+# ── Incident resolve ──────────────────────────────────────────────────
+
+@router.post("/ops/incidents/{incident_id}/resolve")
+async def resolve_incident(incident_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Incident).where(Incident.id == incident_id))
+    inc = result.scalar_one_or_none()
+    if not inc:
+        raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
+
+    inc.status = "resolved"
+    inc.resolved_at = datetime.now(timezone.utc)
+    db.add(AuditEvent(
+        actor="current_user", action="resolve_incident",
+        object_type="incident", object_id=incident_id,
+        details={"description": f"Resolved incident: {inc.title}", "ago": "now"},
+    ))
+    await db.commit()
+    return ApiResponse(
+        meta=make_meta(),
+        data={"success": True, "message": f"Incident {incident_id} resolved"},
+    )
 
 
 # ── Workspace counts ─────────────────────────────────────────────────

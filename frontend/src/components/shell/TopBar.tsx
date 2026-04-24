@@ -1,9 +1,13 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScope } from "@/contexts/ScopeContext";
+
+const DENSITIES = ["default", "compact", "comfortable"] as const;
+type Density = typeof DENSITIES[number];
 
 const CRUMB_MAP: Record<string, string> = {
   "/": "Overview",
@@ -26,6 +30,25 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
   const crumb = CRUMB_MAP[pathname] || "Workspace";
   const { theme, toggleTheme } = useTheme();
   const scope = useScope();
+
+  const [density, setDensity] = useState<Density>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("finrlx-density") as Density) || "default";
+    }
+    return "default";
+  });
+
+  const cycleDensity = useCallback(() => {
+    const idx = DENSITIES.indexOf(density);
+    const next = DENSITIES[(idx + 1) % DENSITIES.length];
+    setDensity(next);
+    if (next === "default") {
+      document.documentElement.removeAttribute("data-density");
+    } else {
+      document.documentElement.setAttribute("data-density", next);
+    }
+    localStorage.setItem("finrlx-density", next);
+  }, [density]);
 
   return (
     <header className="h-11 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface text-[13px]">
@@ -78,6 +101,15 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
         <span>Search…</span>
         <span className="ml-auto px-1 py-0.5 rounded bg-surface-3 text-[10px] font-mono">⌘K</span>
       </div>
+
+      {/* Density selector */}
+      <button
+        onClick={cycleDensity}
+        className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-md hover:bg-surface-3 text-ink-3 text-[10px] font-mono transition-colors"
+        title={`Density: ${density} — click to cycle`}
+      >
+        {density === "compact" ? "Aa−" : density === "comfortable" ? "Aa+" : "Aa"}
+      </button>
 
       {/* Theme toggle */}
       <button

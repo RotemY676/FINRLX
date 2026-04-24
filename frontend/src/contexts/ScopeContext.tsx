@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { fetchRegime, RegimeData } from "@/services/api";
+import { fetchRegime, fetchOverview, RegimeData } from "@/services/api";
 
 interface ScopeContextValue {
   regime: string;
@@ -29,20 +29,35 @@ export function ScopeProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    fetchRegime()
-      .then((res) => {
-        const d = res.data;
-        setScope({
-          regime: d.regime_label,
-          regimeConfidence: d.regime_confidence,
-          horizon: "3M", // derived from recommendation; regime doesn't carry it
-          universe: "US-LargeCap",
-          isLoading: false,
-        });
-      })
-      .catch(() => {
-        setScope((prev) => ({ ...prev, isLoading: false }));
+    Promise.all([
+      fetchRegime().catch(() => null),
+      fetchOverview().catch(() => null),
+    ]).then(([regimeRes, overviewRes]) => {
+      const regime = regimeRes?.data;
+      const overview = overviewRes?.data;
+
+      // Compute horizon from recommendation valid_from/valid_to
+      let horizon = "3M";
+      if (overview?.current_recommendation?.valid_from && overview?.current_recommendation?.valid_to) {
+        const days = Math.round(
+          (new Date(overview.current_recommendation.valid_to).getTime() -
+           new Date(overview.current_recommendation.valid_from).getTime()) / 86400000
+        );
+        if (days <= 30) horizon = "1M";
+        else if (days <= 60) horizon = "2M";
+        else if (days <= 90) horizon = "3M";
+        else if (days <= 180) horizon = "6M";
+        else horizon = `${days}d`;
+      }
+
+      setScope({
+        regime: regime?.regime_label || "Risk-on",
+        regimeConfidence: regime?.regime_confidence || 0,
+        horizon,
+        universe: "US Large Cap",
+        isLoading: false,
       });
+    });
   }, []);
 
   return (

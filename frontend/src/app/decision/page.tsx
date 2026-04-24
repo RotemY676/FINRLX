@@ -21,6 +21,7 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { ScenarioCard } from "@/components/decision/ScenarioCard";
+import { PriceChartCard } from "@/components/charts/PriceChartCard";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
 
@@ -166,6 +167,9 @@ export default function DecisionPage() {
       {rec.warnings.length > 0 ? <WarningsBlock warnings={rec.warnings} /> : (
         <div className="rounded-lg border border-line bg-surface p-pad shadow-sm"><p className="text-[12.5px] text-ink-3">No active warnings.</p></div>
       )}
+
+      {/* ── Price chart with event markers ── */}
+      <PriceChartCard ticker={rec.weights[0]?.ticker || "NVDA"} />
 
       {/* ── Portfolio weights ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">

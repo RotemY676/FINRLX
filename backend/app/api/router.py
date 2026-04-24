@@ -13,6 +13,7 @@ from app.api.v1.regime import router as regime_router
 from app.api.v1.ops import router as ops_router
 from app.api.v1.scenario import router as scenario_router
 from app.api.v1.actions import router as actions_router
+from app.api.v1.pricechart import router as pricechart_router
 from app.api.v1.health import router as health_router
 
 api_router = APIRouter()
@@ -29,4 +30,5 @@ api_router.include_router(regime_router, tags=["regime"])
 api_router.include_router(ops_router, tags=["ops"])
 api_router.include_router(scenario_router, tags=["scenario"])
 api_router.include_router(actions_router, tags=["actions"])
+api_router.include_router(pricechart_router, tags=["pricechart"])
 api_router.include_router(health_router, tags=["health"])
