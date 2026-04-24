@@ -13,7 +13,8 @@ from app.schemas.paper import PaperPortfolioDetail
 from app.schemas.engine import (
     EngineSignal, EngineComparisonResponse, DisagreementSummary,
     EngineDefinitionResponse, EngineSignalDetail, EngineRunRequest,
-    EngineRunResult, EngineRunResponse, EngineStatusResponse,
+    EngineRunResult, EngineRunResponse, EngineRunDetailResponse,
+    EngineStatusResponse,
 )
 from app.schemas.evidence import EvidenceItem, EvidenceNarrativeResponse
 from app.schemas.regime import RegimeSnapshot, ActivityFeedResponse, ActivityEvent

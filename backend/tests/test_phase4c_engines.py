@@ -211,3 +211,107 @@ async def test_evidence_not_hardcoded(client):
     # Should reference real engine names
     source_engines = {i["source_engine"] for i in data["items"] if i.get("source_engine")}
     assert source_engines.intersection({"technical_momentum", "risk_quality", "news_sentiment"})
+
+
+# ── Phase 4C.1 hardening tests ────────────────────────────────────────
+
+REGISTERED_KEYS = {"technical_momentum", "risk_quality", "news_sentiment"}
+
+
+@pytest.mark.asyncio
+async def test_latest_signals_excludes_legacy(client):
+    """latest-signals returns only active registered engines, not legacy seeded ones."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    r = await client.get("/api/v1/engines/latest-signals")
+    signals = r.json()["data"]
+    engine_keys = {s["engine_key"] for s in signals}
+    # Must not include legacy keys
+    legacy_keys = {"momentum", "fundamentals", "narrative", "riskparity", "flow"}
+    assert engine_keys.isdisjoint(legacy_keys), f"Legacy keys found: {engine_keys & legacy_keys}"
+
+
+@pytest.mark.asyncio
+async def test_no_unknown_engine_key(client):
+    """No signal in latest-signals should have engine_key='unknown'."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    r = await client.get("/api/v1/engines/latest-signals")
+    for s in r.json()["data"]:
+        assert s["engine_key"] != "unknown", f"Found unknown engine_key for ticker {s.get('ticker')}"
+
+
+@pytest.mark.asyncio
+async def test_comparison_only_registered(client):
+    """Comparison endpoint includes only registered engine keys."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    r = await client.get("/api/v1/engines/comparison")
+    data = r.json()["data"]
+    if data is None:
+        pytest.skip("No recommendation in test DB")
+    engine_keys = {e["engine_key"] for e in data["engines"]}
+    assert engine_keys.issubset(REGISTERED_KEYS), f"Non-registered keys: {engine_keys - REGISTERED_KEYS}"
+
+
+@pytest.mark.asyncio
+async def test_disagreement_only_registered(client):
+    """Disagreement endpoint includes only registered engine keys."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    r = await client.get("/api/v1/engines/disagreement")
+    data = r.json()["data"]
+    if data is None:
+        pytest.skip("No recommendation in test DB")
+    # total_engines should match number of registered engines with signals
+    assert data["total_engines"] <= len(REGISTERED_KEYS)
+
+
+@pytest.mark.asyncio
+async def test_engine_runs_list(client):
+    """GET /engines/runs returns list of signal runs."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    r = await client.get("/api/v1/engines/runs")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert len(data) >= 1
+    for run in data:
+        assert "run_id" in run
+        assert "engine_name" in run
+        assert "signal_count" in run
+        assert run["signal_count"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_engine_run_detail(client):
+    """GET /engines/runs/{run_id} returns a single run."""
+    await client.post("/api/v1/features/compute", json={})
+    await client.post("/api/v1/engines/run", json={})
+
+    # Get run list first
+    r = await client.get("/api/v1/engines/runs")
+    runs = r.json()["data"]
+    assert len(runs) >= 1
+    run_id = runs[0]["run_id"]
+
+    r2 = await client.get(f"/api/v1/engines/runs/{run_id}")
+    assert r2.status_code == 200
+    data = r2.json()["data"]
+    assert data["run_id"] == run_id
+    assert data["signal_count"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_engine_run_returns_feature_set_id(client):
+    """POST /engines/run returns the actual feature_set_id used (not None)."""
+    await client.post("/api/v1/features/compute", json={})
+
+    r = await client.post("/api/v1/engines/run", json={})
+    data = r.json()["data"]
+    assert data["feature_set_id"] is not None, "Response should include actual feature_set_id"

@@ -18,7 +18,8 @@ from app.schemas.common import ApiResponse
 from app.schemas.engine import (
     EngineSignal, EngineComparisonResponse, DisagreementSummary,
     EngineDefinitionResponse, EngineSignalDetail,
-    EngineRunRequest, EngineRunResult, EngineRunResponse, EngineStatusResponse,
+    EngineRunRequest, EngineRunResult, EngineRunResponse, EngineRunDetailResponse,
+    EngineStatusResponse,
 )
 from app.schemas.evidence import EvidenceItem, EvidenceNarrativeResponse
 from app.models.recommendation import Recommendation
@@ -39,18 +40,36 @@ async def run_engines(body: EngineRunRequest, db: AsyncSession = Depends(get_db)
     )
     successful = sum(1 for r in results if r["status"] == "completed")
     failed = sum(1 for r in results if r["status"] == "failed")
-    fs_id = results[0].get("feature_set_id") if results else None
+    # Use actual resolved feature_set_id, not the request input (which may be None)
+    actual_fs_id = next((r.get("feature_set_id") for r in results if r.get("feature_set_id")), body.feature_set_id)
 
     return ApiResponse(
         meta=make_meta(),
         data=EngineRunResponse(
-            results=[EngineRunResult(**r) for r in results],
+            results=[EngineRunResult(**{k: v for k, v in r.items() if k in ("run_id", "engine_key", "status", "signal_count", "message")}) for r in results],
             total_engines=len(results),
             successful=successful,
             failed=failed,
-            feature_set_id=body.feature_set_id,
+            feature_set_id=actual_fs_id,
         ),
     )
+
+
+@router.get("/engines/runs", response_model=ApiResponse[list[EngineRunDetailResponse]])
+async def list_engine_runs(db: AsyncSession = Depends(get_db)):
+    svc = EngineService(db)
+    runs = await svc.get_runs()
+    return ApiResponse(meta=make_meta(), data=[EngineRunDetailResponse(**r) for r in runs])
+
+
+@router.get("/engines/runs/{run_id}", response_model=ApiResponse[EngineRunDetailResponse])
+async def get_engine_run(run_id: str, db: AsyncSession = Depends(get_db)):
+    svc = EngineService(db)
+    r = await svc.get_run(run_id)
+    if not r:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return ApiResponse(meta=make_meta(), data=EngineRunDetailResponse(**r))
 
 
 @router.get("/engines/latest-signals", response_model=ApiResponse[list[EngineSignalDetail]])

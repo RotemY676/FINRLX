@@ -192,7 +192,7 @@ Seeded: 650 market bars, 41 news, 80 features (95%), 3 engines ran, 30 signals p
 | Recommendations | Still seed-only (Phase 4D scope) |
 | Decision pipeline | Still seed-only (Phase 4D scope) |
 | Publication workflow | Still seed-only (Phase 4E scope) |
-| Old seed signal outputs | Still exist in DB from seed.py (ENGINE_DEFS block); not used by endpoints |
+| Old seed signal outputs | Still exist in DB from seed.py (ENGINE_DEFS block); **isolated** — filtered out by registry-aware queries |
 
 ---
 
@@ -202,8 +202,49 @@ Seeded: 650 market bars, 41 news, 80 features (95%), 3 engines ran, 30 signals p
 2. **Engine weight is equal** (1/3 each) — no learned or configured engine weighting yet.
 3. **Horizon is fixed at "3M"** — engines don't compute their own horizon.
 4. **No engine versioning in runs** — all engines are v1; version comparison is deferred.
-5. **Old seed ENGINE_DEFS block** still creates 5 old-format signal runs during seed. These are not used by any endpoint but remain in the DB.
+5. **Old seed ENGINE_DEFS block** still creates 5 old-format signal runs during seed. These remain in the DB but are filtered out by `get_latest_signals(registered_only=True)`.
 6. **Evidence endpoint** produces structured items from signal artifacts, not a full NLP narrative.
+
+---
+
+## Phase 4C.1 Hardening Addendum
+
+**Date:** 2026-04-24
+
+### Changes
+
+1. **Legacy seeded signal isolation.** `get_latest_signals(registered_only=True)` now filters to only active `EngineDefinition.key` values. Legacy seeded runs (momentum, fundamentals, narrative, riskparity, flow) are excluded from all endpoints. No "unknown" engine_key appears.
+
+2. **Run list/detail endpoints added.**
+   - `GET /engines/runs` — lists recent signal runs with output counts
+   - `GET /engines/runs/{run_id}` — single run detail with signal count
+   - `EngineRunDetailResponse` schema added.
+
+3. **Actual feature_set_id in run response.** `POST /engines/run` now returns the resolved `feature_set_id` from the engine results, not the (possibly null) request input.
+
+4. **Report corrected.** "Old seed signal outputs are not used by any endpoint" → "filtered out by registry-aware queries".
+
+### Tests Added (7)
+
+| Test | What It Verifies |
+|---|---|
+| `test_latest_signals_excludes_legacy` | No legacy keys (momentum, fundamentals, etc.) in latest-signals |
+| `test_no_unknown_engine_key` | No engine_key="unknown" in latest-signals |
+| `test_comparison_only_registered` | Comparison includes only registered keys |
+| `test_disagreement_only_registered` | Disagreement counts only registered engines |
+| `test_engine_runs_list` | GET /engines/runs returns runs with signal_count |
+| `test_engine_run_detail` | GET /engines/runs/{id} returns single run |
+| `test_engine_run_returns_feature_set_id` | POST /engines/run returns actual feature_set_id |
+
+### Test Output
+
+```
+$ python -m pytest tests/ -v
+95 passed, 1 warning in 3.95s
+
+  19 Phase 4C tests (12 original + 7 hardening)
+  76 existing tests — all PASS (zero regressions)
+```
 
 ---
 

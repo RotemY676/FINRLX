@@ -99,6 +99,18 @@ class EngineRunResponse(BaseModel):
     feature_set_id: str | None = None
 
 
+class EngineRunDetailResponse(BaseModel):
+    run_id: str
+    engine_name: str
+    engine_version: str | None = None
+    feature_set_id: str | None = None
+    status: str
+    run_started_at: datetime | None = None
+    run_completed_at: datetime | None = None
+    data_as_of: datetime | None = None
+    signal_count: int = 0
+
+
 class EngineStatusResponse(BaseModel):
     total_definitions: int
     active_definitions: int

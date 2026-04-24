@@ -358,7 +358,8 @@ class EngineService:
             run.run_completed_at = datetime.now(timezone.utc)
 
             results.append({"run_id": run.id, "engine_key": eng.key, "status": "completed",
-                            "signal_count": signal_count, "message": f"{signal_count} signals"})
+                            "signal_count": signal_count, "message": f"{signal_count} signals",
+                            "feature_set_id": fs.id})
 
         await self.db.commit()
         return results
@@ -368,22 +369,39 @@ class EngineService:
             select(SignalRun).order_by(SignalRun.run_completed_at.desc()).limit(1)
         )).scalar_one_or_none()
 
-    async def get_latest_signals(self) -> list[SignalOutput]:
-        """Get signal outputs from the latest completed run of each engine."""
-        # Subquery: latest run per engine
-        subq = (
+    async def _get_registered_keys(self) -> set[str]:
+        """Return the set of active engine definition keys."""
+        rows = (await self.db.execute(
+            select(EngineDefinition.key).where(EngineDefinition.is_active == True)  # noqa: E712
+        )).scalars().all()
+        return set(rows)
+
+    async def get_latest_signals(self, registered_only: bool = True) -> list[SignalOutput]:
+        """Get signal outputs from the latest completed run of each active registered engine.
+
+        When registered_only=True (default), only runs whose engine_name matches
+        an active EngineDefinition.key are included. This excludes legacy seeded
+        runs (momentum, fundamentals, narrative, riskparity, flow) that predate
+        the Phase 4C engine registry.
+        """
+        await self.ensure_default_engines()
+        registered = await self._get_registered_keys() if registered_only else None
+
+        runs = (await self.db.execute(
             select(SignalRun.id, SignalRun.engine_name)
             .where(SignalRun.status == "completed")
             .order_by(SignalRun.run_completed_at.desc())
-        )
-        runs = (await self.db.execute(subq)).all()
+        )).all()
 
         seen_engines = set()
         run_ids = []
         for r in runs:
-            if r.engine_name not in seen_engines:
-                seen_engines.add(r.engine_name)
-                run_ids.append(r.id)
+            if r.engine_name in seen_engines:
+                continue
+            if registered is not None and r.engine_name not in registered:
+                continue
+            seen_engines.add(r.engine_name)
+            run_ids.append(r.id)
 
         if not run_ids:
             return []
@@ -391,6 +409,52 @@ class EngineService:
         return list((await self.db.execute(
             select(SignalOutput).where(SignalOutput.signal_run_id.in_(run_ids))
         )).scalars().all())
+
+    async def get_runs(self, limit: int = 50) -> list[dict]:
+        """Return recent signal runs with output counts."""
+        runs = (await self.db.execute(
+            select(SignalRun).order_by(SignalRun.run_completed_at.desc()).limit(limit)
+        )).scalars().all()
+
+        result = []
+        for r in runs:
+            count = (await self.db.execute(
+                select(func.count()).select_from(SignalOutput).where(SignalOutput.signal_run_id == r.id)
+            )).scalar() or 0
+            result.append({
+                "run_id": r.id,
+                "engine_name": r.engine_name,
+                "engine_version": r.engine_version,
+                "feature_set_id": r.feature_set_id,
+                "status": r.status,
+                "run_started_at": r.run_started_at,
+                "run_completed_at": r.run_completed_at,
+                "data_as_of": r.data_as_of,
+                "signal_count": count,
+            })
+        return result
+
+    async def get_run(self, run_id: str) -> dict | None:
+        """Return a single signal run with output count."""
+        r = (await self.db.execute(
+            select(SignalRun).where(SignalRun.id == run_id)
+        )).scalar_one_or_none()
+        if not r:
+            return None
+        count = (await self.db.execute(
+            select(func.count()).select_from(SignalOutput).where(SignalOutput.signal_run_id == r.id)
+        )).scalar() or 0
+        return {
+            "run_id": r.id,
+            "engine_name": r.engine_name,
+            "engine_version": r.engine_version,
+            "feature_set_id": r.feature_set_id,
+            "status": r.status,
+            "run_started_at": r.run_started_at,
+            "run_completed_at": r.run_completed_at,
+            "data_as_of": r.data_as_of,
+            "signal_count": count,
+        }
 
     async def get_status(self) -> dict:
         total = (await self.db.execute(select(func.count()).select_from(EngineDefinition))).scalar() or 0
