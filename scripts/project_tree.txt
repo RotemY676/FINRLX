@@ -1,0 +1,11 @@
+﻿FINRLX
+├── DOCS
+├── frontend
+├── backend
+├── data
+├── notebooks
+├── scripts
+├── infra
+├── design
+├── logs
+└── archive

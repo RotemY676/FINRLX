@@ -1,0 +1,373 @@
+מעולה. להלן עדכון אפיון-על לפרויקט, כך שהוא לא רק מוסיף “רעיונות מעניינים”, אלא מעדכן את מסגרת המוצר, הארכיטקטורה, שכבות ההחלטה, ה־UX, הוולידציה וה־roadmap לאור מה ש־FinRL-X מציג כיום כגישה מודולרית, weight-centric ו־deployment-consistent. FinRL-X עצמו מתואר על ידי AI4Finance כ"דור הבא" של FinRL, עם צנרת אחידה שמחברת עיבוד נתונים, בניית אסטרטגיה, backtesting וביצוע תחת ממשק אחיד של משקלי תיק יעד.
+
+1. מטרת העדכון לאפיון הכללי
+
+האפיון המקורי שלך כבר חזק בצד של ריבוי מנועי ניתוח: חדשות, סנטימנט, טכני, ML, RL ודשבורד השוואתי.
+העדכון שאני מציע משנה את מרכז הכובד של הפרויקט מ־אוסף מנועי תובנה ל־מערכת קבלת החלטות פורטפוליו-אית מודולרית.
+
+במקום:
+News / Sentiment / Technical / ML / RL → Dashboard
+
+המסגרת החדשה תהיה:
+Data & Feature Layer → Signals → Selection → Allocation → Timing → Risk Overlay → Portfolio Recommendation → Backtest / Paper / Monitoring / Explainability
+
+המעבר הזה תואם ישירות לעקרונות שמוצהרים עבור FinRL-X: pipeline composable, שילוב רכיבים rule-based ו־AI-based, ושמירה על אותו interface בין מחקר, בדיקה וביצוע.
+
+2. עדכון חזון המוצר
+נוסח חזון מעודכן
+
+המערכת תהיה Decision Intelligence Platform להשקעות לטווח בינוני, המשלבת מנועי ניתוח הטרוגניים ומתרגמת אותם ל־המלצת תיק אחידה, מוסברת, ניתנת להשוואה, ניתנת לשחזור, ונבדקת היסטורית ותפעולית.
+
+מה זה משנה מהותית
+
+המערכת כבר לא "מציגה הרבה ניתוחים", אלא:
+
+בוחרת universe ומועמדים
+מקצה משקל מומלץ
+מחליטה אם זה זמן טוב להיחשף
+מפעילה שכבת סיכון ברמת התיק
+מסבירה איך התקבלה ההמלצה
+בודקת מה היה קורה אם היו פועלים לפיה
+
+זה קרוב יותר לארכיטקטורה של FinRL-X, שמצהירה על שילוב selection, allocation, timing ו־portfolio-level risk overlay באותו פרוטוקול החלטה.
+
+3. שינוי ארכיטקטוני מרכזי באפיון
+3.1 עיקרון ליבה חדש: Weight-Centric Interface
+
+כל מנוע במערכת לא יחזיר רק:
+
+buy / sell / hold
+score
+sentiment label
+
+אלא גם תרגום לפלט השקעות אחיד, למשל:
+
+suggested target weights
+desired exposure change
+confidence
+horizon
+rationale
+
+זה נשען ישירות על FinRL-X, שמגדיר את המסגרת שלו כ־weight-centric interface אחיד בין שכבות המערכת.
+
+דרישת אפיון חדשה
+
+יש להגדיר חוזה פלט אחיד לכל מודול החלטה:
+
+DecisionOutput
+- engine_id
+- timestamp
+- universe_id
+- target_weights
+- confidence_score
+- horizon
+- rationale_summary
+- supporting_features
+- warnings
+תועלת מוצרית
+השוואה הוגנת בין מנועים
+fusion engine אמיתי
+אפשרות להעביר אותו פלט גם ל־backtest וגם ל־paper mode
+הסבר טוב יותר בדשבורד
+4. שכבות חדשות שיש להוסיף לאפיון
+4.1 Selection Layer
+
+כיום באפיון שלך יש מנועי ניתוח, אבל לא שכבת “בחירת נכסים” נפרדת וברורה.
+יש להוסיף שכבה מפורשת של:
+
+universe definition
+liquidity / tradability filters
+sector / asset coverage rules
+shortlist generation
+ranking policy
+
+ב־FinRL-X selection הוא שלב מפורש בתוך הצנרת, ולא תופעת לוואי של מנוע בודד.
+
+דרישות פונקציונליות
+תמיכה ב־watchlists, universes ו־screeners
+composite ranking ממספר מנועים
+אפשרות ל־minimum data sufficiency gate
+מניעת בחירת נכסים עם כיסוי מידע חלקי מדי
+4.2 Allocation Layer
+
+יש להוסיף שכבת allocation עצמאית.
+היא תקבל shortlist ותפיק target weights.
+
+ב־V1
+Equal weight
+Confidence-weighted
+Risk-budgeted
+בגרסאות מתקדמות
+Mean-variance
+HRP / risk parity style
+RL allocator
+
+FinRL-X מדגיש הפרדה בין selection ו־allocation, כולל תמיכה ברכיבי allocation הטרוגניים תחת אותו פרוטוקול אחיד.
+
+דרישת אפיון
+
+כל allocator חייב להיות swappable, עם API אחיד, כך שניתן יהיה להשוות allocators שונים על אותו universe, באותו זמן ובאותם cost assumptions.
+
+4.3 Timing Layer
+
+זה אחד העדכונים החשובים ביותר לפרויקט.
+יש להוסיף שכבת timing נפרדת מה־selection ומה־allocation.
+
+תפקידי השכבה
+לדחות כניסה
+להקטין חשיפה
+לעבור ל־cash חלקי
+להקשיח תנאי כניסה
+לשנות rebalance aggressiveness
+
+במאמר FinRL-X timing מופיע כרכיב מובנה בצנרת, לצד selection, allocation ו־risk overlay.
+
+V1 מומלץ
+trend regime filter
+volatility regime filter
+macro stress suppressor
+sentiment shock suppressor
+שינוי אפיון חשוב
+
+הניתוח הטכני כבר לא “עוד מנוע תחזית”, אלא יכול להיות Timing Controller.
+
+4.4 Portfolio-Level Risk Overlay
+
+יש להוסיף שכבת סיכון פורטפוליו-אית עצמאית.
+זו אינה בקרת stop-loss ברמת מניה בודדת, אלא מנגנון שמבצע scaling ו־guardrails ברמת כל התיק.
+
+FinRL-X מדגיש portfolio-level risk overlays כחלק מהצנרת המודולרית.
+
+V1 מומלץ
+max single position
+max sector exposure
+max portfolio volatility target
+cash floor in stress regime
+drawdown response mode
+דרישת אפיון
+
+Risk overlay חייב לפעול אחרי allocation ולפני publication of recommendation, ולשמור trace מלא של כל שינוי שביצע בהמלצת התיק.
+
+5. עדכון שכבת הדאטה והפיצ'רים
+5.1 Data Fusion Layer
+
+האפיון צריך להוסיף שכבת data fusion רשמית שמאחדת:
+
+market data
+technical features
+macro features
+news stream
+sentiment scores
+event signals
+model-produced features
+
+FinRL-X מציג מערכת שמאחדת data processing עם strategy construction תחת מסגרת אחת, כולל שילוב רכיבי AI ו־LLM-based sentiment signals.
+
+דרישות חדשות
+timestamp alignment בין market bars ל־news events
+feature freshness tracking
+raw source preservation
+processed feature registry
+feature versioning
+5.2 Reproducibility by Design
+
+FinRL-X מדגיש reproducible workflows ו־deployment consistency.
+
+לכן יש להוסיף לאפיון:
+
+כל decision run חייב לשמור:
+
+raw input snapshot ids
+processed feature set id
+model versions
+policy versions
+allocation method version
+timing policy version
+risk overlay version
+final recommendation record
+
+זה יאפשר לענות על:
+
+למה הומלץ X בתאריך מסוים
+אילו חדשות נכנסו
+אילו גרסאות השפיעו
+מה השתנה מול run קודם
+6. עדכון ה־UX והדשבורד
+
+הדשבורד אצלך אמור להישאר “מתוחכם ומופשט”, אבל עכשיו צריך לעדכן את עקרונות ה־UX כך שישקפו pipeline החלטה אמיתי.
+
+6.1 מבנה דשבורד חדש
+
+במקום פוקוס על “הרבה כרטיסים של מנועים”, יש לעבור ל־4 שכבות תצוגה:
+
+שכבה 1 — Final Recommendation
+target portfolio
+overall confidence
+risk state
+timing state
+recommended rebalance action
+שכבה 2 — Decision Breakdown
+Selection outcome
+Allocation outcome
+Timing adjustment
+Risk overlay changes
+שכבה 3 — Engine Comparison
+signal comparison
+disagreement map
+engine confidence comparison
+contribution to final decision
+שכבה 4 — Audit & What Changed
+changes since last rebalance
+why recommendation changed
+key drivers
+data freshness / warnings
+
+גישה כזו לא מועתקת אחד לאחד מ־FinRL-X, אבל היא נגזרת ישירות מהעובדה שהמסגרת שם מפרידה את שלבי ההחלטה ומאפשרת עקיבות בין השלבים.
+
+6.2 מודול חדש: Disagreement Analytics
+
+יש להוסיף לאפיון UX:
+
+heatmap של הסכמה/אי-הסכמה
+list of strongest dissenting views
+confidence dispersion
+“why the fusion engine overruled a specific model”
+
+זה לא מוזכר כמודול רשמי ב־FinRL-X, אבל זה חיזוק מוצרי טבעי לפלטפורמה מרובת מנועים כמו שלך, במיוחד תחת ממשק פלט אחיד.
+
+7. עדכון מודל ההמלצה
+
+יש לעדכן את האפיון כך שהפלט המרכזי של המערכת יהיה:
+
+Portfolio Recommendation Object
+recommended assets
+target weights
+rebalance delta
+timing status
+risk regime
+confidence
+primary drivers
+opposing drivers
+constraints applied
+audit id
+
+זה יהפוך את כל המערכת לאחידה יותר מבחינת backend, frontend, storage, backtest ו־paper mode.
+
+8. Backtesting Framework חדש
+
+FinRL-X מדגיש system-level consistency בין מחקר, backtesting, paper trading ו־broker-connected execution.
+
+לכן האפיון חייב להתעדכן כך שכל מנוע וכל pipeline ירוצו תחת Unified Backtesting Protocol.
+
+חובה להוסיף
+identical universe assumptions
+identical rebalancing schedule
+identical transaction cost model
+identical benchmark set
+identical out-of-sample protocol
+identical reporting schema
+מדדי חובה
+CAGR
+volatility
+Sharpe / Sortino
+max drawdown
+turnover
+hit ratio
+exposure statistics
+sector concentration over time
+regime-conditioned performance
+שינוי תפיסתי
+
+לא “לכל מנוע יש בדיקה משלו”, אלא:
+כל המנועים נבחנים תחת אותו משפט השוואה
+
+9. Paper Portfolio / Shadow Mode
+
+זה חלק משמעותי שחסר באפיון המקורי שלך ושכדאי להוסיף.
+FinRL-X מדגיש גשר בין backtesting, paper trading ו־live execution.
+
+דרישת אפיון חדשה
+
+יש להוסיף 2 מצבי תפעול:
+
+Paper Portfolio — תיק וירטואלי שעוקב אחרי המלצות
+Shadow Portfolio — תיק שמבצע replay מול תיק ייחוס או החלטות משתמש
+שימושים
+ולידציה אמיתית של איכות ההמלצות
+השוואה בין recommendation ל־followed/not-followed
+drift measurement
+decision outcome learning
+10. Governance, Monitoring, and Reliability
+
+כדי שהמערכת תהיה רצינית, לא מספיק pipeline יפה.
+יש להוסיף לאפיון שכבת operational governance.
+
+חובה
+stale data detection
+missing feature warnings
+incomplete coverage alerts
+recommendation suppression on bad inputs
+run failure handling
+structured logs
+monitoring for paper mode deviations
+
+FinRL-X מציג deployment-aware architecture ו־monitoring-focused framing להפחתת פער בין סימולציה לפריסה.
+
+11. עדכון Roadmap רשמי של הפרויקט
+V1 — Foundation Upgrade
+
+זה השלב שבו מעדכנים את יסודות המוצר:
+
+weight-centric unified output
+selection layer
+allocation layer
+timing layer
+portfolio-level risk overlay
+decision object schema
+unified backtesting protocol
+audit trail
+updated dashboard structure
+V1.5 — Validation Upgrade
+paper portfolio
+shadow portfolio
+disagreement analytics
+change attribution
+recommendation history
+regime labels
+operational monitoring
+V2 — Advanced Intelligence
+RL allocator אמיתי
+adaptive sector rotation
+multi-asset rotation
+ensemble policy manager
+broker bridge / execution adapter
+live guardrails
+
+החלק של RL allocator, paper/live bridge ו־modular strategy composition נתמך ישירות על ידי תיאור FinRL-X; חלוקת ה־V1/V1.5/V2 היא המלצת מוצר והנדסה שלי עבורך.
+
+12. נוסח מומלץ להטמעה במסמך האפיון הכללי
+
+אפשר להכניס את הפסקה הבאה כמעט כמו שהיא:
+
+The platform will evolve from a multi-engine analytics dashboard into a modular portfolio decision system. All analytical engines, including news, sentiment, technical analysis, machine learning, and reinforcement learning, will feed a unified decision pipeline composed of Selection, Allocation, Timing, and Portfolio-Level Risk Overlay. The system’s primary output will be a weight-centric portfolio recommendation object, enabling consistent comparison, backtesting, paper validation, explainability, and future deployment continuity. This update aligns the product architecture with modern modular quantitative trading design principles exemplified by FinRL-X.
+
+13. ההמלצה הסופית שלי
+
+השדרוג הכי חשוב לאפיון שלך הוא לא להוסיף עוד מודל, אלא להוסיף Decision Architecture.
+
+כלומר:
+
+פחות “עוד מנוע RL”
+יותר “איך כל המנועים הופכים יחד להחלטת תיק אחת, מוסברת, מדידה ונשלטת”
+
+זה בדיוק המקום שבו FinRL-X חזק: לא רק במודל, אלא במסגרת שמחברת data, strategy, testing ו־deployment דרך ממשק אחיד.
+
+בשלב הבא, אני ממליץ להפוך את זה ל־מסמך אנגלי רשמי ומובנה עם כותרות כמו:
+
+Executive Summary
+Updated Product Vision
+Architecture Update
+Functional Requirements
+Dashboard UX Update
+Backtesting and Validation Framework
+Roadmap and Prioritization
