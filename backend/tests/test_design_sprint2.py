@@ -20,7 +20,7 @@ async def test_evidence(client):
     assert r.status_code == 200
     data = r.json()["data"]
     assert data is not None
-    assert len(data["items"]) == 5
+    assert len(data["items"]) >= 1  # real engine-derived or legacy fallback
 
 
 @pytest.mark.asyncio

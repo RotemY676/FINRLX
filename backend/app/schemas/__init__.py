@@ -10,7 +10,11 @@ from app.schemas.overview import OverviewResponse, HealthSummary
 from app.schemas.replay import ReplayDetail, ReplayListResponse
 from app.schemas.backtest import BacktestDetail, BacktestListResponse
 from app.schemas.paper import PaperPortfolioDetail
-from app.schemas.engine import EngineSignal, EngineComparisonResponse, DisagreementSummary
+from app.schemas.engine import (
+    EngineSignal, EngineComparisonResponse, DisagreementSummary,
+    EngineDefinitionResponse, EngineSignalDetail, EngineRunRequest,
+    EngineRunResult, EngineRunResponse, EngineStatusResponse,
+)
 from app.schemas.evidence import EvidenceItem, EvidenceNarrativeResponse
 from app.schemas.regime import RegimeSnapshot, ActivityFeedResponse, ActivityEvent
 from app.schemas.ops import (

@@ -17,6 +17,7 @@ from app.models import (
     SignalRun, SignalOutput,
     MarketBar, NewsEvent, IngestionManifest,
     FeatureDefinition, FeatureSet, FeatureValue,
+    EngineDefinition,
 )
 
 TEST_DB_URL = "sqlite+aiosqlite://"  # in-memory

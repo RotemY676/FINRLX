@@ -17,6 +17,7 @@ class SignalRun(Base, TimestampMixin):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     engine_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     engine_version: Mapped[str | None] = mapped_column(String(50))
+    feature_set_id: Mapped[str | None] = mapped_column(String(36))
     run_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     run_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(30), default="completed")

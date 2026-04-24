@@ -21,6 +21,7 @@ from app.models import (
     DataFeed, PolicyBreach, PublicationQueueEntry, Incident,
     MarketBar, NewsEvent, IngestionManifest,
     FeatureDefinition, FeatureSet, FeatureValue,
+    EngineDefinition,
 )
 
 random.seed(42)
@@ -452,6 +453,26 @@ async def seed():
                 f"completeness {fs.completeness_score:.0%})"
             )
 
+    # ── Engine run (needs committed feature set) ──
+    async with async_session_factory() as db:
+        from app.services.engines import EngineService
+        eng_svc = EngineService(db)
+        await eng_svc.ensure_default_engines()
+
+        # Check if engine runs already exist for the latest feature set
+        latest_fs = await eng_svc._get_latest_feature_set()
+        existing_run = (await db.execute(
+            select(SignalRun).where(SignalRun.feature_set_id == latest_fs.id).limit(1)
+        )).scalar_one_or_none() if latest_fs else None
+
+        if existing_run:
+            engine_msg = f"Engine runs already exist for feature set {latest_fs.id[:8]}…. Skipping."
+        else:
+            results = await eng_svc.run_engines()
+            successful = sum(1 for r in results if r["status"] == "completed")
+            total_signals = sum(r["signal_count"] for r in results)
+            engine_msg = f"{successful} engines ran, {total_signals} signals produced"
+
     print(
         f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
         f"{len(ENGINE_DEFS)} engines × 5 assets = {len(ENGINE_DEFS)*5} signal outputs, "
@@ -461,7 +482,7 @@ async def seed():
         f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents, "
         f"{total_bars} market bars (90d × {len(asset_ids)} assets), "
         f"{len(news_events)} news events (30d), 2 ingestion manifests, "
-        f"{feature_msg}"
+        f"{feature_msg}, {engine_msg}"
     )
 
 
