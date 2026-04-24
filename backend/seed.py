@@ -207,12 +207,76 @@ def _ago_to_timedelta(ago: str) -> timedelta:
     return timedelta(minutes=5)
 
 
+async def _seed_pipeline_stages():
+    """Run ingestion, feature computation, engine run, and pipeline — each idempotent."""
+    from sqlalchemy import select
+
+    # ── Ingestion: bars + news ──
+    async with async_session_factory() as db:
+        from app.models.ingestion import MarketBar as MB
+        bar_count = (await db.execute(text("SELECT count(*) FROM market_bars"))).scalar() or 0
+        if bar_count > 0:
+            print(f"  Ingestion: {bar_count} bars already exist. Skipping.")
+        else:
+            from app.services.ingest import IngestService
+            svc = IngestService(db)
+            m1 = await svc.ingest_bars(source="seed")
+            m2 = await svc.ingest_news(source="seed")
+            print(f"  Ingestion: {m1.row_count} bars, {m2.row_count} news events")
+
+    # ── Features ──
+    async with async_session_factory() as db:
+        from app.services.features import FeatureService
+        from app.models.reference import Universe as UniverseModel
+        svc = FeatureService(db)
+        await svc.ensure_default_definitions()
+        uni_row = (await db.execute(select(UniverseModel.id).limit(1))).scalar()
+        existing_fs = (await db.execute(
+            select(FeatureSet).limit(1)
+        )).scalar_one_or_none()
+        if existing_fs:
+            print(f"  Features: already exist ({existing_fs.id[:8]}…). Skipping.")
+        else:
+            fs = await svc.compute_features(universe_id=uni_row)
+            print(f"  Features: {fs.feature_count} values, completeness {fs.completeness_score:.0%}")
+
+    # ── Engines ──
+    async with async_session_factory() as db:
+        from app.services.engines import EngineService
+        eng_svc = EngineService(db)
+        await eng_svc.ensure_default_engines()
+        latest_fs = await eng_svc._get_latest_feature_set()
+        existing_run = (await db.execute(
+            select(SignalRun).where(SignalRun.feature_set_id == latest_fs.id).limit(1)
+        )).scalar_one_or_none() if latest_fs else None
+        if existing_run:
+            print(f"  Engines: runs already exist. Skipping.")
+        else:
+            results = await eng_svc.run_engines()
+            successful = sum(1 for r in results if r["status"] == "completed")
+            total_signals = sum(r["signal_count"] for r in results)
+            print(f"  Engines: {successful} engines ran, {total_signals} signals")
+
+    # ── Pipeline ──
+    async with async_session_factory() as db:
+        from app.services.pipeline import DecisionPipelineService
+        pipe_svc = DecisionPipelineService(db)
+        existing_pipe = await pipe_svc.get_latest_pipeline_recommendation()
+        if existing_pipe:
+            print(f"  Pipeline: recommendation already exists ({existing_pipe.id[:8]}…). Skipping.")
+        else:
+            result = await pipe_svc.run_pipeline()
+            print(f"  Pipeline: {result['status']} — {result['message']}")
+
+
 async def seed():
     async with async_session_factory() as db:
         result = await db.execute(text("SELECT count(*) FROM assets"))
         count = result.scalar()
         if count and count > 0:
-            print(f"Database already has {count} assets. Skipping seed.")
+            print(f"Database already has {count} assets. Skipping core seed.")
+            # Still run pipeline stages below (they have their own idempotency)
+            await _seed_pipeline_stages()
             return
 
         now = datetime.now(timezone.utc)
@@ -429,65 +493,7 @@ async def seed():
 
         await db.commit()
 
-    # ── Feature computation (needs committed ingestion data) ──
-    async with async_session_factory() as db:
-        from app.services.features import FeatureService
-        from app.models.reference import Universe as UniverseModel
-        from sqlalchemy import select
-        svc = FeatureService(db)
-        await svc.ensure_default_definitions()
-
-        # Re-read universe_id from DB (previous session is closed)
-        uni_row = (await db.execute(select(UniverseModel.id).limit(1))).scalar()
-
-        # Check if a feature set already exists (idempotency)
-        existing_fs = (await db.execute(
-            select(FeatureSet).limit(1)
-        )).scalar_one_or_none()
-        if existing_fs:
-            feature_msg = f"Feature set already exists ({existing_fs.id[:8]}…). Skipping."
-        else:
-            fs = await svc.compute_features(universe_id=uni_row)
-            feature_msg = (
-                f"1 feature set ({fs.feature_count} values, "
-                f"completeness {fs.completeness_score:.0%})"
-            )
-
-    # ── Engine run (needs committed feature set) ──
-    async with async_session_factory() as db:
-        from app.services.engines import EngineService
-        eng_svc = EngineService(db)
-        await eng_svc.ensure_default_engines()
-
-        # Check if engine runs already exist for the latest feature set
-        latest_fs = await eng_svc._get_latest_feature_set()
-        existing_run = (await db.execute(
-            select(SignalRun).where(SignalRun.feature_set_id == latest_fs.id).limit(1)
-        )).scalar_one_or_none() if latest_fs else None
-
-        if existing_run:
-            engine_msg = f"Engine runs already exist for feature set {latest_fs.id[:8]}…. Skipping."
-        else:
-            results = await eng_svc.run_engines()
-            successful = sum(1 for r in results if r["status"] == "completed")
-            total_signals = sum(r["signal_count"] for r in results)
-            engine_msg = f"{successful} engines ran, {total_signals} signals produced"
-
-    # ── Pipeline run (needs committed engine signals) ──
-    async with async_session_factory() as db:
-        from app.services.pipeline import DecisionPipelineService
-        pipe_svc = DecisionPipelineService(db)
-
-        # Check if pipeline-generated recommendation already exists
-        existing_pipe = await pipe_svc.get_latest_pipeline_recommendation()
-        if existing_pipe:
-            pipeline_msg = f"Pipeline recommendation already exists ({existing_pipe.id[:8]}…). Skipping."
-        else:
-            result = await pipe_svc.run_pipeline()
-            if result["status"] == "completed":
-                pipeline_msg = f"Pipeline: {result['message']}"
-            else:
-                pipeline_msg = f"Pipeline: {result['status']} — {result['message']}"
+    await _seed_pipeline_stages()
 
     print(
         f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
@@ -496,9 +502,7 @@ async def seed():
         f"5 replay snapshots, 1 backtest, 1 paper portfolio, "
         f"{len(OPS_FEEDS)} data feeds, {len(OPS_BREACHES)} breaches, "
         f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents, "
-        f"{total_bars} market bars (90d × {len(asset_ids)} assets), "
-        f"{len(news_events)} news events (30d), 2 ingestion manifests, "
-        f"{feature_msg}, {engine_msg}, {pipeline_msg}"
+        f"ingestion + features + engines + pipeline (see above)"
     )
 
 
