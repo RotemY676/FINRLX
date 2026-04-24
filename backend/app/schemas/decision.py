@@ -64,3 +64,12 @@ class RiskOverlayView(BaseModel):
     constraints_applied: list[str]
     rationale: str | None = None
     created_at: datetime
+
+
+class DecisionStagesResponse(BaseModel):
+    """All pipeline stages for a recommendation."""
+    recommendation_id: str
+    selection: SelectionRunView | None = None
+    allocation: AllocationView | None = None
+    timing: TimingView | None = None
+    risk_overlay: RiskOverlayView | None = None

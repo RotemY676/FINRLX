@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { fetchOverview, OverviewData } from "@/services/api";
 import { RecommendationCard } from "@/components/recommendation/RecommendationCard";
 import { HealthPanel } from "@/components/overview/HealthPanel";
+import { PageLoading } from "@/components/feedback/PageLoading";
+import { PageError } from "@/components/feedback/PageError";
 
 export default function OverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
@@ -22,23 +24,15 @@ export default function OverviewPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-qp-body text-qp-text-muted">Loading overview...</p>
-      </div>
-    );
-  }
+  if (loading) return <PageLoading label="Loading overview..." />;
 
   if (error) {
     return (
-      <div className="p-qp-6 bg-qp-red-400/10 border border-qp-red-400 rounded-qp">
-        <h2 className="text-qp-h2 text-qp-red-600 mb-qp-2">Connection Error</h2>
-        <p className="text-qp-body text-qp-text-secondary">{error}</p>
-        <p className="text-qp-small text-qp-text-muted mt-qp-2">
-          Ensure the backend is running at localhost:8000
-        </p>
-      </div>
+      <PageError
+        title="Connection Error"
+        message={error}
+        hint="Ensure the backend is running at localhost:8000 and the database is seeded."
+      />
     );
   }
 

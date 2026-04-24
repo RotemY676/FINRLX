@@ -12,6 +12,7 @@ from app.main import app
 from app.models import (
     Asset, Universe, UniverseMembership,
     Recommendation, RecommendationWeight,
+    SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
 )
 
 TEST_DB_URL = "sqlite+aiosqlite://"  # in-memory
@@ -74,6 +75,32 @@ async def setup_db():
         db.add(RecommendationWeight(
             id=uid(), recommendation_id=rec_id, asset_id=asset_ids["MSFT"],
             target_weight=0.40, previous_weight=0.50, delta=-0.10, stance="underweight",
+        ))
+
+        # Decision pipeline stages
+        sel_id = uid()
+        db.add(SelectionRun(
+            id=sel_id, recommendation_id=rec_id, universe_id=universe_id,
+            included_assets=[
+                {"asset_id": asset_ids["AAPL"], "ticker": "AAPL", "reason": "Passed filters"},
+                {"asset_id": asset_ids["MSFT"], "ticker": "MSFT", "reason": "Passed filters"},
+            ],
+            excluded_assets=[], rationale="All passed.",
+        ))
+        db.add(AllocationResult(
+            id=uid(), recommendation_id=rec_id, selection_run_id=sel_id,
+            weights={asset_ids["AAPL"]: 0.60, asset_ids["MSFT"]: 0.40},
+            method="equal-risk", rationale="Test allocation.",
+        ))
+        db.add(TimingResult(
+            id=uid(), recommendation_id=rec_id,
+            urgency="soon", horizon_days=3, rationale="Test timing.",
+        ))
+        db.add(RiskOverlayResult(
+            id=uid(), recommendation_id=rec_id,
+            portfolio_risk_score=0.35,
+            adjustments=[], constraints_applied=["test_constraint"],
+            rationale="No adjustments needed.",
         ))
 
         await db.commit()
