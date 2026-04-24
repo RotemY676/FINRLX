@@ -1,7 +1,33 @@
 /**
  * API client for FINRLX backend.
- * Uses Next.js rewrite proxy (/api/* -> backend:8000/api/*).
+ *
+ * Production:
+ *   Uses NEXT_PUBLIC_API_BASE_URL, for example:
+ *   https://backend-production-aab8.up.railway.app
+ *
+ * Important:
+ *   Do not call relative /api/v1/* paths directly in production.
+ *   Relative paths hit the frontend service itself and may trigger a localhost proxy.
  */
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://backend-production-aab8.up.railway.app";
+
+function buildApiUrl(path: string): string {
+  if (!path) {
+    throw new Error("API path is missing");
+  }
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  const normalizedBase = API_BASE_URL.replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${normalizedBase}${normalizedPath}`;
+}
 
 export interface ApiResponse<T> {
   meta: {
@@ -291,12 +317,30 @@ export interface PaperPortfolioData {
 
 // Fetch functions
 
-async function apiFetch<T>(path: string): Promise<ApiResponse<T>> {
-  const res = await fetch(path);
+async function apiFetch<T>(
+  path: string,
+  init?: RequestInit
+): Promise<ApiResponse<T>> {
+  const url = buildApiUrl(path);
+
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init?.headers || {}),
+    },
+  });
+
   if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
+    const responseBody = await res.text().catch(() => "");
+    throw new Error(
+      `API error: ${res.status} ${res.statusText} for ${url}${
+        responseBody ? ` — ${responseBody}` : ""
+      }`
+    );
   }
-  return res.json();
+
+  return res.json() as Promise<ApiResponse<T>>;
 }
 
 export async function fetchOverview(): Promise<ApiResponse<OverviewData>> {
@@ -445,15 +489,21 @@ export interface ActivityFeedData {
 
 // New fetch functions
 
-export async function fetchEngineComparison(): Promise<ApiResponse<EngineComparisonData | null>> {
+export async function fetchEngineComparison(): Promise<
+  ApiResponse<EngineComparisonData | null>
+> {
   return apiFetch<EngineComparisonData | null>("/api/v1/engines/comparison");
 }
 
-export async function fetchDisagreement(): Promise<ApiResponse<DisagreementData | null>> {
+export async function fetchDisagreement(): Promise<
+  ApiResponse<DisagreementData | null>
+> {
   return apiFetch<DisagreementData | null>("/api/v1/engines/disagreement");
 }
 
-export async function fetchEvidence(): Promise<ApiResponse<EvidenceNarrativeData | null>> {
+export async function fetchEvidence(): Promise<
+  ApiResponse<EvidenceNarrativeData | null>
+> {
   return apiFetch<EvidenceNarrativeData | null>("/api/v1/engines/evidence");
 }
 
@@ -468,19 +518,70 @@ export async function fetchActivity(): Promise<ApiResponse<ActivityFeedData>> {
 // Ops Command Center types
 
 export interface OpsQueueItem {
-  recommendation_id: string; ticker: string; stance: string; version: string;
-  submitted_ago: string; submitter: string; weight: string; confidence: number;
-  flags: string[]; priority: string;
+  recommendation_id: string;
+  ticker: string;
+  stance: string;
+  version: string;
+  submitted_ago: string;
+  submitter: string;
+  weight: string;
+  confidence: number;
+  flags: string[];
+  priority: string;
 }
-export interface OpsFeed { name: string; status: string; lag: string; coverage: string; slo: number; }
-export interface OpsEngine { name: string; latency: string; drift: number; last_run: string; status: string; }
-export interface OpsBreach { kind: string; label: string; utilization: number; trend: string; severity: string; related: string; }
-export interface OpsIncident { id: string; title: string; started: string; severity: string; owner: string; status: string; affected_recs: number; note: string; }
-export interface OpsAuditEntry { when: string; actor: string; action: string; target: string; scope: string; ok: boolean; }
+
+export interface OpsFeed {
+  name: string;
+  status: string;
+  lag: string;
+  coverage: string;
+  slo: number;
+}
+
+export interface OpsEngine {
+  name: string;
+  latency: string;
+  drift: number;
+  last_run: string;
+  status: string;
+}
+
+export interface OpsBreach {
+  kind: string;
+  label: string;
+  utilization: number;
+  trend: string;
+  severity: string;
+  related: string;
+}
+
+export interface OpsIncident {
+  id: string;
+  title: string;
+  started: string;
+  severity: string;
+  owner: string;
+  status: string;
+  affected_recs: number;
+  note: string;
+}
+
+export interface OpsAuditEntry {
+  when: string;
+  actor: string;
+  action: string;
+  target: string;
+  scope: string;
+  ok: boolean;
+}
 
 export interface OpsData {
-  queue: OpsQueueItem[]; feeds: OpsFeed[]; engines: OpsEngine[];
-  breaches: OpsBreach[]; incidents: OpsIncident[]; audit: OpsAuditEntry[];
+  queue: OpsQueueItem[];
+  feeds: OpsFeed[];
+  engines: OpsEngine[];
+  breaches: OpsBreach[];
+  incidents: OpsIncident[];
+  audit: OpsAuditEntry[];
 }
 
 export async function fetchOps(): Promise<ApiResponse<OpsData>> {
