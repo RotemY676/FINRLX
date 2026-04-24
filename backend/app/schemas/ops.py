@@ -2,11 +2,11 @@
 
 Maps to design handoff: ops.jsx data structures.
 """
-from datetime import datetime
 from pydantic import BaseModel, Field
 
 
 class OpsQueueItem(BaseModel):
+    id: str | None = None
     recommendation_id: str
     ticker: str
     stance: str
@@ -17,6 +17,7 @@ class OpsQueueItem(BaseModel):
     confidence: float
     flags: list[str] = Field(default_factory=list)
     priority: str  # high, mid, low
+    status: str = "pending"
 
 
 class OpsFeed(BaseModel):
@@ -64,6 +65,13 @@ class OpsAuditEntry(BaseModel):
     ok: bool
 
 
+class OpsSystemKpi(BaseModel):
+    key: str
+    value: str
+    sub: str | None = None
+    tone: str = "neutral"  # neutral, pos, caution, breach
+
+
 class OpsCommandCenterResponse(BaseModel):
     queue: list[OpsQueueItem]
     feeds: list[OpsFeed]
@@ -71,3 +79,17 @@ class OpsCommandCenterResponse(BaseModel):
     breaches: list[OpsBreach]
     incidents: list[OpsIncident]
     audit: list[OpsAuditEntry]
+    system_kpis: list[OpsSystemKpi] = Field(default_factory=list)
+
+
+class QueueActionResponse(BaseModel):
+    id: str
+    new_status: str
+    message: str
+
+
+class WorkspaceCounts(BaseModel):
+    overview: int = 0
+    decisions: int = 0
+    risk: int = 0
+    ops: int = 0

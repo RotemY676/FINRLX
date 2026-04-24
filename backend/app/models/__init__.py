@@ -5,7 +5,10 @@ from app.models.decision_pipeline import (
 )
 from app.models.signal import SignalRun, SignalOutput
 from app.models.validation import BacktestExperiment, PaperPortfolio, ReplaySnapshot
-from app.models.ops import AuditEvent, Incident, SystemHealthSnapshot
+from app.models.ops import (
+    AuditEvent, Incident, SystemHealthSnapshot,
+    DataFeed, PolicyBreach, PublicationQueueEntry,
+)
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -14,4 +17,5 @@ __all__ = [
     "SignalRun", "SignalOutput",
     "BacktestExperiment", "PaperPortfolio", "ReplaySnapshot",
     "AuditEvent", "Incident", "SystemHealthSnapshot",
+    "DataFeed", "PolicyBreach", "PublicationQueueEntry",
 ]

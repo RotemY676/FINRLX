@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchOps, OpsData } from "@/services/api";
+import { useEffect, useState, useCallback } from "react";
+import {
+  fetchOps, fetchOpsQueue, fetchOpsAudit,
+  approveQueueItem, deferQueueItem, challengeQueueItem,
+  OpsData, OpsQueueItem, OpsAuditEntry,
+} from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { PageLoading } from "@/components/feedback/PageLoading";
@@ -21,18 +25,95 @@ const SEVERITY_STYLE: Record<string, string> = {
   "sev-1": "text-breach font-semibold", "sev-2": "text-caution font-semibold",
   "sev-3": "text-ink-2", "sev-4": "text-ink-3",
 };
+const KPI_TONE: Record<string, string> = {
+  pos: "text-pos", caution: "text-caution", breach: "text-breach", neutral: "text-ink",
+};
+
+const QUEUE_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "high", label: "High priority" },
+];
+
+const AUDIT_SCOPES = [
+  { key: "all", label: "All" },
+  { key: "recommendation", label: "Queue" },
+  { key: "breach", label: "Policy" },
+  { key: "engine", label: "Engine" },
+  { key: "incident", label: "Ops" },
+];
 
 export default function AdminPage() {
   const [ops, setOps] = useState<OpsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Queue filter state
+  const [queueFilter, setQueueFilter] = useState("all");
+  const [filteredQueue, setFilteredQueue] = useState<OpsQueueItem[]>([]);
+
+  // Audit scope state
+  const [auditScope, setAuditScope] = useState("all");
+  const [filteredAudit, setFilteredAudit] = useState<OpsAuditEntry[]>([]);
+
+  // Action loading
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
   useEffect(() => {
     fetchOps()
-      .then((res) => setOps(res.data))
+      .then((res) => {
+        setOps(res.data);
+        setFilteredQueue(res.data.queue);
+        setFilteredAudit(res.data.audit);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Queue filter handler
+  const handleQueueFilter = useCallback(async (filter: string) => {
+    setQueueFilter(filter);
+    try {
+      const res = await fetchOpsQueue(filter);
+      setFilteredQueue(res.data);
+    } catch {
+      // fallback to local filter
+      if (ops) {
+        setFilteredQueue(
+          filter === "all" ? ops.queue : ops.queue.filter((q) => q.priority === filter)
+        );
+      }
+    }
+  }, [ops]);
+
+  // Audit scope handler
+  const handleAuditScope = useCallback(async (scope: string) => {
+    setAuditScope(scope);
+    try {
+      const res = await fetchOpsAudit(scope);
+      setFilteredAudit(res.data);
+    } catch {
+      if (ops) setFilteredAudit(ops.audit);
+    }
+  }, [ops]);
+
+  // Queue action handler
+  const handleQueueAction = useCallback(async (id: string, action: "approve" | "defer" | "challenge") => {
+    setActionLoading(id);
+    try {
+      const fn = action === "approve" ? approveQueueItem : action === "defer" ? deferQueueItem : challengeQueueItem;
+      await fn(id);
+      // Refresh queue
+      const res = await fetchOpsQueue(queueFilter);
+      setFilteredQueue(res.data);
+      // Refresh full ops for KPI update
+      const opsRes = await fetchOps();
+      setOps(opsRes.data);
+    } catch {
+      // silently fail
+    } finally {
+      setActionLoading(null);
+    }
+  }, [queueFilter]);
 
   if (loading) return <PageLoading label="Loading Ops Command Center..." />;
   if (error) return <PageError title="Ops Error" message={error} hint="Ensure the backend is running and seeded." />;
@@ -43,16 +124,44 @@ export default function AdminPage() {
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Ops Command Center</h1>
         <p className="text-[12px] text-ink-3 mt-0.5">
-          {ops.queue.length} queued · {ops.breaches.filter(b => b.severity === "breach").length} breaches · {ops.incidents.length} incidents
+          {filteredQueue.length} queued · {ops.breaches.filter(b => b.severity === "breach").length} breaches · {ops.incidents.length} incidents
         </p>
       </div>
+
+      {/* ── KPI Strip ── */}
+      {ops.system_kpis.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {ops.system_kpis.map((kpi) => (
+            <div key={kpi.key} className="rounded-lg border border-line bg-surface p-3 text-center">
+              <p className={`text-[20px] font-semibold font-mono ${KPI_TONE[kpi.tone] || "text-ink"}`}>{kpi.value}</p>
+              <p className="text-[12px] text-ink-2 font-medium mt-0.5">{kpi.key}</p>
+              {kpi.sub && <p className="text-[10px] text-ink-4">{kpi.sub}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Publication Queue ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Icon name="decision" size={15} className="text-primary" />
           <h3 className="text-[13px] font-semibold text-ink">Publication Queue</h3>
-          <span className="text-[11px] text-ink-4 ml-auto">{ops.queue.length} pending</span>
+          <div className="flex items-center gap-1 ml-4">
+            {QUEUE_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => handleQueueFilter(f.key)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  queueFilter === f.key
+                    ? "bg-primary text-primary-ink"
+                    : "text-ink-3 hover:bg-surface-3"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <span className="text-[11px] text-ink-4 ml-auto">{filteredQueue.length} pending</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px]">
@@ -64,12 +173,13 @@ export default function AdminPage() {
                 <th className="text-right py-2 pr-3 font-medium">Weight</th>
                 <th className="text-left py-2 pr-3 font-medium">Submitter</th>
                 <th className="text-left py-2 pr-3 font-medium">Flags</th>
-                <th className="text-left py-2 font-medium">Priority</th>
+                <th className="text-left py-2 pr-3 font-medium">Priority</th>
+                <th className="text-right py-2 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {ops.queue.map((q) => (
-                <tr key={q.recommendation_id} className="border-b border-line/50 hover:bg-surface-3 transition-colors">
+              {filteredQueue.map((q) => (
+                <tr key={q.id || q.recommendation_id} className="border-b border-line/50 hover:bg-surface-3 transition-colors">
                   <td className="py-2 pr-3">
                     <span className="font-mono font-semibold text-ink">{q.ticker}</span>
                     <span className="text-ink-4 text-[10px] ml-1">{q.version} · {q.submitted_ago}</span>
@@ -87,7 +197,34 @@ export default function AdminPage() {
                       </span>
                     ))}
                   </td>
-                  <td className={`py-2 text-[11px] font-medium ${PRIORITY_STYLE[q.priority] || ""}`}>{q.priority}</td>
+                  <td className={`py-2 pr-3 text-[11px] font-medium ${PRIORITY_STYLE[q.priority] || ""}`}>{q.priority}</td>
+                  <td className="py-2 text-right">
+                    {q.id && (
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleQueueAction(q.id!, "approve")}
+                          disabled={actionLoading === q.id}
+                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-pos-soft text-pos-soft-ink hover:opacity-80 transition-opacity disabled:opacity-40"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleQueueAction(q.id!, "defer")}
+                          disabled={actionLoading === q.id}
+                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-caution-soft text-caution-soft-ink hover:opacity-80 transition-opacity disabled:opacity-40"
+                        >
+                          Defer
+                        </button>
+                        <button
+                          onClick={() => handleQueueAction(q.id!, "challenge")}
+                          disabled={actionLoading === q.id}
+                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-breach-soft text-breach-soft-ink hover:opacity-80 transition-opacity disabled:opacity-40"
+                        >
+                          Challenge
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -185,7 +322,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-[11px] text-ink-4">{inc.id}</span>
                   <span className={`text-[11px] ${SEVERITY_STYLE[inc.severity] || ""}`}>{inc.severity}</span>
-                  <StatusBadge status={inc.status === "investigating" ? "provisional" : inc.status === "monitoring" ? "staged" : "published"} />
+                  <StatusBadge status={inc.status === "investigating" ? "provisional" : inc.status === "monitoring" ? "staged" : inc.status === "open" ? "provisional" : "published"} />
                 </div>
                 <p className="text-[12.5px] text-ink font-medium">{inc.title}</p>
                 <p className="text-[11px] text-ink-3 mt-1">{inc.note}</p>
@@ -204,9 +341,24 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 mb-4">
             <Icon name="history" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Audit Trail</h3>
+            <div className="flex items-center gap-1 ml-4">
+              {AUDIT_SCOPES.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => handleAuditScope(s.key)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                    auditScope === s.key
+                      ? "bg-primary text-primary-ink"
+                      : "text-ink-3 hover:bg-surface-3"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-1.5">
-            {ops.audit.map((a, i) => (
+            {filteredAudit.map((a, i) => (
               <div key={i} className="flex items-center gap-2 text-[12px] py-1 border-b border-line/30">
                 <span className="text-ink-4 font-mono w-8 shrink-0">{a.when}</span>
                 <span className="text-ink font-medium">{a.actor}</span>

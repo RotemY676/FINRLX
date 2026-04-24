@@ -518,6 +518,7 @@ export async function fetchActivity(): Promise<ApiResponse<ActivityFeedData>> {
 // Ops Command Center types
 
 export interface OpsQueueItem {
+  id?: string;
   recommendation_id: string;
   ticker: string;
   stance: string;
@@ -528,6 +529,7 @@ export interface OpsQueueItem {
   confidence: number;
   flags: string[];
   priority: string;
+  status: string;
 }
 
 export interface OpsFeed {
@@ -575,6 +577,13 @@ export interface OpsAuditEntry {
   ok: boolean;
 }
 
+export interface OpsSystemKpi {
+  key: string;
+  value: string;
+  sub: string | null;
+  tone: string;
+}
+
 export interface OpsData {
   queue: OpsQueueItem[];
   feeds: OpsFeed[];
@@ -582,8 +591,46 @@ export interface OpsData {
   breaches: OpsBreach[];
   incidents: OpsIncident[];
   audit: OpsAuditEntry[];
+  system_kpis: OpsSystemKpi[];
+}
+
+export interface QueueActionResult {
+  id: string;
+  new_status: string;
+  message: string;
+}
+
+export interface WorkspaceCountsData {
+  overview: number;
+  decisions: number;
+  risk: number;
+  ops: number;
 }
 
 export async function fetchOps(): Promise<ApiResponse<OpsData>> {
   return apiFetch<OpsData>("/api/v1/ops");
+}
+
+export async function fetchOpsQueue(filter: string = "all"): Promise<ApiResponse<OpsQueueItem[]>> {
+  return apiFetch<OpsQueueItem[]>(`/api/v1/ops/queue?filter=${filter}`);
+}
+
+export async function fetchOpsAudit(scope: string = "all"): Promise<ApiResponse<OpsAuditEntry[]>> {
+  return apiFetch<OpsAuditEntry[]>(`/api/v1/ops/audit?scope=${scope}`);
+}
+
+export async function approveQueueItem(id: string): Promise<ApiResponse<QueueActionResult>> {
+  return apiFetch<QueueActionResult>(`/api/v1/ops/queue/${id}/approve`, { method: "POST" });
+}
+
+export async function deferQueueItem(id: string): Promise<ApiResponse<QueueActionResult>> {
+  return apiFetch<QueueActionResult>(`/api/v1/ops/queue/${id}/defer`, { method: "POST" });
+}
+
+export async function challengeQueueItem(id: string): Promise<ApiResponse<QueueActionResult>> {
+  return apiFetch<QueueActionResult>(`/api/v1/ops/queue/${id}/challenge`, { method: "POST" });
+}
+
+export async function fetchWorkspaceCounts(): Promise<ApiResponse<WorkspaceCountsData>> {
+  return apiFetch<WorkspaceCountsData>("/api/v1/workspace-counts");
 }

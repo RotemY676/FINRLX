@@ -2,6 +2,8 @@
 
 import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useScope } from "@/contexts/ScopeContext";
 
 const CRUMB_MAP: Record<string, string> = {
   "/": "Overview",
@@ -22,6 +24,8 @@ interface TopBarProps {
 export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
   const pathname = usePathname() ?? "/";
   const crumb = CRUMB_MAP[pathname] || "Workspace";
+  const { theme, toggleTheme } = useTheme();
+  const scope = useScope();
 
   return (
     <header className="h-11 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface text-[13px]">
@@ -52,19 +56,19 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Scope chips */}
+      {/* Scope chips — dynamic from ScopeContext */}
       <div className="hidden lg:flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-pos" />
-          Regime <b className="text-ink font-medium ml-0.5">Risk-on</b>
+          <span className={`w-1.5 h-1.5 rounded-full ${scope.regimeConfidence > 0.7 ? "bg-pos" : scope.regimeConfidence > 0.4 ? "bg-caution" : "bg-breach"}`} />
+          Regime <b className="text-ink font-medium ml-0.5">{scope.isLoading ? "..." : scope.regime}</b>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
           <Icon name="clock" size={11} />
-          Horizon <b className="text-ink font-medium ml-0.5">3M</b>
+          Horizon <b className="text-ink font-medium ml-0.5">{scope.horizon}</b>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
           <Icon name="universe" size={11} />
-          Universe <b className="text-ink font-medium ml-0.5">US-LargeCap</b>
+          Universe <b className="text-ink font-medium ml-0.5">{scope.universe}</b>
         </div>
       </div>
 
@@ -75,11 +79,22 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
         <span className="ml-auto px-1 py-0.5 rounded bg-surface-3 text-[10px] font-mono">⌘K</span>
       </div>
 
-      {/* Actions */}
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="p-1.5 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+      >
+        <Icon name={theme === "light" ? "moon" : "sun"} size={15} />
+      </button>
+
+      {/* Notifications */}
       <button className="p-1.5 rounded-md hover:bg-surface-3 text-ink-3 transition-colors relative" title="Notifications">
         <Icon name="bell" size={15} />
         <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-breach" />
       </button>
+
+      {/* Context pane toggle */}
       <button
         onClick={onToggleCtx}
         className="p-1.5 rounded-md hover:bg-surface-3 transition-colors"
@@ -88,6 +103,8 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
       >
         <Icon name="panel-right" size={15} className="text-ink-3" />
       </button>
+
+      {/* Avatar */}
       <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[11px] font-semibold">
         RM
       </div>

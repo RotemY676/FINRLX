@@ -13,4 +13,6 @@ from app.schemas.paper import PaperPortfolioDetail
 from app.schemas.engine import EngineSignal, EngineComparisonResponse, DisagreementSummary
 from app.schemas.evidence import EvidenceItem, EvidenceNarrativeResponse
 from app.schemas.regime import RegimeSnapshot, ActivityFeedResponse, ActivityEvent
-from app.schemas.ops import OpsCommandCenterResponse
+from app.schemas.ops import (
+    OpsCommandCenterResponse, OpsSystemKpi, QueueActionResponse, WorkspaceCounts,
+)

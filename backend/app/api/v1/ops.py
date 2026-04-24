@@ -1,10 +1,21 @@
-"""Ops Command Center endpoint.
+"""Ops Command Center endpoints.
 
-GET /api/v1/ops — full ops dashboard data
-Data matches design handoff: ops.jsx structures.
+GET  /api/v1/ops                    — full ops dashboard data (DB-backed)
+GET  /api/v1/ops/queue              — publication queue (filterable)
+GET  /api/v1/ops/feeds              — data feed status
+GET  /api/v1/ops/engines            — engine health (computed from signal_runs)
+GET  /api/v1/ops/breaches           — active policy breaches
+GET  /api/v1/ops/incidents          — open incidents
+GET  /api/v1/ops/audit              — audit trail (filterable by scope)
+POST /api/v1/ops/queue/{id}/approve — approve queue item
+POST /api/v1/ops/queue/{id}/defer   — defer queue item
+POST /api/v1/ops/queue/{id}/challenge — challenge queue item
+GET  /api/v1/workspace-counts       — badge counts for sidebar
 """
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,92 +23,294 @@ from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.ops import (
     OpsCommandCenterResponse, OpsQueueItem, OpsFeed, OpsEngine,
-    OpsBreach, OpsIncident, OpsAuditEntry,
+    OpsBreach, OpsIncident, OpsAuditEntry, OpsSystemKpi,
+    QueueActionResponse, WorkspaceCounts,
 )
-from app.models.ops import AuditEvent
+from app.models.ops import (
+    AuditEvent, Incident, DataFeed, PolicyBreach, PublicationQueueEntry,
+)
+from app.models.signal import SignalRun
 
 router = APIRouter()
 
-# Deterministic ops data matching design handoff ops.jsx
-_QUEUE = [
-    OpsQueueItem(recommendation_id="REC-NVDA-L", ticker="NVDA", stance="LONG", version="v4",
-                 submitted_ago="12m", submitter="R. Mikhailov", weight="+4.2%", confidence=0.74,
-                 flags=["sector cap"], priority="high"),
-    OpsQueueItem(recommendation_id="REC-XOM-S", ticker="XOM", stance="SHORT", version="v2",
-                 submitted_ago="22m", submitter="A. Chen", weight="−2.1%", confidence=0.68,
-                 flags=["breach: oil 12%/10%"], priority="high"),
-    OpsQueueItem(recommendation_id="REC-MSFT-T", ticker="MSFT", stance="TRIM", version="v3",
-                 submitted_ago="8m", submitter="J. Park", weight="−0.9%", confidence=0.62,
-                 flags=["Azure caveat"], priority="mid"),
-    OpsQueueItem(recommendation_id="REC-AAPL-L", ticker="AAPL", stance="LONG", version="v2",
-                 submitted_ago="84m", submitter="R. Mikhailov", weight="+1.8%", confidence=0.71,
-                 flags=["stale"], priority="mid"),
-]
 
-_FEEDS = [
-    OpsFeed(name="Reuters · news intel", status="ok", lag="0s", coverage="99.8%", slo=0.98),
-    OpsFeed(name="Bloomberg · price feed", status="ok", lag="12ms", coverage="100%", slo=0.99),
-    OpsFeed(name="Options flow · CBOE", status="degraded", lag="14m", coverage="72%", slo=0.86),
-    OpsFeed(name="Earnings · Factset", status="ok", lag="3s", coverage="99.4%", slo=0.97),
-    OpsFeed(name="Alt data · satellite", status="stale", lag="2.4h", coverage="41%", slo=0.64),
-    OpsFeed(name="Fundamentals · internal", status="ok", lag="0s", coverage="100%", slo=1.0),
-]
+# ── Helpers ──────────────────────────────────────────────────────────
 
-_ENGINES = [
-    OpsEngine(name="Momentum", latency="82ms", drift=-0.03, last_run="2m", status="ok"),
-    OpsEngine(name="Quality", latency="156ms", drift=0.01, last_run="2m", status="ok"),
-    OpsEngine(name="Earnings revisions", latency="94ms", drift=-0.02, last_run="3m", status="ok"),
-    OpsEngine(name="Value", latency="118ms", drift=0.08, last_run="2m", status="warn"),
-    OpsEngine(name="Flow/options", latency="284ms", drift=-0.14, last_run="14m", status="degraded"),
-]
+async def _query_queue(db: AsyncSession, filter_: str = "all") -> list[OpsQueueItem]:
+    stmt = select(PublicationQueueEntry).where(PublicationQueueEntry.status == "pending")
+    if filter_ == "high":
+        stmt = stmt.where(PublicationQueueEntry.priority == "high")
+    stmt = stmt.order_by(PublicationQueueEntry.created_at.desc())
+    rows = (await db.execute(stmt)).scalars().all()
+    return [
+        OpsQueueItem(
+            id=r.id, recommendation_id=r.recommendation_id, ticker=r.ticker,
+            stance=r.stance, version=r.version, submitted_ago=r.submitted_ago,
+            submitter=r.submitter, weight=r.weight, confidence=r.confidence,
+            flags=r.flags or [], priority=r.priority, status=r.status,
+        )
+        for r in rows
+    ]
 
-_BREACHES = [
-    OpsBreach(kind="sector", label="Semiconductors · 28.1% / 30%", utilization=0.937,
-              trend="+0.8%", severity="high", related="NVDA promotion would add ~0.6%"),
-    OpsBreach(kind="single", label="NVDA single-name · 4.2% / 5.0%", utilization=0.84,
-              trend="+0.3%", severity="mid", related="Reviewed by J. Park · 12m ago"),
-    OpsBreach(kind="oil", label="Energy net exposure · 12% / 10%", utilization=1.2,
-              trend="+1.9%", severity="breach", related="Hard breach · escalated"),
-]
 
-_INCIDENTS = [
-    OpsIncident(id="INC-003", title="Options flow feed — latency spike",
-                started="14m ago", severity="sev-2", owner="M. Alvarez", status="investigating",
-                affected_recs=11, note="Confidence capped for flow engine until recovery."),
-    OpsIncident(id="INC-002", title="Alt-data satellite refresh failed",
-                started="2h ago", severity="sev-3", owner="ops-bot", status="monitoring",
-                affected_recs=0, note="Vendor acknowledged; next refresh 16:00 UTC."),
-]
+async def _query_feeds(db: AsyncSession) -> list[OpsFeed]:
+    rows = (await db.execute(select(DataFeed).order_by(DataFeed.name))).scalars().all()
+    return [
+        OpsFeed(name=r.name, status=r.status, lag=r.lag, coverage=r.coverage, slo=r.slo)
+        for r in rows
+    ]
 
+
+async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
+    """Compute engine health from the latest SignalRun per engine."""
+    now = datetime.now(timezone.utc)
+    # Get the latest run per engine
+    subq = (
+        select(
+            SignalRun.engine_name,
+            func.max(SignalRun.run_completed_at).label("latest"),
+        )
+        .where(SignalRun.status == "completed")
+        .group_by(SignalRun.engine_name)
+        .subquery()
+    )
+    stmt = (
+        select(SignalRun)
+        .join(subq, (SignalRun.engine_name == subq.c.engine_name) & (SignalRun.run_completed_at == subq.c.latest))
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+
+    engines = []
+    for r in rows:
+        latency_ms = 0
+        if r.run_started_at and r.run_completed_at:
+            latency_ms = int((r.run_completed_at - r.run_started_at).total_seconds() * 1000)
+        mins_ago = int((now - r.run_completed_at.replace(tzinfo=timezone.utc)).total_seconds() / 60) if r.run_completed_at else 999
+
+        # Status based on staleness
+        if mins_ago > 10:
+            status = "degraded"
+        elif mins_ago > 5:
+            status = "warn"
+        else:
+            status = "ok"
+
+        engines.append(OpsEngine(
+            name=r.engine_name.replace("_", " ").title(),
+            latency=f"{latency_ms}ms",
+            drift=0.0,  # drift requires comparing two runs; stubbed at 0
+            last_run=f"{mins_ago}m",
+            status=status,
+        ))
+
+    return engines
+
+
+async def _query_breaches(db: AsyncSession) -> list[OpsBreach]:
+    rows = (await db.execute(
+        select(PolicyBreach).where(PolicyBreach.is_active == True).order_by(PolicyBreach.severity)  # noqa: E712
+    )).scalars().all()
+    return [
+        OpsBreach(
+            kind=r.kind, label=r.label, utilization=r.utilization,
+            trend=r.trend, severity=r.severity, related=r.related or "",
+        )
+        for r in rows
+    ]
+
+
+async def _query_incidents(db: AsyncSession) -> list[OpsIncident]:
+    rows = (await db.execute(
+        select(Incident).where(Incident.status != "resolved").order_by(Incident.created_at.desc())
+    )).scalars().all()
+    return [
+        OpsIncident(
+            id=r.id[:8], title=r.title, started="recent",
+            severity=f"sev-{r.severity}", owner=r.source or "unknown",
+            status=r.status, affected_recs=0, note=r.description or "",
+        )
+        for r in rows
+    ]
+
+
+async def _query_audit(db: AsyncSession, scope: str = "all") -> list[OpsAuditEntry]:
+    stmt = select(AuditEvent).order_by(AuditEvent.occurred_at.desc()).limit(20)
+    if scope != "all":
+        stmt = stmt.where(AuditEvent.object_type == scope)
+    rows = (await db.execute(stmt)).scalars().all()
+    return [
+        OpsAuditEntry(
+            when=(ev.details or {}).get("ago", "?"),
+            actor=ev.actor,
+            action=ev.action,
+            target=(ev.details or {}).get("description", ev.action),
+            scope=ev.object_type or "system",
+            ok=True,
+        )
+        for ev in rows
+    ]
+
+
+def _compute_kpis(
+    queue: list[OpsQueueItem], feeds: list[OpsFeed],
+    breaches: list[OpsBreach], incidents: list[OpsIncident],
+    engines: list[OpsEngine],
+) -> list[OpsSystemKpi]:
+    ok_feeds = sum(1 for f in feeds if f.status == "ok")
+    total_feeds = len(feeds)
+    feed_pct = f"{ok_feeds}/{total_feeds}" if total_feeds > 0 else "0/0"
+
+    ok_engines = sum(1 for e in engines if e.status == "ok")
+    total_engines = len(engines)
+
+    hard_breaches = sum(1 for b in breaches if b.severity == "breach")
+
+    return [
+        OpsSystemKpi(key="Queue depth", value=str(len(queue)), sub="pending items",
+                     tone="caution" if len(queue) > 5 else "neutral"),
+        OpsSystemKpi(key="Feed coverage", value=feed_pct, sub="feeds healthy",
+                     tone="pos" if ok_feeds == total_feeds else "caution"),
+        OpsSystemKpi(key="Engine health", value=f"{ok_engines}/{total_engines}", sub="engines ok",
+                     tone="pos" if ok_engines == total_engines else "caution"),
+        OpsSystemKpi(key="Policy breaches", value=str(hard_breaches), sub="hard breaches",
+                     tone="breach" if hard_breaches > 0 else "pos"),
+        OpsSystemKpi(key="Open incidents", value=str(len(incidents)), sub="unresolved",
+                     tone="caution" if len(incidents) > 0 else "pos"),
+        OpsSystemKpi(key="High priority", value=str(sum(1 for q in queue if q.priority == "high")),
+                     sub="queue items", tone="breach" if any(q.priority == "high" for q in queue) else "neutral"),
+    ]
+
+
+# ── Main endpoint ────────────────────────────────────────────────────
 
 @router.get("/ops", response_model=ApiResponse[OpsCommandCenterResponse])
 async def get_ops(db: AsyncSession = Depends(get_db)):
-    # Audit trail from real DB
-    events_result = await db.execute(
-        select(AuditEvent).order_by(AuditEvent.occurred_at.desc()).limit(10)
-    )
-    audit_events = events_result.scalars().all()
-
-    audit = []
-    for ev in audit_events:
-        details = ev.details or {}
-        audit.append(OpsAuditEntry(
-            when=details.get("ago", "?"),
-            actor=ev.actor,
-            action=ev.action,
-            target=details.get("description", ev.action),
-            scope=ev.object_type or "system",
-            ok=True,
-        ))
+    queue = await _query_queue(db)
+    feeds = await _query_feeds(db)
+    engines = await _query_engines(db)
+    breaches = await _query_breaches(db)
+    incidents = await _query_incidents(db)
+    audit = await _query_audit(db)
+    kpis = _compute_kpis(queue, feeds, breaches, incidents, engines)
 
     return ApiResponse(
         meta=make_meta(),
         data=OpsCommandCenterResponse(
-            queue=_QUEUE,
-            feeds=_FEEDS,
-            engines=_ENGINES,
-            breaches=_BREACHES,
-            incidents=_INCIDENTS,
-            audit=audit,
+            queue=queue, feeds=feeds, engines=engines,
+            breaches=breaches, incidents=incidents, audit=audit,
+            system_kpis=kpis,
+        ),
+    )
+
+
+# ── Sub-endpoints ────────────────────────────────────────────────────
+
+@router.get("/ops/queue", response_model=ApiResponse[list[OpsQueueItem]])
+async def get_ops_queue(
+    filter: str = Query("all", pattern="^(all|high|mine)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    return ApiResponse(meta=make_meta(), data=await _query_queue(db, filter))
+
+
+@router.get("/ops/feeds", response_model=ApiResponse[list[OpsFeed]])
+async def get_ops_feeds(db: AsyncSession = Depends(get_db)):
+    return ApiResponse(meta=make_meta(), data=await _query_feeds(db))
+
+
+@router.get("/ops/engines", response_model=ApiResponse[list[OpsEngine]])
+async def get_ops_engines(db: AsyncSession = Depends(get_db)):
+    return ApiResponse(meta=make_meta(), data=await _query_engines(db))
+
+
+@router.get("/ops/breaches", response_model=ApiResponse[list[OpsBreach]])
+async def get_ops_breaches(db: AsyncSession = Depends(get_db)):
+    return ApiResponse(meta=make_meta(), data=await _query_breaches(db))
+
+
+@router.get("/ops/incidents", response_model=ApiResponse[list[OpsIncident]])
+async def get_ops_incidents(db: AsyncSession = Depends(get_db)):
+    return ApiResponse(meta=make_meta(), data=await _query_incidents(db))
+
+
+@router.get("/ops/audit", response_model=ApiResponse[list[OpsAuditEntry]])
+async def get_ops_audit(
+    scope: str = Query("all", pattern="^(all|recommendation|policy|engine|system|breach|incident|backtest|note|defer|publish)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    return ApiResponse(meta=make_meta(), data=await _query_audit(db, scope))
+
+
+# ── Queue actions ────────────────────────────────────────────────────
+
+async def _queue_action(db: AsyncSession, item_id: str, new_status: str, action_label: str) -> QueueActionResponse:
+    result = await db.execute(select(PublicationQueueEntry).where(PublicationQueueEntry.id == item_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail=f"Queue item {item_id} not found")
+
+    item.status = new_status
+    db.add(AuditEvent(
+        actor="current_user",
+        action=action_label,
+        object_type="recommendation",
+        object_id=item.recommendation_id,
+        details={"description": f"{action_label} {item.ticker} {item.stance}", "ago": "now"},
+    ))
+    await db.commit()
+    return QueueActionResponse(id=item_id, new_status=new_status, message=f"{item.ticker} {new_status}")
+
+
+@router.post("/ops/queue/{item_id}/approve", response_model=ApiResponse[QueueActionResponse])
+async def approve_queue_item(item_id: str, db: AsyncSession = Depends(get_db)):
+    data = await _queue_action(db, item_id, "approved", "approve")
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.post("/ops/queue/{item_id}/defer", response_model=ApiResponse[QueueActionResponse])
+async def defer_queue_item(item_id: str, db: AsyncSession = Depends(get_db)):
+    data = await _queue_action(db, item_id, "deferred", "defer")
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.post("/ops/queue/{item_id}/challenge", response_model=ApiResponse[QueueActionResponse])
+async def challenge_queue_item(item_id: str, db: AsyncSession = Depends(get_db)):
+    data = await _queue_action(db, item_id, "challenged", "challenge")
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+# ── Workspace counts ─────────────────────────────────────────────────
+
+@router.get("/workspace-counts", response_model=ApiResponse[WorkspaceCounts])
+async def get_workspace_counts(db: AsyncSession = Depends(get_db)):
+    from app.models.recommendation import Recommendation
+
+    # Overview: pending (non-published) recommendations
+    overview_count = (await db.execute(
+        select(func.count()).select_from(PublicationQueueEntry).where(PublicationQueueEntry.status == "pending")
+    )).scalar() or 0
+
+    # Decisions: total active recommendations
+    decisions_count = (await db.execute(
+        select(func.count()).select_from(Recommendation)
+    )).scalar() or 0
+
+    # Risk: active policy breaches
+    risk_count = (await db.execute(
+        select(func.count()).select_from(PolicyBreach).where(PolicyBreach.is_active == True)  # noqa: E712
+    )).scalar() or 0
+
+    # Ops: open incidents
+    ops_count = (await db.execute(
+        select(func.count()).select_from(Incident).where(Incident.status != "resolved")
+    )).scalar() or 0
+
+    return ApiResponse(
+        meta=make_meta(),
+        data=WorkspaceCounts(
+            overview=overview_count,
+            decisions=decisions_count,
+            risk=risk_count,
+            ops=ops_count,
         ),
     )

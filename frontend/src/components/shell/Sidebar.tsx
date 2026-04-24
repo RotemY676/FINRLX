@@ -1,14 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icons/Icon";
+import { fetchWorkspaceCounts, WorkspaceCountsData } from "@/services/api";
 
 const WORKSPACES = [
-  { key: "overview", href: "/", label: "Overview", icon: "overview", badge: "4" },
-  { key: "decision", href: "/decision", label: "Decisions", icon: "decision", badge: "12" },
+  { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" as const },
+  { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" as const },
   { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
-  { key: "risk", href: "#", label: "Risk workspace", icon: "risk", badge: "2" },
+  { key: "risk", href: "#", label: "Risk workspace", icon: "risk", countKey: "risk" as const },
   { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay" },
   { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest" },
   { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper" },
@@ -17,7 +19,7 @@ const WORKSPACES = [
 ];
 
 const OPS = [
-  { key: "admin", href: "/admin", label: "Ops command", icon: "ops", badge: "1" },
+  { key: "admin", href: "/admin", label: "Ops command", icon: "ops", countKey: "ops" as const },
 ];
 
 const SAVED = [
@@ -33,9 +35,61 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname() ?? "/";
+  const [counts, setCounts] = useState<WorkspaceCountsData | null>(null);
+
+  useEffect(() => {
+    fetchWorkspaceCounts()
+      .then((res) => setCounts(res.data))
+      .catch(() => {});
+
+    // Refresh counts every 60s
+    const interval = setInterval(() => {
+      fetchWorkspaceCounts()
+        .then((res) => setCounts(res.data))
+        .catch(() => {});
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const getBadge = (countKey?: "overview" | "decisions" | "risk" | "ops") => {
+    if (!countKey || !counts) return undefined;
+    const val = counts[countKey];
+    return val > 0 ? String(val) : undefined;
+  };
+
+  const renderNavItem = (item: typeof WORKSPACES[number] | typeof OPS[number]) => {
+    const active = isActive(item.href);
+    const badge = getBadge((item as any).countKey);
+    return (
+      <Link
+        key={item.key}
+        href={item.href}
+        className={`flex items-center gap-2.5 px-3 py-1.5 mx-1.5 rounded-md text-[13px] transition-colors ${
+          active
+            ? "bg-primary-soft text-primary-soft-ink font-medium"
+            : "text-ink-2 hover:bg-surface-3"
+        }`}
+        title={collapsed ? item.label : undefined}
+      >
+        <Icon name={item.icon} size={16} className={active ? "text-primary" : "text-ink-3"} />
+        {!collapsed && (
+          <>
+            <span className="flex-1 truncate">{item.label}</span>
+            {badge && (
+              <span className={`text-[11px] font-mono min-w-[20px] text-center rounded-sm px-1 ${
+                active ? "text-primary" : "text-ink-4 bg-surface-2"
+              }`}>
+                {badge}
+              </span>
+            )}
+          </>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <aside
@@ -50,35 +104,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
             Workspaces
           </div>
         )}
-        {WORKSPACES.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-1.5 mx-1.5 rounded-md text-[13px] transition-colors ${
-                active
-                  ? "bg-primary-soft text-primary-soft-ink font-medium"
-                  : "text-ink-2 hover:bg-surface-3"
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon name={item.icon} size={16} className={active ? "text-primary" : "text-ink-3"} />
-              {!collapsed && (
-                <>
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {item.badge && (
-                    <span className={`text-[11px] font-mono min-w-[20px] text-center rounded-sm px-1 ${
-                      active ? "text-primary" : "text-ink-4 bg-surface-2"
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+        {WORKSPACES.map(renderNavItem)}
       </div>
 
       {/* Operations */}
@@ -88,33 +114,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
             Operations
           </div>
         )}
-        {OPS.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-1.5 mx-1.5 rounded-md text-[13px] transition-colors ${
-                active
-                  ? "bg-primary-soft text-primary-soft-ink font-medium"
-                  : "text-ink-2 hover:bg-surface-3"
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon name={item.icon} size={16} className={active ? "text-primary" : "text-ink-3"} />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge && (
-                    <span className="text-[11px] font-mono text-ink-4 bg-surface-2 px-1 rounded-sm">
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+        {OPS.map(renderNavItem)}
       </div>
 
       {/* Saved views */}
@@ -138,7 +138,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
       {/* Version */}
       {!collapsed && (
         <div className="px-3 py-2 border-t border-line">
-          <span className="text-[11px] text-ink-4">v0.2.0</span>
+          <span className="text-[11px] text-ink-4">v0.3.0</span>
         </div>
       )}
     </aside>

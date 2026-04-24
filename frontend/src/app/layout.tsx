@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/shell/AppShell";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ScopeProvider } from "@/contexts/ScopeContext";
 
 export const metadata: Metadata = {
   title: "FINRLX",
@@ -13,9 +15,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("finrlx-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
-        <AppShell>{children}</AppShell>
+        <ThemeProvider>
+          <ScopeProvider>
+            <AppShell>{children}</AppShell>
+          </ScopeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

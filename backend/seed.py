@@ -18,6 +18,7 @@ from app.models import (
     SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
     BacktestExperiment, PaperPortfolio, ReplaySnapshot,
     SignalRun, SignalOutput, AuditEvent,
+    DataFeed, PolicyBreach, PublicationQueueEntry, Incident,
 )
 
 random.seed(42)
@@ -136,6 +137,62 @@ ACTIVITY_EVENTS = [
     {"kind": "incident", "actor": "Ops", "what": "reuters feed recovered", "ago": "3h", "detail": "Backfilled 09:14 → 09:27 · re-scored 11 recs"},
     {"kind": "backtest", "actor": "M. Alvarez", "what": "backtest #204 complete", "ago": "3h", "detail": "Momentum + quality · 5y IR 1.32"},
     {"kind": "publish", "actor": "R. Mikhailov", "what": "published REC-AAPL-L v2", "ago": "4h", "detail": "Services + buyback"},
+]
+
+
+# ── Ops: Data Feeds matching design handoff (ops.jsx FEEDS) ──
+OPS_FEEDS = [
+    {"name": "Reuters · news intel", "status": "ok", "lag": "0s", "coverage": "99.8%", "slo": 0.98},
+    {"name": "Bloomberg · price feed", "status": "ok", "lag": "12ms", "coverage": "100%", "slo": 0.99},
+    {"name": "Options flow · CBOE", "status": "degraded", "lag": "14m", "coverage": "72%", "slo": 0.86},
+    {"name": "Earnings · Factset", "status": "ok", "lag": "3s", "coverage": "99.4%", "slo": 0.97},
+    {"name": "Alt data · satellite", "status": "stale", "lag": "2.4h", "coverage": "41%", "slo": 0.64},
+    {"name": "Fundamentals · internal", "status": "ok", "lag": "0s", "coverage": "100%", "slo": 1.0},
+]
+
+# ── Ops: Policy Breaches matching design handoff (ops.jsx BREACHES) ──
+OPS_BREACHES = [
+    {"kind": "sector", "label": "Semiconductors · 28.1% / 30%", "utilization": 0.937,
+     "trend": "+0.8%", "severity": "high", "related": "NVDA promotion would add ~0.6%"},
+    {"kind": "single", "label": "NVDA single-name · 4.2% / 5.0%", "utilization": 0.84,
+     "trend": "+0.3%", "severity": "mid", "related": "Reviewed by J. Park · 12m ago"},
+    {"kind": "oil", "label": "Energy net exposure · 12% / 10%", "utilization": 1.2,
+     "trend": "+1.9%", "severity": "breach", "related": "Hard breach · escalated"},
+]
+
+# ── Ops: Publication Queue matching design handoff (ops.jsx QUEUE) ──
+OPS_QUEUE = [
+    {"recommendation_id": "REC-NVDA-L", "ticker": "NVDA", "stance": "LONG", "version": "v4",
+     "submitted_ago": "12m", "submitter": "R. Mikhailov", "weight": "+4.2%", "confidence": 0.74,
+     "flags": ["sector cap"], "priority": "high"},
+    {"recommendation_id": "REC-XOM-S", "ticker": "XOM", "stance": "SHORT", "version": "v2",
+     "submitted_ago": "22m", "submitter": "A. Chen", "weight": "−2.1%", "confidence": 0.68,
+     "flags": ["breach: oil 12%/10%"], "priority": "high"},
+    {"recommendation_id": "REC-MSFT-T", "ticker": "MSFT", "stance": "TRIM", "version": "v3",
+     "submitted_ago": "8m", "submitter": "J. Park", "weight": "−0.9%", "confidence": 0.62,
+     "flags": ["Azure caveat"], "priority": "mid"},
+    {"recommendation_id": "REC-AAPL-L", "ticker": "AAPL", "stance": "LONG", "version": "v2",
+     "submitted_ago": "84m", "submitter": "R. Mikhailov", "weight": "+1.8%", "confidence": 0.71,
+     "flags": ["stale"], "priority": "mid"},
+    {"recommendation_id": "REC-GOOGL-L", "ticker": "GOOGL", "stance": "LONG", "version": "v1",
+     "submitted_ago": "95m", "submitter": "A. Chen", "weight": "+2.5%", "confidence": 0.66,
+     "flags": [], "priority": "low"},
+    {"recommendation_id": "REC-JPM-H", "ticker": "JPM", "stance": "HOLD", "version": "v3",
+     "submitted_ago": "2h", "submitter": "J. Park", "weight": "+0.1%", "confidence": 0.59,
+     "flags": ["rate sensitivity"], "priority": "low"},
+    {"recommendation_id": "REC-V-L", "ticker": "V", "stance": "LONG", "version": "v1",
+     "submitted_ago": "3h", "submitter": "R. Mikhailov", "weight": "+1.2%", "confidence": 0.63,
+     "flags": [], "priority": "low"},
+]
+
+# ── Ops: Incidents matching design handoff (ops.jsx INCIDENTS) ──
+OPS_INCIDENTS = [
+    {"inc_id": "INC-003", "severity": 2, "title": "Options flow feed — latency spike",
+     "description": "Confidence capped for flow engine until recovery.",
+     "status": "open", "source": "M. Alvarez", "started_ago": "14m", "affected_recs": 11},
+    {"inc_id": "INC-002", "severity": 3, "title": "Alt-data satellite refresh failed",
+     "description": "Vendor acknowledged; next refresh 16:00 UTC.",
+     "status": "acknowledged", "source": "ops-bot", "started_ago": "2h", "affected_recs": 0},
 ]
 
 
@@ -310,12 +367,35 @@ async def seed():
                 occurred_at=now - td,
             ))
 
+        # ── Ops: Data Feeds ──
+        for f in OPS_FEEDS:
+            db.add(DataFeed(id=uid(), **f, last_checked_at=now))
+
+        # ── Ops: Policy Breaches ──
+        for b in OPS_BREACHES:
+            db.add(PolicyBreach(id=uid(), **b, is_active=True))
+
+        # ── Ops: Publication Queue ──
+        for q in OPS_QUEUE:
+            db.add(PublicationQueueEntry(id=uid(), **q, status="pending"))
+
+        # ── Ops: Incidents ──
+        for inc in OPS_INCIDENTS:
+            td = _ago_to_timedelta(inc["started_ago"])
+            db.add(Incident(
+                id=uid(), severity=inc["severity"], title=inc["title"],
+                description=inc["description"], status=inc["status"],
+                source=inc["source"],
+            ))
+
         await db.commit()
         print(
             f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
             f"{len(ENGINE_DEFS)} engines × 5 assets = {len(ENGINE_DEFS)*5} signal outputs, "
             f"{len(EVIDENCE_ITEMS)} evidence items, {len(ACTIVITY_EVENTS)} audit events, "
-            f"5 replay snapshots, 1 backtest, 1 paper portfolio"
+            f"5 replay snapshots, 1 backtest, 1 paper portfolio, "
+            f"{len(OPS_FEEDS)} data feeds, {len(OPS_BREACHES)} breaches, "
+            f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents"
         )
 
 

@@ -13,6 +13,8 @@ from app.models import (
     Asset, Universe, UniverseMembership,
     Recommendation, RecommendationWeight,
     SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
+    AuditEvent, DataFeed, PolicyBreach, PublicationQueueEntry, Incident,
+    SignalRun, SignalOutput,
 )
 
 TEST_DB_URL = "sqlite+aiosqlite://"  # in-memory
@@ -102,6 +104,27 @@ async def setup_db():
             adjustments=[], constraints_applied=["test_constraint"],
             rationale="No adjustments needed.",
         ))
+
+        # Ops seed data
+        db.add(DataFeed(id=uid(), name="Reuters · news intel", status="ok", lag="0s", coverage="99.8%", slo=0.98, last_checked_at=now))
+        db.add(DataFeed(id=uid(), name="Options flow · CBOE", status="degraded", lag="14m", coverage="72%", slo=0.86, last_checked_at=now))
+
+        db.add(PolicyBreach(id=uid(), kind="sector", label="Semis 28.1%/30%", utilization=0.937, trend="+0.8%", severity="high", related="NVDA", is_active=True))
+        db.add(PolicyBreach(id=uid(), kind="oil", label="Energy 12%/10%", utilization=1.2, trend="+1.9%", severity="breach", related="Escalated", is_active=True))
+
+        queue_id_1 = uid()
+        db.add(PublicationQueueEntry(id=queue_id_1, recommendation_id="REC-NVDA-L", ticker="NVDA", stance="LONG", version="v4", submitted_ago="12m", submitter="R. Mikhailov", weight="+4.2%", confidence=0.74, flags=["sector cap"], priority="high", status="pending"))
+        db.add(PublicationQueueEntry(id=uid(), recommendation_id="REC-XOM-S", ticker="XOM", stance="SHORT", version="v2", submitted_ago="22m", submitter="A. Chen", weight="-2.1%", confidence=0.68, flags=[], priority="mid", status="pending"))
+
+        db.add(Incident(id=uid(), severity=2, title="Options flow feed latency spike", description="Confidence capped.", status="open", source="M. Alvarez"))
+
+        db.add(AuditEvent(id=uid(), actor="R. Mikhailov", action="publish", object_type="recommendation", details={"description": "published rec v4", "ago": "12m"}, occurred_at=now - timedelta(minutes=12)))
+        db.add(AuditEvent(id=uid(), actor="system", action="breach", object_type="breach", details={"description": "sector limit approaching", "ago": "38m"}, occurred_at=now - timedelta(minutes=38)))
+
+        # Signal run for engine health
+        run_id = uid()
+        db.add(SignalRun(id=run_id, engine_name="momentum", engine_version="v3.2", run_started_at=now - timedelta(minutes=3), run_completed_at=now - timedelta(minutes=2), status="completed", data_as_of=now - timedelta(minutes=2)))
+        db.add(SignalOutput(id=uid(), signal_run_id=run_id, asset_id=asset_ids["AAPL"], score=0.7, stance="buy", confidence=0.82, rationale="Test", artifacts={}))
 
         await db.commit()
 
