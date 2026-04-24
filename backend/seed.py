@@ -473,6 +473,22 @@ async def seed():
             total_signals = sum(r["signal_count"] for r in results)
             engine_msg = f"{successful} engines ran, {total_signals} signals produced"
 
+    # ── Pipeline run (needs committed engine signals) ──
+    async with async_session_factory() as db:
+        from app.services.pipeline import DecisionPipelineService
+        pipe_svc = DecisionPipelineService(db)
+
+        # Check if pipeline-generated recommendation already exists
+        existing_pipe = await pipe_svc.get_latest_pipeline_recommendation()
+        if existing_pipe:
+            pipeline_msg = f"Pipeline recommendation already exists ({existing_pipe.id[:8]}…). Skipping."
+        else:
+            result = await pipe_svc.run_pipeline()
+            if result["status"] == "completed":
+                pipeline_msg = f"Pipeline: {result['message']}"
+            else:
+                pipeline_msg = f"Pipeline: {result['status']} — {result['message']}"
+
     print(
         f"Seeded: {len(ASSETS)} assets, 1 universe, 1 recommendation, "
         f"{len(ENGINE_DEFS)} engines × 5 assets = {len(ENGINE_DEFS)*5} signal outputs, "
@@ -482,7 +498,7 @@ async def seed():
         f"{len(OPS_QUEUE)} queue entries, {len(OPS_INCIDENTS)} incidents, "
         f"{total_bars} market bars (90d × {len(asset_ids)} assets), "
         f"{len(news_events)} news events (30d), 2 ingestion manifests, "
-        f"{feature_msg}, {engine_msg}"
+        f"{feature_msg}, {engine_msg}, {pipeline_msg}"
     )
 
 

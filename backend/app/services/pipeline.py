@@ -1,0 +1,554 @@
+"""Decision pipeline service.
+
+Phase 4D: Selection → Allocation → Timing → Risk Overlay → Recommendation.
+Reads persisted signal_outputs and writes pipeline stage records + recommendation.
+
+Doc 10 Section 8 steps 5-9:
+  5. Execute selection policy
+  6. Execute allocation policy
+  7. Execute timing policy
+  8. Execute risk overlay
+  9. Publish (deferred to Phase 4E — recommendation created as 'draft')
+"""
+from datetime import datetime, timezone, timedelta
+
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.signal import SignalRun, SignalOutput
+from app.models.decision_pipeline import SelectionRun, AllocationResult, TimingResult, RiskOverlayResult
+from app.models.recommendation import Recommendation, RecommendationWeight
+from app.models.reference import Asset, Universe, UniverseMembership
+from app.models.feature import FeatureSet
+from app.models.ops import AuditEvent
+from app.models.base import gen_uuid
+from app.services.engines import EngineService
+
+
+# ── Policy constants ──────────────────────────────────────────────────
+
+MAX_POSITION_WEIGHT = 0.15  # 15% cap per asset
+MIN_POSITION_WEIGHT = 0.02  # 2% floor for selected assets
+MAX_INVESTED = 0.95         # 95% max invested
+CASH_RESERVE = 0.05         # 5% cash floor
+SELECTION_THRESHOLD = -0.50 # include assets with aggregate score above this (generous)
+CONFIDENCE_FLOOR = 0.20     # trim assets below this confidence
+HIGH_RISK_TRIM = 0.70       # reduce weight by 30% for high-risk assets
+
+
+class DecisionPipelineService:
+    """Orchestrates the full decision pipeline from signals to recommendation."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def _get_universe(self, universe_id: str | None) -> tuple[str, list[tuple[str, str]]]:
+        """Return (universe_id, [(asset_id, ticker)]) — use first universe if none specified."""
+        if not universe_id:
+            uni = (await self.db.execute(select(Universe.id).limit(1))).scalar()
+            universe_id = uni
+        if not universe_id:
+            return None, []
+        rows = (await self.db.execute(
+            select(Asset.id, Asset.ticker)
+            .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
+            .where(UniverseMembership.universe_id == universe_id)
+        )).all()
+        return universe_id, [(r.id, r.ticker) for r in rows]
+
+    async def _get_registered_signals(self, signal_run_ids: list[str] | None = None, feature_set_id: str | None = None) -> tuple[list[SignalOutput], list[str], str | None]:
+        """Get signals from engine runs. Returns (outputs, run_ids, feature_set_id).
+
+        If feature_set_id is provided, uses runs linked to that specific feature set.
+        Otherwise, finds the best feature set that has registered engine runs.
+        """
+        eng_svc = EngineService(self.db)
+        registered_keys = await eng_svc._get_registered_keys()
+
+        # If specific feature_set_id is provided, use it directly
+        if feature_set_id:
+            runs = (await self.db.execute(
+                select(SignalRun)
+                .where(SignalRun.feature_set_id == feature_set_id)
+                .where(SignalRun.status == "completed")
+                .where(SignalRun.engine_name.in_(registered_keys))
+            )).scalars().all()
+            if runs:
+                run_ids = [r.id for r in runs]
+                outputs = list((await self.db.execute(
+                    select(SignalOutput).where(SignalOutput.signal_run_id.in_(run_ids))
+                )).scalars().all())
+                if outputs:
+                    return outputs, run_ids, feature_set_id
+
+        # Find a feature set that has registered engine runs linked to it.
+        # Prefer the most recent as_of, but require actual signal coverage.
+        fs_candidates = (await self.db.execute(
+            select(FeatureSet)
+            .where(FeatureSet.status.in_(["completed", "partial"]))
+            .order_by(FeatureSet.as_of.desc(), FeatureSet.created_at.desc())
+            .limit(20)
+        )).scalars().all()
+
+        for fs in fs_candidates:
+            runs = (await self.db.execute(
+                select(SignalRun)
+                .where(SignalRun.feature_set_id == fs.id)
+                .where(SignalRun.status == "completed")
+                .where(SignalRun.engine_name.in_(registered_keys))
+            )).scalars().all()
+            if runs:
+                run_ids = [r.id for r in runs]
+                outputs = list((await self.db.execute(
+                    select(SignalOutput).where(SignalOutput.signal_run_id.in_(run_ids))
+                )).scalars().all())
+                if outputs:
+                    return outputs, run_ids, fs.id
+
+        # No feature set has engine runs — return empty
+        return [], [], None
+
+    def _aggregate_asset_signals(self, outputs: list[SignalOutput]) -> dict[str, dict]:
+        """Group signals by asset_id and compute aggregate score/stance/confidence."""
+        by_asset: dict[str, list[SignalOutput]] = {}
+        for o in outputs:
+            by_asset.setdefault(o.asset_id, []).append(o)
+
+        result = {}
+        for asset_id, signals in by_asset.items():
+            # Stance scoring: buy=+1, hold=0, trim=-0.5, sell=-1
+            stance_map = {"buy": 1.0, "hold": 0.0, "trim": -0.5, "sell": -1.0}
+            weighted_score = 0.0
+            total_conf = 0.0
+            drivers = []
+            caveats = []
+            ticker = "?"
+
+            for s in signals:
+                arts = s.artifacts or {}
+                ticker = arts.get("ticker", ticker)
+                conf = s.confidence or 0.0
+                raw_score = s.score or 0.0
+                stance_val = stance_map.get(s.stance or "hold", 0.0)
+
+                # Combine raw score with stance direction, weighted by confidence
+                combined = (raw_score * 0.6 + stance_val * 0.4) * max(conf, 0.1)
+                weighted_score += combined
+                total_conf += conf
+                drivers.extend(arts.get("drivers", []))
+                caveats.extend(arts.get("caveats", []))
+
+            n = len(signals)
+            avg_score = weighted_score / n if n > 0 else 0.0
+            avg_conf = total_conf / n if n > 0 else 0.0
+
+            # Determine aggregate stance
+            if avg_score >= 0.15:
+                agg_stance = "overweight"
+            elif avg_score >= 0.0:
+                agg_stance = "neutral"
+            elif avg_score >= -0.15:
+                agg_stance = "underweight"
+            else:
+                agg_stance = "exit"
+
+            # Risk level from caveats
+            risk_level = "High" if len(caveats) > 2 else "Elevated" if caveats else "Moderate"
+
+            result[asset_id] = {
+                "ticker": ticker,
+                "score": round(avg_score, 4),
+                "confidence": round(avg_conf, 3),
+                "stance": agg_stance,
+                "n_engines": n,
+                "risk_level": risk_level,
+                "drivers": list(dict.fromkeys(drivers))[:5],
+                "caveats": list(dict.fromkeys(caveats))[:3],
+            }
+
+        return result
+
+    # ── Stage: Selection ──────────────────────────────────────────────
+
+    async def run_selection(
+        self, rec_id: str, universe_id: str, asset_signals: dict[str, dict],
+        universe_assets: list[tuple[str, str]],
+    ) -> SelectionRun:
+        """Select candidate assets above threshold from engine signals."""
+        included = []
+        excluded = []
+        all_asset_ids = {aid for aid, _ in universe_assets}
+
+        for asset_id, ticker in universe_assets:
+            sig = asset_signals.get(asset_id)
+            if not sig:
+                excluded.append({"asset_id": asset_id, "ticker": ticker, "reason": "No engine signal coverage"})
+                continue
+            if sig["score"] >= SELECTION_THRESHOLD:
+                included.append({
+                    "asset_id": asset_id, "ticker": ticker,
+                    "reason": f"Score {sig['score']:.3f} ({sig['stance']}, {sig['n_engines']} engines, conf {sig['confidence']:.2f})",
+                })
+            else:
+                excluded.append({
+                    "asset_id": asset_id, "ticker": ticker,
+                    "reason": f"Score {sig['score']:.3f} below threshold {SELECTION_THRESHOLD}",
+                })
+
+        sel = SelectionRun(
+            id=gen_uuid(), recommendation_id=rec_id, universe_id=universe_id,
+            included_assets=included, excluded_assets=excluded,
+            rationale=f"Selected {len(included)} of {len(universe_assets)} assets (threshold {SELECTION_THRESHOLD})",
+        )
+        self.db.add(sel)
+        return sel
+
+    # ── Stage: Allocation ─────────────────────────────────────────────
+
+    async def run_allocation(
+        self, rec_id: str, sel: SelectionRun, asset_signals: dict[str, dict],
+    ) -> AllocationResult:
+        """Convert selected assets into normalized target weights."""
+        included = sel.included_assets or []
+        if not included:
+            alloc = AllocationResult(
+                id=gen_uuid(), recommendation_id=rec_id, selection_run_id=sel.id,
+                weights={}, method="score-weighted", rationale="No assets selected",
+            )
+            self.db.add(alloc)
+            return alloc
+
+        # Compute raw weights from positive scores
+        raw = {}
+        for entry in included:
+            aid = entry["asset_id"]
+            sig = asset_signals.get(aid, {})
+            score = max(sig.get("score", 0), 0.001)  # floor at tiny positive
+            raw[aid] = score
+
+        total_raw = sum(raw.values())
+        if total_raw <= 0:
+            total_raw = 1.0
+
+        # Normalize to MAX_INVESTED, enforce caps
+        weights = {}
+        for aid, score in raw.items():
+            w = (score / total_raw) * MAX_INVESTED
+            w = min(w, MAX_POSITION_WEIGHT)
+            w = max(w, MIN_POSITION_WEIGHT)
+            weights[aid] = round(w, 4)
+
+        # Re-normalize if sum exceeds MAX_INVESTED
+        total = sum(weights.values())
+        if total > MAX_INVESTED:
+            scale = MAX_INVESTED / total
+            weights = {aid: round(w * scale, 4) for aid, w in weights.items()}
+
+        alloc = AllocationResult(
+            id=gen_uuid(), recommendation_id=rec_id, selection_run_id=sel.id,
+            weights=weights, method="score-weighted",
+            rationale=f"Allocated {len(weights)} positions, total invested {sum(weights.values()):.1%}, cash {1-sum(weights.values()):.1%}",
+        )
+        self.db.add(alloc)
+        return alloc
+
+    # ── Stage: Timing ─────────────────────────────────────────────────
+
+    async def run_timing(
+        self, rec_id: str, alloc: AllocationResult, asset_signals: dict[str, dict],
+    ) -> TimingResult:
+        """Classify timing urgency per asset based on signal confidence and risk."""
+        weights = alloc.weights or {}
+        entry_signals = {}
+        exit_signals = {}
+        urgency_votes = []
+
+        for aid, w in weights.items():
+            sig = asset_signals.get(aid, {})
+            conf = sig.get("confidence", 0.5)
+            risk = sig.get("risk_level", "Moderate")
+            stance = sig.get("stance", "neutral")
+
+            if conf >= 0.6 and risk in ("Low", "Moderate") and stance == "overweight":
+                entry_signals[aid] = "enter_now"
+                urgency_votes.append("soon")
+            elif conf >= 0.4:
+                entry_signals[aid] = "stage_in"
+                urgency_votes.append("soon")
+            else:
+                entry_signals[aid] = "defer"
+                urgency_votes.append("wait")
+
+            if stance == "exit":
+                exit_signals[aid] = "reduce"
+
+        # Overall urgency
+        if urgency_votes.count("soon") > len(urgency_votes) / 2:
+            urgency = "soon"
+        else:
+            urgency = "wait"
+
+        timing = TimingResult(
+            id=gen_uuid(), recommendation_id=rec_id,
+            urgency=urgency, horizon_days=90,
+            entry_signals=entry_signals, exit_signals=exit_signals,
+            rationale=f"Timing: {urgency}, {len(entry_signals)} entries, {len(exit_signals)} exits",
+        )
+        self.db.add(timing)
+        return timing
+
+    # ── Stage: Risk Overlay ───────────────────────────────────────────
+
+    async def run_risk_overlay(
+        self, rec_id: str, alloc: AllocationResult, asset_signals: dict[str, dict],
+    ) -> RiskOverlayResult:
+        """Enforce portfolio-level risk controls on allocation weights."""
+        pre_weights = dict(alloc.weights or {})
+        post_weights = dict(pre_weights)
+        adjustments = []
+        constraints = ["max_position_15pct", "confidence_floor_20pct", "high_risk_trim_30pct", "cash_reserve_5pct"]
+
+        for aid, w in list(post_weights.items()):
+            sig = asset_signals.get(aid, {})
+            ticker = sig.get("ticker", "?")
+            conf = sig.get("confidence", 0.5)
+            risk = sig.get("risk_level", "Moderate")
+
+            # Max position cap
+            if w > MAX_POSITION_WEIGHT:
+                new_w = MAX_POSITION_WEIGHT
+                adjustments.append({"asset_id": aid, "ticker": ticker,
+                    "reason": f"Capped at {MAX_POSITION_WEIGHT:.0%}", "delta": round(new_w - w, 4)})
+                post_weights[aid] = new_w
+
+            # Confidence floor
+            if conf < CONFIDENCE_FLOOR:
+                new_w = post_weights[aid] * 0.5
+                adjustments.append({"asset_id": aid, "ticker": ticker,
+                    "reason": f"Low confidence {conf:.2f} < {CONFIDENCE_FLOOR}", "delta": round(new_w - post_weights[aid], 4)})
+                post_weights[aid] = round(new_w, 4)
+
+            # High-risk trim
+            if risk in ("High", "Elevated"):
+                trim_factor = HIGH_RISK_TRIM
+                new_w = post_weights[aid] * trim_factor
+                adjustments.append({"asset_id": aid, "ticker": ticker,
+                    "reason": f"Risk={risk}, trimmed to {trim_factor:.0%}", "delta": round(new_w - post_weights[aid], 4)})
+                post_weights[aid] = round(new_w, 4)
+
+        # Ensure total <= MAX_INVESTED
+        total = sum(post_weights.values())
+        if total > MAX_INVESTED:
+            scale = MAX_INVESTED / total
+            post_weights = {aid: round(w * scale, 4) for aid, w in post_weights.items()}
+
+        # Portfolio risk score: avg of individual risk levels
+        risk_scores = {"Low": 0.2, "Moderate": 0.4, "Elevated": 0.6, "High": 0.8}
+        risk_vals = [risk_scores.get(asset_signals.get(aid, {}).get("risk_level", "Moderate"), 0.4)
+                     for aid in post_weights]
+        portfolio_risk = round(sum(risk_vals) / max(len(risk_vals), 1), 3)
+
+        overlay = RiskOverlayResult(
+            id=gen_uuid(), recommendation_id=rec_id,
+            pre_risk_weights=pre_weights, post_risk_weights=post_weights,
+            adjustments=adjustments, constraints_applied=constraints,
+            portfolio_risk_score=portfolio_risk,
+            rationale=f"Risk overlay: {len(adjustments)} adjustments, portfolio risk {portfolio_risk:.2f}",
+        )
+        self.db.add(overlay)
+        return overlay
+
+    # ── Generate Recommendation ───────────────────────────────────────
+
+    async def generate_recommendation(
+        self, rec_id: str, universe_id: str,
+        overlay: RiskOverlayResult, asset_signals: dict[str, dict],
+        feature_set_id: str | None, signal_run_ids: list[str] | None,
+        warnings: list[str],
+    ) -> Recommendation:
+        """Create the final recommendation with weights and confidence triplet."""
+        now = datetime.now(timezone.utc)
+        final_weights = overlay.post_risk_weights or {}
+
+        # Confidence triplet
+        confidences = [asset_signals.get(aid, {}).get("confidence", 0.5) for aid in final_weights]
+        model_conf = round(sum(confidences) / max(len(confidences), 1), 3)
+        data_conf = 0.90  # will be refined when feature freshness is checked
+        operational_conf = 0.95 if not warnings else max(0.5, 0.95 - len(warnings) * 0.05)
+
+        # Rationale
+        n_positions = len([w for w in final_weights.values() if w > 0.005])
+        total_invested = sum(final_weights.values())
+        rationale = (
+            f"Pipeline-generated recommendation with {n_positions} positions, "
+            f"total invested {total_invested:.1%}. "
+            f"Based on {len(signal_run_ids or [])} engine runs."
+        )
+        if warnings:
+            rationale += f" Warnings: {'; '.join(warnings[:3])}"
+
+        # Get existing recommendation to compute deltas
+        prev = (await self.db.execute(
+            select(Recommendation).order_by(Recommendation.created_at.desc()).limit(1)
+        )).scalar_one_or_none()
+
+        prev_weights_map = {}
+        if prev and prev.id != rec_id:
+            prev_wt_rows = (await self.db.execute(
+                select(RecommendationWeight).where(RecommendationWeight.recommendation_id == prev.id)
+            )).scalars().all()
+            prev_weights_map = {w.asset_id: w.target_weight for w in prev_wt_rows}
+
+        rec = (await self.db.execute(
+            select(Recommendation).where(Recommendation.id == rec_id)
+        )).scalar_one_or_none()
+        if rec:
+            rec.status = "draft"
+            rec.model_confidence = model_conf
+            rec.data_confidence = data_conf
+            rec.operational_confidence = operational_conf
+            rec.valid_from = now
+            rec.valid_to = now + timedelta(days=90)
+            rec.rationale_summary = rationale
+            rec.warnings = warnings if warnings else []
+            rec.data_as_of = now
+            rec.source_feature_set_id = feature_set_id
+            rec.source_signal_run_ids = signal_run_ids
+
+        # Create weight rows
+        for aid, w in final_weights.items():
+            if w < 0.001:
+                continue
+            sig = asset_signals.get(aid, {})
+            prev_w = prev_weights_map.get(aid, 0.0)
+            delta = round(w - prev_w, 4)
+            stance = sig.get("stance", "neutral")
+
+            self.db.add(RecommendationWeight(
+                id=gen_uuid(), recommendation_id=rec_id, asset_id=aid,
+                target_weight=w, previous_weight=prev_w, delta=delta,
+                stance=stance,
+                rationale="; ".join(sig.get("drivers", [])[:2]) if sig.get("drivers") else None,
+            ))
+
+        return rec
+
+    # ── Full Pipeline ─────────────────────────────────────────────────
+
+    async def run_pipeline(
+        self,
+        signal_run_ids: list[str] | None = None,
+        universe_id: str | None = None,
+        feature_set_id: str | None = None,
+    ) -> dict:
+        """Run the complete decision pipeline: Selection → Allocation → Timing → Risk → Recommendation."""
+        warnings = []
+        stages = []
+
+        # 1. Get signals
+        outputs, run_ids, fs_id = await self._get_registered_signals(signal_run_ids, feature_set_id)
+        if not outputs:
+            return {
+                "recommendation_id": None, "status": "failed",
+                "stages": [{"stage": "signals", "status": "failed", "record_id": None, "message": "No registered engine signals available"}],
+                "warnings": ["No engine signals. Run /api/v1/engines/run first."],
+                "feature_set_id": None, "signal_run_ids": [],
+                "message": "Pipeline failed: no engine signals available",
+            }
+
+        # 2. Get universe
+        universe_id, universe_assets = await self._get_universe(universe_id)
+        if not universe_assets:
+            return {
+                "recommendation_id": None, "status": "failed",
+                "stages": [{"stage": "universe", "status": "failed", "record_id": None, "message": "No assets in universe"}],
+                "warnings": ["No universe/assets found."],
+                "feature_set_id": fs_id, "signal_run_ids": run_ids,
+                "message": "Pipeline failed: no assets in universe",
+            }
+
+        # 3. Aggregate signals
+        asset_signals = self._aggregate_asset_signals(outputs)
+
+        # Create recommendation record first (stages reference it)
+        rec_id = gen_uuid()
+        now = datetime.now(timezone.utc)
+        rec = Recommendation(
+            id=rec_id, universe_id=universe_id, status="draft",
+            source_feature_set_id=fs_id, source_signal_run_ids=run_ids,
+        )
+        self.db.add(rec)
+
+        # 4. Selection
+        sel = await self.run_selection(rec_id, universe_id, asset_signals, universe_assets)
+        n_selected = len(sel.included_assets or [])
+        stages.append({"stage": "selection", "status": "completed", "record_id": sel.id,
+                       "message": f"Selected {n_selected} assets"})
+        if n_selected == 0:
+            warnings.append("No assets passed selection threshold")
+
+        # 5. Allocation
+        alloc = await self.run_allocation(rec_id, sel, asset_signals)
+        stages.append({"stage": "allocation", "status": "completed", "record_id": alloc.id,
+                       "message": f"Allocated {len(alloc.weights or {})} positions"})
+
+        # 6. Timing
+        timing = await self.run_timing(rec_id, alloc, asset_signals)
+        stages.append({"stage": "timing", "status": "completed", "record_id": timing.id,
+                       "message": f"Urgency: {timing.urgency}"})
+
+        # 7. Risk overlay
+        overlay = await self.run_risk_overlay(rec_id, alloc, asset_signals)
+        stages.append({"stage": "risk_overlay", "status": "completed", "record_id": overlay.id,
+                       "message": f"{len(overlay.adjustments or [])} adjustments"})
+
+        # 8. Generate recommendation
+        rec = await self.generate_recommendation(
+            rec_id, universe_id, overlay, asset_signals, fs_id, run_ids, warnings,
+        )
+        stages.append({"stage": "recommendation", "status": "completed", "record_id": rec_id,
+                       "message": f"Draft recommendation created"})
+
+        # Audit event
+        self.db.add(AuditEvent(
+            actor="pipeline", action="generate_recommendation",
+            object_type="recommendation", object_id=rec_id,
+            details={"stages": len(stages), "feature_set_id": fs_id, "signal_run_ids": run_ids},
+            occurred_at=now,
+        ))
+
+        await self.db.commit()
+
+        return {
+            "recommendation_id": rec_id, "status": "completed",
+            "stages": stages, "warnings": warnings,
+            "feature_set_id": fs_id, "signal_run_ids": run_ids,
+            "message": f"Pipeline completed: draft recommendation {rec_id[:8]}… with {len(alloc.weights or {})} positions",
+        }
+
+    async def get_latest_pipeline_recommendation(self) -> Recommendation | None:
+        """Get latest pipeline-generated recommendation (has source lineage)."""
+        return (await self.db.execute(
+            select(Recommendation)
+            .where(Recommendation.source_feature_set_id.is_not(None))
+            .order_by(Recommendation.created_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
+
+    async def get_status(self) -> dict:
+        pipeline_count = (await self.db.execute(
+            select(func.count()).select_from(Recommendation)
+            .where(Recommendation.source_feature_set_id.is_not(None))
+        )).scalar() or 0
+        published_count = (await self.db.execute(
+            select(func.count()).select_from(Recommendation)
+            .where(Recommendation.status.in_(["published", "published_with_warning"]))
+        )).scalar() or 0
+        latest = await self.get_latest_pipeline_recommendation()
+        return {
+            "latest_recommendation_id": latest.id if latest else None,
+            "latest_status": latest.status if latest else None,
+            "latest_created_at": latest.created_at if latest else None,
+            "total_pipeline_recommendations": pipeline_count,
+            "total_published": published_count,
+        }

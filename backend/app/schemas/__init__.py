@@ -27,6 +27,9 @@ from app.schemas.feature import (
     FeatureDefinitionResponse, FeatureValueResponse, FeatureSetResponse,
     FeatureComputeRequest, FeatureComputeResult, FeatureStatusResponse,
 )
+from app.schemas.pipeline import (
+    PipelineRunRequest, PipelineRunResult, PipelineStageResult, PipelineStatusResponse,
+)
 from app.schemas.ingestion import (
     MarketBarResponse, MarketBarListResponse,
     NewsEventResponse, NewsEventListResponse,

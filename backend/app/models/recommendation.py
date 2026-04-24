@@ -55,6 +55,10 @@ class Recommendation(Base, TimestampMixin):
     # Freshness
     data_as_of: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Pipeline lineage (Phase 4D)
+    source_feature_set_id: Mapped[str | None] = mapped_column(String(36))
+    source_signal_run_ids: Mapped[list | None] = mapped_column(JSON)
+
 
 class RecommendationWeight(Base):
     """Per-asset target weight within a recommendation."""
