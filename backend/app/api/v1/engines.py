@@ -288,10 +288,9 @@ async def get_disagreement(db: AsyncSession = Depends(get_db)):
 
 @router.get("/engines/evidence", response_model=ApiResponse[EvidenceNarrativeResponse | None])
 async def get_evidence(db: AsyncSession = Depends(get_db)):
-    """Evidence narrative — now derived from latest real signal outputs.
+    """Evidence narrative derived from latest real signal outputs.
 
-    Still partially structured (not a full NLP narrative), but no longer
-    uses hardcoded EVIDENCE_ITEMS constants.
+    Returns None with a warning if no registered engine signals exist.
     """
     rec = (await db.execute(
         select(Recommendation)
@@ -305,20 +304,10 @@ async def get_evidence(db: AsyncSession = Depends(get_db)):
     all_signals = await svc.get_latest_signals()
 
     if not all_signals:
-        # Fallback: try importing legacy constants
-        try:
-            from seed import EVIDENCE_ITEMS
-            items = [EvidenceItem(**ei) for ei in EVIDENCE_ITEMS]
-            return ApiResponse(
-                meta=make_meta(warnings=["Using legacy evidence items — no real engine signals available"]),
-                data=EvidenceNarrativeResponse(
-                    recommendation_id=rec.id, items=items,
-                    caveat="Legacy evidence: engine runner has not produced real signals yet.",
-                    last_refreshed_min=None,
-                ),
-            )
-        except Exception:
-            return ApiResponse(meta=make_meta(warnings=["No evidence available"]), data=None)
+        return ApiResponse(
+            meta=make_meta(warnings=["No engine-derived evidence available. Run /api/v1/engines/run first."]),
+            data=None,
+        )
 
     # Build evidence items from real signal outputs
     by_engine: dict[str, list[SignalOutput]] = {}

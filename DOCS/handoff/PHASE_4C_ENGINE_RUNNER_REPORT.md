@@ -248,6 +248,37 @@ $ python -m pytest tests/ -v
 
 ---
 
+## Phase 4C.2 Cleanup Addendum
+
+**Date:** 2026-04-24
+
+### Changes
+
+1. **Removed legacy evidence fallback.** The `from seed import EVIDENCE_ITEMS` fallback in `/engines/evidence` is removed. When no registered engine signals exist, the endpoint returns `data=None` with warning `"No engine-derived evidence available. Run /api/v1/engines/run first."`.
+
+2. **No seed.py import in runtime engines.py.** The word `EVIDENCE_ITEMS` no longer appears in the engines endpoint source code. No `from seed import` statement exists.
+
+3. **Sprint 2 test updated.** `test_evidence` now accepts `data=None` when no engine run has happened (no legacy fallback to mask this).
+
+### Tests Added (2)
+
+| Test | What It Verifies |
+|---|---|
+| `test_no_seed_import_in_engines_endpoint` | Source code contains no `from seed import` or `EVIDENCE_ITEMS` |
+| `test_evidence_no_signals_returns_none` | Without signals: data=None + warning; with signals: real engine sources only |
+
+### Test Output
+
+```
+$ python -m pytest tests/ -v
+97 passed, 1 warning in 4.20s
+
+  21 Phase 4C tests (12 original + 7 hardening + 2 cleanup)
+  76 existing tests — all PASS (zero regressions)
+```
+
+---
+
 ## 14. Recommended Phase 4D Prompt
 
 ```

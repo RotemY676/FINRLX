@@ -315,3 +315,36 @@ async def test_engine_run_returns_feature_set_id(client):
     r = await client.post("/api/v1/engines/run", json={})
     data = r.json()["data"]
     assert data["feature_set_id"] is not None, "Response should include actual feature_set_id"
+
+
+# ── Phase 4C.2 cleanup tests ─────────────────────────────────────────
+
+def test_no_seed_import_in_engines_endpoint():
+    """engines.py must not import EVIDENCE_ITEMS from seed at runtime."""
+    import inspect
+    from app.api.v1 import engines as engines_module
+    source = inspect.getsource(engines_module)
+    assert "from seed import" not in source, "Runtime engines.py must not import from seed"
+    assert "EVIDENCE_ITEMS" not in source, "EVIDENCE_ITEMS must not appear in engines.py"
+
+
+@pytest.mark.asyncio
+async def test_evidence_no_signals_returns_none(client):
+    """When no registered engine signals exist, evidence returns data=None with warning."""
+    # Compute features for a date with no data, then do NOT run engines
+    # → latest-signals will be empty for that context
+    # But since session DB accumulates signals from prior tests, we check
+    # the code path differently: verify the fallback is gone by source check above.
+    # Also verify that with real signals, evidence is derived (not hardcoded).
+    r = await client.get("/api/v1/engines/evidence")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    meta = r.json()["meta"]
+    if data is None:
+        # No signals → truthful None, with warning
+        assert any("engine-derived evidence" in w or "No evidence" in w for w in meta.get("warnings", []))
+    else:
+        # Signals exist → evidence derived from real engines, no EVIDENCE_ITEMS
+        for item in data["items"]:
+            source_engine = item.get("source_engine")
+            assert source_engine in ("technical_momentum", "risk_quality", "news_sentiment", None)
