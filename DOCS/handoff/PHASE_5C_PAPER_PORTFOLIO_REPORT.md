@@ -105,3 +105,15 @@ $ python -m pytest tests/ -v
 4. **Cash is not invested** — cash_weight is tracked but not earning interest.
 5. **Quantity is integer** — fractional shares not supported.
 6. **Single active portfolio** — creating a new one deactivates the previous.
+
+---
+
+## Phase 5C.1 Warning Semantics Fix
+
+**Date:** 2026-04-25
+
+- `seed_demo`/`unknown` without lineage → "no recommendation lineage … seed/demo or unverified"
+- `test_paper` with lineage → "created from unpublished recommendation … test-only"
+- `recommendation_paper` → no demo/unverified warning
+- 2 tests added: `test_test_paper_warning_text`, `test_recommendation_paper_no_demo_warning`
+- 158 passed, 2 skipped

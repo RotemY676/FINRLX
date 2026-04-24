@@ -147,3 +147,34 @@ async def test_paper_list(client):
     for p in data:
         assert "source_type" in p
         assert "is_demo" in p
+
+
+# ── Warning semantics ─────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_test_paper_warning_text(client):
+    """test_paper portfolio warns about unpublished, not about missing lineage."""
+    rec_id = await _ensure_draft(client)
+    r = await client.post(f"/api/v1/paper/from-recommendation/{rec_id}",
+                          json={"allow_unpublished": True})
+    data = r.json()["data"]
+    assert data["source_type"] == "test_paper"
+    # Should warn about test-only, NOT about missing lineage
+    assert any("test-only" in w for w in data["warnings"])
+    assert not any("no recommendation lineage" in w.lower() for w in data["warnings"])
+
+
+@pytest.mark.asyncio
+async def test_recommendation_paper_no_demo_warning(client):
+    """recommendation_paper portfolio has no demo/unverified warning."""
+    rec_id = await _ensure_published(client)
+    r = await client.get(f"/api/v1/recommendations/{rec_id}")
+    if r.json()["data"]["status"] not in ("published", "published_with_warning"):
+        pytest.skip("Could not publish")
+
+    r2 = await client.post(f"/api/v1/paper/from-recommendation/{rec_id}", json={})
+    data = r2.json()["data"]
+    assert data["source_type"] == "recommendation_paper"
+    assert not any("seed/demo" in w for w in data["warnings"])
+    assert not any("unverified" in w for w in data["warnings"])
+    assert not any("test-only" in w for w in data["warnings"])

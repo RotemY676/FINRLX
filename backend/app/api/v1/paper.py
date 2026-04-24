@@ -61,8 +61,10 @@ def _build_detail(pp: PaperPortfolio, asset_map: dict) -> PaperPortfolioDetail:
         events.append(PaperEvent(timestamp=pp.created_at, event_type="creation", description="Portfolio created"))
 
     warnings = []
-    if is_demo:
+    if source_type in ("seed_demo", "unknown") and not lineage_available:
         warnings.append("This paper portfolio has no recommendation lineage and should be treated as seed/demo or unverified.")
+    elif source_type == "test_paper":
+        warnings.append("This paper portfolio was created from an unpublished recommendation using allow_unpublished=true and should be treated as test-only.")
     drifted = [h for h in holdings if abs(h.drift) > 0.01]
     if drifted:
         warnings.append(f"{len(drifted)} position(s) drifted > 1%")
