@@ -1,23 +1,33 @@
-﻿# Python
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
 .env
+*.egg-info/
 
 # Node
 node_modules/
+.next/
+frontend/.next/
 dist/
 build/
 
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# OS / logs
+# OS
 .DS_Store
 Thumbs.db
+
+# Logs
 *.log
+logs/*
+!logs/.gitkeep
 
 # Data / local artifacts
 data/raw/*
@@ -30,3 +40,49 @@ data/exports/*
 # Archives
 archive/*
 !archive/.gitkeep
+
+# Source package ZIPs (keep extracted contents, not ZIPs)
+*.zip
+
+# Local SQLite dev databases
+*.db
+
+# Design exports
+design/exports/*
+!design/exports/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / Next
+node_modules/
+.next/
+frontend/.next/
+dist/
+build/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs / OS
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# Local archives / packages
+*.zip
+
+# Optional local docs extraction noise
+DOCS/source_packages/*.zip
+

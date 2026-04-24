@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
-    # Database
-    database_url: str = "postgresql+asyncpg://finrlx:finrlx@localhost:5432/finrlx"
+    # Database — defaults to SQLite for local dev, use PostgreSQL in production/Docker
+    database_url: str = "sqlite+aiosqlite:///./finrlx_dev.db"
     database_echo: bool = False
 
     # CORS
