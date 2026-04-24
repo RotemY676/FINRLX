@@ -35,10 +35,16 @@ class PaperPortfolio(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    current_holdings: Mapped[dict | None] = mapped_column(JSON)  # {asset_id: weight}
+    current_holdings: Mapped[dict | None] = mapped_column(JSON)
     cash_weight: Mapped[float] = mapped_column(Float, default=1.0)
+    portfolio_value: Mapped[float] = mapped_column(Float, default=100000.0)
     last_rebalance_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     total_rebalances: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Provenance (Phase 5C)
+    source_recommendation_id: Mapped[str | None] = mapped_column(String(36))
+    source_type: Mapped[str] = mapped_column(String(30), default="unknown")  # recommendation_paper, seed_demo, unknown
+    events_log: Mapped[list | None] = mapped_column(JSON)
 
 
 class ReplaySnapshot(Base, TimestampMixin):
