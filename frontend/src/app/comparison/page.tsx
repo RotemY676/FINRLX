@@ -9,6 +9,7 @@ import { Icon } from "@/components/icons/Icon";
 import { ConfidenceBlock } from "@/components/recommendation/ConfidenceBlock";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { ComparisonBarChart } from "@/components/charts/ComparisonBarChart";
+import { AlignmentChart } from "@/components/charts/AlignmentChart";
 import { usePaneContext } from "@/components/shell/ContextPane";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
@@ -178,6 +179,15 @@ export default function ComparisonPage() {
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+
+      {/* Alignment chart */}
+      {engines && engines.engines.length > 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <h3 className="text-[13px] font-semibold text-ink mb-4">Engine Alignment</h3>
+          <p className="text-[11px] text-ink-4 mb-3">Bubble size = engine portfolio weight. X = stance direction. Y = confidence.</p>
+          <AlignmentChart engines={engines.engines} />
         </section>
       )}
 

@@ -464,3 +464,25 @@ export async function fetchRegime(): Promise<ApiResponse<RegimeData>> {
 export async function fetchActivity(): Promise<ApiResponse<ActivityFeedData>> {
   return apiFetch<ActivityFeedData>("/api/v1/activity");
 }
+
+// Ops Command Center types
+
+export interface OpsQueueItem {
+  recommendation_id: string; ticker: string; stance: string; version: string;
+  submitted_ago: string; submitter: string; weight: string; confidence: number;
+  flags: string[]; priority: string;
+}
+export interface OpsFeed { name: string; status: string; lag: string; coverage: string; slo: number; }
+export interface OpsEngine { name: string; latency: string; drift: number; last_run: string; status: string; }
+export interface OpsBreach { kind: string; label: string; utilization: number; trend: string; severity: string; related: string; }
+export interface OpsIncident { id: string; title: string; started: string; severity: string; owner: string; status: string; affected_recs: number; note: string; }
+export interface OpsAuditEntry { when: string; actor: string; action: string; target: string; scope: string; ok: boolean; }
+
+export interface OpsData {
+  queue: OpsQueueItem[]; feeds: OpsFeed[]; engines: OpsEngine[];
+  breaches: OpsBreach[]; incidents: OpsIncident[]; audit: OpsAuditEntry[];
+}
+
+export async function fetchOps(): Promise<ApiResponse<OpsData>> {
+  return apiFetch<OpsData>("/api/v1/ops");
+}
