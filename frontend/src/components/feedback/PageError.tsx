@@ -1,3 +1,5 @@
+import { Icon } from "@/components/icons/Icon";
+
 interface Props {
   title?: string;
   message: string;
@@ -6,14 +8,17 @@ interface Props {
 
 export function PageError({ title, message, hint }: Props) {
   return (
-    <div className="p-qp-6 bg-qp-red-400/10 border border-qp-red-400 rounded-qp">
-      <h2 className="text-qp-h2 text-qp-red-600 mb-qp-2">
-        {title || "Error"}
-      </h2>
-      <p className="text-qp-body text-qp-text-secondary">{message}</p>
-      {hint && (
-        <p className="text-qp-small text-qp-text-muted mt-qp-2">{hint}</p>
-      )}
+    <div className="rounded-lg border border-breach/30 bg-breach-soft p-pad">
+      <div className="flex items-start gap-2">
+        <Icon name="alert-triangle" size={16} className="text-breach mt-0.5 shrink-0" />
+        <div>
+          <h2 className="text-[14px] font-semibold text-breach-soft-ink mb-1">
+            {title || "Error"}
+          </h2>
+          <p className="text-[13px] text-breach-soft-ink/80">{message}</p>
+          {hint && <p className="text-[11px] text-ink-4 mt-2">{hint}</p>}
+        </div>
+      </div>
     </div>
   );
 }

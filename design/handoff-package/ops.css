@@ -1,0 +1,414 @@
+/* ============================================
+   Ops Command Center — queue, feeds, engines, breaches, incidents, audit
+   ============================================ */
+
+/* ---- Layout variants ---- */
+.ops-workspace {
+  display: grid;
+  gap: var(--dens-gap);
+  align-items: start;
+}
+.ops-workspace.layout-2col {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+.ops-workspace.layout-stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+.ops-main { display: flex; flex-direction: column; gap: var(--dens-gap); min-width: 0; }
+.ops-side { display: flex; flex-direction: column; gap: var(--dens-gap); }
+
+@media (max-width: 1280px) {
+  .ops-workspace.layout-2col { grid-template-columns: 1fr; }
+}
+
+/* ---- System strip (Tier 1 KPIs) ---- */
+.ops-system .card-body { padding: 14px 16px; }
+
+/* ---- Pulse dot ---- */
+.ops-pulse {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+}
+.ops-pulse .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--pc);
+  z-index: 1;
+}
+.ops-pulse .ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--pc);
+  opacity: 0;
+  animation: ops-pulse-ring 1.8s ease-out infinite;
+}
+@keyframes ops-pulse-ring {
+  0%   { transform: scale(0.4); opacity: 0.7; }
+  80%  { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-pulse .ring { animation: none; }
+}
+
+/* ---- Status pills ---- */
+.ops-status-pill {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.ops-status-pill.st-ok { color: var(--pos-soft-ink); background: var(--pos-soft); border-color: color-mix(in oklch, var(--pos) 30%, transparent); }
+.ops-status-pill.st-warn,
+.ops-status-pill.st-degraded { color: var(--caution-soft-ink); background: var(--caution-soft); border-color: color-mix(in oklch, var(--caution) 30%, transparent); }
+.ops-status-pill.st-stale,
+.ops-status-pill.st-breach,
+.ops-status-pill.st-down { color: var(--breach-soft-ink); background: var(--breach-soft); border-color: color-mix(in oklch, var(--breach) 30%, transparent); }
+
+/* ---- Queue table ---- */
+.ops-queue-table tbody tr.selected td {
+  background: color-mix(in oklch, var(--primary) 8%, var(--surface));
+  box-shadow: inset 3px 0 0 0 var(--primary);
+}
+.ops-queue-table .btn.sm { padding: 3px 8px; font-size: 11px; }
+.ops-cb {
+  width: 14px; height: 14px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.ops-bulk-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in oklch, var(--primary) 6%, var(--surface-2));
+  border-bottom: 1px solid color-mix(in oklch, var(--primary) 25%, var(--line));
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.ops-bulk-count {
+  font-weight: 600;
+  color: var(--primary-soft-ink);
+  margin-right: auto;
+}
+
+/* ---- Feed health rows ---- */
+.ops-feed {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 160px 82px;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px dashed var(--line);
+}
+.ops-feed:last-child { border-bottom: 0; }
+.ops-feed-name .nm { font-size: 13px; color: var(--ink); font-weight: 500; }
+.ops-feed-name .meta {
+  font-size: 11px; color: var(--ink-4);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+.ops-slo { display: flex; align-items: center; gap: 8px; }
+.ops-slo .bar {
+  flex: 1;
+  height: 5px; border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.ops-slo .bar > span {
+  display: block; height: 100%;
+  border-radius: 999px;
+}
+.ops-slo .num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  min-width: 44px;
+  text-align: right;
+}
+
+/* ---- Engines table ---- */
+.ops-engines tbody td { padding: 10px 12px; }
+.ops-drift-bar {
+  position: relative;
+  width: 120px; height: 6px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ops-drift-bar .mid {
+  position: absolute; left: 50%; top: -2px; bottom: -2px;
+  width: 1px; background: var(--line-strong);
+  z-index: 1;
+}
+.ops-drift-bar .pos,
+.ops-drift-bar .neg {
+  position: absolute; top: 0; bottom: 0;
+}
+.ops-drift-bar .pos { background: var(--caution); }
+.ops-drift-bar .neg { background: var(--primary); }
+
+/* ---- Breach rows ---- */
+.ops-breach-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 180px auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.ops-breach-row.sev-breach {
+  border-color: color-mix(in oklch, var(--breach) 35%, var(--line));
+  background: color-mix(in oklch, var(--breach) 6%, var(--surface));
+}
+.ops-breach-row.sev-high {
+  border-color: color-mix(in oklch, var(--caution) 35%, var(--line));
+  background: color-mix(in oklch, var(--caution) 4%, var(--surface));
+}
+.ops-breach-ic {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface-3);
+  color: var(--ink-3);
+}
+.ops-breach-row.sev-breach .ops-breach-ic {
+  background: var(--breach-soft); color: var(--breach-soft-ink);
+}
+.ops-breach-row.sev-high .ops-breach-ic {
+  background: var(--caution-soft); color: var(--caution-soft-ink);
+}
+.ops-breach-label {
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ops-breach-meta {
+  font-size: 11.5px; color: var(--ink-3); margin-top: 3px;
+}
+.ops-breach-util {
+  display: flex; align-items: center; gap: 8px;
+}
+.ops-breach-util .bar {
+  flex: 1;
+  height: 6px; border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+  min-width: 80px;
+}
+.ops-breach-util .bar > span {
+  display: block; height: 100%;
+  border-radius: 999px;
+}
+.ops-breach-util .num {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  min-width: 36px;
+  text-align: right;
+}
+.ops-breach-util .trend {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.ops-breach-util .trend.up {
+  color: var(--breach-soft-ink);
+  background: var(--breach-soft);
+}
+.ops-breach-util .trend.down {
+  color: var(--pos-soft-ink);
+  background: var(--pos-soft);
+}
+
+/* ---- Incidents ---- */
+.ops-incident {
+  padding: 12px 16px;
+  border-bottom: 1px dashed var(--line);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.ops-incident:last-child { border-bottom: 0; }
+.ops-incident:hover {
+  background: color-mix(in oklch, var(--primary) 3%, var(--surface));
+}
+.ops-inc-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.ops-sev-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+.ops-sev-tag.sev-sev-1 { background: var(--breach); color: white; }
+.ops-sev-tag.sev-sev-2 { background: var(--breach-soft); color: var(--breach-soft-ink); border: 1px solid color-mix(in oklch, var(--breach) 30%, transparent); }
+.ops-sev-tag.sev-sev-3 { background: var(--caution-soft); color: var(--caution-soft-ink); border: 1px solid color-mix(in oklch, var(--caution) 30%, transparent); }
+.ops-inc-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.ops-inc-status {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.ops-inc-age {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+.ops-inc-title {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.ops-inc-meta {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.ops-inc-meta b { color: var(--ink-2); font-weight: 500; }
+
+/* ---- Audit ---- */
+.ops-audit tbody td { padding: 8px 12px; font-size: 12px; }
+.ops-audit-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  display: inline-block;
+}
+.ops-audit-dot.ok { background: var(--pos); }
+.ops-audit-dot.warn { background: var(--caution); }
+.ops-scope {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* ---- Drawer ---- */
+.ops-drawer {
+  position: fixed; inset: 0;
+  z-index: 50;
+  display: flex; justify-content: flex-end;
+  pointer-events: none;
+}
+.ops-drawer-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(8, 12, 20, 0.5);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  animation: ops-drawer-fade 220ms ease;
+}
+.ops-drawer-sheet {
+  position: relative;
+  width: 560px; max-width: 92vw;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -20px 0 48px -16px color-mix(in oklch, var(--ink) 30%, transparent);
+  pointer-events: auto;
+  display: flex; flex-direction: column;
+  animation: ops-drawer-slide 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes ops-drawer-fade {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes ops-drawer-slide {
+  from { transform: translateX(40px); opacity: 0.6; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-drawer-backdrop, .ops-drawer-sheet { animation: none; }
+}
+.ops-drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.ops-drawer-body {
+  flex: 1; overflow-y: auto;
+  padding: 22px 24px 32px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.ops-drawer-section { display: flex; flex-direction: column; gap: 10px; }
+
+.ops-timeline { display: flex; flex-direction: column; gap: 0; }
+.ops-tl-row {
+  display: grid;
+  grid-template-columns: 18px 80px 1fr;
+  gap: 10px;
+  padding: 8px 0;
+  align-items: flex-start;
+  position: relative;
+}
+.ops-tl-row::before {
+  content: "";
+  position: absolute;
+  left: 8px; top: 18px; bottom: -8px;
+  width: 1px;
+  background: var(--line);
+}
+.ops-tl-row:last-child::before { display: none; }
+.ops-tl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ink-4);
+  margin-top: 6px; margin-left: 4px;
+  z-index: 1;
+  border: 2px solid var(--surface);
+  box-sizing: content-box;
+}
+.ops-tl-dot.ok { background: var(--pos); }
+.ops-tl-dot.warn { background: var(--caution); }
+.ops-tl-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-4);
+  padding-top: 4px;
+}
+.ops-tl-event {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  padding-top: 3px;
+}
+
+/* ---- Compact density overrides ---- */
+[data-density="compact"] .ops-feed { padding: 7px 16px; }
+[data-density="compact"] .ops-incident { padding: 9px 16px; }
+[data-density="compact"] .ops-breach-row { padding: 9px 12px; }
+
+/* ---- Card-head meta slot ---- */
+.card-head .meta {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}

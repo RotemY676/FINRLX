@@ -1,192 +1,248 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchCurrentComparison, ComparisonData } from "@/services/api";
+import {
+  fetchCurrentComparison, fetchEngineComparison,
+  ComparisonData, EngineComparisonData,
+} from "@/services/api";
+import { Icon } from "@/components/icons/Icon";
 import { ConfidenceBlock } from "@/components/recommendation/ConfidenceBlock";
+import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { ComparisonBarChart } from "@/components/charts/ComparisonBarChart";
 import { usePaneContext } from "@/components/shell/ContextPane";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 
-function stanceColor(stance: string | null): string {
-  switch (stance) {
-    case "overweight": return "text-qp-green-600";
-    case "underweight": return "text-qp-red-600";
-    default: return "text-qp-text-secondary";
-  }
-}
-
-function deltaColor(d: number): string {
-  if (d > 0.005) return "text-qp-green-600";
-  if (d < -0.005) return "text-qp-red-600";
-  return "text-qp-text-secondary";
-}
+const STANCE_STYLE: Record<string, string> = {
+  buy: "text-pos-soft-ink bg-pos-soft", sell: "text-breach-soft-ink bg-breach-soft",
+  hold: "text-ink-3 bg-surface-3", trim: "text-caution-soft-ink bg-caution-soft",
+  overweight: "text-pos-soft-ink bg-pos-soft", underweight: "text-breach-soft-ink bg-breach-soft",
+  neutral: "text-ink-3 bg-surface-3",
+};
 
 export default function ComparisonPage() {
   const [data, setData] = useState<ComparisonData | null>(null);
+  const [engines, setEngines] = useState<EngineComparisonData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { openPane } = usePaneContext();
 
   useEffect(() => {
-    fetchCurrentComparison()
-      .then((res) => setData(res.data))
+    Promise.all([fetchCurrentComparison(), fetchEngineComparison()])
+      .then(([comp, eng]) => { setData(comp.data); setEngines(eng.data); })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <PageLoading label="Loading comparison..." />;
-
-  if (error) {
-    return (
-      <PageError
-        title="Comparison Error"
-        message={error}
-        hint="Ensure the backend is running and the database is seeded."
-      />
-    );
-  }
-
-  if (!data) {
-    return (
-      <PageEmpty
-        title="No Recommendation to Compare"
-        message="The comparison view requires a published recommendation. Run the seed script to create one."
-      />
-    );
-  }
+  if (error) return <PageError title="Comparison Error" message={error} hint="Ensure the backend is running and seeded." />;
+  if (!data) return <PageEmpty title="No Recommendation to Compare" message="Publish a recommendation first." />;
 
   return (
-    <div className="space-y-qp-6">
+    <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-qp-h1">Engine Comparison</h1>
-        <p className="text-qp-small text-qp-text-muted mt-1">
-          Recommendation vs {data.benchmark_name}
+        <h1 className="text-[20px] font-semibold text-ink">Engine Comparison</h1>
+        <p className="text-[12px] text-ink-3 mt-0.5">
+          {engines ? `${engines.engines.length} engines · synthesis: ${engines.synthesis_stance}` : `Recommendation vs ${data.benchmark_name}`}
         </p>
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-qp-4">
-        <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-          <p className="text-qp-small text-qp-text-muted">Total Active Weight</p>
-          <p className="text-qp-hero font-mono">{(data.total_active_weight * 100).toFixed(1)}%</p>
-          <p className="text-qp-small text-qp-text-muted">Sum of absolute deviations from benchmark</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-gap">
+        <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <p className="text-[11px] text-ink-4">Total Active Weight</p>
+          <p className="text-[24px] font-display font-semibold text-ink">{(data.total_active_weight * 100).toFixed(1)}%</p>
         </div>
-        <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-          <p className="text-qp-small text-qp-text-muted">Top 3 Concentration</p>
-          <div className="flex items-baseline gap-qp-3 mt-1">
+        <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <p className="text-[11px] text-ink-4">Top 3 Concentration</p>
+          <div className="flex items-baseline gap-3 mt-1">
             <div>
-              <p className="text-qp-h2 font-mono">{(data.concentration_top3_rec * 100).toFixed(0)}%</p>
-              <p className="text-qp-small text-qp-text-muted">Recommendation</p>
+              <p className="text-[18px] font-display font-semibold text-ink">{(data.concentration_top3_rec * 100).toFixed(0)}%</p>
+              <p className="text-[11px] text-ink-4">Rec</p>
             </div>
-            <span className="text-qp-text-muted">vs</span>
+            <span className="text-ink-4">vs</span>
             <div>
-              <p className="text-qp-h2 font-mono">{(data.concentration_top3_bench * 100).toFixed(0)}%</p>
-              <p className="text-qp-small text-qp-text-muted">{data.benchmark_name}</p>
+              <p className="text-[18px] font-display font-semibold text-ink">{(data.concentration_top3_bench * 100).toFixed(0)}%</p>
+              <p className="text-[11px] text-ink-4">{data.benchmark_name}</p>
             </div>
           </div>
         </div>
-        <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
+        {engines && (
+          <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+            <p className="text-[11px] text-ink-4">Engine Dispersion</p>
+            <p className="text-[24px] font-display font-semibold text-caution">{(engines.dispersion * 100).toFixed(0)}%</p>
+            <p className="text-[11px] text-ink-4">{engines.engines.filter(e => e.stance === "buy").length} buy · {engines.engines.filter(e => e.stance !== "buy").length} other</p>
+          </div>
+        )}
+        <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
           <ConfidenceBlock confidence={data.recommendation_confidence} />
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-        <h3 className="text-qp-h3 mb-qp-4">Weight Comparison</h3>
-        <ComparisonBarChart rows={data.weights} />
-      </div>
+      {/* ── Multi-engine comparison matrix — now from real backend ── */}
+      {engines && engines.engines.length > 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <h3 className="text-[13px] font-semibold text-ink mb-4">Engine Matrix</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12.5px]">
+              <thead>
+                <tr className="border-b border-line text-[11px] text-ink-4 uppercase tracking-wider">
+                  <th className="text-left py-2 pr-3 font-medium">Engine</th>
+                  <th className="text-left py-2 pr-3 font-medium">Stance</th>
+                  <th className="text-left py-2 pr-3 font-medium">Confidence</th>
+                  <th className="text-right py-2 pr-3 font-medium">Weight</th>
+                  <th className="text-left py-2 pr-3 font-medium">Horizon</th>
+                  <th className="text-left py-2 pr-3 font-medium">Risk</th>
+                  <th className="text-left py-2 font-medium">Top Drivers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {engines.engines.map((eng) => (
+                  <tr
+                    key={eng.engine_key}
+                    className="border-b border-line/50 hover:bg-surface-3 cursor-pointer transition-colors"
+                    onClick={() =>
+                      openPane(`${eng.engine_name} · Methodology`, (
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-[11px] text-ink-4">Engine</p>
+                            <p className="text-[14px] font-semibold text-ink">{eng.engine_name}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-[11px] text-ink-4">Stance</p>
+                              <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
+                            </div>
+                            <div>
+                              <p className="text-[11px] text-ink-4">Confidence</p>
+                              <p className="text-[14px] font-mono text-ink">{(eng.confidence * 100).toFixed(0)}%</p>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4 mb-1">What it sees (drivers)</p>
+                            <ul className="space-y-1">
+                              {eng.drivers.map((d, i) => <li key={i} className="text-[12px] text-ink-2">• {d}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4 mb-1">What it ignores</p>
+                            <ul className="space-y-1">
+                              {eng.ignores.map((d, i) => <li key={i} className="text-[12px] text-ink-3">• {d}</li>)}
+                            </ul>
+                          </div>
+                          {eng.note && (
+                            <div className="pt-3 border-t border-line">
+                              <p className="text-[11px] text-ink-4 mb-1">Note</p>
+                              <p className="text-[12px] text-ink-2">{eng.note}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    }
+                  >
+                    <td className="py-2 pr-3 font-medium text-ink">{eng.engine_name}</td>
+                    <td className="py-2 pr-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-14 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${eng.confidence >= 0.7 ? "bg-pos" : eng.confidence >= 0.55 ? "bg-caution" : "bg-breach"}`} style={{ width: `${eng.confidence * 100}%` }} />
+                        </div>
+                        <span className="text-[11px] font-mono text-ink-2">{eng.confidence.toFixed(2)}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 pr-3 text-right font-mono text-ink-2">{(eng.weight * 100).toFixed(0)}%</td>
+                    <td className="py-2 pr-3 text-ink-2">{eng.horizon}</td>
+                    <td className="py-2 pr-3">
+                      <span className={`text-[11px] ${eng.risk_read === "Low" ? "text-pos" : eng.risk_read === "Moderate" ? "text-ink-2" : eng.risk_read === "Elevated" ? "text-caution" : "text-breach"}`}>{eng.risk_read}</span>
+                    </td>
+                    <td className="py-2 text-ink-3 text-[11px]">{eng.drivers.slice(0, 2).join("; ")}</td>
+                  </tr>
+                ))}
+                {/* Synthesis row */}
+                <tr className="bg-primary-soft">
+                  <td className="py-2 pr-3 font-semibold text-primary-soft-ink">Synthesis</td>
+                  <td className="py-2 pr-3">
+                    <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[engines.synthesis_stance] || ""}`}>{engines.synthesis_stance}</span>
+                  </td>
+                  <td className="py-2 pr-3">
+                    <span className="text-[11px] font-mono text-primary-soft-ink">{engines.synthesis_confidence.toFixed(2)}</span>
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono text-primary-soft-ink">100%</td>
+                  <td className="py-2 pr-3 text-primary-soft-ink">—</td>
+                  <td className="py-2 pr-3 text-primary-soft-ink">—</td>
+                  <td className="py-2 text-primary-soft-ink text-[11px]">Weighted across all engines</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
-      {/* Detailed table */}
-      <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-        <h3 className="text-qp-h3 mb-qp-3">
-          Position Detail
-          <span className="text-qp-small text-qp-text-muted font-normal ml-qp-2">
-            Click a row to inspect
-          </span>
-        </h3>
+      {/* Weight comparison chart */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <h3 className="text-[13px] font-semibold text-ink mb-4">Weight Comparison (Rec vs {data.benchmark_name})</h3>
+        <ComparisonBarChart rows={data.weights} />
+      </section>
+
+      {/* Position detail table */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-[13px] font-semibold text-ink">Position Detail</h3>
+          <span className="text-[11px] text-ink-4">Click a row to inspect</span>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-qp-body">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-qp-border text-qp-small text-qp-text-muted">
-                <th className="text-left py-qp-2 pr-qp-3">Ticker</th>
-                <th className="text-left py-qp-2 pr-qp-3">Name</th>
-                <th className="text-right py-qp-2 pr-qp-3">Rec. Wt</th>
-                <th className="text-right py-qp-2 pr-qp-3">Bench. Wt</th>
-                <th className="text-right py-qp-2 pr-qp-3">Active</th>
-                <th className="text-left py-qp-2">Stance</th>
+              <tr className="border-b border-line text-[11px] text-ink-4 uppercase tracking-wider">
+                <th className="text-left py-2 pr-3 font-medium">Ticker</th>
+                <th className="text-left py-2 pr-3 font-medium">Name</th>
+                <th className="text-right py-2 pr-3 font-medium">Rec</th>
+                <th className="text-right py-2 pr-3 font-medium">Bench</th>
+                <th className="text-right py-2 pr-3 font-medium">Active</th>
+                <th className="text-left py-2 font-medium">Stance</th>
               </tr>
             </thead>
             <tbody>
               {data.weights.map((row) => (
-                <tr
-                  key={row.asset_id}
-                  className="border-b border-qp-border/50 hover:bg-qp-bg-hover cursor-pointer transition-colors duration-qp"
-                  onClick={() =>
-                    openPane(`${row.ticker} Comparison`, (
-                      <div className="space-y-qp-4">
-                        <div>
-                          <p className="text-qp-small text-qp-text-muted">Asset</p>
-                          <p className="text-qp-body font-medium">{row.name}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-qp-3">
-                          <div>
-                            <p className="text-qp-small text-qp-text-muted">Recommendation</p>
-                            <p className="text-qp-h2 font-mono">{(row.recommendation_weight * 100).toFixed(1)}%</p>
-                          </div>
-                          <div>
-                            <p className="text-qp-small text-qp-text-muted">{data.benchmark_name}</p>
-                            <p className="text-qp-h2 font-mono">{(row.benchmark_weight * 100).toFixed(1)}%</p>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-qp-small text-qp-text-muted">Active Weight</p>
-                          <p className={`text-qp-h2 font-mono ${deltaColor(row.delta)}`}>
-                            {row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-qp-small text-qp-text-muted">Stance</p>
-                          <p className={`text-qp-body font-medium ${stanceColor(row.recommendation_stance)}`}>
-                            {row.recommendation_stance || "neutral"}
-                          </p>
-                        </div>
+                <tr key={row.asset_id} className="border-b border-line/50 hover:bg-surface-3 cursor-pointer transition-colors"
+                  onClick={() => openPane(`${row.ticker} · Comparison`, (
+                    <div className="space-y-4">
+                      <p className="text-[13px] font-medium text-ink">{row.name}</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><p className="text-[11px] text-ink-4">Recommendation</p><p className="text-[18px] font-mono font-semibold text-ink">{(row.recommendation_weight * 100).toFixed(1)}%</p></div>
+                        <div><p className="text-[11px] text-ink-4">{data.benchmark_name}</p><p className="text-[18px] font-mono font-semibold text-ink">{(row.benchmark_weight * 100).toFixed(1)}%</p></div>
                       </div>
-                    ))
-                  }
+                      <div><p className="text-[11px] text-ink-4">Active Weight</p>
+                        <p className={`text-[18px] font-mono font-semibold ${row.delta > 0.005 ? "text-pos" : row.delta < -0.005 ? "text-breach" : "text-ink-3"}`}>{row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  ))}
                 >
-                  <td className="py-qp-2 pr-qp-3 font-mono font-medium">{row.ticker}</td>
-                  <td className="py-qp-2 pr-qp-3 text-qp-text-secondary">{row.name}</td>
-                  <td className="py-qp-2 pr-qp-3 text-right font-mono">{(row.recommendation_weight * 100).toFixed(1)}%</td>
-                  <td className="py-qp-2 pr-qp-3 text-right font-mono">{(row.benchmark_weight * 100).toFixed(1)}%</td>
-                  <td className={`py-qp-2 pr-qp-3 text-right font-mono ${deltaColor(row.delta)}`}>
+                  <td className="py-2 pr-3 font-mono font-semibold text-ink">{row.ticker}</td>
+                  <td className="py-2 pr-3 text-ink-2">{row.name}</td>
+                  <td className="py-2 pr-3 text-right font-mono">{(row.recommendation_weight * 100).toFixed(1)}%</td>
+                  <td className="py-2 pr-3 text-right font-mono text-ink-3">{(row.benchmark_weight * 100).toFixed(1)}%</td>
+                  <td className={`py-2 pr-3 text-right font-mono ${row.delta > 0.005 ? "text-pos" : row.delta < -0.005 ? "text-breach" : "text-ink-3"}`}>
                     {row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%
                   </td>
-                  <td className={`py-qp-2 ${stanceColor(row.recommendation_stance)}`}>
-                    {row.recommendation_stance || "—"}
+                  <td className="py-2">
+                    <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[row.recommendation_stance || "neutral"] || ""}`}>{row.recommendation_stance || "neutral"}</span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Rationale + Warnings */}
       {data.recommendation_rationale && (
-        <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-          <h3 className="text-qp-h3 mb-qp-2">Recommendation Rationale</h3>
-          <p className="text-qp-body text-qp-text-secondary">{data.recommendation_rationale}</p>
-        </div>
-      )}
-
-      {data.recommendation_warning_count > 0 && (
-        <div className="p-qp-4 bg-qp-amber-400/10 border border-qp-amber-400 rounded-qp">
-          <p className="text-qp-body text-qp-amber-600">
-            {data.recommendation_warning_count} active warning{data.recommendation_warning_count > 1 ? "s" : ""}
-          </p>
-        </div>
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <h3 className="text-[13px] font-semibold text-ink mb-2">Recommendation Rationale</h3>
+          <p className="text-[12.5px] text-ink-2 leading-relaxed">{data.recommendation_rationale}</p>
+        </section>
       )}
     </div>
   );

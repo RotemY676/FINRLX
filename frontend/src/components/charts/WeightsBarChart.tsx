@@ -1,24 +1,18 @@
 "use client";
 
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { WeightEntry } from "@/services/api";
 
-interface Props {
-  weights: WeightEntry[];
-}
-
 const STANCE_COLORS: Record<string, string> = {
-  overweight: "#22c55e",
-  underweight: "#ef4444",
-  neutral: "#60a5fa",
+  overweight: "oklch(0.58 0.13 155)",
+  underweight: "oklch(0.58 0.18 25)",
+  neutral: "oklch(0.52 0.17 255)",
 };
 
-export function WeightsBarChart({ weights }: Props) {
+export function WeightsBarChart({ weights }: { weights: WeightEntry[] }) {
   if (weights.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center text-qp-body text-qp-text-muted">
+      <div className="h-48 flex items-center justify-center text-[13px] text-ink-3">
         No weight data available for chart.
       </div>
     );
@@ -33,48 +27,24 @@ export function WeightsBarChart({ weights }: Props) {
     }));
 
   return (
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
-          <XAxis
-            dataKey="ticker"
-            tick={{ fontSize: 11, fontFamily: "monospace", fill: "#475569" }}
-            tickLine={false}
-            axisLine={{ stroke: "#e2e8f0" }}
-          />
-          <YAxis
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) => `${v}%`}
-            width={40}
-          />
-          <Tooltip
-            formatter={(value: number) => [`${value}%`, "Weight"]}
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 8,
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            }}
-            cursor={{ fill: "rgba(0,0,0,0.04)" }}
-          />
-          <Bar dataKey="weight" radius={[4, 4, 0, 0]} maxBarSize={48}>
-            {data.map((d, i) => (
-              <Cell
-                key={i}
-                fill={STANCE_COLORS[d.stance || "neutral"] || "#60a5fa"}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-      {/* Legend for stance colors */}
-      <div className="flex items-center justify-center gap-qp-6 mt-qp-2">
-        {Object.entries(STANCE_COLORS).map(([label, color]) => (
-          <div key={label} className="flex items-center gap-qp-1">
-            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
-            <span className="text-qp-small text-qp-text-muted capitalize">{label}</span>
+    <div>
+      <div className="h-56">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
+            <XAxis dataKey="ticker" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.42 0.012 250)" }} tickLine={false} axisLine={{ stroke: "oklch(0.92 0.008 240)" }} />
+            <YAxis tick={{ fontSize: 11, fill: "oklch(0.58 0.01 250)" }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} width={36} />
+            <Tooltip formatter={(value: number) => [`${value}%`, "Weight"]} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid oklch(0.92 0.008 240)", boxShadow: "var(--shadow-sm)" }} cursor={{ fill: "oklch(0.96 0.007 240)" }} />
+            <Bar dataKey="weight" radius={[4, 4, 0, 0]} maxBarSize={40}>
+              {data.map((d, i) => (<Cell key={i} fill={STANCE_COLORS[d.stance || "neutral"] || STANCE_COLORS.neutral} />))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center justify-center gap-5 mt-2">
+        {Object.entries({ overweight: "Overweight", neutral: "Neutral", underweight: "Underweight" }).map(([k, label]) => (
+          <div key={k} className="flex items-center gap-1.5 text-[11px] text-ink-3">
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: STANCE_COLORS[k] }} />
+            {label}
           </div>
         ))}
       </div>

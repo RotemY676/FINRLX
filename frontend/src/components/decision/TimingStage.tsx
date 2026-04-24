@@ -1,35 +1,25 @@
 import { TimingView } from "@/services/api";
 import { StageCard } from "./StageCard";
 
-const URGENCY_COLORS: Record<string, string> = {
-  immediate: "text-qp-red-600 bg-qp-red-400/10",
-  soon: "text-qp-amber-600 bg-qp-amber-400/10",
-  wait: "text-qp-blue-600 bg-qp-blue-50",
-  defer: "text-qp-text-muted bg-qp-border/50",
+const U_STYLE: Record<string, string> = {
+  immediate: "text-breach bg-breach-soft",
+  soon: "text-caution-soft-ink bg-caution-soft",
+  wait: "text-primary-soft-ink bg-primary-soft",
+  defer: "text-ink-3 bg-surface-3",
 };
 
 export function TimingStage({ data }: { data: TimingView | null }) {
   return (
     <StageCard title="Timing" available={!!data}>
       {data && (
-        <div className="space-y-qp-3">
-          <div className="flex items-center gap-qp-3">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
             {data.urgency && (
-              <span className={`px-qp-3 py-qp-1 rounded-qp-sm text-qp-body font-medium ${
-                URGENCY_COLORS[data.urgency] || ""
-              }`}>
-                {data.urgency}
-              </span>
+              <span className={`px-2.5 py-1 rounded-md text-[12.5px] font-medium ${U_STYLE[data.urgency] || ""}`}>{data.urgency}</span>
             )}
-            {data.horizon_days != null && (
-              <span className="text-qp-body text-qp-text-secondary">
-                {data.horizon_days} day horizon
-              </span>
-            )}
+            {data.horizon_days != null && <span className="text-[12.5px] text-ink-2">{data.horizon_days} day horizon</span>}
           </div>
-          {data.rationale && (
-            <p className="text-qp-body text-qp-text-secondary">{data.rationale}</p>
-          )}
+          {data.rationale && <p className="text-[12.5px] text-ink-2">{data.rationale}</p>}
         </div>
       )}
     </StageCard>

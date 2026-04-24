@@ -16,33 +16,33 @@ function fmt(d: string | null): string {
 
 export function MetadataBlock(props: MetadataProps) {
   return (
-    <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-      <h3 className="text-qp-h3 mb-qp-3">Publication Metadata</h3>
-      <div className="grid grid-cols-2 gap-qp-3 text-qp-body">
+    <div className="rounded-lg border border-line bg-surface p-pad">
+      <h3 className="text-[13px] font-semibold text-ink mb-3">Publication Metadata</h3>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[12.5px]">
         <div>
-          <p className="text-qp-small text-qp-text-muted">Status</p>
+          <p className="text-[11px] text-ink-4 mb-0.5">Status</p>
           <StatusBadge status={props.status} />
         </div>
         <div>
-          <p className="text-qp-small text-qp-text-muted">Published</p>
-          <p>{fmt(props.publishedAt)}</p>
+          <p className="text-[11px] text-ink-4 mb-0.5">Published</p>
+          <p className="text-ink-2">{fmt(props.publishedAt)}</p>
         </div>
         <div>
-          <p className="text-qp-small text-qp-text-muted">Valid From</p>
-          <p>{fmt(props.validFrom)}</p>
+          <p className="text-[11px] text-ink-4 mb-0.5">Valid From</p>
+          <p className="text-ink-2">{fmt(props.validFrom)}</p>
         </div>
         <div>
-          <p className="text-qp-small text-qp-text-muted">Valid To</p>
-          <p>{fmt(props.validTo)}</p>
+          <p className="text-[11px] text-ink-4 mb-0.5">Valid To</p>
+          <p className="text-ink-2">{fmt(props.validTo)}</p>
         </div>
         <div>
-          <p className="text-qp-small text-qp-text-muted">Data As Of</p>
-          <p>{fmt(props.dataAsOf)}</p>
+          <p className="text-[11px] text-ink-4 mb-0.5">Data As Of</p>
+          <p className="text-ink-2">{fmt(props.dataAsOf)}</p>
         </div>
         {props.policyVersionId && (
           <div>
-            <p className="text-qp-small text-qp-text-muted">Policy Version</p>
-            <p className="font-mono text-qp-small">{props.policyVersionId.slice(0, 8)}...</p>
+            <p className="text-[11px] text-ink-4 mb-0.5">Policy Version</p>
+            <p className="font-mono text-[11px] text-ink-3">{props.policyVersionId.slice(0, 8)}…</p>
           </div>
         )}
       </div>

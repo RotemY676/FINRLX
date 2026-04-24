@@ -1,9 +1,139 @@
+/* QuantPipeline Design System Tokens
+   Source of truth: design/handoff-package/styles.css
+   Visual direction: credible, analytical, calm. */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ── Light theme (default) ── */
+:root {
+  --canvas: oklch(0.985 0.003 240);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.975 0.005 240);
+  --surface-3: oklch(0.96 0.007 240);
+  --line: oklch(0.92 0.008 240);
+  --line-strong: oklch(0.86 0.01 240);
+
+  --ink: oklch(0.22 0.015 250);
+  --ink-2: oklch(0.42 0.012 250);
+  --ink-3: oklch(0.58 0.01 250);
+  --ink-4: oklch(0.72 0.008 250);
+
+  --primary: oklch(0.52 0.17 255);
+  --primary-ink: oklch(0.98 0.005 255);
+  --primary-soft: oklch(0.95 0.03 255);
+  --primary-soft-ink: oklch(0.38 0.14 255);
+
+  --pos: oklch(0.58 0.13 155);
+  --pos-soft: oklch(0.955 0.035 155);
+  --pos-soft-ink: oklch(0.38 0.11 155);
+
+  --caution: oklch(0.72 0.14 75);
+  --caution-soft: oklch(0.965 0.04 80);
+  --caution-soft-ink: oklch(0.45 0.12 65);
+
+  --breach: oklch(0.58 0.18 25);
+  --breach-soft: oklch(0.96 0.03 25);
+  --breach-soft-ink: oklch(0.42 0.15 25);
+
+  --accent: oklch(0.55 0.12 215);
+  --accent-2: oklch(0.5 0.14 290);
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  --shadow-sm: 0 1px 2px oklch(0.4 0.02 250 / 0.05);
+  --shadow-md: 0 1px 2px oklch(0.4 0.02 250 / 0.06), 0 4px 12px oklch(0.4 0.02 250 / 0.04);
+  --shadow-lg: 0 2px 4px oklch(0.4 0.02 250 / 0.06), 0 12px 28px oklch(0.4 0.02 250 / 0.08);
+
+  --dens-pad: 16px;
+  --dens-row: 36px;
+  --dens-gap: 16px;
+  --dens-text: 13.5px;
+
+  --font-sans: "Inter Tight", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+/* ── Dark theme ── */
+:root[data-theme="dark"] {
+  --canvas: oklch(0.165 0.012 250);
+  --surface: oklch(0.205 0.014 250);
+  --surface-2: oklch(0.225 0.014 250);
+  --surface-3: oklch(0.25 0.015 250);
+  --line: oklch(0.3 0.013 250);
+  --line-strong: oklch(0.38 0.015 250);
+
+  --ink: oklch(0.96 0.005 250);
+  --ink-2: oklch(0.78 0.008 250);
+  --ink-3: oklch(0.62 0.01 250);
+  --ink-4: oklch(0.48 0.012 250);
+
+  --primary: oklch(0.68 0.16 255);
+  --primary-ink: oklch(0.15 0.01 250);
+  --primary-soft: oklch(0.3 0.08 255);
+  --primary-soft-ink: oklch(0.85 0.1 255);
+
+  --pos: oklch(0.7 0.15 155);
+  --pos-soft: oklch(0.3 0.07 155);
+  --pos-soft-ink: oklch(0.85 0.12 155);
+
+  --caution: oklch(0.78 0.15 75);
+  --caution-soft: oklch(0.32 0.08 75);
+  --caution-soft-ink: oklch(0.88 0.12 80);
+
+  --breach: oklch(0.7 0.19 25);
+  --breach-soft: oklch(0.32 0.09 25);
+  --breach-soft-ink: oklch(0.88 0.14 25);
+
+  --accent: oklch(0.7 0.12 215);
+  --accent-2: oklch(0.68 0.14 290);
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 2px 4px oklch(0 0 0 / 0.35), 0 12px 28px oklch(0 0 0 / 0.45);
+}
+
+/* ── Density ── */
+:root[data-density="compact"] {
+  --dens-pad: 12px; --dens-row: 30px; --dens-gap: 12px; --dens-text: 12.5px;
+}
+:root[data-density="comfortable"] {
+  --dens-pad: 20px; --dens-row: 42px; --dens-gap: 20px; --dens-text: 14px;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
-
+/* ── Base ── */
 body {
-  @apply bg-qp-bg text-qp-text-primary font-sans antialiased;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--dens-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

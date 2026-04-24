@@ -350,3 +350,117 @@ export async function fetchCurrentPaper(): Promise<
 > {
   return apiFetch<PaperPortfolioData | null>("/api/v1/paper/current");
 }
+
+// Engine comparison types
+
+export interface EngineSignal {
+  engine_key: string;
+  engine_name: string;
+  stance: string;
+  confidence: number;
+  weight: number;
+  risk_read: string;
+  horizon: string;
+  drivers: string[];
+  ignores: string[];
+  note: string | null;
+  data_freshness_min: number | null;
+}
+
+export interface EngineComparisonData {
+  recommendation_id: string;
+  engines: EngineSignal[];
+  synthesis_stance: string;
+  synthesis_confidence: number;
+  dispersion: number;
+}
+
+export interface DisagreementData {
+  recommendation_id: string;
+  total_engines: number;
+  agreeing: number;
+  dissenting: number;
+  dispersion: number;
+  dominant_stance: string;
+  dissenting_engines: string[];
+  summary: string;
+}
+
+// Evidence types
+
+export interface EvidenceItem {
+  order: number;
+  title: string;
+  body: string;
+  delta_label: string | null;
+  delta_direction: string | null;
+  caveat: string | null;
+  source_engine: string | null;
+}
+
+export interface EvidenceNarrativeData {
+  recommendation_id: string;
+  items: EvidenceItem[];
+  caveat: string | null;
+  last_refreshed_min: number | null;
+}
+
+// Regime types
+
+export interface SignalPosture {
+  factor: string;
+  direction: string;
+  sigma: number;
+}
+
+export interface SectorTilt {
+  sector: string;
+  tilt_pct: number;
+}
+
+export interface RegimeData {
+  regime_label: string;
+  regime_confidence: number;
+  persistence_days: number;
+  last_switch_date: string;
+  alternatives: Array<{ label: string; prob: number }>;
+  signal_posture: SignalPosture[];
+  sector_tilts: SectorTilt[];
+  as_of: string;
+}
+
+export interface ActivityEventData {
+  kind: string;
+  actor: string;
+  description: string;
+  detail: string | null;
+  when_ago: string;
+  timestamp: string;
+}
+
+export interface ActivityFeedData {
+  events: ActivityEventData[];
+  total: number;
+}
+
+// New fetch functions
+
+export async function fetchEngineComparison(): Promise<ApiResponse<EngineComparisonData | null>> {
+  return apiFetch<EngineComparisonData | null>("/api/v1/engines/comparison");
+}
+
+export async function fetchDisagreement(): Promise<ApiResponse<DisagreementData | null>> {
+  return apiFetch<DisagreementData | null>("/api/v1/engines/disagreement");
+}
+
+export async function fetchEvidence(): Promise<ApiResponse<EvidenceNarrativeData | null>> {
+  return apiFetch<EvidenceNarrativeData | null>("/api/v1/engines/evidence");
+}
+
+export async function fetchRegime(): Promise<ApiResponse<RegimeData>> {
+  return apiFetch<RegimeData>("/api/v1/regime");
+}
+
+export async function fetchActivity(): Promise<ApiResponse<ActivityFeedData>> {
+  return apiFetch<ActivityFeedData>("/api/v1/activity");
+}

@@ -14,10 +14,10 @@ import { PageEmpty } from "@/components/feedback/PageEmpty";
 
 function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-      <p className="text-qp-small text-qp-text-muted">{label}</p>
-      <p className="text-qp-h2 font-mono mt-1">{value}</p>
-      {sub && <p className="text-qp-small text-qp-text-muted mt-1">{sub}</p>}
+    <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+      <p className="text-[11px] text-ink-3">{label}</p>
+      <p className="text-[15px] font-semibold text-ink font-mono mt-1">{value}</p>
+      {sub && <p className="text-[11px] text-ink-4 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -50,24 +50,24 @@ export default function BacktestsPage() {
   if (!list || list.total === 0) return <PageEmpty title="No Backtests" message="No backtest experiments available. Run the seed script to create demo data." />;
 
   return (
-    <div className="space-y-qp-6">
+    <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-qp-h1">Backtests</h1>
-        <p className="text-qp-small text-qp-text-muted mt-1">
+        <h1 className="text-[20px] font-semibold text-ink">Backtests</h1>
+        <p className="text-[11px] text-ink-4 mt-1">
           {list.total} experiment{list.total !== 1 ? "s" : ""}
         </p>
       </div>
 
       {/* Experiment list */}
-      <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-        <h3 className="text-qp-h3 mb-qp-3">Experiments</h3>
+      <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+        <h3 className="text-[13px] font-semibold text-ink mb-3">Experiments</h3>
         {list.items.map((item) => (
           <div
             key={item.id}
-            className={`flex items-center justify-between p-qp-3 rounded-qp cursor-pointer transition-colors duration-qp ${
+            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
               detail?.id === item.id
-                ? "bg-qp-blue-50 border border-qp-blue-200"
-                : "hover:bg-qp-bg-hover"
+                ? "bg-primary-soft border border-primary"
+                : "hover:bg-surface-3"
             }`}
             onClick={async () => {
               const res = await fetchBacktest(item.id);
@@ -75,22 +75,22 @@ export default function BacktestsPage() {
             }}
           >
             <div>
-              <span className="text-qp-body font-medium">{item.name}</span>
+              <span className="text-[13px] font-medium">{item.name}</span>
               {item.start_date && item.end_date && (
-                <span className="text-qp-small text-qp-text-muted ml-qp-2">
+                <span className="text-[11px] text-ink-4 ml-2">
                   {new Date(item.start_date).toLocaleDateString()} — {new Date(item.end_date).toLocaleDateString()}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-qp-3">
+            <div className="flex items-center gap-3">
               {item.total_return != null && (
-                <span className={`font-mono text-qp-body ${item.total_return >= 0 ? "text-qp-green-600" : "text-qp-red-600"}`}>
+                <span className={`font-mono text-[13px] ${item.total_return >= 0 ? "text-pos" : "text-breach"}`}>
                   {pct(item.total_return)}
                 </span>
               )}
               <StatusBadge status={item.status} />
               {item.is_promoted && (
-                <span className="px-qp-2 py-0.5 bg-qp-blue-100 text-qp-blue-700 rounded-qp-sm text-qp-small font-medium">
+                <span className="px-2 py-0.5 bg-primary-soft text-primary rounded-md text-[11px] font-medium">
                   promoted
                 </span>
               )}
@@ -104,17 +104,17 @@ export default function BacktestsPage() {
           {/* Experiment header */}
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-qp-h2">{detail.name}</h2>
-              <p className="text-qp-small text-qp-text-muted mt-1">
+              <h2 className="text-[15px] font-semibold text-ink">{detail.name}</h2>
+              <p className="text-[11px] text-ink-4 mt-1">
                 {detail.universe_name || "Unknown universe"}
                 {detail.start_date && ` · ${new Date(detail.start_date).toLocaleDateString()}`}
                 {detail.end_date && ` — ${new Date(detail.end_date).toLocaleDateString()}`}
               </p>
             </div>
-            <div className="flex items-center gap-qp-2">
+            <div className="flex items-center gap-2">
               <StatusBadge status={detail.status} />
               {detail.is_promoted && (
-                <span className="px-qp-2 py-0.5 bg-qp-blue-100 text-qp-blue-700 rounded-qp-sm text-qp-small font-medium">
+                <span className="px-2 py-0.5 bg-primary-soft text-primary rounded-md text-[11px] font-medium">
                   promoted
                 </span>
               )}
@@ -122,7 +122,7 @@ export default function BacktestsPage() {
           </div>
 
           {/* Result summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-qp-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-gap">
             <MetricCard label="Total Return" value={pct(detail.results.total_return)} />
             <MetricCard label="Annualized Return" value={pct(detail.results.annualized_return)} />
             <MetricCard label="Max Drawdown" value={pct(detail.results.max_drawdown)} />
@@ -133,19 +133,19 @@ export default function BacktestsPage() {
           </div>
 
           {/* Equity curve */}
-          <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-            <h3 className="text-qp-h3 mb-qp-4">Equity Curve (base 100)</h3>
+          <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+            <h3 className="text-[13px] font-semibold text-ink mb-4">Equity Curve (base 100)</h3>
             <EquityCurveChart data={detail.equity_curve} />
           </div>
 
           {/* Config table */}
-          <div className="bg-qp-bg-card border border-qp-border rounded-qp p-qp-4">
-            <h3 className="text-qp-h3 mb-qp-3">Experiment Configuration</h3>
-            <div className="space-y-qp-1">
+          <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+            <h3 className="text-[13px] font-semibold text-ink mb-3">Experiment Configuration</h3>
+            <div className="space-y-1">
               {Object.entries(detail.config).map(([key, val]) => (
-                <div key={key} className="flex gap-qp-3 text-qp-body">
-                  <span className="text-qp-text-muted w-40 shrink-0">{key.replace(/_/g, " ")}</span>
-                  <span className="text-qp-text-secondary">{String(val)}</span>
+                <div key={key} className="flex gap-3 text-[13px]">
+                  <span className="text-ink-3 w-40 shrink-0">{key.replace(/_/g, " ")}</span>
+                  <span className="text-ink-2">{String(val)}</span>
                 </div>
               ))}
             </div>
