@@ -1,10 +1,12 @@
 """Decision pipeline endpoints.
 
-POST /api/v1/pipeline/run      — trigger full pipeline run
-GET  /api/v1/pipeline/status   — pipeline status summary
-GET  /api/v1/pipeline/latest   — latest pipeline-generated recommendation
+POST /api/v1/pipeline/run              — trigger full pipeline run
+GET  /api/v1/pipeline/status           — pipeline status summary
+GET  /api/v1/pipeline/latest           — latest pipeline-generated recommendation
+GET  /api/v1/pipeline/runs             — list pipeline runs
+GET  /api/v1/pipeline/runs/{rec_id}    — pipeline run detail with stages
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -50,6 +52,22 @@ async def get_pipeline_status(db: AsyncSession = Depends(get_db)):
     svc = DecisionPipelineService(db)
     status = await svc.get_status()
     return ApiResponse(meta=make_meta(), data=PipelineStatusResponse(**status))
+
+
+@router.get("/pipeline/runs", response_model=ApiResponse[list[dict]])
+async def list_pipeline_runs(db: AsyncSession = Depends(get_db)):
+    svc = DecisionPipelineService(db)
+    runs = await svc.get_pipeline_runs()
+    return ApiResponse(meta=make_meta(), data=runs)
+
+
+@router.get("/pipeline/runs/{recommendation_id}", response_model=ApiResponse[dict])
+async def get_pipeline_run_detail(recommendation_id: str, db: AsyncSession = Depends(get_db)):
+    svc = DecisionPipelineService(db)
+    detail = await svc.get_pipeline_run_detail(recommendation_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Pipeline run not found")
+    return ApiResponse(meta=make_meta(), data=detail)
 
 
 @router.get("/pipeline/latest", response_model=ApiResponse[RecommendationDetail | None])

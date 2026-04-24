@@ -19,33 +19,48 @@ router = APIRouter()
 
 @router.get("/overview", response_model=ApiResponse[OverviewResponse])
 async def get_overview(db: AsyncSession = Depends(get_db)):
+    meta_warnings = []
+
     # Get the most recently published recommendation
-    stmt = (
+    rec = (await db.execute(
         select(Recommendation)
         .where(Recommendation.status.in_(["published", "published_with_warning"]))
         .order_by(Recommendation.published_at.desc())
         .limit(1)
-    )
-    result = await db.execute(stmt)
-    rec = result.scalar_one_or_none()
+    )).scalar_one_or_none()
+
+    # Check for newer pipeline draft
+    latest_draft = (await db.execute(
+        select(Recommendation)
+        .where(Recommendation.source_feature_set_id.is_not(None))
+        .order_by(Recommendation.created_at.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+
+    # If no published rec but draft exists, use the draft
+    if not rec and latest_draft:
+        rec = latest_draft
+        meta_warnings.append(
+            "No published recommendation exists; showing latest pipeline-generated draft."
+        )
+    elif rec and latest_draft and latest_draft.id != rec.id:
+        if latest_draft.created_at and rec.created_at and latest_draft.created_at > rec.created_at:
+            meta_warnings.append(
+                "A newer pipeline-generated draft exists but is not published yet."
+            )
 
     current_recommendation = None
     if rec:
-        # Count weights
-        weight_count_stmt = (
-            select(func.count())
-            .select_from(RecommendationWeight)
+        weight_count = (await db.execute(
+            select(func.count()).select_from(RecommendationWeight)
             .where(RecommendationWeight.recommendation_id == rec.id)
-        )
-        weight_count = (await db.execute(weight_count_stmt)).scalar() or 0
+        )).scalar() or 0
 
-        # Get top overweight / underweight
-        weights_stmt = (
+        weights = (await db.execute(
             select(RecommendationWeight)
             .where(RecommendationWeight.recommendation_id == rec.id)
             .order_by(RecommendationWeight.delta.desc().nulls_last())
-        )
-        weights = (await db.execute(weights_stmt)).scalars().all()
+        )).scalars().all()
 
         top_over = None
         top_under = None
@@ -77,13 +92,10 @@ async def get_overview(db: AsyncSession = Depends(get_db)):
             warning_count=len(warning_list),
         )
 
-    # Count total published recommendations
-    total_stmt = (
-        select(func.count())
-        .select_from(Recommendation)
+    total_count = (await db.execute(
+        select(func.count()).select_from(Recommendation)
         .where(Recommendation.status.in_(["published", "published_with_warning"]))
-    )
-    total_count = (await db.execute(total_stmt)).scalar() or 0
+    )).scalar() or 0
 
     overview = OverviewResponse(
         current_recommendation=current_recommendation,
@@ -92,4 +104,7 @@ async def get_overview(db: AsyncSession = Depends(get_db)):
         last_published_at=rec.published_at if rec else None,
     )
 
-    return ApiResponse(meta=make_meta(), data=overview)
+    return ApiResponse(
+        meta=make_meta(warnings=meta_warnings if meta_warnings else None),
+        data=overview,
+    )

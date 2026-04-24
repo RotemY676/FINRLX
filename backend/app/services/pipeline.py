@@ -62,8 +62,32 @@ class DecisionPipelineService:
         If feature_set_id is provided, uses runs linked to that specific feature set.
         Otherwise, finds the best feature set that has registered engine runs.
         """
+        from app.models.engine import EngineDefinition
         eng_svc = EngineService(self.db)
         registered_keys = await eng_svc._get_registered_keys()
+
+        # If explicit signal_run_ids provided, validate and use them
+        if signal_run_ids:
+            runs = (await self.db.execute(
+                select(SignalRun)
+                .where(SignalRun.id.in_(signal_run_ids))
+                .where(SignalRun.status == "completed")
+            )).scalars().all()
+
+            # Filter to registered engines only
+            valid_runs = [r for r in runs if r.engine_name in registered_keys]
+            if not valid_runs:
+                return [], [], None
+
+            # Verify consistent feature_set_id
+            fs_ids = {r.feature_set_id for r in valid_runs if r.feature_set_id}
+            common_fs = fs_ids.pop() if len(fs_ids) == 1 else (fs_ids.pop() if fs_ids else None)
+
+            run_ids = [r.id for r in valid_runs]
+            outputs = list((await self.db.execute(
+                select(SignalOutput).where(SignalOutput.signal_run_id.in_(run_ids))
+            )).scalars().all())
+            return outputs, run_ids, common_fs
 
         # If specific feature_set_id is provided, use it directly
         if feature_set_id:
@@ -534,6 +558,93 @@ class DecisionPipelineService:
             .order_by(Recommendation.created_at.desc())
             .limit(1)
         )).scalar_one_or_none()
+
+    async def get_pipeline_runs(self, limit: int = 50) -> list[dict]:
+        """List pipeline-generated recommendations as pipeline runs."""
+        recs = (await self.db.execute(
+            select(Recommendation)
+            .where(Recommendation.source_feature_set_id.is_not(None))
+            .order_by(Recommendation.created_at.desc())
+            .limit(limit)
+        )).scalars().all()
+
+        result = []
+        for r in recs:
+            wt_count = (await self.db.execute(
+                select(func.count()).select_from(RecommendationWeight)
+                .where(RecommendationWeight.recommendation_id == r.id)
+            )).scalar() or 0
+            warning_list = r.warnings if isinstance(r.warnings, list) else []
+            result.append({
+                "recommendation_id": r.id,
+                "status": r.status,
+                "created_at": r.created_at,
+                "source_feature_set_id": r.source_feature_set_id,
+                "source_signal_run_ids": r.source_signal_run_ids,
+                "weight_count": wt_count,
+                "model_confidence": r.model_confidence,
+                "data_confidence": r.data_confidence,
+                "operational_confidence": r.operational_confidence,
+                "warning_count": len(warning_list),
+            })
+        return result
+
+    async def get_pipeline_run_detail(self, recommendation_id: str) -> dict | None:
+        """Get full pipeline run detail including all stage records."""
+        rec = (await self.db.execute(
+            select(Recommendation).where(Recommendation.id == recommendation_id)
+            .where(Recommendation.source_feature_set_id.is_not(None))
+        )).scalar_one_or_none()
+        if not rec:
+            return None
+
+        sel = (await self.db.execute(
+            select(SelectionRun).where(SelectionRun.recommendation_id == rec.id)
+        )).scalar_one_or_none()
+        alloc = (await self.db.execute(
+            select(AllocationResult).where(AllocationResult.recommendation_id == rec.id)
+        )).scalar_one_or_none()
+        timing = (await self.db.execute(
+            select(TimingResult).where(TimingResult.recommendation_id == rec.id)
+        )).scalar_one_or_none()
+        overlay = (await self.db.execute(
+            select(RiskOverlayResult).where(RiskOverlayResult.recommendation_id == rec.id)
+        )).scalar_one_or_none()
+
+        wt_count = (await self.db.execute(
+            select(func.count()).select_from(RecommendationWeight)
+            .where(RecommendationWeight.recommendation_id == rec.id)
+        )).scalar() or 0
+
+        return {
+            "recommendation_id": rec.id,
+            "status": rec.status,
+            "created_at": rec.created_at,
+            "source_feature_set_id": rec.source_feature_set_id,
+            "source_signal_run_ids": rec.source_signal_run_ids,
+            "model_confidence": rec.model_confidence,
+            "data_confidence": rec.data_confidence,
+            "operational_confidence": rec.operational_confidence,
+            "rationale_summary": rec.rationale_summary,
+            "warnings": rec.warnings if isinstance(rec.warnings, list) else [],
+            "weight_count": wt_count,
+            "selection": {
+                "id": sel.id, "included_count": len(sel.included_assets or []),
+                "excluded_count": len(sel.excluded_assets or []), "rationale": sel.rationale,
+            } if sel else None,
+            "allocation": {
+                "id": alloc.id, "method": alloc.method,
+                "position_count": len(alloc.weights or {}), "rationale": alloc.rationale,
+            } if alloc else None,
+            "timing": {
+                "id": timing.id, "urgency": timing.urgency,
+                "horizon_days": timing.horizon_days, "rationale": timing.rationale,
+            } if timing else None,
+            "risk_overlay": {
+                "id": overlay.id, "portfolio_risk_score": overlay.portfolio_risk_score,
+                "adjustment_count": len(overlay.adjustments or []), "rationale": overlay.rationale,
+            } if overlay else None,
+        }
 
     async def get_status(self) -> dict:
         pipeline_count = (await self.db.execute(

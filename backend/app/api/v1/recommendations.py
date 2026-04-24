@@ -67,19 +67,47 @@ async def _build_recommendation_detail(
 
 @router.get("/recommendations/current", response_model=ApiResponse[RecommendationDetail | None])
 async def get_current_recommendation(db: AsyncSession = Depends(get_db)):
-    stmt = (
+    warnings = []
+
+    # 1. Try published recommendation first
+    published = (await db.execute(
         select(Recommendation)
         .where(Recommendation.status.in_(["published", "published_with_warning"]))
         .order_by(Recommendation.published_at.desc())
         .limit(1)
+    )).scalar_one_or_none()
+
+    # 2. Check for newer pipeline-generated draft
+    latest_draft = (await db.execute(
+        select(Recommendation)
+        .where(Recommendation.source_feature_set_id.is_not(None))
+        .order_by(Recommendation.created_at.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+
+    if published:
+        # Published exists — use it, but warn if newer draft exists
+        if latest_draft and latest_draft.id != published.id:
+            if latest_draft.created_at and published.created_at:
+                if latest_draft.created_at > published.created_at:
+                    warnings.append(
+                        "A newer pipeline-generated draft exists but is not published yet."
+                    )
+        detail = await _build_recommendation_detail(published, db)
+        return ApiResponse(meta=make_meta(warnings=warnings if warnings else None), data=detail)
+
+    if latest_draft:
+        # No published, but draft exists — return it with warning
+        warnings.append(
+            "No published recommendation exists; returning latest pipeline-generated draft."
+        )
+        detail = await _build_recommendation_detail(latest_draft, db)
+        return ApiResponse(meta=make_meta(warnings=warnings), data=detail)
+
+    return ApiResponse(
+        meta=make_meta(warnings=["No published recommendation found"]),
+        data=None,
     )
-    rec = (await db.execute(stmt)).scalar_one_or_none()
-
-    if not rec:
-        return ApiResponse(meta=make_meta(warnings=["No published recommendation found"]), data=None)
-
-    detail = await _build_recommendation_detail(rec, db)
-    return ApiResponse(meta=make_meta(), data=detail)
 
 
 @router.get("/recommendations/{recommendation_id}", response_model=ApiResponse[RecommendationDetail])
