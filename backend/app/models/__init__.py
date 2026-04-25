@@ -16,6 +16,7 @@ from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
 from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
 from app.models.engine import EngineDefinition
 from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction, ModelValidationReport, MLPromotionReview
+from app.models.policy import PolicyRule, PolicyRuleHistory
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -31,4 +32,5 @@ __all__ = [
     "PaperValuationSnapshot", "PaperTrade",
     "ModelDefinition", "ModelRun", "ModelPrediction", "ModelValidationReport",
     "MLPromotionReview",
+    "PolicyRule", "PolicyRuleHistory",
 ]

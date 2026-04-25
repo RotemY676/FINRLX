@@ -635,6 +635,28 @@ export interface OpsMLBlock {
   ml_is_shadow_only: boolean;
 }
 
+export interface OpsPolicyBlock {
+  total_rules: number;
+  active_rules: number;
+  enforced_rules: number;
+  active_breaches: number;
+}
+
+export interface OpsIntegrationsBlock {
+  total_integrations: number;
+  healthy: number;
+  degraded: number;
+  placeholder: number;
+  real_providers: number;
+}
+
+export interface OpsUniverseBlock {
+  total_universes: number;
+  total_assets: number;
+  default_universe_name: string | null;
+  default_readiness: string | null;
+}
+
 export interface OpsData {
   queue: OpsQueueItem[];
   feeds: OpsFeed[];
@@ -644,6 +666,9 @@ export interface OpsData {
   audit: OpsAuditEntry[];
   system_kpis: OpsSystemKpi[];
   ml_ops: OpsMLBlock | null;
+  policy: OpsPolicyBlock | null;
+  integrations_summary: OpsIntegrationsBlock | null;
+  universe: OpsUniverseBlock | null;
 }
 
 export interface QueueActionResult {

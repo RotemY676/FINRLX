@@ -84,6 +84,28 @@ class OpsMLBlock(BaseModel):
     ml_is_shadow_only: bool = True
 
 
+class OpsPolicyBlock(BaseModel):
+    total_rules: int = 0
+    active_rules: int = 0
+    enforced_rules: int = 0
+    active_breaches: int = 0
+
+
+class OpsIntegrationsBlock(BaseModel):
+    total_integrations: int = 0
+    healthy: int = 0
+    degraded: int = 0
+    placeholder: int = 0
+    real_providers: int = 0
+
+
+class OpsUniverseBlock(BaseModel):
+    total_universes: int = 0
+    total_assets: int = 0
+    default_universe_name: str | None = None
+    default_readiness: str | None = None
+
+
 class OpsCommandCenterResponse(BaseModel):
     queue: list[OpsQueueItem]
     feeds: list[OpsFeed]
@@ -93,6 +115,9 @@ class OpsCommandCenterResponse(BaseModel):
     audit: list[OpsAuditEntry]
     system_kpis: list[OpsSystemKpi] = Field(default_factory=list)
     ml_ops: OpsMLBlock | None = None
+    policy: OpsPolicyBlock | None = None
+    integrations_summary: OpsIntegrationsBlock | None = None
+    universe: OpsUniverseBlock | None = None
 
 
 class QueueActionResponse(BaseModel):

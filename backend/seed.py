@@ -286,6 +286,13 @@ async def _seed_pipeline_stages():
         inserted = await ml_svc.ensure_default_definitions()
         print(f"  Models: {inserted} new definition(s) registered" if inserted else "  Models: definitions already exist")
 
+    # ── Policy rules (Phase 6F) ──
+    async with async_session_factory() as db:
+        from app.services.policies import PolicyService
+        pol_svc = PolicyService(db)
+        inserted = await pol_svc.ensure_default_policy_rules()
+        print(f"  Policies: {inserted} new rule(s) created" if inserted else "  Policies: rules already exist")
+
 
 async def seed():
     async with async_session_factory() as db:

@@ -25,6 +25,7 @@ from app.schemas.ops import (
     OpsCommandCenterResponse, OpsQueueItem, OpsFeed, OpsEngine,
     OpsBreach, OpsIncident, OpsAuditEntry, OpsSystemKpi,
     QueueActionResponse, WorkspaceCounts, OpsMLBlock,
+    OpsPolicyBlock, OpsIntegrationsBlock, OpsUniverseBlock,
 )
 from app.models.ops import (
     AuditEvent, Incident, DataFeed, PolicyBreach, PublicationQueueEntry,
@@ -230,12 +231,33 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
     ml_block_data = await ml_svc.get_ops_ml_block()
     ml_block = OpsMLBlock(**ml_block_data)
 
+    # Policy block
+    from app.services.policies import PolicyService
+    pol_svc = PolicyService(db)
+    await pol_svc.ensure_default_policy_rules()
+    pol_data = await pol_svc.get_ops_summary()
+    pol_block = OpsPolicyBlock(**pol_data)
+
+    # Integrations block
+    from app.services.integrations import IntegrationsService
+    int_svc = IntegrationsService(db)
+    int_data = await int_svc.get_integration_health()
+    int_block = OpsIntegrationsBlock(**int_data)
+
+    # Universe block
+    from app.services.universe import UniverseService
+    uni_svc = UniverseService(db)
+    uni_data = await uni_svc.get_ops_summary()
+    uni_block = OpsUniverseBlock(**uni_data)
+
     return ApiResponse(
         meta=make_meta(),
         data=OpsCommandCenterResponse(
             queue=queue, feeds=feeds, engines=engines,
             breaches=breaches, incidents=incidents, audit=audit,
             system_kpis=kpis, ml_ops=ml_block,
+            policy=pol_block, integrations_summary=int_block,
+            universe=uni_block,
         ),
     )
 

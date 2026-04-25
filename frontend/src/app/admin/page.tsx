@@ -380,6 +380,93 @@ export default function AdminPage() {
         </section>
       </div>
 
+      {/* ── Policy / Integrations / Universe strip ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gap">
+        {/* Policy Rules */}
+        {ops.policy && (
+          <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="risk" size={14} className="text-ink-3" />
+              <h3 className="text-[13px] font-semibold text-ink">Policy Rules</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink">{ops.policy.active_rules}</p>
+                <p className="text-[10px] text-ink-4">active rules</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink">{ops.policy.enforced_rules}</p>
+                <p className="text-[10px] text-ink-4">enforced</p>
+              </div>
+              <div>
+                <p className={`text-[18px] font-display font-semibold ${ops.policy.active_breaches > 0 ? "text-breach" : "text-pos"}`}>{ops.policy.active_breaches}</p>
+                <p className="text-[10px] text-ink-4">active breaches</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink-3">{ops.policy.total_rules - ops.policy.enforced_rules}</p>
+                <p className="text-[10px] text-ink-4">display-only</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Integrations */}
+        {ops.integrations_summary && (
+          <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="database" size={14} className="text-ink-3" />
+              <h3 className="text-[13px] font-semibold text-ink">Integrations</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className={`text-[18px] font-display font-semibold ${ops.integrations_summary.healthy > 0 ? "text-pos" : "text-ink-3"}`}>{ops.integrations_summary.healthy}</p>
+                <p className="text-[10px] text-ink-4">healthy</p>
+              </div>
+              <div>
+                <p className={`text-[18px] font-display font-semibold ${ops.integrations_summary.degraded > 0 ? "text-caution" : "text-ink-3"}`}>{ops.integrations_summary.degraded}</p>
+                <p className="text-[10px] text-ink-4">degraded</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink">{ops.integrations_summary.real_providers}</p>
+                <p className="text-[10px] text-ink-4">real providers</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-display font-semibold text-caution">{ops.integrations_summary.placeholder}</p>
+                <p className="text-[10px] text-ink-4">placeholder / demo</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Universe */}
+        {ops.universe && (
+          <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="universe" size={14} className="text-ink-3" />
+              <h3 className="text-[13px] font-semibold text-ink">Universe</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink">{ops.universe.total_assets}</p>
+                <p className="text-[10px] text-ink-4">assets</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-display font-semibold text-ink">{ops.universe.total_universes}</p>
+                <p className="text-[10px] text-ink-4">universes</p>
+              </div>
+            </div>
+            {ops.universe.default_universe_name && (
+              <div className="mt-2 pt-2 border-t border-line text-center">
+                <p className="text-[11px] text-ink-3">{ops.universe.default_universe_name}</p>
+                <p className={`text-[11px] font-medium ${ops.universe.default_readiness === "ready" ? "text-pos" : "text-caution"}`}>
+                  {ops.universe.default_readiness || "unknown"}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+
       {/* ── Breach Watch ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
         <div className="flex items-center gap-2 mb-4">
