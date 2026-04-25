@@ -93,6 +93,7 @@ class BacktestService:
         universe_id: str | None = None,
         rebalance_frequency: str = REBALANCE_MONTHLY,
         cost_bps: int = DEFAULT_COST_BPS,
+        include_shadow_engines: bool = False,
     ) -> BacktestExperiment:
         """Run a walk-forward backtest using real market_bars and pipeline logic."""
         now = datetime.now(timezone.utc)
@@ -113,6 +114,7 @@ class BacktestService:
                 "cost_bps": cost_bps,
                 "methodology": "walk-forward",
                 "pipeline": "Phase 4 pipeline (features → engines → selection → allocation → timing → risk)",
+                "include_shadow_engines": include_shadow_engines,
             },
         )
         self.db.add(bt)
@@ -184,7 +186,10 @@ class BacktestService:
                 await eng_svc.run_engines(feature_set_id=fs.id)
 
                 pipe_svc = DecisionPipelineService(self.db)
-                pipe_result = await pipe_svc.run_pipeline(feature_set_id=fs.id, universe_id=universe_id)
+                pipe_result = await pipe_svc.run_pipeline(
+                    feature_set_id=fs.id, universe_id=universe_id,
+                    include_shadow_engines=include_shadow_engines,
+                )
 
                 if pipe_result["status"] == "completed" and pipe_result.get("recommendation_id"):
                     # Tag backtest recommendation so it doesn't pollute live current
@@ -292,7 +297,11 @@ class BacktestService:
             "market_bar_window": {"start": start_date.isoformat(), "end": end_date.isoformat()},
             "rebalance_dates": [d.isoformat() for d in rebalance_dates],
             "created_by_service": "BacktestService.run_backtest",
+            "include_shadow_engines": include_shadow_engines,
         }
+        if include_shadow_engines:
+            bt.results_summary["experimental_context"] = "ml_shadow"
+            bt.results_summary["model_key"] = "ml_return_forecaster"
         await self.db.commit()
         return bt
 

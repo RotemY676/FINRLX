@@ -72,6 +72,28 @@ class ModelPrediction(Base):
     )
 
 
+class MLPromotionReview(Base):
+    __tablename__ = "ml_promotion_reviews"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    model_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    model_version: Mapped[str] = mapped_column(String(20), nullable=False, default="v1")
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    baseline_backtest_id: Mapped[str | None] = mapped_column(String(36))
+    shadow_backtest_id: Mapped[str | None] = mapped_column(String(36))
+    validation_report_id: Mapped[str | None] = mapped_column(String(36))
+    baseline_metrics: Mapped[dict | None] = mapped_column(JSON)
+    shadow_metrics: Mapped[dict | None] = mapped_column(JSON)
+    metric_deltas: Mapped[dict | None] = mapped_column(JSON)
+    sample_count: Mapped[int] = mapped_column(Integer, default=0)
+    recommendation: Mapped[str] = mapped_column(String(30), nullable=False, default="not_ready")
+    decision: Mapped[str | None] = mapped_column(String(30))
+    warnings: Mapped[list | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class ModelValidationReport(Base):
     __tablename__ = "model_validation_reports"
 

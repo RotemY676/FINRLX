@@ -62,3 +62,8 @@ class ModelStatusResponse(BaseModel):
     directional_accuracy: float | None = None
     validation_sample_count: int | None = None
     promotion_readiness: str | None = None
+    latest_promotion_review_id: str | None = None
+    promotion_review_recommendation: str | None = None
+    promotion_review_decision: str | None = None
+    shadow_backtest_delta_summary: dict | None = None
+    still_shadow: bool = True

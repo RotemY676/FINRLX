@@ -308,6 +308,21 @@ class ModelingService:
             select(ModelValidationReport).order_by(ModelValidationReport.evaluated_at.desc()).limit(1)
         )).scalar_one_or_none()
 
+        # Latest promotion review
+        from app.models.modeling import MLPromotionReview
+        promo_review = (await self.db.execute(
+            select(MLPromotionReview).order_by(MLPromotionReview.reviewed_at.desc()).limit(1)
+        )).scalar_one_or_none()
+
+        promo_delta_summary = None
+        if promo_review and promo_review.metric_deltas:
+            d = promo_review.metric_deltas
+            promo_delta_summary = {
+                "total_return_delta": d.get("total_return_delta"),
+                "sharpe_delta": d.get("sharpe_ratio_delta"),
+                "max_drawdown_delta": d.get("max_drawdown_delta"),
+            }
+
         return {
             "total_definitions": total_defs,
             "active_definitions": active,
@@ -319,4 +334,9 @@ class ModelingService:
             "directional_accuracy": val_report.directional_accuracy if val_report else None,
             "validation_sample_count": val_report.sample_count if val_report else None,
             "promotion_readiness": val_report.promotion_readiness if val_report else None,
+            "latest_promotion_review_id": promo_review.id if promo_review else None,
+            "promotion_review_recommendation": promo_review.recommendation if promo_review else None,
+            "promotion_review_decision": promo_review.decision if promo_review else None,
+            "shadow_backtest_delta_summary": promo_delta_summary,
+            "still_shadow": True,
         }
