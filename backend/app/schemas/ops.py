@@ -72,6 +72,18 @@ class OpsSystemKpi(BaseModel):
     tone: str = "neutral"  # neutral, pos, caution, breach
 
 
+class OpsMLBlock(BaseModel):
+    """Compact ML observability block for ops dashboard."""
+    total_models: int = 0
+    active_models: int = 0
+    shadow_models: int = 0
+    latest_validation_status: str | None = None
+    promotion_readiness: str | None = None
+    warning_count: int = 0
+    any_model_influences_live_pipeline: bool = False
+    ml_is_shadow_only: bool = True
+
+
 class OpsCommandCenterResponse(BaseModel):
     queue: list[OpsQueueItem]
     feeds: list[OpsFeed]
@@ -80,6 +92,7 @@ class OpsCommandCenterResponse(BaseModel):
     incidents: list[OpsIncident]
     audit: list[OpsAuditEntry]
     system_kpis: list[OpsSystemKpi] = Field(default_factory=list)
+    ml_ops: OpsMLBlock | None = None
 
 
 class QueueActionResponse(BaseModel):

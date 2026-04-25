@@ -24,7 +24,7 @@ from app.schemas.common import ApiResponse
 from app.schemas.ops import (
     OpsCommandCenterResponse, OpsQueueItem, OpsFeed, OpsEngine,
     OpsBreach, OpsIncident, OpsAuditEntry, OpsSystemKpi,
-    QueueActionResponse, WorkspaceCounts,
+    QueueActionResponse, WorkspaceCounts, OpsMLBlock,
 )
 from app.models.ops import (
     AuditEvent, Incident, DataFeed, PolicyBreach, PublicationQueueEntry,
@@ -224,12 +224,18 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
     audit = await _query_audit(db)
     kpis = _compute_kpis(queue, feeds, breaches, incidents, engines)
 
+    # ML ops block
+    from app.services.ml_ops import MLOpsService
+    ml_svc = MLOpsService(db)
+    ml_block_data = await ml_svc.get_ops_ml_block()
+    ml_block = OpsMLBlock(**ml_block_data)
+
     return ApiResponse(
         meta=make_meta(),
         data=OpsCommandCenterResponse(
             queue=queue, feeds=feeds, engines=engines,
             breaches=breaches, incidents=incidents, audit=audit,
-            system_kpis=kpis,
+            system_kpis=kpis, ml_ops=ml_block,
         ),
     )
 

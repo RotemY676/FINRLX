@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident,
+  fetchMLOpsSummary,
+  OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
@@ -62,12 +63,16 @@ export default function AdminPage() {
   // Incident drawer
   const [drawerIncident, setDrawerIncident] = useState<OpsIncident | null>(null);
 
+  // ML Ops summary
+  const [mlSummary, setMlSummary] = useState<MLOpsSummary | null>(null);
+
   useEffect(() => {
-    fetchOps()
-      .then((res) => {
-        setOps(res.data);
-        setFilteredQueue(res.data.queue);
-        setFilteredAudit(res.data.audit);
+    Promise.all([fetchOps(), fetchMLOpsSummary().catch(() => null)])
+      .then(([opsRes, mlRes]) => {
+        setOps(opsRes.data);
+        setFilteredQueue(opsRes.data.queue);
+        setFilteredAudit(opsRes.data.audit);
+        if (mlRes) setMlSummary(mlRes.data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -143,6 +148,101 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── ML Observability ── */}
+      {mlSummary && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon name="compare" size={15} className="text-primary" />
+            <h3 className="text-[13px] font-semibold text-ink">ML Observability</h3>
+            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-caution-soft text-caution-soft-ink">
+              Shadow
+            </span>
+            {!mlSummary.live_pipeline_influence && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">
+                Live influence: Off
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Model</p>
+              <p className="text-[12px] font-medium text-ink font-mono">{mlSummary.model_key}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Status</p>
+              <p className="text-[12px] font-medium text-caution">{mlSummary.status}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Predictions</p>
+              <p className="text-[12px] font-medium text-ink font-mono">{mlSummary.prediction_count}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Validation</p>
+              <p className="text-[12px] font-medium text-ink">{mlSummary.validation_status || "—"}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Accuracy</p>
+              <p className="text-[12px] font-medium text-ink font-mono">
+                {mlSummary.directional_accuracy != null
+                  ? `${(mlSummary.directional_accuracy * 100).toFixed(0)}%`
+                  : "—"}
+                {mlSummary.validation_sample_count != null && (
+                  <span className="text-ink-4 text-[10px] ml-1">n={mlSummary.validation_sample_count}</span>
+                )}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] text-ink-4 mb-0.5">Readiness</p>
+              <p className={`text-[12px] font-medium ${
+                mlSummary.promotion_readiness === "eligible_for_review" ? "text-pos" :
+                mlSummary.promotion_readiness === "promising_shadow" ? "text-caution" :
+                "text-ink-3"
+              }`}>
+                {mlSummary.promotion_readiness || "—"}
+              </p>
+            </div>
+          </div>
+          {/* Shadow vs Baseline delta */}
+          {mlSummary.total_return_delta != null && (
+            <div className="flex items-center gap-4 text-[11px] border-t border-line pt-3 mb-3">
+              <span className="text-ink-4">Baseline vs Shadow:</span>
+              <span className="font-mono text-ink">
+                Return delta {mlSummary.total_return_delta >= 0 ? "+" : ""}{(mlSummary.total_return_delta * 100).toFixed(2)}%
+              </span>
+              {mlSummary.sharpe_delta != null && (
+                <span className="font-mono text-ink-3">
+                  Sharpe delta {mlSummary.sharpe_delta >= 0 ? "+" : ""}{mlSummary.sharpe_delta.toFixed(2)}
+                </span>
+              )}
+              {mlSummary.max_drawdown_delta != null && (
+                <span className="font-mono text-ink-3">
+                  DD delta {mlSummary.max_drawdown_delta >= 0 ? "+" : ""}{(mlSummary.max_drawdown_delta * 100).toFixed(2)}%
+                </span>
+              )}
+            </div>
+          )}
+          {/* Warnings */}
+          {mlSummary.warnings.length > 0 && (
+            <div className="space-y-1 border-t border-line pt-3 mb-3">
+              {mlSummary.warnings.map((w, i) => (
+                <div key={i} className="flex items-center gap-2 text-[11px]">
+                  <Icon name={w.level === "warning" ? "alert-triangle" : "info"} size={10}
+                    className={w.level === "warning" ? "text-caution" : "text-ink-4"} />
+                  <span className={w.level === "warning" ? "text-caution" : "text-ink-3"}>{w.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Recommended action */}
+          {mlSummary.recommended_operator_action && (
+            <div className="flex items-center gap-2 text-[11px] border-t border-line pt-3">
+              <span className="text-ink-4">Recommended:</span>
+              <span className="font-medium text-ink-2">{mlSummary.recommended_operator_action.replace(/_/g, " ")}</span>
+            </div>
+          )}
+        </section>
       )}
 
       {/* ── Publication Queue ── */}

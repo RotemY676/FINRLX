@@ -584,6 +584,17 @@ export interface OpsSystemKpi {
   tone: string;
 }
 
+export interface OpsMLBlock {
+  total_models: number;
+  active_models: number;
+  shadow_models: number;
+  latest_validation_status: string | null;
+  promotion_readiness: string | null;
+  warning_count: number;
+  any_model_influences_live_pipeline: boolean;
+  ml_is_shadow_only: boolean;
+}
+
 export interface OpsData {
   queue: OpsQueueItem[];
   feeds: OpsFeed[];
@@ -592,6 +603,7 @@ export interface OpsData {
   incidents: OpsIncident[];
   audit: OpsAuditEntry[];
   system_kpis: OpsSystemKpi[];
+  ml_ops: OpsMLBlock | null;
 }
 
 export interface QueueActionResult {
@@ -734,4 +746,43 @@ export async function fetchPriceChart(ticker: string = "NVDA"): Promise<ApiRespo
 
 export async function resolveIncident(id: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
   return apiFetch<{ success: boolean; message: string }>(`/api/v1/ops/incidents/${id}/resolve`, { method: "POST" });
+}
+
+// ML Ops Observability types
+
+export interface MLOpsWarning {
+  level: string;
+  message: string;
+}
+
+export interface MLOpsSummary {
+  model_key: string;
+  model_name: string | null;
+  status: string;
+  is_shadow: boolean;
+  latest_prediction_run_id: string | null;
+  latest_prediction_status: string | null;
+  prediction_count: number;
+  latest_validation_report_id: string | null;
+  validation_status: string | null;
+  validation_sample_count: number | null;
+  directional_accuracy: number | null;
+  calibration_error: number | null;
+  promotion_readiness: string | null;
+  latest_promotion_review_id: string | null;
+  promotion_review_recommendation: string | null;
+  promotion_review_decision: string | null;
+  baseline_total_return: number | null;
+  shadow_total_return: number | null;
+  total_return_delta: number | null;
+  max_drawdown_delta: number | null;
+  sharpe_delta: number | null;
+  still_shadow: boolean;
+  live_pipeline_influence: boolean;
+  warnings: MLOpsWarning[];
+  recommended_operator_action: string | null;
+}
+
+export async function fetchMLOpsSummary(): Promise<ApiResponse<MLOpsSummary>> {
+  return apiFetch<MLOpsSummary>("/api/v1/ml-ops/summary");
 }
