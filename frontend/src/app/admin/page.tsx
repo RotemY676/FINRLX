@@ -322,18 +322,20 @@ export default function AdminPage() {
           {/* Safety badges */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {[
-              { key: "offline_only", label: "Offline only" },
-              { key: "shadow_only", label: "Shadow only" },
-              { key: "no_broker_execution", label: "No broker execution" },
-              { key: "no_publication_influence", label: "No publication influence" },
-              { key: "no_recommendation_pollution", label: "Not a live recommendation" },
+              { key: "offline_only", label: "Offline only", safeWhen: true },
+              { key: "shadow_only", label: "Shadow only", safeWhen: true },
+              { key: "live_pipeline_influence", label: "No live pipeline influence", safeWhen: false },
+              { key: "no_broker_execution", label: "No broker execution", safeWhen: true },
+              { key: "no_publication_influence", label: "No publication influence", safeWhen: true },
+              { key: "no_recommendation_pollution", label: "Not a live recommendation", safeWhen: true },
             ].map((f) => {
-              const val = (latestBenchmark.safety_flags as unknown as Record<string, boolean>)?.[f.key];
+              const raw = (latestBenchmark.safety_flags as unknown as Record<string, boolean>)?.[f.key];
+              const isSafe = raw === f.safeWhen;
               return (
                 <span key={f.key} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium ${
-                  val ? "bg-surface-3 text-ink-3" : "bg-breach-soft text-breach-soft-ink"
+                  isSafe ? "bg-surface-3 text-ink-3" : "bg-breach-soft text-breach-soft-ink"
                 }`}>
-                  {val ? f.label : `WARNING: ${f.label} = false`}
+                  {isSafe ? f.label : `WARNING: ${f.key}`}
                 </span>
               );
             })}
@@ -380,6 +382,10 @@ export default function AdminPage() {
                       const agents = Object.entries(latestBenchmark.metrics_by_agent);
                       const bestReturn = Math.max(...agents.map(([, m]) => m.total_return ?? -Infinity));
                       const bestReward = Math.max(...agents.map(([, m]) => m.total_reward ?? -Infinity));
+                      // Lowest drawdown = closest to zero (least severe). max_drawdown is negative, so max() finds least negative.
+                      const lowestDrawdown = Math.max(...agents.map(([, m]) => m.max_drawdown ?? -Infinity));
+                      // Lowest turnover = smallest positive value.
+                      const lowestTurnover = Math.min(...agents.filter(([, m]) => m.total_turnover != null).map(([, m]) => m.total_turnover!));
                       return agents.map(([key, m]) => (
                         <tr key={key} className="border-b border-line/50 hover:bg-surface-3 transition-colors">
                           <td className="py-2 pr-3 font-medium text-ink">{key.replace(/_/g, " ")}</td>
@@ -389,10 +395,10 @@ export default function AdminPage() {
                           <td className={`py-2 pr-3 text-right font-mono ${m.total_reward === bestReward ? "text-pos font-semibold" : "text-ink-2"}`}>
                             {m.total_reward?.toFixed(4) ?? "—"}
                           </td>
-                          <td className="py-2 pr-3 text-right font-mono text-ink-2">
+                          <td className={`py-2 pr-3 text-right font-mono ${m.max_drawdown === lowestDrawdown ? "text-pos font-semibold" : "text-ink-2"}`}>
                             {m.max_drawdown != null ? `${(m.max_drawdown * 100).toFixed(2)}%` : "—"}
                           </td>
-                          <td className="py-2 pr-3 text-right font-mono text-ink-2">
+                          <td className={`py-2 pr-3 text-right font-mono ${m.total_turnover === lowestTurnover ? "text-pos font-semibold" : "text-ink-2"}`}>
                             {m.total_turnover?.toFixed(2) ?? "—"}
                           </td>
                           <td className="py-2 pr-3 text-right font-mono text-ink-3">{m.step_count ?? "—"}</td>
@@ -405,7 +411,9 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-[10px] text-ink-4 mt-2">Green highlight = best offline metric in this benchmark. Not a live recommendation.</p>
+              <p className="text-[10px] text-ink-4 mt-2">
+                Green highlight: best offline return · highest offline reward · lowest drawdown · lowest turnover in this benchmark. Not a live recommendation.
+              </p>
             </div>
           )}
 
