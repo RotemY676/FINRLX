@@ -17,6 +17,7 @@ from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
 from app.models.engine import EngineDefinition
 from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction, ModelValidationReport, MLPromotionReview
 from app.models.policy import PolicyRule, PolicyRuleHistory
+from app.models.rl import RLEnvironmentDefinition, RLEnvironmentRun, RLEpisode, RLStep
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -33,4 +34,5 @@ __all__ = [
     "ModelDefinition", "ModelRun", "ModelPrediction", "ModelValidationReport",
     "MLPromotionReview",
     "PolicyRule", "PolicyRuleHistory",
+    "RLEnvironmentDefinition", "RLEnvironmentRun", "RLEpisode", "RLStep",
 ]

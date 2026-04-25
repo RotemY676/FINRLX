@@ -245,6 +245,42 @@ export default function AdminPage() {
         </section>
       )}
 
+      {/* ── RL Environment ── */}
+      {ops.rl && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="sparkle" size={15} className="text-accent" />
+            <h3 className="text-[13px] font-semibold text-ink">RL Environment</h3>
+            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">
+              Offline / Shadow
+            </span>
+            {!ops.rl.live_pipeline_influence && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">
+                Live influence: Off
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div>
+              <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_environments}</p>
+              <p className="text-[10px] text-ink-4">environments</p>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_runs}</p>
+              <p className="text-[10px] text-ink-4">simulation runs</p>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_run_status || "—"}</p>
+              <p className="text-[10px] text-ink-4">latest status</p>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_agent_type?.replace(/_/g, " ") || "—"}</p>
+              <p className="text-[10px] text-ink-4">agent type</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Publication Queue ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
         <div className="flex items-center gap-2 mb-4">

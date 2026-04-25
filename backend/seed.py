@@ -293,6 +293,13 @@ async def _seed_pipeline_stages():
         inserted = await pol_svc.ensure_default_policy_rules()
         print(f"  Policies: {inserted} new rule(s) created" if inserted else "  Policies: rules already exist")
 
+    # ── RL environment (Phase 7A) ──
+    async with async_session_factory() as db:
+        from app.services.rl_environment import RLEnvironmentService
+        rl_svc = RLEnvironmentService(db)
+        inserted = await rl_svc.ensure_default_rl_environment()
+        print(f"  RL: {inserted} new environment(s) created" if inserted else "  RL: environments already exist")
+
 
 async def seed():
     async with async_session_factory() as db:

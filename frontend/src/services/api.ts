@@ -657,6 +657,15 @@ export interface OpsUniverseBlock {
   default_readiness: string | null;
 }
 
+export interface OpsRLBlock {
+  total_environments: number;
+  total_runs: number;
+  latest_run_status: string | null;
+  latest_agent_type: string | null;
+  is_shadow_only: boolean;
+  live_pipeline_influence: boolean;
+}
+
 export interface OpsData {
   queue: OpsQueueItem[];
   feeds: OpsFeed[];
@@ -669,6 +678,7 @@ export interface OpsData {
   policy: OpsPolicyBlock | null;
   integrations_summary: OpsIntegrationsBlock | null;
   universe: OpsUniverseBlock | null;
+  rl: OpsRLBlock | null;
 }
 
 export interface QueueActionResult {

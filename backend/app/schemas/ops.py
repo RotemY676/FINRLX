@@ -106,6 +106,15 @@ class OpsUniverseBlock(BaseModel):
     default_readiness: str | None = None
 
 
+class OpsRLBlock(BaseModel):
+    total_environments: int = 0
+    total_runs: int = 0
+    latest_run_status: str | None = None
+    latest_agent_type: str | None = None
+    is_shadow_only: bool = True
+    live_pipeline_influence: bool = False
+
+
 class OpsCommandCenterResponse(BaseModel):
     queue: list[OpsQueueItem]
     feeds: list[OpsFeed]
@@ -118,6 +127,7 @@ class OpsCommandCenterResponse(BaseModel):
     policy: OpsPolicyBlock | None = None
     integrations_summary: OpsIntegrationsBlock | None = None
     universe: OpsUniverseBlock | None = None
+    rl: OpsRLBlock | None = None
 
 
 class QueueActionResponse(BaseModel):

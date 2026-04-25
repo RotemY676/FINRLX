@@ -25,7 +25,7 @@ from app.schemas.ops import (
     OpsCommandCenterResponse, OpsQueueItem, OpsFeed, OpsEngine,
     OpsBreach, OpsIncident, OpsAuditEntry, OpsSystemKpi,
     QueueActionResponse, WorkspaceCounts, OpsMLBlock,
-    OpsPolicyBlock, OpsIntegrationsBlock, OpsUniverseBlock,
+    OpsPolicyBlock, OpsIntegrationsBlock, OpsUniverseBlock, OpsRLBlock,
 )
 from app.models.ops import (
     AuditEvent, Incident, DataFeed, PolicyBreach, PublicationQueueEntry,
@@ -250,6 +250,13 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
     uni_data = await uni_svc.get_ops_summary()
     uni_block = OpsUniverseBlock(**uni_data)
 
+    # RL block
+    from app.services.rl_environment import RLEnvironmentService
+    rl_svc = RLEnvironmentService(db)
+    await rl_svc.ensure_default_rl_environment()
+    rl_data = await rl_svc.get_status()
+    rl_block = OpsRLBlock(**rl_data)
+
     return ApiResponse(
         meta=make_meta(),
         data=OpsCommandCenterResponse(
@@ -257,7 +264,7 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
             breaches=breaches, incidents=incidents, audit=audit,
             system_kpis=kpis, ml_ops=ml_block,
             policy=pol_block, integrations_summary=int_block,
-            universe=uni_block,
+            universe=uni_block, rl=rl_block,
         ),
     )
 
