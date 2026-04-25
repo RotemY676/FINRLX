@@ -667,6 +667,8 @@ export interface OpsRLBlock {
   latest_training_status: string | null;
   latest_training_agent: string | null;
   total_policy_snapshots: number;
+  total_benchmarks: number;
+  latest_benchmark_status: string | null;
   is_shadow_only: boolean;
   live_pipeline_influence: boolean;
 }

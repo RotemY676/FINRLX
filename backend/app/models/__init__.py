@@ -19,7 +19,7 @@ from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction, Mode
 from app.models.policy import PolicyRule, PolicyRuleHistory
 from app.models.rl import (
     RLEnvironmentDefinition, RLEnvironmentRun, RLEpisode, RLStep,
-    RLAgentDefinition, RLTrainingRun, RLPolicySnapshot,
+    RLAgentDefinition, RLTrainingRun, RLPolicySnapshot, RLBenchmarkReport,
 )
 
 __all__ = [
@@ -38,5 +38,5 @@ __all__ = [
     "MLPromotionReview",
     "PolicyRule", "PolicyRuleHistory",
     "RLEnvironmentDefinition", "RLEnvironmentRun", "RLEpisode", "RLStep",
-    "RLAgentDefinition", "RLTrainingRun", "RLPolicySnapshot",
+    "RLAgentDefinition", "RLTrainingRun", "RLPolicySnapshot", "RLBenchmarkReport",
 ]

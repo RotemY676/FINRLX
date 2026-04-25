@@ -1,7 +1,8 @@
-"""RL environment and training entities.
+"""RL environment, training, and benchmarking entities.
 
 Phase 7A: offline-only RL environment foundation.
 Phase 7B: agent registry, training runs, policy snapshots.
+Phase 7C: offline benchmarking and forensic comparison.
 """
 from datetime import datetime, date
 
@@ -133,3 +134,27 @@ class RLStep(Base):
     constraint_violations: Mapped[list | None] = mapped_column(JSON)
     metadata_: Mapped[dict | None] = mapped_column("metadata_", JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RLBenchmarkReport(Base):
+    __tablename__ = "rl_benchmark_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    environment_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    universe_id: Mapped[str | None] = mapped_column(String(36))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
+    compared_agents: Mapped[list | None] = mapped_column(JSON)
+    metrics_by_agent: Mapped[dict | None] = mapped_column(JSON)
+    reward_breakdown_by_agent: Mapped[dict | None] = mapped_column(JSON)
+    violations_by_agent: Mapped[dict | None] = mapped_column(JSON)
+    forensic_summary: Mapped[list | None] = mapped_column(JSON)
+    simulation_run_ids: Mapped[dict | None] = mapped_column(JSON)
+    policy_snapshot_ids: Mapped[list | None] = mapped_column(JSON)
+    dataset_lineage: Mapped[dict | None] = mapped_column(JSON)
+    safety_flags: Mapped[dict | None] = mapped_column(JSON)
+    warnings: Mapped[list | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

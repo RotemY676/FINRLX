@@ -116,6 +116,8 @@ class OpsRLBlock(BaseModel):
     latest_training_status: str | None = None
     latest_training_agent: str | None = None
     total_policy_snapshots: int = 0
+    total_benchmarks: int = 0
+    latest_benchmark_status: str | None = None
     is_shadow_only: bool = True
     live_pipeline_influence: bool = False
 

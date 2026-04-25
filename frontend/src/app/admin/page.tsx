@@ -260,7 +260,7 @@ export default function AdminPage() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
             <div>
               <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_environments}</p>
               <p className="text-[10px] text-ink-4">environments</p>
@@ -278,8 +278,12 @@ export default function AdminPage() {
               <p className="text-[10px] text-ink-4">policy snapshots</p>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_training_status || "—"}</p>
-              <p className="text-[10px] text-ink-4">latest training</p>
+              <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_benchmarks}</p>
+              <p className="text-[10px] text-ink-4">benchmarks</p>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_benchmark_status || "—"}</p>
+              <p className="text-[10px] text-ink-4">latest benchmark</p>
             </div>
             <div>
               <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_training_agent?.replace(/_/g, " ") || "—"}</p>
