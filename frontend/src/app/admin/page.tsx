@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark, fetchRLBenchmarkAudit,
+  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
+  fetchRLBenchmarkAudit, fetchRLBenchmarkAuditForReport,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   RLBenchmarkReport, RLBenchmarkAuditEvent,
 } from "@/services/api";
@@ -84,6 +85,16 @@ export default function AdminPage() {
   const [benchRunError, setBenchRunError] = useState<string | null>(null);
   const [benchRunSuccess, setBenchRunSuccess] = useState<string | null>(null);
   const [benchAuditEvents, setBenchAuditEvents] = useState<RLBenchmarkAuditEvent[]>([]);
+  const [selectedBenchAudit, setSelectedBenchAudit] = useState<RLBenchmarkAuditEvent[]>([]);
+
+  const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
+    setSelectedBenchmark(b);
+    setSelectedBenchAudit([]);
+    try {
+      const res = await fetchRLBenchmarkAuditForReport(b.id);
+      if (res.data) setSelectedBenchAudit(res.data);
+    } catch { /* audit unavailable for old benchmarks */ }
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -99,7 +110,7 @@ export default function AdminPage() {
         if (mlRes) setMlSummary(mlRes.data);
         if (benchRes && benchRes.data) {
           setBenchmarks(benchRes.data);
-          if (benchRes.data.length > 0) setSelectedBenchmark(benchRes.data[0]);
+          if (benchRes.data.length > 0) selectBenchmark(benchRes.data[0]);
         }
         if (auditRes && auditRes.data) setBenchAuditEvents(auditRes.data);
       })
@@ -441,7 +452,7 @@ export default function AdminPage() {
                 const refreshed = await fetchRLBenchmarks().catch(() => null);
                 if (refreshed && refreshed.data) {
                   setBenchmarks(refreshed.data);
-                  setSelectedBenchmark(report);
+                  selectBenchmark(report);
                 }
                 const refreshAudit = await fetchRLBenchmarkAudit().catch(() => null);
                 if (refreshAudit && refreshAudit.data) setBenchAuditEvents(refreshAudit.data);
@@ -505,7 +516,7 @@ export default function AdminPage() {
             {benchmarks.slice(0, 8).map((b) => (
               <div
                 key={b.id}
-                onClick={() => setSelectedBenchmark(b)}
+                onClick={() => selectBenchmark(b)}
                 className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                   selectedBenchmark?.id === b.id ? "bg-primary-soft border border-primary" : "hover:bg-surface-3"
                 }`}
@@ -855,17 +866,57 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* Selected benchmark fingerprint + invariants (inline in drilldown) */}
-      {selectedBenchmark?.result_fingerprint && (
+      {/* Audit Trail — Selected Benchmark */}
+      {selectedBenchmark && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon name="check" size={14} className="text-ink-3" />
-            <h4 className="text-[12px] font-semibold text-ink">Governance — Selected Benchmark</h4>
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="history" size={14} className="text-ink-3" />
+            <h4 className="text-[12px] font-semibold text-ink">Audit Trail — Selected Benchmark</h4>
+            <span className="text-[10px] text-ink-4 font-mono ml-auto">{selectedBenchmark.id.slice(0, 8)}...</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+          {selectedBenchAudit.length > 0 ? (
+            <div className="overflow-x-auto max-h-36 overflow-y-auto mb-3">
+              <table className="w-full text-[11px]">
+                <thead className="sticky top-0 bg-surface">
+                  <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                    <th className="text-left py-1.5 pr-2 font-medium">Time</th>
+                    <th className="text-left py-1.5 pr-2 font-medium">Event</th>
+                    <th className="text-left py-1.5 pr-2 font-medium">Status</th>
+                    <th className="text-right py-1.5 pr-2 font-medium">Agents</th>
+                    <th className="text-left py-1.5 pr-2 font-medium">Fingerprint</th>
+                    <th className="text-left py-1.5 font-medium">Invariants</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedBenchAudit.map((ev) => (
+                    <tr key={ev.id} className="border-b border-line/30">
+                      <td className="py-1.5 pr-2 font-mono text-ink-3">{ev.created_at?.slice(11, 19) || "—"}</td>
+                      <td className="py-1.5 pr-2 text-ink-2">{ev.event_type?.replace(/_/g, " ") || "—"}</td>
+                      <td className="py-1.5 pr-2">{ev.status ? <StatusBadge status={ev.status} /> : "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-ink-3">{ev.executed_agents?.length || "—"}/{ev.requested_agents?.length || "—"}</td>
+                      <td className="py-1.5 pr-2 font-mono text-ink-4 text-[9px]">{ev.result_fingerprint?.slice(0, 12) || "—"}</td>
+                      <td className="py-1.5">
+                        {ev.invariant_check_results?.all_passed === true && <span className="text-[9px] font-medium text-pos">passed</span>}
+                        {ev.invariant_check_results?.all_passed === false && <span className="text-[9px] font-medium text-breach">failed</span>}
+                        {ev.invariant_check_results == null && <span className="text-[9px] text-ink-4">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-[11px] text-ink-3 mb-3">No audit events recorded for this benchmark. Audit trail is available for benchmark runs created after Phase 7G.</p>
+          )}
+          {/* Governance: fingerprint + invariants */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-3 border-t border-line">
             <div>
               <p className="text-[10px] text-ink-4 mb-0.5">Result fingerprint</p>
-              <p className="font-mono text-ink-3 text-[10px] break-all">{selectedBenchmark.result_fingerprint}</p>
+              {selectedBenchmark.result_fingerprint ? (
+                <p className="font-mono text-ink-3 text-[10px] break-all">{selectedBenchmark.result_fingerprint}</p>
+              ) : (
+                <p className="text-ink-4 text-[10px]">No result fingerprint — this benchmark likely predates Phase 7G governance.</p>
+              )}
             </div>
             <div>
               <p className="text-[10px] text-ink-4 mb-0.5">Invariant checks</p>
@@ -878,7 +929,7 @@ export default function AdminPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-ink-4">No invariant data — benchmark predates Phase 7G audit trail.</p>
+                <p className="text-ink-4 text-[10px]">No invariant data — this benchmark likely predates Phase 7G governance.</p>
               )}
             </div>
           </div>
