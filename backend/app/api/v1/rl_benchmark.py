@@ -50,6 +50,7 @@ def _report_dict(r) -> dict:
         "reward_breakdown_by_agent": r.reward_breakdown_by_agent,
         "violations_by_agent": r.violations_by_agent,
         "forensic_summary": r.forensic_summary,
+        "forensic_summary_by_agent": (r.dataset_lineage or {}).get("forensic_summary_by_agent"),
         "simulation_run_ids": r.simulation_run_ids,
         "policy_snapshot_ids": r.policy_snapshot_ids,
         "dataset_lineage": r.dataset_lineage,

@@ -97,6 +97,7 @@ class RLBenchmarkService:
         violations_by_agent: dict[str, list] = {}
         sim_run_ids: dict[str, str] = {}
         forensic_rows: list[dict] = []
+        forensic_by_agent: dict[str, list[dict]] = {}
         warnings: list[str] = []
         executed_agents: list[str] = []
         skipped_agents: list[dict] = []
@@ -139,6 +140,7 @@ class RLBenchmarkService:
                     select(RLEpisode).where(RLEpisode.environment_run_id == sim.id)
                 )).scalars().all()
                 agent_violations: list[str] = []
+                agent_forensic: list[dict] = []
                 for ep in episodes:
                     steps = (await self.db.execute(
                         select(RLStep).where(RLStep.episode_id == ep.id)
@@ -147,18 +149,20 @@ class RLBenchmarkService:
                     for s in steps:
                         if s.constraint_violations:
                             agent_violations.extend(s.constraint_violations)
-                        # Add forensic row for first agent only (to keep report compact)
+                        row = {
+                            "step_index": s.step_index,
+                            "as_of_date": s.as_of_date.isoformat() if s.as_of_date else None,
+                            "agent_key": agent_key,
+                            "reward": s.reward,
+                            "portfolio_value": s.portfolio_value,
+                            "turnover": (s.metadata_ or {}).get("turnover"),
+                            "violations": s.constraint_violations,
+                            "action_type": (s.action or {}).get("action_type"),
+                        }
+                        agent_forensic.append(row)
                         if agent_key == agents_to_run[0]:
-                            forensic_rows.append({
-                                "step_index": s.step_index,
-                                "as_of_date": s.as_of_date.isoformat() if s.as_of_date else None,
-                                "agent_key": agent_key,
-                                "reward": s.reward,
-                                "portfolio_value": s.portfolio_value,
-                                "turnover": (s.metadata_ or {}).get("turnover"),
-                                "violations": s.constraint_violations,
-                                "action_type": (s.action or {}).get("action_type"),
-                            })
+                            forensic_rows.append(row)
+                forensic_by_agent[agent_key] = agent_forensic[:50]  # cap at 50 per agent
 
                 violations_by_agent[agent_key] = agent_violations
                 metrics_by_agent[agent_key]["violation_count"] = len(agent_violations)
@@ -190,6 +194,7 @@ class RLBenchmarkService:
             "executed_agents": executed_agents,
             "skipped_agents": skipped_agents,
             "is_complete_comparison": is_complete,
+            "forensic_summary_by_agent": forensic_by_agent,
         }
 
         await self.db.commit()

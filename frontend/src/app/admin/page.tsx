@@ -67,8 +67,9 @@ export default function AdminPage() {
   // ML Ops summary
   const [mlSummary, setMlSummary] = useState<MLOpsSummary | null>(null);
 
-  // RL Benchmark
-  const [latestBenchmark, setLatestBenchmark] = useState<RLBenchmarkReport | null>(null);
+  // RL Benchmarks
+  const [benchmarks, setBenchmarks] = useState<RLBenchmarkReport[]>([]);
+  const [selectedBenchmark, setSelectedBenchmark] = useState<RLBenchmarkReport | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -81,8 +82,9 @@ export default function AdminPage() {
         setFilteredQueue(opsRes.data.queue);
         setFilteredAudit(opsRes.data.audit);
         if (mlRes) setMlSummary(mlRes.data);
-        if (benchRes && benchRes.data && benchRes.data.length > 0) {
-          setLatestBenchmark(benchRes.data[0]);
+        if (benchRes && benchRes.data) {
+          setBenchmarks(benchRes.data);
+          if (benchRes.data.length > 0) setSelectedBenchmark(benchRes.data[0]);
         }
       })
       .catch((err) => setError(err.message))
@@ -304,22 +306,70 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* ── RL Benchmark Visualization ── */}
-      {latestBenchmark && (
+      {/* ── RL Offline Benchmark — Forensic Analysis ── */}
+      {benchmarks.length === 0 && ops && ops.rl && ops.rl.total_benchmarks === 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon name="compare" size={15} className="text-ink-4" />
+            <h3 className="text-[13px] font-semibold text-ink-3">Offline Benchmark</h3>
+          </div>
+          <p className="text-[12px] text-ink-3">No offline benchmarks have been run yet. Use the RL benchmark API to compare agents on historical data.</p>
+          <p className="text-[10px] text-ink-4 mt-1">This is an offline/shadow forensic tool — not a live recommendation system.</p>
+        </section>
+      )}
+
+      {/* Benchmark History */}
+      {benchmarks.length > 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="history" size={15} className="text-accent" />
+            <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark History</h3>
+            <span className="text-[10px] text-ink-4 ml-auto">{benchmarks.length} report{benchmarks.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="space-y-1">
+            {benchmarks.slice(0, 8).map((b) => (
+              <div
+                key={b.id}
+                onClick={() => setSelectedBenchmark(b)}
+                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                  selectedBenchmark?.id === b.id ? "bg-primary-soft border border-primary" : "hover:bg-surface-3"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={b.status} />
+                  <span className="text-[12px] text-ink-2">{b.name}</span>
+                  <span className="text-[10px] text-ink-4 font-mono">{b.start_date} — {b.end_date}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-ink-3">{b.executed_agents?.length || 0} agents</span>
+                  {b.is_complete_comparison ? (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-pos-soft text-pos-soft-ink">Complete</span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-caution-soft text-caution-soft-ink">Partial</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Selected Benchmark Drill-down */}
+      {selectedBenchmark && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Icon name="compare" size={15} className="text-accent" />
             <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark — Forensic Comparison</h3>
-            <StatusBadge status={latestBenchmark.status} />
-            {latestBenchmark.is_complete_comparison ? (
+            <StatusBadge status={selectedBenchmark.status} />
+            {selectedBenchmark.is_complete_comparison ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-pos-soft text-pos-soft-ink">Complete</span>
             ) : (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-caution-soft text-caution-soft-ink">Partial</span>
             )}
-            <span className="text-[10px] text-ink-4 ml-auto font-mono">{latestBenchmark.id.slice(0, 8)}...</span>
+            <span className="text-[10px] text-ink-4 ml-auto font-mono">{selectedBenchmark.id.slice(0, 8)}...</span>
           </div>
 
-          {/* Safety badges */}
+          {/* Safety badges — all 6 */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {[
               { key: "offline_only", label: "Offline only", safeWhen: true },
@@ -329,39 +379,39 @@ export default function AdminPage() {
               { key: "no_publication_influence", label: "No publication influence", safeWhen: true },
               { key: "no_recommendation_pollution", label: "Not a live recommendation", safeWhen: true },
             ].map((f) => {
-              const raw = (latestBenchmark.safety_flags as unknown as Record<string, boolean>)?.[f.key];
+              const raw = (selectedBenchmark.safety_flags as unknown as Record<string, boolean>)?.[f.key];
               const isSafe = raw === f.safeWhen;
               return (
                 <span key={f.key} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium ${
                   isSafe ? "bg-surface-3 text-ink-3" : "bg-breach-soft text-breach-soft-ink"
-                }`}>
-                  {isSafe ? f.label : `WARNING: ${f.key}`}
-                </span>
+                }`}>{isSafe ? f.label : `WARNING: ${f.key}`}</span>
               );
             })}
           </div>
 
-          {/* Benchmark info */}
-          <div className="flex items-center gap-4 text-[11px] text-ink-3 mb-4">
-            <span>Window: {latestBenchmark.start_date} — {latestBenchmark.end_date}</span>
-            <span>Agents: {latestBenchmark.executed_agents?.length || 0} executed</span>
-            {latestBenchmark.skipped_agents?.length > 0 && (
-              <span className="text-caution">{latestBenchmark.skipped_agents.length} skipped</span>
+          {/* Benchmark metadata */}
+          <div className="flex items-center gap-4 text-[11px] text-ink-3 mb-4 flex-wrap">
+            <span>Window: {selectedBenchmark.start_date} — {selectedBenchmark.end_date}</span>
+            <span>Agents: {selectedBenchmark.executed_agents?.length || 0} executed</span>
+            {selectedBenchmark.skipped_agents?.length > 0 && (
+              <span className="text-caution">{selectedBenchmark.skipped_agents.length} skipped</span>
             )}
+            {selectedBenchmark.environment_key && <span>Env: {selectedBenchmark.environment_key}</span>}
+            {selectedBenchmark.created_at && <span>Created: {selectedBenchmark.created_at.slice(0, 16).replace("T", " ")}</span>}
           </div>
 
           {/* Skipped agents warning */}
-          {latestBenchmark.skipped_agents?.length > 0 && (
+          {selectedBenchmark.skipped_agents?.length > 0 && (
             <div className="rounded-lg border border-caution bg-caution-soft p-3 mb-4 text-[12px] text-caution-soft-ink">
               <p className="font-medium mb-1">Skipped agents:</p>
-              {latestBenchmark.skipped_agents.map((s, i) => (
+              {selectedBenchmark.skipped_agents.map((s, i) => (
                 <p key={i}>{s.agent_key}: {s.reason}</p>
               ))}
             </div>
           )}
 
           {/* Agent comparison table */}
-          {latestBenchmark.metrics_by_agent && Object.keys(latestBenchmark.metrics_by_agent).length > 0 && (
+          {selectedBenchmark.metrics_by_agent && Object.keys(selectedBenchmark.metrics_by_agent).length > 0 && (
             <div className="mb-4">
               <h4 className="text-[12px] font-semibold text-ink mb-2">Agent Comparison — Offline Metrics</h4>
               <div className="overflow-x-auto">
@@ -379,12 +429,10 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {(() => {
-                      const agents = Object.entries(latestBenchmark.metrics_by_agent);
+                      const agents = Object.entries(selectedBenchmark.metrics_by_agent);
                       const bestReturn = Math.max(...agents.map(([, m]) => m.total_return ?? -Infinity));
                       const bestReward = Math.max(...agents.map(([, m]) => m.total_reward ?? -Infinity));
-                      // Lowest drawdown = closest to zero (least severe). max_drawdown is negative, so max() finds least negative.
                       const lowestDrawdown = Math.max(...agents.map(([, m]) => m.max_drawdown ?? -Infinity));
-                      // Lowest turnover = smallest positive value.
                       const lowestTurnover = Math.min(...agents.filter(([, m]) => m.total_turnover != null).map(([, m]) => m.total_turnover!));
                       return agents.map(([key, m]) => (
                         <tr key={key} className="border-b border-line/50 hover:bg-surface-3 transition-colors">
@@ -418,7 +466,7 @@ export default function AdminPage() {
           )}
 
           {/* Reward breakdown */}
-          {latestBenchmark.reward_breakdown_by_agent && Object.keys(latestBenchmark.reward_breakdown_by_agent).length > 0 && (
+          {selectedBenchmark.reward_breakdown_by_agent && Object.keys(selectedBenchmark.reward_breakdown_by_agent).length > 0 && (
             <div className="mb-4">
               <h4 className="text-[12px] font-semibold text-ink mb-2">Reward Component Breakdown</h4>
               <div className="overflow-x-auto">
@@ -432,7 +480,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(latestBenchmark.reward_breakdown_by_agent).map(([key, rb]) => (
+                    {Object.entries(selectedBenchmark.reward_breakdown_by_agent).map(([key, rb]) => (
                       <tr key={key} className="border-b border-line/50">
                         <td className="py-2 pr-3 text-ink-2">{key.replace(/_/g, " ")}</td>
                         <td className="py-2 pr-3 text-right font-mono text-ink-2">{rb.portfolio_return_component?.toFixed(4) ?? "—"}</td>
@@ -446,12 +494,66 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Equity / Portfolio Value Curve */}
+          {(() => {
+            const forensicByAgent = selectedBenchmark.forensic_summary_by_agent;
+            const agentKeys = forensicByAgent ? Object.keys(forensicByAgent) : [];
+            const hasPerAgent = agentKeys.length > 0;
+            const displaySteps = hasPerAgent
+              ? forensicByAgent![agentKeys[0]] || []
+              : selectedBenchmark.forensic_summary || [];
+            if (displaySteps.length === 0) return null;
+            return (
+              <div className="mb-4">
+                <h4 className="text-[12px] font-semibold text-ink mb-1">Offline Forensic Portfolio Value Curve</h4>
+                <p className="text-[10px] text-ink-4 mb-2">
+                  {hasPerAgent
+                    ? `Per-agent portfolio value available for: ${agentKeys.map(k => k.replace(/_/g, " ")).join(", ")}`
+                    : `Portfolio value curve based on: ${displaySteps[0]?.agent_key?.replace(/_/g, " ") || "first agent"}`
+                  }. Not a live signal.
+                </p>
+                {/* Simple inline SVG sparkline per agent */}
+                <div className="space-y-3">
+                  {(hasPerAgent ? agentKeys : ["_default"]).map((agentKey) => {
+                    const steps = hasPerAgent ? (forensicByAgent![agentKey] || []) : displaySteps;
+                    if (steps.length < 2) return null;
+                    const values = steps.map(s => s.portfolio_value ?? 100);
+                    const minV = Math.min(...values);
+                    const maxV = Math.max(...values);
+                    const range = maxV - minV || 1;
+                    const w = 600;
+                    const h = 40;
+                    const points = values.map((v, i) =>
+                      `${(i / (values.length - 1)) * w},${h - ((v - minV) / range) * (h - 4) - 2}`
+                    ).join(" ");
+                    const label = agentKey === "_default" ? (steps[0]?.agent_key || "agent") : agentKey;
+                    const finalVal = values[values.length - 1];
+                    return (
+                      <div key={agentKey} className="flex items-center gap-3">
+                        <span className="text-[11px] text-ink-2 w-32 shrink-0 truncate">{label.replace(/_/g, " ")}</span>
+                        <svg viewBox={`0 0 ${w} ${h}`} className="flex-1 h-10" preserveAspectRatio="none">
+                          <polyline points={points} fill="none" stroke="oklch(0.52 0.17 255)" strokeWidth="2" />
+                          <line x1="0" y1={h - ((100 - minV) / range) * (h - 4) - 2} x2={w} y2={h - ((100 - minV) / range) * (h - 4) - 2}
+                            stroke="oklch(0.92 0.008 240)" strokeDasharray="4 4" strokeWidth="1" />
+                        </svg>
+                        <span className={`text-[11px] font-mono w-14 text-right ${finalVal >= 100 ? "text-pos" : "text-breach"}`}>{finalVal.toFixed(1)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Forensic step summary */}
-          {latestBenchmark.forensic_summary && latestBenchmark.forensic_summary.length > 0 && (
+          {selectedBenchmark.forensic_summary && selectedBenchmark.forensic_summary.length > 0 && (
             <div className="mb-3">
               <h4 className="text-[12px] font-semibold text-ink mb-2">Forensic Step Summary</h4>
               <p className="text-[10px] text-ink-4 mb-2">
-                Step-level forensic rows for: {latestBenchmark.forensic_summary[0]?.agent_key?.replace(/_/g, " ") || "first agent"}
+                Step-level detail for: {selectedBenchmark.forensic_summary[0]?.agent_key?.replace(/_/g, " ") || "first agent"}
+                {selectedBenchmark.forensic_summary_by_agent
+                  ? ` (per-agent detail available for ${Object.keys(selectedBenchmark.forensic_summary_by_agent).length} agents)`
+                  : ""}
               </p>
               <div className="overflow-x-auto max-h-48 overflow-y-auto">
                 <table className="w-full text-[11px]">
@@ -467,7 +569,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {latestBenchmark.forensic_summary.slice(0, 20).map((s, i) => (
+                    {selectedBenchmark.forensic_summary.slice(0, 20).map((s, i) => (
                       <tr key={i} className="border-b border-line/30">
                         <td className="py-1.5 pr-2 font-mono text-ink-3">{s.step_index}</td>
                         <td className="py-1.5 pr-2 font-mono text-ink-2">{s.as_of_date?.slice(5) || "—"}</td>
@@ -487,9 +589,9 @@ export default function AdminPage() {
           )}
 
           {/* Warnings */}
-          {latestBenchmark.warnings && latestBenchmark.warnings.length > 0 && (
+          {selectedBenchmark.warnings && selectedBenchmark.warnings.length > 0 && (
             <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[11px] text-caution-soft-ink">
-              {latestBenchmark.warnings.map((w, i) => (
+              {selectedBenchmark.warnings.map((w, i) => (
                 <p key={i} className="flex items-center gap-1.5">
                   <Icon name="alert-triangle" size={10} />{w}
                 </p>
@@ -499,15 +601,44 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* No benchmarks empty state */}
-      {!latestBenchmark && ops && ops.rl && ops.rl.total_benchmarks === 0 && (
+      {/* Benchmark Trend Table */}
+      {benchmarks.length > 1 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon name="compare" size={15} className="text-ink-4" />
-            <h3 className="text-[13px] font-semibold text-ink-3">Offline Benchmark</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="trend-up" size={15} className="text-ink-3" />
+            <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark Trend</h3>
+            <span className="text-[10px] text-ink-4 ml-auto">Across {benchmarks.length} reports — not live performance</span>
           </div>
-          <p className="text-[12px] text-ink-3">No offline benchmarks have been run yet. Use the RL benchmark API to compare agents on historical data.</p>
-          <p className="text-[10px] text-ink-4 mt-1">This is an offline/shadow forensic tool — not a live recommendation system.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                  <th className="text-left py-1.5 pr-2 font-medium">Benchmark</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Window</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Agent</th>
+                  <th className="text-right py-1.5 pr-2 font-medium">Return</th>
+                  <th className="text-right py-1.5 pr-2 font-medium">Reward</th>
+                  <th className="text-right py-1.5 pr-2 font-medium">Drawdown</th>
+                  <th className="text-right py-1.5 font-medium">Turnover</th>
+                </tr>
+              </thead>
+              <tbody>
+                {benchmarks.slice(0, 5).flatMap((b) =>
+                  Object.entries(b.metrics_by_agent || {}).map(([agent, m]) => (
+                    <tr key={`${b.id}-${agent}`} className="border-b border-line/30">
+                      <td className="py-1.5 pr-2 text-ink-3 font-mono">{b.id.slice(0, 6)}</td>
+                      <td className="py-1.5 pr-2 text-ink-3">{b.start_date?.slice(5)} — {b.end_date?.slice(5)}</td>
+                      <td className="py-1.5 pr-2 text-ink-2">{agent.replace(/_/g, " ")}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{m.total_return != null ? `${(m.total_return * 100).toFixed(2)}%` : "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{m.total_reward?.toFixed(4) ?? "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{m.max_drawdown != null ? `${(m.max_drawdown * 100).toFixed(2)}%` : "—"}</td>
+                      <td className="py-1.5 text-right font-mono text-ink-3">{m.total_turnover?.toFixed(2) ?? "—"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 

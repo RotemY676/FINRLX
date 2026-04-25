@@ -929,6 +929,7 @@ export interface RLBenchmarkReport {
   reward_breakdown_by_agent: Record<string, RLRewardBreakdown>;
   violations_by_agent: Record<string, string[]>;
   forensic_summary: RLForensicStep[];
+  forensic_summary_by_agent?: Record<string, RLForensicStep[]> | null;
   safety_flags: RLBenchmarkSafetyFlags;
   warnings: string[] | null;
   created_at: string | null;
