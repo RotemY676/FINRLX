@@ -382,7 +382,7 @@ export default function AdminPage() {
             />
             <span>
               I understand this is an <strong className="text-ink">offline/shadow benchmark only</strong>.
-              It will not create live recommendations, execute trades, influence production decisions, or affect publication workflow.
+              It cannot affect live recommendations, production decisions, broker systems, or publication workflow.
             </span>
           </label>
         </div>
@@ -411,7 +411,12 @@ export default function AdminPage() {
                   agent_keys: agents,
                 });
                 const report = res.data;
-                setBenchRunSuccess(`Benchmark ${report.id.slice(0, 8)}... ${report.status} — ${report.executed_agents?.length || 0} agents`);
+                const isFullPass = report.status === "completed" && report.is_complete_comparison && (report.skipped_agents?.length || 0) === 0;
+                setBenchRunSuccess(
+                  isFullPass
+                    ? `Benchmark ${report.id.slice(0, 8)}... completed — ${report.executed_agents?.length || 0} agents compared`
+                    : `partial|Benchmark ${report.id.slice(0, 8)}... ${report.status} — ${report.executed_agents?.length || 0} executed, ${report.skipped_agents?.length || 0} skipped`
+                );
                 // Refresh benchmarks and select the new one
                 const refreshed = await fetchRLBenchmarks().catch(() => null);
                 if (refreshed && refreshed.data) {
@@ -437,9 +442,14 @@ export default function AdminPage() {
           )}
         </div>
         {/* Result messages */}
-        {benchRunSuccess && (
+        {benchRunSuccess && !benchRunSuccess.startsWith("partial|") && (
           <div className="mt-3 rounded-lg border border-pos bg-pos-soft p-3 text-[11px] text-pos-soft-ink">
             <Icon name="check" size={12} className="inline mr-1" />{benchRunSuccess}
+          </div>
+        )}
+        {benchRunSuccess && benchRunSuccess.startsWith("partial|") && (
+          <div className="mt-3 rounded-lg border border-caution bg-caution-soft p-3 text-[11px] text-caution-soft-ink">
+            <Icon name="alert-triangle" size={12} className="inline mr-1" />{benchRunSuccess.slice(8)}
           </div>
         )}
         {benchRunError && (
