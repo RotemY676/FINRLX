@@ -70,7 +70,12 @@ async def train_cpu_prototype(body: FinRLXCPUPrototypeRequest, db: AsyncSession 
     svc = FinRLXResearchService(db)
     sd = date.fromisoformat(body.start_date) if body.start_date else None
     ed = date.fromisoformat(body.end_date) if body.end_date else None
-    result = await svc.train_cpu_prototype(body.name, body.algorithm.upper(), sd, ed, body.timesteps, body.seed)
+    if sd and ed and sd > ed:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date.")
+    try:
+        result = await svc.train_cpu_prototype(body.name, body.algorithm.upper(), sd, ed, body.timesteps, body.seed)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
 
 

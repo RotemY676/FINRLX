@@ -464,6 +464,25 @@ class FinRLXResearchService:
 
         timesteps = min(max(timesteps, 1), 500)  # cap
 
+        # Validate date range
+        if start_date > end_date:
+            raise ValueError("start_date must be <= end_date")
+
+        # Validate dataset contract before any candidate creation
+        validation = await self.validate_dataset_contract(start_date, end_date, limit=10)
+        if not validation["valid"]:
+            return {
+                "policy_candidate_id": None, "training_run_id": None,
+                "name": name, "status": "dataset_invalid",
+                "training_mode": "dataset_invalid", "real_neural_training": False,
+                "algorithm": algorithm, "timesteps": timesteps,
+                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                "not_eligible_for_promotion": True,
+                "dataset_validation": validation,
+                "warnings": [f"Dataset invalid: {validation.get('missing_fields', [])}"],
+                "created_at": now.isoformat(),
+            }
+
         pre_fp = await self._capture_production_fingerprints()
 
         await self._create_audit_event("finrlx_cpu_research_train_requested", {
@@ -503,11 +522,14 @@ class FinRLXResearchService:
             avail = [c for c in cc.values() if c["snapshot_available"]]
             overall_unch = all(c["unchanged"] for c in avail) if avail else None
 
+            iso = self.get_candidate_isolation(candidate_id)
+
             await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
                 "candidate_id": candidate_id, "training_run_id": run.id,
                 "algorithm": algorithm, "dependency_status": dep_status,
                 "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
                 "production_fingerprints_unchanged": overall_unch,
+                "isolation_checks": iso["checks"],
             })
             await self.db.commit()
 
@@ -518,6 +540,7 @@ class FinRLXResearchService:
                 "algorithm": algorithm, "timesteps": timesteps,
                 "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
                 "not_eligible_for_promotion": True,
+                "isolation_checks": iso["checks"], "isolated": True, "all_blocked": True,
                 "production_fingerprints": {"before": pre_fp, "after": post_fp,
                                             "unchanged": overall_unch, "component_checks": cc},
                 "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
@@ -608,6 +631,7 @@ class FinRLXResearchService:
             })
             await self.db.commit()
 
+            iso = self.get_candidate_isolation(candidate_id)
             return {
                 "policy_candidate_id": candidate_id, "training_run_id": run.id,
                 "name": name, "status": "completed",
@@ -616,6 +640,7 @@ class FinRLXResearchService:
                 "training_metrics": training_metrics,
                 "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
                 "not_eligible_for_promotion": True,
+                "isolation_checks": iso["checks"], "isolated": True, "all_blocked": True,
                 "production_fingerprints": {"before": pre_fp, "after": post_fp,
                                             "unchanged": overall_unch, "component_checks": cc},
                 "warnings": ["CPU-only offline research prototype.", "Not eligible for promotion.",

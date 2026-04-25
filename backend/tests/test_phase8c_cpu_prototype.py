@@ -124,14 +124,43 @@ async def test_cpu_prototype_fingerprints(client):
 
 
 @pytest.mark.asyncio
-async def test_cpu_prototype_audit(client):
-    """CPU prototype creates audit events."""
+async def test_cpu_prototype_rejects_bad_date_range(client):
+    """train-cpu-prototype rejects start_date > end_date."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "start_date": "2026-04-15", "end_date": "2026-03-15",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_cpu_prototype_response_includes_isolation_checks(client):
+    """train-cpu-prototype response includes isolation_checks."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+    })
+    data = r.json()["data"]
+    assert data.get("isolation_checks") is not None
+    assert data["isolation_checks"]["promotion_blocked"] is True
+    assert data["isolation_checks"]["publication_blocked"] is True
+    assert data["isolation_checks"]["live_recommendation_blocked"] is True
+    assert data["isolation_checks"]["overview_influence_blocked"] is True
+    assert data["isolation_checks"]["broker_execution_blocked"] is True
+    assert data["isolated"] is True
+    assert data["all_blocked"] is True
+
+
+@pytest.mark.asyncio
+async def test_cpu_prototype_audit_persisted(client):
+    """CPU prototype audit events are persisted with full details."""
     from tests.conftest import test_session_factory
     from sqlalchemy import select
     from app.models.ops import AuditEvent
 
     await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
-        "algorithm": "PPO", "research_acknowledgement": True,
+        "algorithm": "PPO", "timesteps": 30, "seed": 42,
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "research_acknowledgement": True,
     })
 
     async with test_session_factory() as db:
@@ -142,9 +171,34 @@ async def test_cpu_prototype_audit(client):
             .order_by(AuditEvent.occurred_at.desc())
         )).scalars().all()
 
-    assert len(events) >= 2  # requested + completed/unavailable/failed
     actions = {e.action for e in events}
     assert "finrlx_cpu_research_train_requested" in actions
+
+    # Verify requested event details
+    requested = next(e for e in events if e.action == "finrlx_cpu_research_train_requested")
+    rd = requested.details or {}
+    assert rd.get("algorithm") == "PPO"
+    assert rd.get("timesteps") == 30
+    assert rd.get("seed") == 42
+    assert rd.get("safety_flags", {}).get("research_only") is True
+    assert rd.get("dependency_status") is not None
+
+    # Verify terminal event (dependency_unavailable or completed)
+    terminal_actions = {"finrlx_cpu_research_train_completed",
+                        "finrlx_cpu_research_train_dependency_unavailable",
+                        "finrlx_cpu_research_train_failed"}
+    terminal = [e for e in events if e.action in terminal_actions]
+    assert len(terminal) >= 1
+    td = terminal[0].details or {}
+    assert td.get("safety_flags", {}).get("research_only") is True
+    assert td.get("component_checks") is not None
+    assert "recommendations_current" in td["component_checks"]
+    assert "publication_status" in td["component_checks"]
+    assert "overview" in td["component_checks"]
+    assert "production_fingerprints_unchanged" in td
+    if td.get("candidate_id"):
+        assert td.get("isolation_checks") is not None
+        assert td["isolation_checks"].get("promotion_blocked") is True
 
 
 # ── Safety regressions ───────────────────────────────────────────────────
