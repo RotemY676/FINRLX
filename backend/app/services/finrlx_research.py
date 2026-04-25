@@ -291,7 +291,7 @@ class FinRLXResearchService:
     async def get_candidates(self) -> list[dict]:
         snapshots = (await self.db.execute(
             select(RLPolicySnapshot)
-            .where(RLPolicySnapshot.policy_type == "finrlx_research_stub")
+            .where(RLPolicySnapshot.policy_type.like("finrlx_%"))
             .order_by(RLPolicySnapshot.created_at.desc()).limit(20)
         )).scalars().all()
         return [self._candidate_dict(s) for s in snapshots]
@@ -299,7 +299,7 @@ class FinRLXResearchService:
     async def get_candidate(self, candidate_id: str) -> dict | None:
         s = (await self.db.execute(
             select(RLPolicySnapshot).where(RLPolicySnapshot.id == candidate_id)
-            .where(RLPolicySnapshot.policy_type == "finrlx_research_stub")
+            .where(RLPolicySnapshot.policy_type.like("finrlx_%"))
         )).scalar_one_or_none()
         return self._candidate_dict(s) if s else None
 
@@ -408,6 +408,261 @@ class FinRLXResearchService:
             object_type="finrlx_research", object_id=details.get("candidate_id"),
             details=details, occurred_at=datetime.now(timezone.utc),
         ))
+
+    @staticmethod
+    def get_neural_dependency_status() -> dict:
+        """Detect optional CPU-only neural RL dependencies with lazy imports."""
+        status: dict[str, bool | None] = {}
+        import_errors: dict[str, str] = {}
+
+        for lib in ["numpy", "gymnasium", "stable_baselines3", "torch"]:
+            try:
+                __import__(lib)
+                status[f"{lib}_available"] = True
+            except ImportError as e:
+                status[f"{lib}_available"] = False
+                import_errors[lib] = str(e)
+
+        torch_cuda = None
+        if status.get("torch_available"):
+            try:
+                import torch
+                torch_cuda = torch.cuda.is_available()
+            except Exception:
+                torch_cuda = False
+
+        neural_ok = all(status.get(f"{l}_available") for l in ["numpy", "gymnasium", "stable_baselines3", "torch"])
+        missing = [l for l in ["numpy", "gymnasium", "stable_baselines3", "torch"] if not status.get(f"{l}_available")]
+
+        return {
+            **status,
+            "torch_cuda_available": torch_cuda,
+            "cpu_only_mode": True,
+            "neural_training_available": neural_ok,
+            "missing_dependencies": missing,
+            "production_runtime_dependency": False,
+            "import_errors": import_errors if import_errors else None,
+        }
+
+    async def train_cpu_prototype(
+        self,
+        name: str = "CPU-only Research Prototype",
+        algorithm: str = "PPO",
+        start_date: date | None = None,
+        end_date: date | None = None,
+        timesteps: int = 50,
+        seed: int = 42,
+    ) -> dict:
+        """Run a CPU-only PPO/A2C research prototype, or fall back if dependencies missing."""
+        now = datetime.now(timezone.utc)
+        dep_status = self.get_neural_dependency_status()
+
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=60)
+
+        timesteps = min(max(timesteps, 1), 500)  # cap
+
+        pre_fp = await self._capture_production_fingerprints()
+
+        await self._create_audit_event("finrlx_cpu_research_train_requested", {
+            "name": name, "algorithm": algorithm, "timesteps": timesteps, "seed": seed,
+            "start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+            "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+        })
+
+        env_svc = RLEnvironmentService(self.db)
+        canonical_key, _ = env_svc.resolve_key("quantpipeline_offline_v1")
+
+        if not dep_status["neural_training_available"]:
+            # Dependencies unavailable — create honest stub candidate
+            run = RLTrainingRun(
+                id=gen_uuid(), agent_key=f"finrlx_cpu_{algorithm.lower()}_unavailable",
+                environment_key=canonical_key, status="dependency_unavailable",
+                train_start_date=start_date, train_end_date=end_date,
+                config={"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
+                        "training_mode": "dependency_unavailable", "real_neural_training": False},
+            )
+            self.db.add(run)
+            run.completed_at = now
+
+            candidate_id = gen_uuid()
+            self.db.add(RLPolicySnapshot(
+                id=candidate_id, training_run_id=run.id,
+                agent_key=run.agent_key, environment_key=canonical_key,
+                policy_type=f"finrlx_cpu_{algorithm.lower()}_unavailable",
+                policy_payload={"training_mode": "dependency_unavailable", "real_neural_training": False,
+                                "safety_flags": FINRLX_SAFETY_FLAGS, "missing": dep_status["missing_dependencies"]},
+                metrics={"training_mode": "dependency_unavailable"},
+            ))
+            run.metrics = {"policy_candidate_id": candidate_id, "training_mode": "dependency_unavailable"}
+
+            post_fp = await self._capture_production_fingerprints()
+            cc = self._build_component_checks(pre_fp, post_fp)
+            avail = [c for c in cc.values() if c["snapshot_available"]]
+            overall_unch = all(c["unchanged"] for c in avail) if avail else None
+
+            await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
+                "candidate_id": candidate_id, "training_run_id": run.id,
+                "algorithm": algorithm, "dependency_status": dep_status,
+                "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
+                "production_fingerprints_unchanged": overall_unch,
+            })
+            await self.db.commit()
+
+            return {
+                "policy_candidate_id": candidate_id, "training_run_id": run.id,
+                "name": name, "status": "dependency_unavailable",
+                "training_mode": "dependency_unavailable", "real_neural_training": False,
+                "algorithm": algorithm, "timesteps": timesteps,
+                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                "not_eligible_for_promotion": True,
+                "production_fingerprints": {"before": pre_fp, "after": post_fp,
+                                            "unchanged": overall_unch, "component_checks": cc},
+                "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
+                             "No real CPU PPO/A2C training was performed.",
+                             "Candidate created as dependency_unavailable stub."],
+                "created_at": now.isoformat(),
+            }
+
+        # Dependencies available — run real CPU-only training
+        # This branch only executes if numpy, gymnasium, stable_baselines3, torch are all importable
+        try:
+            import numpy as np
+            import gymnasium as gym
+            from gymnasium import spaces
+            from stable_baselines3 import PPO as SB3PPO, A2C as SB3A2C
+
+            # Build tiny synthetic environment from dataset
+            validation = await self.validate_dataset_contract(start_date, end_date, limit=30)
+            n_assets = validation.get("asset_count", 2) or 2
+
+            class TinyOfflineEnv(gym.Env):
+                def __init__(self):
+                    super().__init__()
+                    self.observation_space = spaces.Box(low=-1, high=1, shape=(n_assets,), dtype=np.float32)
+                    self.action_space = spaces.Discrete(3)  # 0=cash, 1=baseline, 2=risk-reduced
+                    self._step = 0
+                    self._max_steps = min(timesteps, 100)
+                    np.random.seed(seed)
+
+                def reset(self, **kwargs):
+                    self._step = 0
+                    return np.zeros(n_assets, dtype=np.float32), {}
+
+                def step(self, action):
+                    self._step += 1
+                    obs = np.random.uniform(-0.05, 0.05, size=n_assets).astype(np.float32)
+                    reward = float(np.sum(obs) * (0.5 + 0.5 * (action == 1)))
+                    done = self._step >= self._max_steps
+                    return obs, reward, done, False, {}
+
+            algo_cls = SB3PPO if algorithm.upper() == "PPO" else SB3A2C
+            env = TinyOfflineEnv()
+            import time
+            t0 = time.monotonic()
+            model = algo_cls("MlpPolicy", env, verbose=0, seed=seed, device="cpu")
+            model.learn(total_timesteps=timesteps)
+            training_ms = int((time.monotonic() - t0) * 1000)
+
+            # Extract simple policy info
+            final_reward = float(np.mean([env.step(1)[1] for _ in range(10)]))
+
+            run = RLTrainingRun(
+                id=gen_uuid(), agent_key=f"finrlx_cpu_{algorithm.lower()}_research",
+                environment_key=canonical_key, status="completed",
+                train_start_date=start_date, train_end_date=end_date,
+                config={"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
+                        "training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True},
+                completed_at=datetime.now(timezone.utc),
+            )
+            self.db.add(run)
+
+            candidate_id = gen_uuid()
+            training_metrics = {"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
+                                "training_duration_ms": training_ms, "final_mean_reward": round(final_reward, 6),
+                                "training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True}
+            self.db.add(RLPolicySnapshot(
+                id=candidate_id, training_run_id=run.id,
+                agent_key=run.agent_key, environment_key=canonical_key,
+                policy_type=f"finrlx_cpu_{algorithm.lower()}_research",
+                policy_payload={"training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True,
+                                "algorithm": algorithm, "safety_flags": FINRLX_SAFETY_FLAGS,
+                                "notes": "CPU-only offline research prototype. Not eligible for promotion."},
+                metrics=training_metrics,
+            ))
+            run.metrics = {**training_metrics, "policy_candidate_id": candidate_id}
+
+            post_fp = await self._capture_production_fingerprints()
+            cc = self._build_component_checks(pre_fp, post_fp)
+            avail = [c for c in cc.values() if c["snapshot_available"]]
+            overall_unch = all(c["unchanged"] for c in avail) if avail else None
+
+            await self._create_audit_event("finrlx_cpu_research_train_completed", {
+                "candidate_id": candidate_id, "training_run_id": run.id,
+                "algorithm": algorithm, "real_neural_training": True,
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"],
+                "component_checks": cc, "production_fingerprints_unchanged": overall_unch,
+            })
+            await self.db.commit()
+
+            return {
+                "policy_candidate_id": candidate_id, "training_run_id": run.id,
+                "name": name, "status": "completed",
+                "training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True,
+                "algorithm": algorithm, "timesteps": timesteps,
+                "training_metrics": training_metrics,
+                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                "not_eligible_for_promotion": True,
+                "production_fingerprints": {"before": pre_fp, "after": post_fp,
+                                            "unchanged": overall_unch, "component_checks": cc},
+                "warnings": ["CPU-only offline research prototype.", "Not eligible for promotion.",
+                             "Not used by production decisions."],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+        except Exception as e:
+            post_fp = await self._capture_production_fingerprints()
+            cc = self._build_component_checks(pre_fp, post_fp)
+            avail = [c for c in cc.values() if c["snapshot_available"]]
+            overall_unch = all(c["unchanged"] for c in avail) if avail else None
+
+            await self._create_audit_event("finrlx_cpu_research_train_failed", {
+                "algorithm": algorithm, "error": str(e)[:500],
+                "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
+                "production_fingerprints_unchanged": overall_unch,
+            })
+            await self.db.commit()
+
+            return {
+                "policy_candidate_id": None, "training_run_id": None,
+                "name": name, "status": "failed",
+                "training_mode": "failed", "real_neural_training": False,
+                "algorithm": algorithm, "timesteps": timesteps,
+                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                "not_eligible_for_promotion": True,
+                "production_fingerprints": {"before": pre_fp, "after": post_fp,
+                                            "unchanged": overall_unch, "component_checks": cc},
+                "warnings": [f"Training failed: {str(e)[:200]}"],
+                "created_at": now.isoformat(),
+            }
+
+    def _build_component_checks(self, pre: dict, post: dict) -> dict:
+        cc = {}
+        for k in ["recommendations_current", "publication_status", "overview"]:
+            pre_c, post_c = pre.get(k, {}), post.get(k, {})
+            pa, pb = pre_c.get("snapshot_available", False), post_c.get("snapshot_available", False)
+            if pa and pb:
+                unch = pre_c.get("hash") == post_c.get("hash")
+            else:
+                unch = None
+            cc[k] = {"before_hash": pre_c.get("hash"), "after_hash": post_c.get("hash"),
+                      "unchanged": unch, "snapshot_available": pa and pb}
+            if not (pa and pb):
+                cc[k]["reason"] = pre_c.get("reason") or post_c.get("reason") or "snapshot unavailable"
+        return cc
 
     @staticmethod
     def safety_guard(action: str) -> dict:

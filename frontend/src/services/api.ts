@@ -1005,8 +1005,23 @@ export interface FinRLXCandidateIsolation {
   reasons: string[];
 }
 
+export interface FinRLXDependencyStatus {
+  numpy_available: boolean;
+  gymnasium_available: boolean;
+  stable_baselines3_available: boolean;
+  torch_available: boolean;
+  torch_cuda_available: boolean | null;
+  cpu_only_mode: boolean;
+  neural_training_available: boolean;
+  missing_dependencies: string[];
+}
+
 export async function fetchFinRLXStatus(): Promise<ApiResponse<FinRLXAdapterStatus>> {
   return apiFetch<FinRLXAdapterStatus>("/api/v1/rl/finrlx/status");
+}
+
+export async function fetchFinRLXDependencies(): Promise<ApiResponse<FinRLXDependencyStatus>> {
+  return apiFetch<FinRLXDependencyStatus>("/api/v1/rl/finrlx/dependencies");
 }
 
 export async function fetchFinRLXCandidates(): Promise<ApiResponse<Record<string, unknown>[]>> {

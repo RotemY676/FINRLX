@@ -1,10 +1,13 @@
 """FinRL-X research spike endpoints.
 
 GET  /api/v1/rl/finrlx/status
+GET  /api/v1/rl/finrlx/dependencies
 POST /api/v1/rl/finrlx/validate-dataset
 POST /api/v1/rl/finrlx/train-research
+POST /api/v1/rl/finrlx/train-cpu-prototype
 GET  /api/v1/rl/finrlx/candidates
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}
+GET  /api/v1/rl/finrlx/candidates/{candidate_id}/isolation
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -20,6 +23,16 @@ from app.schemas.common import ApiResponse
 from app.services.finrlx_research import FinRLXResearchService
 
 router = APIRouter()
+
+
+class FinRLXCPUPrototypeRequest(BaseModel):
+    name: str = "CPU-only Research Prototype"
+    algorithm: str = "PPO"
+    start_date: str | None = None
+    end_date: str | None = None
+    timesteps: int = 50
+    seed: int = 42
+    research_acknowledgement: bool = False
 
 
 class FinRLXValidateRequest(BaseModel):
@@ -39,6 +52,26 @@ class FinRLXTrainRequest(BaseModel):
 async def get_finrlx_status(db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
     return ApiResponse(meta=make_meta(), data=svc.get_adapter_info())
+
+
+@router.get("/rl/finrlx/dependencies", response_model=ApiResponse[dict])
+async def get_dependencies(db: AsyncSession = Depends(get_db)):
+    return ApiResponse(meta=make_meta(), data=FinRLXResearchService.get_neural_dependency_status())
+
+
+@router.post("/rl/finrlx/train-cpu-prototype", response_model=ApiResponse[dict])
+async def train_cpu_prototype(body: FinRLXCPUPrototypeRequest, db: AsyncSession = Depends(get_db)):
+    if not body.research_acknowledgement:
+        raise HTTPException(status_code=422, detail="Research acknowledgement required.")
+    if body.algorithm.upper() not in ("PPO", "A2C"):
+        raise HTTPException(status_code=422, detail="Algorithm must be PPO or A2C.")
+    if body.timesteps > 500:
+        raise HTTPException(status_code=422, detail="Timesteps capped at 500 for research prototype.")
+    svc = FinRLXResearchService(db)
+    sd = date.fromisoformat(body.start_date) if body.start_date else None
+    ed = date.fromisoformat(body.end_date) if body.end_date else None
+    result = await svc.train_cpu_prototype(body.name, body.algorithm.upper(), sd, ed, body.timesteps, body.seed)
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
 
 
 @router.post("/rl/finrlx/validate-dataset", response_model=ApiResponse[dict])

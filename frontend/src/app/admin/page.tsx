@@ -6,8 +6,9 @@ import {
   approveQueueItem, deferQueueItem, challengeQueueItem,
   fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
   fetchRLBenchmarkAudit, fetchRLBenchmarkAuditForReport,
-  fetchFinRLXStatus,
+  fetchFinRLXStatus, fetchFinRLXDependencies,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
+  FinRLXDependencyStatus,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -88,6 +89,7 @@ export default function AdminPage() {
   const [benchAuditEvents, setBenchAuditEvents] = useState<RLBenchmarkAuditEvent[]>([]);
   const [selectedBenchAudit, setSelectedBenchAudit] = useState<RLBenchmarkAuditEvent[]>([]);
   const [finrlxStatus, setFinrlxStatus] = useState<FinRLXAdapterStatus | null>(null);
+  const [finrlxDeps, setFinrlxDeps] = useState<FinRLXDependencyStatus | null>(null);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -117,6 +119,7 @@ export default function AdminPage() {
         }
         if (auditRes && auditRes.data) setBenchAuditEvents(auditRes.data);
         if (finrlxRes && finrlxRes.data) setFinrlxStatus(finrlxRes.data);
+        fetchFinRLXDependencies().then(r => { if (r.data) setFinrlxDeps(r.data); }).catch(() => {});
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -385,6 +388,26 @@ export default function AdminPage() {
             </div>
           )}
           <p className="text-[10px] text-ink-4">{finrlxStatus.notes}</p>
+          {/* CPU-only dependency status */}
+          {finrlxDeps && (
+            <div className="mt-3 pt-3 border-t border-line">
+              <h4 className="text-[11px] font-semibold text-ink mb-2">CPU-Only Neural Dependency Status</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {(["numpy", "gymnasium", "stable_baselines3", "torch"] as const).map((lib) => {
+                  const avail = (finrlxDeps as unknown as Record<string, unknown>)[`${lib}_available`];
+                  return (
+                    <span key={lib} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium ${
+                      avail ? "bg-pos-soft text-pos-soft-ink" : "bg-surface-3 text-ink-3"
+                    }`}>{lib}: {avail ? "installed" : "missing"}</span>
+                  );
+                })}
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium ${
+                  finrlxDeps.neural_training_available ? "bg-pos-soft text-pos-soft-ink" : "bg-caution-soft text-caution-soft-ink"
+                }`}>Neural training: {finrlxDeps.neural_training_available ? "available" : "unavailable"}</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">CPU-only mode</span>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
