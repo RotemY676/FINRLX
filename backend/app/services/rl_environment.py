@@ -44,6 +44,9 @@ DEFAULT_CONSTRAINT_SCHEMA = {
     "keys": ["position_cap_max", "cash_floor", "max_invested", "ml_shadow_only"],
 }
 
+DEFAULT_ENVIRONMENT_KEY = "quantpipeline_offline_v1"
+ENVIRONMENT_ALIASES = {"default": DEFAULT_ENVIRONMENT_KEY}
+
 DEFAULT_ENVIRONMENTS = [
     {
         "key": "quantpipeline_offline_v1",
@@ -83,14 +86,25 @@ class RLEnvironmentService:
             await self.db.commit()
         return inserted
 
+    def resolve_key(self, key: str) -> tuple[str, str | None]:
+        """Resolve an environment key, handling aliases like 'default'.
+
+        Returns (canonical_key, warning_or_none).
+        """
+        canonical = ENVIRONMENT_ALIASES.get(key)
+        if canonical:
+            return canonical, f"Environment alias '{key}' resolved to '{canonical}'."
+        return key, None
+
     async def get_environment_definitions(self) -> list[RLEnvironmentDefinition]:
         return list((await self.db.execute(
             select(RLEnvironmentDefinition).order_by(RLEnvironmentDefinition.key)
         )).scalars().all())
 
     async def get_environment_definition(self, key: str) -> RLEnvironmentDefinition | None:
+        canonical, _ = self.resolve_key(key)
         return (await self.db.execute(
-            select(RLEnvironmentDefinition).where(RLEnvironmentDefinition.key == key)
+            select(RLEnvironmentDefinition).where(RLEnvironmentDefinition.key == canonical)
         )).scalar_one_or_none()
 
     # ── State ────────────────────────────────────────────────────────
@@ -240,10 +254,12 @@ class RLEnvironmentService:
         if start_date is None:
             start_date = end_date - timedelta(days=60)
 
-        env_def = await self.get_environment_definition(environment_key)
+        canonical_key, alias_warning = self.resolve_key(environment_key)
+        env_def = await self.get_environment_definition(canonical_key)
         if not env_def:
             await self.ensure_default_rl_environment()
-            env_def = await self.get_environment_definition(environment_key)
+            env_def = await self.get_environment_definition(canonical_key)
+        environment_key = canonical_key  # persist canonical, not alias
 
         agent_fn = AGENTS.get(agent_type)
         if not agent_fn:
@@ -295,6 +311,8 @@ class RLEnvironmentService:
         total_reward = 0.0
         total_turnover = 0.0
         warnings: list[str] = []
+        if alias_warning:
+            warnings.append(alias_warning)
         steps_created = 0
 
         for i, step_date in enumerate(dates):
@@ -391,12 +409,15 @@ class RLEnvironmentService:
     # ── Queries ──────────────────────────────────────────────────────
 
     async def validate_environment(self, key: str) -> dict:
-        env = await self.get_environment_definition(key)
+        canonical_key, alias_warning = self.resolve_key(key)
+        env = await self.get_environment_definition(canonical_key)
         if not env:
-            return {"valid": False, "errors": ["Environment not found"]}
+            return {"valid": False, "environment_key": canonical_key, "errors": ["Environment not found"], "is_shadow_only": True}
 
         errors = []
         warnings = []
+        if alias_warning:
+            warnings.append(alias_warning)
 
         # Check universe exists
         if not env.universe_id:
@@ -418,7 +439,7 @@ class RLEnvironmentService:
 
         return {
             "valid": len(errors) == 0,
-            "environment_key": key,
+            "environment_key": canonical_key,
             "is_shadow_only": env.is_shadow_only if env else True,
             "errors": errors,
             "warnings": warnings,

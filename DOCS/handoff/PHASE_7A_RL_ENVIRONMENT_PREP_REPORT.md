@@ -147,6 +147,36 @@ Same walk-forward pattern as BacktestService but at step/episode/run granularity
 
 ---
 
+## Phase 7A.1 — Default Alias Resolution Addendum
+
+**Date:** 2026-04-25
+
+### Problem
+- `POST /rl/environments/default/validate` returned "Environment not found"
+- `POST /rl/simulations/run` with `environment_key="default"` ran but persisted `environment_key="default"` and `universe_id=null`
+
+### Fix
+1. Added `resolve_key()` method with alias map: `"default" → "quantpipeline_offline_v1"`
+2. All key-accepting methods (`get_environment_definition`, `validate_environment`, `run_offline_simulation`) now resolve aliases before lookup
+3. Canonical key is persisted, not the alias
+4. Warning added when alias is used: "Environment alias 'default' resolved to 'quantpipeline_offline_v1'."
+5. `universe_id` is always populated from the resolved environment definition
+
+### Tests Added (4)
+| Test | What It Verifies |
+|---|---|
+| `test_validate_default_alias` | Validate with "default" resolves to canonical key |
+| `test_simulation_default_alias_persists_canonical` | Simulation persists canonical key + non-null universe_id |
+| `test_simulation_has_universe_id` | universe_id is always populated |
+| `test_real_key_still_works` | Canonical key works without alias warning |
+
+### Test Output
+```
+256 passed, 2 skipped, 1 warning in 24.40s
+```
+
+---
+
 ## 10. Test Output
 
 ### Backend

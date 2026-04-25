@@ -145,6 +145,56 @@ async def test_heuristic_agent_produces_valid_actions(client):
             assert step.get("constraint_violations") is None or len(step["constraint_violations"]) == 0
 
 
+# ── Default alias resolution ─────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_validate_default_alias(client):
+    """POST /rl/environments/default/validate resolves to canonical key."""
+    r = await client.post("/api/v1/rl/environments/default/validate")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["environment_key"] == "quantpipeline_offline_v1"
+    assert data["valid"] is True
+    assert any("alias" in w.lower() for w in data.get("warnings", []))
+
+
+@pytest.mark.asyncio
+async def test_simulation_default_alias_persists_canonical(client):
+    """Simulation with 'default' persists canonical environment_key."""
+    r = await client.post("/api/v1/rl/simulations/run", json={
+        "environment_key": "default",
+        "start_date": "2026-03-15",
+        "end_date": "2026-04-15",
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["environment_key"] == "quantpipeline_offline_v1"
+    assert data["universe_id"] is not None
+
+
+@pytest.mark.asyncio
+async def test_simulation_has_universe_id(client):
+    """Simulation run always has non-null universe_id when environment exists."""
+    r = await client.post("/api/v1/rl/simulations/run", json={
+        "start_date": "2026-03-15",
+        "end_date": "2026-04-15",
+    })
+    data = r.json()["data"]
+    assert data["universe_id"] is not None
+
+
+@pytest.mark.asyncio
+async def test_real_key_still_works(client):
+    """Canonical key works without alias warning."""
+    r = await client.post("/api/v1/rl/environments/quantpipeline_offline_v1/validate")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["environment_key"] == "quantpipeline_offline_v1"
+    assert data["valid"] is True
+    # No alias warning for canonical key
+    assert not any("alias" in w.lower() for w in data.get("warnings", []))
+
+
 # ── Shadow / isolation ───────────────────────────────────────────────────
 
 @pytest.mark.asyncio
