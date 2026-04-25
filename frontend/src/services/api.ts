@@ -980,6 +980,26 @@ export async function fetchRLBenchmarkAuditForReport(reportId: string): Promise<
   return apiFetch<RLBenchmarkAuditEvent[]>(`/api/v1/rl/benchmarks/${reportId}/audit`);
 }
 
+// FinRL-X Research types
+
+export interface FinRLXAdapterStatus {
+  adapter_type: string;
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  live_pipeline_influence: boolean;
+  no_broker_execution: boolean;
+  finrlx_available: boolean;
+  gpu_required: boolean;
+  training_mode: string;
+  missing_for_real_training: string[];
+  notes: string;
+}
+
+export async function fetchFinRLXStatus(): Promise<ApiResponse<FinRLXAdapterStatus>> {
+  return apiFetch<FinRLXAdapterStatus>("/api/v1/rl/finrlx/status");
+}
+
 export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<ApiResponse<RLBenchmarkReport>> {
   return apiFetch<RLBenchmarkReport>("/api/v1/rl/benchmarks/run", {
     method: "POST",

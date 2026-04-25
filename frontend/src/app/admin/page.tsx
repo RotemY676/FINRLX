@@ -6,8 +6,9 @@ import {
   approveQueueItem, deferQueueItem, challengeQueueItem,
   fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
   fetchRLBenchmarkAudit, fetchRLBenchmarkAuditForReport,
+  fetchFinRLXStatus,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
-  RLBenchmarkReport, RLBenchmarkAuditEvent,
+  RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
@@ -86,6 +87,7 @@ export default function AdminPage() {
   const [benchRunSuccess, setBenchRunSuccess] = useState<string | null>(null);
   const [benchAuditEvents, setBenchAuditEvents] = useState<RLBenchmarkAuditEvent[]>([]);
   const [selectedBenchAudit, setSelectedBenchAudit] = useState<RLBenchmarkAuditEvent[]>([]);
+  const [finrlxStatus, setFinrlxStatus] = useState<FinRLXAdapterStatus | null>(null);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -102,8 +104,9 @@ export default function AdminPage() {
       fetchMLOpsSummary().catch(() => null),
       fetchRLBenchmarks().catch(() => null),
       fetchRLBenchmarkAudit().catch(() => null),
+      fetchFinRLXStatus().catch(() => null),
     ])
-      .then(([opsRes, mlRes, benchRes, auditRes]) => {
+      .then(([opsRes, mlRes, benchRes, auditRes, finrlxRes]) => {
         setOps(opsRes.data);
         setFilteredQueue(opsRes.data.queue);
         setFilteredAudit(opsRes.data.audit);
@@ -113,6 +116,7 @@ export default function AdminPage() {
           if (benchRes.data.length > 0) selectBenchmark(benchRes.data[0]);
         }
         if (auditRes && auditRes.data) setBenchAuditEvents(auditRes.data);
+        if (finrlxRes && finrlxRes.data) setFinrlxStatus(finrlxRes.data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -330,6 +334,51 @@ export default function AdminPage() {
               <p className="text-[10px] text-ink-4">latest agent</p>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* ── FinRL-X Research Spike ── */}
+      {finrlxStatus && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="sparkle" size={15} className="text-accent-2" />
+            <h3 className="text-[13px] font-semibold text-ink">FinRL-X Research Spike</h3>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline / Shadow</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center mb-3">
+            <div>
+              <p className="text-[12px] font-medium text-ink">{finrlxStatus.training_mode}</p>
+              <p className="text-[10px] text-ink-4">training mode</p>
+            </div>
+            <div>
+              <p className={`text-[12px] font-medium ${finrlxStatus.finrlx_available ? "text-pos" : "text-caution"}`}>
+                {finrlxStatus.finrlx_available ? "Available" : "Not installed"}
+              </p>
+              <p className="text-[10px] text-ink-4">FinRL-X status</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-medium text-ink">{finrlxStatus.gpu_required ? "Required" : "Not required"}</p>
+              <p className="text-[10px] text-ink-4">GPU</p>
+            </div>
+            <div>
+              <p className={`text-[12px] font-medium ${finrlxStatus.live_pipeline_influence ? "text-breach" : "text-pos"}`}>
+                {finrlxStatus.live_pipeline_influence ? "Active" : "None"}
+              </p>
+              <p className="text-[10px] text-ink-4">production influence</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-medium text-ink">{finrlxStatus.no_broker_execution ? "None" : "Active"}</p>
+              <p className="text-[10px] text-ink-4">broker integration</p>
+            </div>
+          </div>
+          {finrlxStatus.missing_for_real_training?.length > 0 && (
+            <div className="rounded-lg border border-caution bg-caution-soft p-2 text-[10px] text-caution-soft-ink">
+              <span className="font-medium">Dependencies needed for real neural training: </span>
+              {finrlxStatus.missing_for_real_training.join(", ")}
+            </div>
+          )}
+          <p className="text-[10px] text-ink-4 mt-2">{finrlxStatus.notes}</p>
         </section>
       )}
 

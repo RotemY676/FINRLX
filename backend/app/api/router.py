@@ -28,6 +28,7 @@ from app.api.v1.universe import router as universe_router
 from app.api.v1.rl import router as rl_router
 from app.api.v1.rl_training import router as rl_training_router
 from app.api.v1.rl_benchmark import router as rl_benchmark_router
+from app.api.v1.rl_finrlx import router as rl_finrlx_router
 from app.api.v1.health import router as health_router
 
 api_router = APIRouter()
@@ -59,4 +60,5 @@ api_router.include_router(universe_router, tags=["universes"])
 api_router.include_router(rl_router, tags=["rl"])
 api_router.include_router(rl_training_router, tags=["rl-training"])
 api_router.include_router(rl_benchmark_router, tags=["rl-benchmark"])
+api_router.include_router(rl_finrlx_router, tags=["rl-finrlx"])
 api_router.include_router(health_router, tags=["health"])
