@@ -73,8 +73,8 @@ export default function OverviewPage() {
           { k: "Positions", v: rec ? String(rec.total_positions) : "—", sub: "active", tone: "" },
           { k: "Publishable", v: rec ? "1" : "0", sub: "requires review", tone: "primary" },
           { k: "Warnings", v: rec ? String(rec.warning_count) : "0", sub: rec?.warning_count ? "active" : "none", tone: rec?.warning_count ? "caution" : "" },
-          { k: "Freshness", v: "94%", sub: "engines current", tone: "pos" },
-          { k: "Coverage", v: "96%", sub: "universe covered", tone: "pos" },
+          { k: "Freshness", v: data.health.source_freshness_ok ? "OK" : "Stale", sub: data.health.source_freshness_ok ? "sources current" : "check feeds", tone: data.health.source_freshness_ok ? "pos" : "caution" },
+          { k: "Model Health", v: data.health.model_health_ok ? "OK" : "Degraded", sub: data.health.model_health_ok ? "models healthy" : "check models", tone: data.health.model_health_ok ? "pos" : "caution" },
           { k: "Recommendations", v: String(data.recent_recommendation_count), sub: "published", tone: "" },
         ].map((kpi, i) => (
           <div key={i} className="rounded-lg border border-line bg-surface p-3 shadow-sm">
@@ -92,9 +92,11 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-gap">
         <div className="lg:col-span-2">
           {rec ? <RecommendationCard rec={rec} /> : (
-            <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-              <h2 className="text-[15px] font-semibold text-ink-2">No Recommendation Available</h2>
-              <p className="text-[13px] text-ink-3 mt-1">Run the pipeline to generate one, then publish.</p>
+            <div className="rounded-lg border border-caution bg-caution-soft p-pad shadow-sm">
+              <h2 className="text-[15px] font-semibold text-caution-soft-ink">No Published Recommendation</h2>
+              <p className="text-[13px] text-caution-soft-ink mt-1">
+                A pipeline draft may exist but has not been published yet. Check Decision Workspace to review and publish.
+              </p>
             </div>
           )}
         </div>

@@ -5,12 +5,17 @@ const STYLES: Record<string, string> = {
   published_with_warning: "bg-caution-soft text-caution-soft-ink",
   pending: "bg-primary-soft text-primary-soft-ink",
   staged: "bg-primary-soft text-primary-soft-ink",
+  approved: "bg-pos-soft text-pos-soft-ink",
   suppressed: "bg-breach-soft text-breach-soft-ink",
+  deferred: "bg-caution-soft text-caution-soft-ink",
+  superseded: "bg-surface-3 text-ink-4",
   stale: "bg-surface-3 text-ink-3",
   draft: "bg-surface-3 text-ink-3",
   completed: "bg-pos-soft text-pos-soft-ink",
   failed: "bg-breach-soft text-breach-soft-ink",
   running: "bg-primary-soft text-primary-soft-ink",
+  partial: "bg-caution-soft text-caution-soft-ink",
+  degraded: "bg-caution-soft text-caution-soft-ink",
 };
 
 export function StatusBadge({ status }: { status: string }) {

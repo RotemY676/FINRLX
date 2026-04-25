@@ -266,6 +266,15 @@ export interface BacktestDetail {
   equity_curve: EquityCurvePoint[];
   warnings: string[];
   created_at: string;
+  // Provenance fields
+  source_type?: string | null;
+  is_demo?: boolean;
+  lineage_available?: boolean;
+  decision_count?: number | null;
+  market_bar_window?: { start: string; end: string } | null;
+  recommendation_ids?: string[];
+  source_feature_set_ids?: string[];
+  source_signal_run_ids?: string[];
 }
 
 export interface BacktestListItem {
@@ -277,6 +286,11 @@ export interface BacktestListItem {
   is_promoted: boolean;
   total_return: number | null;
   sharpe_ratio: number | null;
+  // Provenance
+  source_type?: string | null;
+  is_demo?: boolean;
+  lineage_available?: boolean;
+  decision_count?: number | null;
 }
 
 export interface BacktestListData {
@@ -313,6 +327,11 @@ export interface PaperPortfolioData {
   events: PaperEvent[];
   warnings: string[];
   created_at: string;
+  // Provenance fields
+  source_type?: string | null;
+  source_recommendation_id?: string | null;
+  portfolio_value?: number | null;
+  is_demo?: boolean;
 }
 
 // Fetch functions
@@ -393,6 +412,27 @@ export async function fetchCurrentPaper(): Promise<
   ApiResponse<PaperPortfolioData | null>
 > {
   return apiFetch<PaperPortfolioData | null>("/api/v1/paper/current");
+}
+
+// Paper portfolio performance
+
+export interface PaperPerformanceSummary {
+  status: string;
+  total_return: number | null;
+  annualized_return: number | null;
+  max_drawdown: number | null;
+  volatility: number | null;
+  sharpe_ratio: number | null;
+  starting_value: number | null;
+  ending_value: number | null;
+  trade_count: number | null;
+  snapshot_count: number | null;
+  days: number | null;
+  warnings: string[];
+}
+
+export async function fetchPaperPerformance(portfolioId: string): Promise<ApiResponse<PaperPerformanceSummary>> {
+  return apiFetch<PaperPerformanceSummary>(`/api/v1/paper/${portfolioId}/performance`);
 }
 
 // Engine comparison types

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchCurrentPaper, PaperPortfolioData } from "@/services/api";
+import { fetchCurrentPaper, fetchPaperPerformance, PaperPortfolioData, PaperPerformanceSummary } from "@/services/api";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
 import { fmtDateTime, fmtDate } from "@/lib/format";
 import { DriftBarChart } from "@/components/charts/DriftBarChart";
 import { usePaneContext } from "@/components/shell/ContextPane";
+import { SourceBadge } from "@/components/recommendation/SourceBadge";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
@@ -18,13 +19,22 @@ function driftColor(d: number): string {
 
 export default function PaperPage() {
   const [data, setData] = useState<PaperPortfolioData | null>(null);
+  const [perf, setPerf] = useState<PaperPerformanceSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { openPane } = usePaneContext();
 
   useEffect(() => {
     fetchCurrentPaper()
-      .then((res) => setData(res.data))
+      .then(async (res) => {
+        setData(res.data);
+        if (res.data?.id) {
+          try {
+            const perfRes = await fetchPaperPerformance(res.data.id);
+            if (perfRes.data?.status === "computed") setPerf(perfRes.data);
+          } catch { /* performance not available yet */ }
+        }
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -42,9 +52,27 @@ export default function PaperPage() {
         <div>
           <h1 className="text-[20px] font-semibold text-ink">Paper Portfolio</h1>
           <p className="text-[11px] text-ink-4 mt-1">{data.name}</p>
+          {data.source_recommendation_id && (
+            <p className="text-[10px] text-ink-4 font-mono mt-0.5">Source: {data.source_recommendation_id.slice(0, 8)}...</p>
+          )}
         </div>
-        <StatusBadge status={data.is_active ? "published" : "stale"} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={data.is_active ? "published" : "stale"} />
+          {data.source_type && <SourceBadge source={data.source_type} />}
+        </div>
       </div>
+
+      {/* Test paper warning */}
+      {data.source_type === "test_paper" && (
+        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+          This is a test paper portfolio created from an unpublished recommendation (allow_unpublished=true). Treat as experimental.
+        </div>
+      )}
+      {data.is_demo && (
+        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+          This portfolio is from seeded/demo data and may not reflect real market conditions.
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-gap">
@@ -72,6 +100,43 @@ export default function PaperPage() {
           </p>
         </div>
       </div>
+
+      {/* Performance summary */}
+      {perf && (
+        <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+          <h3 className="text-[13px] font-semibold text-ink mb-3">Performance Summary</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { k: "Total Return", v: perf.total_return != null ? `${(perf.total_return * 100).toFixed(1)}%` : "—" },
+              { k: "Sharpe", v: perf.sharpe_ratio?.toFixed(2) ?? "—" },
+              { k: "Max Drawdown", v: perf.max_drawdown != null ? `${(perf.max_drawdown * 100).toFixed(1)}%` : "—" },
+              { k: "Volatility", v: perf.volatility != null ? `${(perf.volatility * 100).toFixed(1)}%` : "—" },
+              { k: "Trades", v: String(perf.trade_count ?? "—") },
+              { k: "Days", v: String(perf.days ?? "—") },
+            ].map((m) => (
+              <div key={m.k} className="text-center">
+                <p className="text-[11px] text-ink-4">{m.k}</p>
+                <p className="text-[14px] font-semibold text-ink font-mono mt-0.5">{m.v}</p>
+              </div>
+            ))}
+          </div>
+          {perf.warnings.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-line space-y-1">
+              {perf.warnings.map((w, i) => (
+                <p key={i} className="text-[11px] text-caution">{w}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Portfolio value */}
+      {data.portfolio_value != null && (
+        <div className="bg-surface border border-line rounded-lg shadow-sm p-pad flex items-center justify-between">
+          <span className="text-[13px] text-ink-3">Portfolio Value</span>
+          <span className="text-[18px] font-display font-semibold text-ink font-mono">${data.portfolio_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        </div>
+      )}
 
       {/* Drift chart */}
       <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">

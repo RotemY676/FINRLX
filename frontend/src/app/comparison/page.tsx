@@ -14,6 +14,7 @@ import { usePaneContext } from "@/components/shell/ContextPane";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { SourceBadge } from "@/components/recommendation/SourceBadge";
 
 const STANCE_STYLE: Record<string, string> = {
   buy: "text-pos-soft-ink bg-pos-soft", sell: "text-breach-soft-ink bg-breach-soft",
@@ -142,7 +143,12 @@ export default function ComparisonPage() {
                       ))
                     }
                   >
-                    <td className="py-2 pr-3 font-medium text-ink">{eng.engine_name}</td>
+                    <td className="py-2 pr-3 font-medium text-ink">
+                      {eng.engine_name}
+                      {eng.engine_key === "ml_return_forecaster" && (
+                        <span className="ml-2"><SourceBadge source="shadow" label="Shadow / experimental" /></span>
+                      )}
+                    </td>
                     <td className="py-2 pr-3">
                       <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
                     </td>

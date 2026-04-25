@@ -90,12 +90,12 @@ export default function BacktestsPage() {
                 </span>
               )}
               <StatusBadge status={item.status} />
-              {(item as any).source_type === "pipeline_backtest" && (
+              {item.source_type === "pipeline_backtest" && (
                 <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
               )}
-              {((item as any).source_type === "seed_demo" || (item as any).source_type === "unknown") && (
+              {(item.source_type === "seed_demo" || item.source_type === "unknown") && (
                 <span className="px-2 py-0.5 bg-caution-soft text-caution-soft-ink rounded-md text-[10px] font-medium">
-                  {(item as any).source_type === "seed_demo" ? "Seed/Demo" : "Unverified"}
+                  {item.source_type === "seed_demo" ? "Seed / Demo" : "Unverified"}
                 </span>
               )}
               {item.is_promoted && (
@@ -111,9 +111,9 @@ export default function BacktestsPage() {
       {detail && (
         <>
           {/* Demo/unverified warning */}
-          {((detail as any).is_demo || (detail as any).source_type === "unknown") && (
+          {(detail.is_demo || detail.source_type === "unknown" || detail.source_type === "seed_demo") && (
             <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
-              This backtest has no pipeline lineage and should be treated as seed/demo or unverified.
+              This backtest has no pipeline lineage and should be treated as seed/demo or unverified data.
             </div>
           )}
 
@@ -166,6 +166,37 @@ export default function BacktestsPage() {
               ))}
             </div>
           </div>
+
+          {/* Provenance */}
+          {detail.source_type === "pipeline_backtest" && (
+            <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
+              <h3 className="text-[13px] font-semibold text-ink mb-3">Provenance</h3>
+              <div className="space-y-1 text-[13px]">
+                <div className="flex gap-3">
+                  <span className="text-ink-3 w-40 shrink-0">Source type</span>
+                  <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
+                </div>
+                {detail.decision_count != null && (
+                  <div className="flex gap-3">
+                    <span className="text-ink-3 w-40 shrink-0">Decision points</span>
+                    <span className="text-ink-2 font-mono">{detail.decision_count}</span>
+                  </div>
+                )}
+                {detail.market_bar_window && (
+                  <div className="flex gap-3">
+                    <span className="text-ink-3 w-40 shrink-0">Market bar window</span>
+                    <span className="text-ink-2 font-mono">{detail.market_bar_window.start} — {detail.market_bar_window.end}</span>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <span className="text-ink-3 w-40 shrink-0">Lineage</span>
+                  <span className={`text-[11px] font-medium ${detail.lineage_available ? "text-pos" : "text-ink-3"}`}>
+                    {detail.lineage_available ? "Available" : "Not available"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Warnings */}
           {detail.warnings.length > 0 && <WarningsBlock warnings={detail.warnings} />}

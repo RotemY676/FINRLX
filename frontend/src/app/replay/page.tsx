@@ -109,6 +109,13 @@ export default function ReplayPage() {
 
       {detail && (
         <>
+          {/* Seeded data warning */}
+          {detail.warnings.some(w => w.toLowerCase().includes("seeded") || w.toLowerCase().includes("demo")) && (
+            <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+              This replay is from seeded/demo data and may not reflect real pipeline decisions.
+            </div>
+          )}
+
           {/* Replay header */}
           <div className="flex items-start justify-between">
             <div>
