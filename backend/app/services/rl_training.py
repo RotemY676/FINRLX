@@ -193,7 +193,7 @@ class RLTrainingService:
         eval_start_date: date | None = None,
         eval_end_date: date | None = None,
     ) -> dict:
-        """Evaluate a policy snapshot on a date range."""
+        """Evaluate a policy snapshot on a date range using stored policy weights."""
         snapshot = (await self.db.execute(
             select(RLPolicySnapshot).where(RLPolicySnapshot.id == policy_snapshot_id)
         )).scalar_one_or_none()
@@ -207,20 +207,49 @@ class RLTrainingService:
         if eval_start_date is None:
             eval_start_date = eval_end_date - timedelta(days=30)
 
-        # Run simulation using heuristic agent (policy weights are the same pattern)
-        sim = await env_svc.run_offline_simulation(
-            snapshot.environment_key, eval_start_date, eval_end_date, "heuristic_baseline",
-        )
+        # Build agent from stored policy payload
+        payload = snapshot.policy_payload or {}
+        blend_weights = payload.get("weights")
+        used_policy_weights = False
+        fallback_warning = None
+        agent_label = snapshot.agent_key
+
+        if snapshot.policy_type == "score_weighted_blend" and blend_weights:
+            # Register the policy-derived agent temporarily
+            agent_fn = _score_weighted_agent_fn(blend_weights)
+            temp_key = f"_eval_policy_{policy_snapshot_id[:8]}"
+            AGENTS[temp_key] = agent_fn
+            used_policy_weights = True
+            try:
+                sim = await env_svc.run_offline_simulation(
+                    snapshot.environment_key, eval_start_date, eval_end_date, temp_key,
+                )
+            finally:
+                AGENTS.pop(temp_key, None)
+        else:
+            # Fallback to heuristic if policy payload is invalid
+            fallback_warning = "Policy payload invalid or unsupported type; fell back to heuristic_baseline."
+            sim = await env_svc.run_offline_simulation(
+                snapshot.environment_key, eval_start_date, eval_end_date, "heuristic_baseline",
+            )
+            agent_label = "heuristic_baseline"
+
+        eval_warnings = list(sim.warnings or [])
+        if fallback_warning:
+            eval_warnings.append(fallback_warning)
 
         return {
             "policy_snapshot_id": policy_snapshot_id,
             "agent_key": snapshot.agent_key,
+            "policy_type": snapshot.policy_type,
+            "policy_weights": blend_weights,
+            "used_policy_weights": used_policy_weights,
             "eval_start_date": eval_start_date.isoformat(),
             "eval_end_date": eval_end_date.isoformat(),
             "simulation_run_id": sim.id,
             "status": sim.status,
             "metrics": sim.metrics,
-            "warnings": sim.warnings,
+            "warnings": eval_warnings if eval_warnings else None,
         }
 
     async def get_training_runs(self, limit: int = 20) -> list[RLTrainingRun]:
@@ -251,7 +280,7 @@ class RLTrainingService:
         end_date: date | None = None,
         limit: int = 200,
     ) -> list[dict]:
-        """Export training dataset rows with state/prices/returns."""
+        """Export training dataset rows with state/prices/returns and next_price."""
         env_svc = RLEnvironmentService(self.db)
         canonical_key, _ = env_svc.resolve_key(environment_key)
 
@@ -260,28 +289,58 @@ class RLTrainingService:
         if start_date is None:
             start_date = end_date - timedelta(days=60)
 
-        # Generate daily dates
-        rows = []
+        # Collect all weekday dates
+        all_dates: list[date] = []
         d = start_date
-        while d <= end_date and len(rows) < limit:
-            if d.weekday() >= 5:
-                d += timedelta(days=1)
-                continue
-            state = await env_svc.build_state(d)
-            row = {
-                "as_of_date": d.isoformat(),
-                "universe_tickers": state.get("tickers", []),
-                "policy_constraints": state.get("policy_constraints", {}),
-                "assets": [],
-            }
+        while d <= end_date:
+            if d.weekday() < 5:
+                all_dates.append(d)
+            d += timedelta(days=1)
+
+        # Build states (limited)
+        rows = []
+        for i, day in enumerate(all_dates):
+            if len(rows) >= limit:
+                break
+            state = await env_svc.build_state(day)
+
+            # Look ahead for next trading day prices
+            next_date = all_dates[i + 1] if i + 1 < len(all_dates) else None
+            next_state = await env_svc.build_state(next_date) if next_date else None
+
+            next_prices: dict[str, float | None] = {}
+            if next_state:
+                for a in next_state.get("assets", []):
+                    next_prices[a["ticker"]] = a.get("price")
+
+            asset_rows = []
+            warnings = []
             for a in state.get("assets", []):
-                row["assets"].append({
-                    "ticker": a["ticker"],
-                    "price": a.get("price"),
+                ticker = a["ticker"]
+                price = a.get("price")
+                np = next_prices.get(ticker)
+                realized = None
+                if price and np and price > 0:
+                    realized = round((np - price) / price, 6)
+                elif next_date and np is None:
+                    warnings.append(f"{ticker}: next_price unavailable for {next_date}")
+                asset_rows.append({
+                    "ticker": ticker,
+                    "price": price,
+                    "next_price": np,
+                    "realized_return": realized,
                     "engine_score": a.get("engine_score"),
                 })
+
+            row = {
+                "as_of_date": day.isoformat(),
+                "next_date": next_date.isoformat() if next_date else None,
+                "universe_tickers": state.get("tickers", []),
+                "policy_constraints": state.get("policy_constraints", {}),
+                "assets": asset_rows,
+                "warnings": warnings if warnings else None,
+            }
             rows.append(row)
-            d += timedelta(days=1)
 
         return rows
 
@@ -306,8 +365,13 @@ class RLTrainingService:
         )).scalar_one_or_none()
 
         return {
+            "adapter_type": "internal_gym_like",
+            "supports_reset_step": True,
+            "supports_dataset_export": True,
+            "supports_policy_evaluation": True,
             "offline_only": True,
             "live_pipeline_influence": False,
+            "no_broker_execution": True,
             "total_environments": env_status["total_environments"],
             "total_agents": total_agents,
             "trainable_agents": trainable,
