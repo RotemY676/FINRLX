@@ -47,11 +47,13 @@ def _agent_dict(a) -> dict:
 
 
 def _run_dict(r) -> dict:
+    metrics = r.metrics or {}
     return {
         "id": r.id, "agent_key": r.agent_key, "environment_key": r.environment_key,
         "status": r.status,
         "train_start_date": r.train_start_date.isoformat() if r.train_start_date else None,
         "train_end_date": r.train_end_date.isoformat() if r.train_end_date else None,
+        "policy_snapshot_id": metrics.get("policy_snapshot_id"),
         "config": r.config, "metrics": r.metrics, "warnings": r.warnings,
         "model_artifact_ref": r.model_artifact_ref,
         "created_at": r.created_at.isoformat() if r.created_at else None,

@@ -87,9 +87,12 @@ async def test_train_creates_run_and_snapshot(client):
     assert data["agent_key"] == "score_weighted_baseline"
     assert data["metrics"] is not None
     assert "policy_snapshot_id" in data["metrics"]
+    # Top-level convenience field
+    assert data["policy_snapshot_id"] is not None
+    assert data["policy_snapshot_id"] == data["metrics"]["policy_snapshot_id"]
 
     # Verify policy snapshot exists
-    snap_id = data["metrics"]["policy_snapshot_id"]
+    snap_id = data["policy_snapshot_id"]
     r2 = await client.get(f"/api/v1/rl/policies/{snap_id}")
     assert r2.status_code == 200
     snap = r2.json()["data"]
