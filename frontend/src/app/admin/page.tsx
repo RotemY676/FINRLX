@@ -70,6 +70,7 @@ export default function AdminPage() {
   // RL Benchmarks
   const [benchmarks, setBenchmarks] = useState<RLBenchmarkReport[]>([]);
   const [selectedBenchmark, setSelectedBenchmark] = useState<RLBenchmarkReport | null>(null);
+  const [selectedForensicAgent, setSelectedForensicAgent] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -545,48 +546,76 @@ export default function AdminPage() {
             );
           })()}
 
-          {/* Forensic step summary */}
-          {selectedBenchmark.forensic_summary && selectedBenchmark.forensic_summary.length > 0 && (
-            <div className="mb-3">
-              <h4 className="text-[12px] font-semibold text-ink mb-2">Forensic Step Summary</h4>
-              <p className="text-[10px] text-ink-4 mb-2">
-                Step-level detail for: {selectedBenchmark.forensic_summary[0]?.agent_key?.replace(/_/g, " ") || "first agent"}
-                {selectedBenchmark.forensic_summary_by_agent
-                  ? ` (per-agent detail available for ${Object.keys(selectedBenchmark.forensic_summary_by_agent).length} agents)`
-                  : ""}
-              </p>
-              <div className="overflow-x-auto max-h-48 overflow-y-auto">
-                <table className="w-full text-[11px]">
-                  <thead className="sticky top-0 bg-surface">
-                    <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
-                      <th className="text-left py-1.5 pr-2 font-medium">Step</th>
-                      <th className="text-left py-1.5 pr-2 font-medium">Date</th>
-                      <th className="text-left py-1.5 pr-2 font-medium">Action</th>
-                      <th className="text-right py-1.5 pr-2 font-medium">Reward</th>
-                      <th className="text-right py-1.5 pr-2 font-medium">Value</th>
-                      <th className="text-right py-1.5 pr-2 font-medium">Turnover</th>
-                      <th className="text-right py-1.5 font-medium">Violations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedBenchmark.forensic_summary.slice(0, 20).map((s, i) => (
-                      <tr key={i} className="border-b border-line/30">
-                        <td className="py-1.5 pr-2 font-mono text-ink-3">{s.step_index}</td>
-                        <td className="py-1.5 pr-2 font-mono text-ink-2">{s.as_of_date?.slice(5) || "—"}</td>
-                        <td className="py-1.5 pr-2 text-ink-2">{s.action_type || "—"}</td>
-                        <td className={`py-1.5 pr-2 text-right font-mono ${(s.reward ?? 0) >= 0 ? "text-ink-2" : "text-breach"}`}>{s.reward?.toFixed(4) ?? "—"}</td>
-                        <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{s.portfolio_value?.toFixed(1) ?? "—"}</td>
-                        <td className="py-1.5 pr-2 text-right font-mono text-ink-3">{s.turnover?.toFixed(2) ?? "—"}</td>
-                        <td className={`py-1.5 text-right font-mono ${(s.violations?.length ?? 0) > 0 ? "text-caution" : "text-ink-4"}`}>
-                          {s.violations?.length ?? 0}
-                        </td>
+          {/* Forensic step summary — per-agent drill-down */}
+          {(() => {
+            const byAgent = selectedBenchmark.forensic_summary_by_agent;
+            const hasPerAgent = byAgent && Object.keys(byAgent).length > 0;
+            const agentKeys = hasPerAgent ? Object.keys(byAgent!) : [];
+            const activeAgent = hasPerAgent
+              ? (selectedForensicAgent && agentKeys.includes(selectedForensicAgent) ? selectedForensicAgent : agentKeys[0])
+              : null;
+            const rows = hasPerAgent && activeAgent
+              ? (byAgent![activeAgent] || [])
+              : (selectedBenchmark.forensic_summary || []);
+            if (rows.length === 0) return null;
+            return (
+              <div className="mb-3">
+                <h4 className="text-[12px] font-semibold text-ink mb-2">Forensic Step Summary</h4>
+                {hasPerAgent ? (
+                  <>
+                    <div className="flex items-center gap-1 mb-2">
+                      {agentKeys.map((ak) => (
+                        <button
+                          key={ak}
+                          onClick={() => setSelectedForensicAgent(ak)}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                            ak === activeAgent ? "bg-primary text-primary-ink" : "text-ink-3 hover:bg-surface-3"
+                          }`}
+                        >{ak.replace(/_/g, " ")}</button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-ink-4 mb-2">
+                      Step-level forensic detail for: {activeAgent?.replace(/_/g, " ")} · up to 50 rows per agent · offline forensic only
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-ink-4 mb-2">
+                    Step-level forensic rows currently available for first agent only: {rows[0]?.agent_key?.replace(/_/g, " ") || "unknown"}
+                  </p>
+                )}
+                <div className="overflow-x-auto max-h-48 overflow-y-auto">
+                  <table className="w-full text-[11px]">
+                    <thead className="sticky top-0 bg-surface">
+                      <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                        <th className="text-left py-1.5 pr-2 font-medium">Step</th>
+                        <th className="text-left py-1.5 pr-2 font-medium">Date</th>
+                        <th className="text-left py-1.5 pr-2 font-medium">Action</th>
+                        <th className="text-right py-1.5 pr-2 font-medium">Reward</th>
+                        <th className="text-right py-1.5 pr-2 font-medium">Value</th>
+                        <th className="text-right py-1.5 pr-2 font-medium">Turnover</th>
+                        <th className="text-right py-1.5 font-medium">Violations</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {rows.slice(0, 50).map((s, i) => (
+                        <tr key={i} className="border-b border-line/30">
+                          <td className="py-1.5 pr-2 font-mono text-ink-3">{s.step_index}</td>
+                          <td className="py-1.5 pr-2 font-mono text-ink-2">{s.as_of_date?.slice(5) || "—"}</td>
+                          <td className="py-1.5 pr-2 text-ink-2">{s.action_type || "—"}</td>
+                          <td className={`py-1.5 pr-2 text-right font-mono ${(s.reward ?? 0) >= 0 ? "text-ink-2" : "text-breach"}`}>{s.reward?.toFixed(4) ?? "—"}</td>
+                          <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{s.portfolio_value?.toFixed(1) ?? "—"}</td>
+                          <td className="py-1.5 pr-2 text-right font-mono text-ink-3">{s.turnover?.toFixed(2) ?? "—"}</td>
+                          <td className={`py-1.5 text-right font-mono ${(s.violations?.length ?? 0) > 0 ? "text-caution" : "text-ink-4"}`}>
+                            {s.violations?.length ?? 0}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Warnings */}
           {selectedBenchmark.warnings && selectedBenchmark.warnings.length > 0 && (
