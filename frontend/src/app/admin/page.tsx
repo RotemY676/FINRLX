@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
+  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark, fetchRLBenchmarkAudit,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
-  RLBenchmarkReport,
+  RLBenchmarkReport, RLBenchmarkAuditEvent,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
@@ -83,14 +83,16 @@ export default function AdminPage() {
   const [benchRunLoading, setBenchRunLoading] = useState(false);
   const [benchRunError, setBenchRunError] = useState<string | null>(null);
   const [benchRunSuccess, setBenchRunSuccess] = useState<string | null>(null);
+  const [benchAuditEvents, setBenchAuditEvents] = useState<RLBenchmarkAuditEvent[]>([]);
 
   useEffect(() => {
     Promise.all([
       fetchOps(),
       fetchMLOpsSummary().catch(() => null),
       fetchRLBenchmarks().catch(() => null),
+      fetchRLBenchmarkAudit().catch(() => null),
     ])
-      .then(([opsRes, mlRes, benchRes]) => {
+      .then(([opsRes, mlRes, benchRes, auditRes]) => {
         setOps(opsRes.data);
         setFilteredQueue(opsRes.data.queue);
         setFilteredAudit(opsRes.data.audit);
@@ -99,6 +101,7 @@ export default function AdminPage() {
           setBenchmarks(benchRes.data);
           if (benchRes.data.length > 0) setSelectedBenchmark(benchRes.data[0]);
         }
+        if (auditRes && auditRes.data) setBenchAuditEvents(auditRes.data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -434,12 +437,14 @@ export default function AdminPage() {
                     ? `Benchmark ${report.id.slice(0, 8)}... completed — ${report.executed_agents?.length || 0} agents compared`
                     : `partial|Offline benchmark created with partial scope — ${partialReason}. ${report.executed_agents?.length || 0} executed.`
                 );
-                // Refresh benchmarks and select the new one
+                // Refresh benchmarks + audit and select the new one
                 const refreshed = await fetchRLBenchmarks().catch(() => null);
                 if (refreshed && refreshed.data) {
                   setBenchmarks(refreshed.data);
                   setSelectedBenchmark(report);
                 }
+                const refreshAudit = await fetchRLBenchmarkAudit().catch(() => null);
+                if (refreshAudit && refreshAudit.data) setBenchAuditEvents(refreshAudit.data);
               } catch (err: unknown) {
                 setBenchRunError(err instanceof Error ? err.message : "Benchmark run failed");
               } finally {
@@ -796,6 +801,87 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {/* Benchmark Governance & Audit Trail */}
+      {benchAuditEvents.length > 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="history" size={15} className="text-ink-3" />
+            <h3 className="text-[13px] font-semibold text-ink">Benchmark Governance & Audit Trail</h3>
+            <span className="text-[10px] text-ink-4 ml-auto">{benchAuditEvents.length} event{benchAuditEvents.length !== 1 ? "s" : ""} — offline forensic audit</span>
+          </div>
+          <div className="overflow-x-auto max-h-56 overflow-y-auto">
+            <table className="w-full text-[11px]">
+              <thead className="sticky top-0 bg-surface">
+                <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                  <th className="text-left py-1.5 pr-2 font-medium">Time</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Event</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Report</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Status</th>
+                  <th className="text-right py-1.5 pr-2 font-medium">Agents</th>
+                  <th className="text-left py-1.5 pr-2 font-medium">Fingerprint</th>
+                  <th className="text-left py-1.5 font-medium">Invariants</th>
+                </tr>
+              </thead>
+              <tbody>
+                {benchAuditEvents.slice(0, 20).map((ev) => {
+                  const invPassed = ev.invariant_check_results?.all_passed;
+                  return (
+                    <tr key={ev.id} className="border-b border-line/30">
+                      <td className="py-1.5 pr-2 font-mono text-ink-3">{ev.created_at?.slice(11, 19) || "—"}</td>
+                      <td className="py-1.5 pr-2 text-ink-2">{ev.event_type?.replace(/_/g, " ") || "—"}</td>
+                      <td className="py-1.5 pr-2 font-mono text-ink-3">{ev.benchmark_report_id?.slice(0, 6) || "—"}</td>
+                      <td className="py-1.5 pr-2">
+                        {ev.status && <StatusBadge status={ev.status} />}
+                      </td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-ink-3">
+                        {ev.executed_agents?.length || "—"}/{ev.requested_agents?.length || "—"}
+                      </td>
+                      <td className="py-1.5 pr-2 font-mono text-ink-4 text-[9px]">{ev.result_fingerprint?.slice(0, 12) || "—"}</td>
+                      <td className="py-1.5">
+                        {invPassed === true && <span className="text-[9px] font-medium text-pos">passed</span>}
+                        {invPassed === false && <span className="text-[9px] font-medium text-breach">failed</span>}
+                        {invPassed == null && <span className="text-[9px] text-ink-4">—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] text-ink-4 mt-2">Offline benchmark forensic audit trail — not used by production decisions.</p>
+        </section>
+      )}
+
+      {/* Selected benchmark fingerprint + invariants (inline in drilldown) */}
+      {selectedBenchmark?.result_fingerprint && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon name="check" size={14} className="text-ink-3" />
+            <h4 className="text-[12px] font-semibold text-ink">Governance — Selected Benchmark</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+            <div>
+              <p className="text-[10px] text-ink-4 mb-0.5">Result fingerprint</p>
+              <p className="font-mono text-ink-3 text-[10px] break-all">{selectedBenchmark.result_fingerprint}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-ink-4 mb-0.5">Invariant checks</p>
+              {selectedBenchmark.invariant_check_results ? (
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(selectedBenchmark.invariant_check_results).filter(([k]) => k !== "all_passed").map(([k, v]) => (
+                    <span key={k} className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${v ? "bg-pos-soft text-pos-soft-ink" : "bg-breach-soft text-breach-soft-ink"}`}>
+                      {k.replace(/_/g, " ")}: {v ? "pass" : "FAIL"}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-ink-4">No invariant data — benchmark predates Phase 7G audit trail.</p>
+              )}
+            </div>
+          </div>
         </section>
       )}
 

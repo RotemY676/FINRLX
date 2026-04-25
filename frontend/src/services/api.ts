@@ -930,6 +930,8 @@ export interface RLBenchmarkReport {
   violations_by_agent: Record<string, string[]>;
   forensic_summary: RLForensicStep[];
   forensic_summary_by_agent?: Record<string, RLForensicStep[]> | null;
+  result_fingerprint?: string | null;
+  invariant_check_results?: Record<string, boolean> | null;
   safety_flags: RLBenchmarkSafetyFlags;
   warnings: string[] | null;
   created_at: string | null;
@@ -950,6 +952,32 @@ export interface RunRLBenchmarkRequest {
   start_date: string;
   end_date: string;
   agent_keys?: string[];
+}
+
+export interface RLBenchmarkAuditEvent {
+  id: string;
+  created_at: string | null;
+  event_type: string;
+  actor_type: string;
+  source: string;
+  benchmark_report_id: string | null;
+  status: string | null;
+  requested_agents: string[] | null;
+  executed_agents: string[] | null;
+  skipped_agents: unknown[] | null;
+  is_complete_comparison: boolean | null;
+  safety_flags: RLBenchmarkSafetyFlags | null;
+  result_fingerprint: string | null;
+  invariant_check_results: Record<string, boolean> | null;
+  warnings: string[] | null;
+}
+
+export async function fetchRLBenchmarkAudit(): Promise<ApiResponse<RLBenchmarkAuditEvent[]>> {
+  return apiFetch<RLBenchmarkAuditEvent[]>("/api/v1/rl/benchmarks/audit");
+}
+
+export async function fetchRLBenchmarkAuditForReport(reportId: string): Promise<ApiResponse<RLBenchmarkAuditEvent[]>> {
+  return apiFetch<RLBenchmarkAuditEvent[]>(`/api/v1/rl/benchmarks/${reportId}/audit`);
 }
 
 export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<ApiResponse<RLBenchmarkReport>> {

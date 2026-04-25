@@ -1,11 +1,12 @@
 """RL offline benchmarking and forensic comparison service.
 
 Phase 7C: compares multiple offline/shadow agents on the same dataset/window.
-Produces persisted benchmark reports with per-agent metrics, reward breakdowns,
-violations, and step-level forensic summaries.
+Phase 7G: audit trail, result fingerprint, invariant checks.
 
 Offline/shadow only — does NOT influence live pipeline, publication, or recommendations.
 """
+import hashlib
+import json
 from datetime import date, datetime, timezone, timedelta
 
 from sqlalchemy import select, func
@@ -15,10 +16,42 @@ from app.models.rl import (
     RLBenchmarkReport, RLEnvironmentRun, RLEpisode, RLStep,
     RLPolicySnapshot,
 )
+from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
 from app.services.rl_environment import RLEnvironmentService
 from app.services.rl_agents import AGENTS
 from app.services.rl_training import _score_weighted_agent_fn
+
+
+def _compute_fingerprint(report_data: dict) -> str:
+    """Compute deterministic SHA-256 fingerprint from stable benchmark fields."""
+    stable = {
+        "name": report_data.get("name"),
+        "environment_key": report_data.get("environment_key"),
+        "start_date": report_data.get("start_date"),
+        "end_date": report_data.get("end_date"),
+        "requested_agents": report_data.get("requested_agents"),
+        "executed_agents": report_data.get("executed_agents"),
+        "skipped_agents": report_data.get("skipped_agents"),
+        "metrics_by_agent": report_data.get("metrics_by_agent"),
+        "reward_breakdown_by_agent": report_data.get("reward_breakdown_by_agent"),
+        "safety_flags": report_data.get("safety_flags"),
+    }
+    serialized = json.dumps(stable, sort_keys=True, default=str)
+    return hashlib.sha256(serialized.encode()).hexdigest()
+
+
+def _check_invariants(safety_flags: dict) -> dict:
+    """Run lightweight invariant checks on safety flags."""
+    checks = {}
+    checks["offline_only"] = safety_flags.get("offline_only") is True
+    checks["shadow_only"] = safety_flags.get("shadow_only") is True
+    checks["no_live_pipeline_influence"] = safety_flags.get("live_pipeline_influence") is False
+    checks["no_broker_execution"] = safety_flags.get("no_broker_execution") is True
+    checks["no_publication_influence"] = safety_flags.get("no_publication_influence") is True
+    checks["no_recommendation_pollution"] = safety_flags.get("no_recommendation_pollution") is True
+    checks["all_passed"] = all(checks.values())
+    return checks
 
 SAFETY_FLAGS = {
     "offline_only": True,
@@ -91,6 +124,21 @@ class RLBenchmarkService:
             dataset_lineage={"environment_key": canonical_key, "start": start_date.isoformat(), "end": end_date.isoformat()},
         )
         self.db.add(report)
+
+        # Audit: benchmark_run_requested
+        self.db.add(AuditEvent(
+            id=gen_uuid(), actor="system", action="benchmark_run_requested",
+            object_type="rl_benchmark", object_id=report.id,
+            details={
+                "event_type": "benchmark_run_requested",
+                "actor_type": "api", "source": "rl_benchmark",
+                "name": name, "environment_key": canonical_key,
+                "start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+                "requested_agents": agents_to_run,
+                "safety_flags": SAFETY_FLAGS,
+            },
+            occurred_at=now,
+        ))
 
         metrics_by_agent: dict[str, dict] = {}
         reward_breakdown: dict[str, dict] = {}
@@ -197,6 +245,45 @@ class RLBenchmarkService:
             "forensic_summary_by_agent": forensic_by_agent,
         }
 
+        # Compute fingerprint and invariant checks
+        fingerprint_data = {
+            "name": name, "environment_key": canonical_key,
+            "start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+            "requested_agents": agents_to_run, "executed_agents": executed_agents,
+            "skipped_agents": skipped_agents,
+            "metrics_by_agent": metrics_by_agent,
+            "reward_breakdown_by_agent": reward_breakdown,
+            "safety_flags": SAFETY_FLAGS,
+        }
+        result_fingerprint = _compute_fingerprint(fingerprint_data)
+        invariant_checks = _check_invariants(SAFETY_FLAGS)
+
+        # Store governance fields in dataset_lineage
+        report.dataset_lineage["result_fingerprint"] = result_fingerprint
+        report.dataset_lineage["invariant_check_results"] = invariant_checks
+
+        # Audit: benchmark_run_completed / partial / failed
+        event_type = f"benchmark_run_{report.status}"
+        self.db.add(AuditEvent(
+            id=gen_uuid(), actor="system", action=event_type,
+            object_type="rl_benchmark", object_id=report.id,
+            details={
+                "event_type": event_type,
+                "actor_type": "api", "source": "rl_benchmark",
+                "benchmark_report_id": report.id,
+                "status": report.status,
+                "is_complete_comparison": is_complete,
+                "requested_agents": agents_to_run,
+                "executed_agents": executed_agents,
+                "skipped_agents": skipped_agents,
+                "safety_flags": SAFETY_FLAGS,
+                "result_fingerprint": result_fingerprint,
+                "invariant_check_results": invariant_checks,
+                "warnings": warnings,
+            },
+            occurred_at=datetime.now(timezone.utc),
+        ))
+
         await self.db.commit()
         return report
 
@@ -224,6 +311,27 @@ class RLBenchmarkService:
     async def get_benchmark(self, report_id: str) -> RLBenchmarkReport | None:
         return (await self.db.execute(
             select(RLBenchmarkReport).where(RLBenchmarkReport.id == report_id)
+        )).scalar_one_or_none()
+
+    async def get_audit_events(self, limit: int = 20) -> list[AuditEvent]:
+        return list((await self.db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.object_type == "rl_benchmark")
+            .order_by(AuditEvent.occurred_at.desc()).limit(limit)
+        )).scalars().all())
+
+    async def get_audit_for_report(self, report_id: str) -> list[AuditEvent]:
+        return list((await self.db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.object_type == "rl_benchmark")
+            .where(AuditEvent.object_id == report_id)
+            .order_by(AuditEvent.occurred_at.desc())
+        )).scalars().all())
+
+    async def get_audit_event(self, event_id: str) -> AuditEvent | None:
+        return (await self.db.execute(
+            select(AuditEvent).where(AuditEvent.id == event_id)
+            .where(AuditEvent.object_type == "rl_benchmark")
         )).scalar_one_or_none()
 
     async def get_ops_summary(self) -> dict:

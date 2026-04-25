@@ -51,6 +51,8 @@ def _report_dict(r) -> dict:
         "violations_by_agent": r.violations_by_agent,
         "forensic_summary": r.forensic_summary,
         "forensic_summary_by_agent": (r.dataset_lineage or {}).get("forensic_summary_by_agent"),
+        "result_fingerprint": (r.dataset_lineage or {}).get("result_fingerprint"),
+        "invariant_check_results": (r.dataset_lineage or {}).get("invariant_check_results"),
         "simulation_run_ids": r.simulation_run_ids,
         "policy_snapshot_ids": r.policy_snapshot_ids,
         "dataset_lineage": r.dataset_lineage,
@@ -79,6 +81,13 @@ async def list_benchmarks(db: AsyncSession = Depends(get_db)):
     return ApiResponse(meta=make_meta(), data=[_report_dict(r) for r in reports])
 
 
+@router.get("/rl/benchmarks/audit", response_model=ApiResponse[list[dict]])
+async def list_audit_events(db: AsyncSession = Depends(get_db)):
+    svc = RLBenchmarkService(db)
+    events = await svc.get_audit_events()
+    return ApiResponse(meta=make_meta(), data=[_audit_dict(e) for e in events])
+
+
 @router.get("/rl/benchmarks/{benchmark_report_id}", response_model=ApiResponse[dict])
 async def get_benchmark(benchmark_report_id: str, db: AsyncSession = Depends(get_db)):
     svc = RLBenchmarkService(db)
@@ -95,3 +104,31 @@ async def compare_policy(body: RLComparePolicyRequest, db: AsyncSession = Depend
     ed = date.fromisoformat(body.end_date) if body.end_date else None
     report = await svc.compare_policy(body.policy_snapshot_id, body.environment_key, sd, ed)
     return ApiResponse(meta=make_meta(warnings=report.warnings), data=_report_dict(report))
+
+
+def _audit_dict(e) -> dict:
+    d = e.details or {}
+    return {
+        "id": e.id,
+        "created_at": e.occurred_at.isoformat() if e.occurred_at else None,
+        "event_type": d.get("event_type", e.action),
+        "actor_type": d.get("actor_type", "system"),
+        "source": d.get("source", "rl_benchmark"),
+        "benchmark_report_id": e.object_id,
+        "status": d.get("status"),
+        "requested_agents": d.get("requested_agents"),
+        "executed_agents": d.get("executed_agents"),
+        "skipped_agents": d.get("skipped_agents"),
+        "is_complete_comparison": d.get("is_complete_comparison"),
+        "safety_flags": d.get("safety_flags"),
+        "result_fingerprint": d.get("result_fingerprint"),
+        "invariant_check_results": d.get("invariant_check_results"),
+        "warnings": d.get("warnings"),
+    }
+
+
+@router.get("/rl/benchmarks/{benchmark_report_id}/audit", response_model=ApiResponse[list[dict]])
+async def get_audit_for_report(benchmark_report_id: str, db: AsyncSession = Depends(get_db)):
+    svc = RLBenchmarkService(db)
+    events = await svc.get_audit_for_report(benchmark_report_id)
+    return ApiResponse(meta=make_meta(), data=[_audit_dict(e) for e in events])
