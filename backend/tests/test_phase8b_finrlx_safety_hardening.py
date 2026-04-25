@@ -77,19 +77,55 @@ async def test_candidate_list_includes_safety_flags(client):
 
 @pytest.mark.asyncio
 async def test_train_creates_audit_events_persisted(client):
-    """Train-research creates persisted audit events."""
+    """Train-research creates persisted requested + completed audit events in DB."""
+    from tests.conftest import test_session_factory
+    from sqlalchemy import select
+    from app.models.ops import AuditEvent
+
     r = await client.post("/api/v1/rl/finrlx/train-research", json={
         "research_acknowledgement": True,
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
     })
     assert r.json()["data"]["training_status"] == "completed"
-    # Verify audit events are persisted via ops audit endpoint
-    r2 = await client.get("/api/v1/ops/audit")
-    audit_entries = r2.json()["data"]
-    finrlx_events = [e for e in audit_entries if "finrlx" in (e.get("action") or "").lower()
-                     or "finrlx" in (e.get("target") or "").lower()]
-    # At least some finrlx audit activity should be visible
-    # (audit endpoint may format differently, so we check training_status as backup)
-    assert r.json()["data"]["training_status"] == "completed"
+    candidate_id = r.json()["data"]["policy_candidate_id"]
+
+    # Query DB directly for finrlx_research audit events
+    async with test_session_factory() as db:
+        events = (await db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.object_type == "finrlx_research")
+            .order_by(AuditEvent.occurred_at.desc())
+        )).scalars().all()
+
+    actions = {e.action for e in events}
+    assert "finrlx_train_research_requested" in actions
+    assert "finrlx_train_research_completed" in actions
+
+    # Verify requested event details
+    requested = next(e for e in events if e.action == "finrlx_train_research_requested")
+    rd = requested.details or {}
+    assert rd.get("research_acknowledgement") is True
+    assert rd.get("safety_flags", {}).get("research_only") is True
+    assert rd.get("name") is not None
+
+    # Verify completed event details
+    completed = next(e for e in events if e.action == "finrlx_train_research_completed")
+    cd = completed.details or {}
+    assert cd.get("candidate_id") is not None
+    assert cd.get("training_run_id") is not None
+    assert cd.get("safety_flags", {}).get("research_only") is True
+    assert cd.get("isolation_checks", {}).get("promotion_blocked") is True
+    assert "production_fingerprints_unchanged" in cd
+
+    # Verify component_checks in completed audit event
+    cc = cd.get("component_checks", {})
+    assert "recommendations_current" in cc
+    assert "publication_status" in cc
+    assert "overview" in cc
+    assert cc["recommendations_current"].get("snapshot_available") is True
+    assert cc["publication_status"].get("snapshot_available") is True
+    assert cc["overview"].get("snapshot_available") is False
+    assert cc["overview"].get("reason") is not None
 
 
 @pytest.mark.asyncio
