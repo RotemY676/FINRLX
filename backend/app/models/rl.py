@@ -1,6 +1,7 @@
-"""RL environment entities.
+"""RL environment and training entities.
 
 Phase 7A: offline-only RL environment foundation.
+Phase 7B: agent registry, training runs, policy snapshots.
 """
 from datetime import datetime, date
 
@@ -64,6 +65,55 @@ class RLEpisode(Base):
     turnover: Mapped[float | None] = mapped_column(Float)
     step_count: Mapped[int] = mapped_column(Integer, default=0)
     warnings: Mapped[list | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RLAgentDefinition(Base):
+    __tablename__ = "rl_agent_definitions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    key: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    agent_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    algorithm_family: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="baseline")
+    is_trainable: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_shadow_only: Mapped[bool] = mapped_column(Boolean, default=True)
+    config_schema: Mapped[dict | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RLTrainingRun(Base):
+    __tablename__ = "rl_training_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    agent_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    environment_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
+    train_start_date: Mapped[date | None] = mapped_column(Date)
+    train_end_date: Mapped[date | None] = mapped_column(Date)
+    eval_start_date: Mapped[date | None] = mapped_column(Date)
+    eval_end_date: Mapped[date | None] = mapped_column(Date)
+    config: Mapped[dict | None] = mapped_column(JSON)
+    metrics: Mapped[dict | None] = mapped_column(JSON)
+    warnings: Mapped[list | None] = mapped_column(JSON)
+    model_artifact_ref: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RLPolicySnapshot(Base):
+    __tablename__ = "rl_policy_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    training_run_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    agent_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    environment_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    policy_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    policy_payload: Mapped[dict | None] = mapped_column(JSON)
+    metrics: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

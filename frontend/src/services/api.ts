@@ -662,6 +662,11 @@ export interface OpsRLBlock {
   total_runs: number;
   latest_run_status: string | null;
   latest_agent_type: string | null;
+  total_agents: number;
+  trainable_agents: number;
+  latest_training_status: string | null;
+  latest_training_agent: string | null;
+  total_policy_snapshots: number;
   is_shadow_only: boolean;
   live_pipeline_influence: boolean;
 }

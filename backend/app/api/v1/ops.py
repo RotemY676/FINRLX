@@ -250,12 +250,16 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
     uni_data = await uni_svc.get_ops_summary()
     uni_block = OpsUniverseBlock(**uni_data)
 
-    # RL block
+    # RL block (merged from env + training)
     from app.services.rl_environment import RLEnvironmentService
+    from app.services.rl_training import RLTrainingService
     rl_svc = RLEnvironmentService(db)
     await rl_svc.ensure_default_rl_environment()
-    rl_data = await rl_svc.get_status()
-    rl_block = OpsRLBlock(**rl_data)
+    rl_env_data = await rl_svc.get_status()
+    rl_train_svc = RLTrainingService(db)
+    await rl_train_svc.ensure_default_agent_definitions()
+    rl_adapter_data = await rl_train_svc.get_adapter_status()
+    rl_block = OpsRLBlock(**{**rl_env_data, **rl_adapter_data})
 
     return ApiResponse(
         meta=make_meta(),

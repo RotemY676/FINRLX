@@ -260,22 +260,30 @@ export default function AdminPage() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
             <div>
               <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_environments}</p>
               <p className="text-[10px] text-ink-4">environments</p>
             </div>
             <div>
+              <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_agents}</p>
+              <p className="text-[10px] text-ink-4">agents ({ops.rl.trainable_agents} trainable)</p>
+            </div>
+            <div>
               <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_runs}</p>
-              <p className="text-[10px] text-ink-4">simulation runs</p>
+              <p className="text-[10px] text-ink-4">simulations</p>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_run_status || "—"}</p>
-              <p className="text-[10px] text-ink-4">latest status</p>
+              <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_policy_snapshots}</p>
+              <p className="text-[10px] text-ink-4">policy snapshots</p>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_agent_type?.replace(/_/g, " ") || "—"}</p>
-              <p className="text-[10px] text-ink-4">agent type</p>
+              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_training_status || "—"}</p>
+              <p className="text-[10px] text-ink-4">latest training</p>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-ink">{ops.rl.latest_training_agent?.replace(/_/g, " ") || "—"}</p>
+              <p className="text-[10px] text-ink-4">latest agent</p>
             </div>
           </div>
         </section>

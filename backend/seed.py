@@ -300,6 +300,13 @@ async def _seed_pipeline_stages():
         inserted = await rl_svc.ensure_default_rl_environment()
         print(f"  RL: {inserted} new environment(s) created" if inserted else "  RL: environments already exist")
 
+    # ── RL agent definitions (Phase 7B) ──
+    async with async_session_factory() as db:
+        from app.services.rl_training import RLTrainingService
+        rl_train_svc = RLTrainingService(db)
+        inserted = await rl_train_svc.ensure_default_agent_definitions()
+        print(f"  RL Agents: {inserted} new agent(s) created" if inserted else "  RL Agents: agents already exist")
+
 
 async def seed():
     async with async_session_factory() as db:
