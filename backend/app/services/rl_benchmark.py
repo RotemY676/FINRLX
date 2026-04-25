@@ -98,10 +98,13 @@ class RLBenchmarkService:
         sim_run_ids: dict[str, str] = {}
         forensic_rows: list[dict] = []
         warnings: list[str] = []
+        executed_agents: list[str] = []
+        skipped_agents: list[dict] = []
 
         try:
             for agent_key in agents_to_run:
                 if agent_key not in AGENTS:
+                    skipped_agents.append({"agent_key": agent_key, "reason": f"Agent '{agent_key}' not found"})
                     warnings.append(f"Agent '{agent_key}' not found — skipped")
                     continue
 
@@ -109,6 +112,7 @@ class RLBenchmarkService:
                     canonical_key, start_date, end_date, agent_key,
                 )
                 sim_run_ids[agent_key] = sim.id
+                executed_agents.append(agent_key)
                 m = sim.metrics or {}
 
                 metrics_by_agent[agent_key] = {
@@ -168,14 +172,25 @@ class RLBenchmarkService:
             for k in cleanup_keys:
                 AGENTS.pop(k, None)
 
-        report.status = "completed"
+        is_complete = len(skipped_agents) == 0 and len(executed_agents) == len(agents_to_run)
+        report.status = "completed" if is_complete else "partial"
         report.completed_at = datetime.now(timezone.utc)
+        report.compared_agents = executed_agents  # only agents that actually ran
         report.metrics_by_agent = metrics_by_agent
         report.reward_breakdown_by_agent = reward_breakdown
-        report.violations_by_agent = {k: v[:20] for k, v in violations_by_agent.items()}  # limit stored violations
+        report.violations_by_agent = {k: v[:20] for k, v in violations_by_agent.items()}
         report.simulation_run_ids = sim_run_ids
-        report.forensic_summary = forensic_rows[:100]  # limit to 100 rows
+        report.forensic_summary = forensic_rows[:100]
         report.warnings = warnings if warnings else None
+        report.dataset_lineage = {
+            "environment_key": canonical_key,
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+            "requested_agents": agents_to_run,
+            "executed_agents": executed_agents,
+            "skipped_agents": skipped_agents,
+            "is_complete_comparison": is_complete,
+        }
 
         await self.db.commit()
         return report

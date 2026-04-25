@@ -1,6 +1,7 @@
 """RL baseline agent placeholders.
 
 Phase 7A: lightweight agents for offline simulation. No neural networks, no training.
+Phase 7B: added score_weighted_baseline (trainable deterministic agent).
 """
 import random
 
@@ -77,7 +78,19 @@ def random_valid_agent(state: dict, policy_constraints: dict) -> dict:
     return {"target_weights": weights, "cash_weight": cash, "action_type": "rebalance"}
 
 
+def score_weighted_baseline_agent(state: dict, policy_constraints: dict) -> dict:
+    """Score-weighted baseline agent using default engine blend weights.
+
+    Uses the same logic as heuristic_baseline but is registered separately
+    so it can be referenced as score_weighted_baseline in benchmarks/training.
+    This is the DEFAULT untrained score_weighted agent. Trained variants
+    are created via _score_weighted_agent_fn with custom blend weights.
+    """
+    return heuristic_baseline_agent(state, policy_constraints)
+
+
 AGENTS = {
     "heuristic_baseline": heuristic_baseline_agent,
     "random_valid": random_valid_agent,
+    "score_weighted_baseline": score_weighted_baseline_agent,
 }
