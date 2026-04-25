@@ -996,8 +996,25 @@ export interface FinRLXAdapterStatus {
   notes: string;
 }
 
+export interface FinRLXCandidateIsolation {
+  candidate_id: string;
+  isolated: boolean;
+  checks: Record<string, boolean>;
+  all_blocked: boolean;
+  safety_flags: Record<string, boolean>;
+  reasons: string[];
+}
+
 export async function fetchFinRLXStatus(): Promise<ApiResponse<FinRLXAdapterStatus>> {
   return apiFetch<FinRLXAdapterStatus>("/api/v1/rl/finrlx/status");
+}
+
+export async function fetchFinRLXCandidates(): Promise<ApiResponse<Record<string, unknown>[]>> {
+  return apiFetch<Record<string, unknown>[]>("/api/v1/rl/finrlx/candidates");
+}
+
+export async function fetchFinRLXCandidateIsolation(id: string): Promise<ApiResponse<FinRLXCandidateIsolation>> {
+  return apiFetch<FinRLXCandidateIsolation>(`/api/v1/rl/finrlx/candidates/${id}/isolation`);
 }
 
 export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<ApiResponse<RLBenchmarkReport>> {

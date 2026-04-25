@@ -78,3 +78,12 @@ async def get_candidate(candidate_id: str, db: AsyncSession = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Research candidate not found")
     return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.get("/rl/finrlx/candidates/{candidate_id}/isolation", response_model=ApiResponse[dict])
+async def get_candidate_isolation(candidate_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    candidate = await svc.get_candidate(candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Research candidate not found")
+    return ApiResponse(meta=make_meta(), data=svc.get_candidate_isolation(candidate_id))

@@ -372,13 +372,19 @@ export default function AdminPage() {
               <p className="text-[10px] text-ink-4">broker integration</p>
             </div>
           </div>
+          {/* Candidate isolation badges */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {["Promotion blocked", "Publication blocked", "Recommendation blocked", "Overview blocked", "Broker blocked"].map((c) => (
+              <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-pos-soft text-pos-soft-ink">{c}</span>
+            ))}
+          </div>
           {finrlxStatus.missing_for_real_training?.length > 0 && (
-            <div className="rounded-lg border border-caution bg-caution-soft p-2 text-[10px] text-caution-soft-ink">
+            <div className="rounded-lg border border-caution bg-caution-soft p-2 text-[10px] text-caution-soft-ink mb-2">
               <span className="font-medium">Dependencies needed for real neural training: </span>
               {finrlxStatus.missing_for_real_training.join(", ")}
             </div>
           )}
-          <p className="text-[10px] text-ink-4 mt-2">{finrlxStatus.notes}</p>
+          <p className="text-[10px] text-ink-4">{finrlxStatus.notes}</p>
         </section>
       )}
 

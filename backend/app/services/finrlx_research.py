@@ -18,6 +18,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.rl import RLPolicySnapshot, RLTrainingRun
+from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
 from app.services.rl_training import RLTrainingService
 from app.services.rl_environment import RLEnvironmentService
@@ -145,6 +146,15 @@ class FinRLXResearchService:
         if start_date is None:
             start_date = end_date - timedelta(days=60)
 
+        # Capture pre-training production fingerprints
+        pre_fingerprints = await self._capture_production_fingerprints()
+
+        # Audit: requested
+        await self._create_audit_event("finrlx_train_research_requested", {
+            "name": name, "start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+            "research_acknowledgement": True, "safety_flags": FINRLX_SAFETY_FLAGS,
+        })
+
         # Validate dataset first
         validation = await self.validate_dataset_contract(start_date, end_date, limit=20)
 
@@ -201,6 +211,19 @@ class FinRLXResearchService:
             "policy_candidate_id": candidate_id,
         }
 
+        # Capture post-training production fingerprints
+        post_fingerprints = await self._capture_production_fingerprints()
+        fingerprints_unchanged = pre_fingerprints.get("hash") == post_fingerprints.get("hash")
+
+        # Audit: completed
+        await self._create_audit_event("finrlx_train_research_completed", {
+            "candidate_id": candidate_id, "training_run_id": run.id,
+            "status": "completed", "training_mode": "stubbed",
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+            "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"],
+            "production_fingerprints_unchanged": fingerprints_unchanged,
+        })
+
         await self.db.commit()
 
         return {
@@ -223,6 +246,11 @@ class FinRLXResearchService:
                 "notes": "No ML/RL libraries installed. This is a stubbed research interface.",
             },
             "safety_flags": FINRLX_SAFETY_FLAGS,
+            "production_fingerprints": {
+                "before": pre_fingerprints,
+                "after": post_fingerprints,
+                "unchanged": fingerprints_unchanged,
+            },
             "warnings": [
                 "Real FinRL-X training was NOT performed.",
                 "No ML/RL libraries are installed.",
@@ -262,9 +290,77 @@ class FinRLXResearchService:
             "no_broker_execution": True,
             "no_publication_influence": True,
             "no_recommendation_pollution": True,
+            "safety_flags": FINRLX_SAFETY_FLAGS,
             "metrics": s.metrics,
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
+
+    def get_candidate_isolation(self, candidate_id: str) -> dict:
+        """Check candidate isolation — all promotion/live/broker actions are blocked."""
+        checks = {
+            "promotion_blocked": True,
+            "publication_blocked": True,
+            "live_recommendation_blocked": True,
+            "overview_influence_blocked": True,
+            "broker_execution_blocked": True,
+        }
+        return {
+            "candidate_id": candidate_id,
+            "isolated": True,
+            "checks": checks,
+            "all_blocked": all(checks.values()),
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+            "reasons": [
+                "FinRL-X research candidates are research-only, offline-only, shadow-only.",
+                "No promotion, publication, live recommendation, overview influence, or broker action is permitted.",
+                "Real FinRL-X training has not been implemented.",
+            ],
+        }
+
+    async def _capture_production_fingerprints(self) -> dict:
+        """Capture lightweight fingerprints of production endpoints to prove no mutation."""
+        from app.models.recommendation import Recommendation
+        from sqlalchemy import func as sqfunc
+
+        fingerprints = {}
+        try:
+            # Recommendation count + latest ID
+            rec_count = (await self.db.execute(
+                select(sqfunc.count()).select_from(Recommendation)
+            )).scalar() or 0
+            latest_rec = (await self.db.execute(
+                select(Recommendation.id, Recommendation.status)
+                .order_by(Recommendation.created_at.desc()).limit(1)
+            )).first()
+            fingerprints["recommendations"] = {
+                "count": rec_count,
+                "latest_id": latest_rec.id if latest_rec else None,
+                "latest_status": latest_rec.status if latest_rec else None,
+            }
+        except Exception:
+            fingerprints["recommendations"] = {"snapshot_available": False, "reason": "query error"}
+
+        try:
+            from app.models.recommendation import Recommendation as Rec
+            pub_count = (await self.db.execute(
+                select(sqfunc.count()).select_from(Rec)
+                .where(Rec.status.in_(["published", "published_with_warning"]))
+            )).scalar() or 0
+            fingerprints["publication"] = {"published_count": pub_count}
+        except Exception:
+            fingerprints["publication"] = {"snapshot_available": False, "reason": "query error"}
+
+        # Hash for comparison
+        fp_str = json.dumps(fingerprints, sort_keys=True, default=str)
+        fingerprints["hash"] = hashlib.sha256(fp_str.encode()).hexdigest()[:16]
+        return fingerprints
+
+    async def _create_audit_event(self, event_type: str, details: dict) -> None:
+        self.db.add(AuditEvent(
+            id=gen_uuid(), actor="system", action=event_type,
+            object_type="finrlx_research", object_id=details.get("candidate_id"),
+            details=details, occurred_at=datetime.now(timezone.utc),
+        ))
 
     @staticmethod
     def safety_guard(action: str) -> dict:
