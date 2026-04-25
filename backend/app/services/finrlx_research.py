@@ -213,7 +213,34 @@ class FinRLXResearchService:
 
         # Capture post-training production fingerprints
         post_fingerprints = await self._capture_production_fingerprints()
-        fingerprints_unchanged = pre_fingerprints.get("hash") == post_fingerprints.get("hash")
+
+        # Per-component comparison
+        component_checks = {}
+        for comp_key in ["recommendations_current", "publication_status", "overview"]:
+            pre_comp = pre_fingerprints.get(comp_key, {})
+            post_comp = post_fingerprints.get(comp_key, {})
+            pre_avail = pre_comp.get("snapshot_available", False)
+            post_avail = post_comp.get("snapshot_available", False)
+            if pre_avail and post_avail:
+                comp_unchanged = pre_comp.get("hash") == post_comp.get("hash")
+            else:
+                comp_unchanged = None  # cannot determine
+            component_checks[comp_key] = {
+                "before_hash": pre_comp.get("hash"),
+                "after_hash": post_comp.get("hash"),
+                "unchanged": comp_unchanged,
+                "snapshot_available": pre_avail and post_avail,
+            }
+            if not (pre_avail and post_avail):
+                reason = pre_comp.get("reason") or post_comp.get("reason") or "snapshot unavailable"
+                component_checks[comp_key]["reason"] = reason
+
+        # Overall unchanged: true only if all available components unchanged
+        available_checks = [c for c in component_checks.values() if c["snapshot_available"]]
+        if available_checks:
+            overall_unchanged = all(c["unchanged"] for c in available_checks)
+        else:
+            overall_unchanged = None  # no useful components
 
         # Audit: completed
         await self._create_audit_event("finrlx_train_research_completed", {
@@ -221,7 +248,8 @@ class FinRLXResearchService:
             "status": "completed", "training_mode": "stubbed",
             "safety_flags": FINRLX_SAFETY_FLAGS,
             "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"],
-            "production_fingerprints_unchanged": fingerprints_unchanged,
+            "production_fingerprints_unchanged": overall_unchanged,
+            "component_checks": component_checks,
         })
 
         await self.db.commit()
@@ -249,7 +277,8 @@ class FinRLXResearchService:
             "production_fingerprints": {
                 "before": pre_fingerprints,
                 "after": post_fingerprints,
-                "unchanged": fingerprints_unchanged,
+                "unchanged": overall_unchanged,
+                "component_checks": component_checks,
             },
             "warnings": [
                 "Real FinRL-X training was NOT performed.",
@@ -318,13 +347,14 @@ class FinRLXResearchService:
         }
 
     async def _capture_production_fingerprints(self) -> dict:
-        """Capture lightweight fingerprints of production endpoints to prove no mutation."""
+        """Capture lightweight per-component fingerprints proving no production mutation."""
         from app.models.recommendation import Recommendation
         from sqlalchemy import func as sqfunc
 
-        fingerprints = {}
+        components: dict[str, dict] = {}
+
+        # 1. recommendations_current
         try:
-            # Recommendation count + latest ID
             rec_count = (await self.db.execute(
                 select(sqfunc.count()).select_from(Recommendation)
             )).scalar() or 0
@@ -332,28 +362,45 @@ class FinRLXResearchService:
                 select(Recommendation.id, Recommendation.status)
                 .order_by(Recommendation.created_at.desc()).limit(1)
             )).first()
-            fingerprints["recommendations"] = {
-                "count": rec_count,
-                "latest_id": latest_rec.id if latest_rec else None,
-                "latest_status": latest_rec.status if latest_rec else None,
+            snap = {"count": rec_count, "latest_id": latest_rec.id if latest_rec else None,
+                    "latest_status": latest_rec.status if latest_rec else None}
+            snap_str = json.dumps(snap, sort_keys=True, default=str)
+            components["recommendations_current"] = {
+                "snapshot_available": True, "snapshot": snap,
+                "hash": hashlib.sha256(snap_str.encode()).hexdigest()[:16],
             }
         except Exception:
-            fingerprints["recommendations"] = {"snapshot_available": False, "reason": "query error"}
+            components["recommendations_current"] = {"snapshot_available": False, "reason": "query error"}
 
+        # 2. publication_status
         try:
-            from app.models.recommendation import Recommendation as Rec
-            pub_count = (await self.db.execute(
-                select(sqfunc.count()).select_from(Rec)
-                .where(Rec.status.in_(["published", "published_with_warning"]))
-            )).scalar() or 0
-            fingerprints["publication"] = {"published_count": pub_count}
+            status_counts: dict[str, int] = {}
+            for st in ["draft", "staged", "approved", "published", "published_with_warning", "deferred", "suppressed"]:
+                c = (await self.db.execute(
+                    select(sqfunc.count()).select_from(Recommendation).where(Recommendation.status == st)
+                )).scalar() or 0
+                status_counts[st] = c
+            snap = status_counts
+            snap_str = json.dumps(snap, sort_keys=True, default=str)
+            components["publication_status"] = {
+                "snapshot_available": True, "snapshot": snap,
+                "hash": hashlib.sha256(snap_str.encode()).hexdigest()[:16],
+            }
         except Exception:
-            fingerprints["publication"] = {"snapshot_available": False, "reason": "query error"}
+            components["publication_status"] = {"snapshot_available": False, "reason": "query error"}
 
-        # Hash for comparison
-        fp_str = json.dumps(fingerprints, sort_keys=True, default=str)
-        fingerprints["hash"] = hashlib.sha256(fp_str.encode()).hexdigest()[:16]
-        return fingerprints
+        # 3. overview — aggregate API, no safe stable internal function
+        components["overview"] = {
+            "snapshot_available": False,
+            "reason": "Overview is an aggregate API response; no safe internal stable snapshot function exists yet.",
+        }
+
+        # Overall hash from available components
+        hashable = {k: v.get("hash") for k, v in components.items() if v.get("snapshot_available")}
+        overall_str = json.dumps(hashable, sort_keys=True)
+        overall_hash = hashlib.sha256(overall_str.encode()).hexdigest()[:16]
+
+        return {**components, "hash": overall_hash}
 
     async def _create_audit_event(self, event_type: str, details: dict) -> None:
         self.db.add(AuditEvent(
