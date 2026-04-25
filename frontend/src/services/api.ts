@@ -943,3 +943,19 @@ export async function fetchRLBenchmarks(): Promise<ApiResponse<RLBenchmarkReport
 export async function fetchRLBenchmark(id: string): Promise<ApiResponse<RLBenchmarkReport>> {
   return apiFetch<RLBenchmarkReport>(`/api/v1/rl/benchmarks/${id}`);
 }
+
+export interface RunRLBenchmarkRequest {
+  name: string;
+  environment_key?: string;
+  start_date: string;
+  end_date: string;
+  agent_keys?: string[];
+}
+
+export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<ApiResponse<RLBenchmarkReport>> {
+  return apiFetch<RLBenchmarkReport>("/api/v1/rl/benchmarks/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}

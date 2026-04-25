@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  fetchMLOpsSummary, fetchRLBenchmarks,
+  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   RLBenchmarkReport,
 } from "@/services/api";
@@ -71,6 +71,18 @@ export default function AdminPage() {
   const [benchmarks, setBenchmarks] = useState<RLBenchmarkReport[]>([]);
   const [selectedBenchmark, setSelectedBenchmark] = useState<RLBenchmarkReport | null>(null);
   const [selectedForensicAgent, setSelectedForensicAgent] = useState<string | null>(null);
+
+  // RL Benchmark run workflow
+  const [benchRunName, setBenchRunName] = useState("Offline Agent Comparison");
+  const [benchRunStart, setBenchRunStart] = useState("2026-03-15");
+  const [benchRunEnd, setBenchRunEnd] = useState("2026-04-15");
+  const [benchRunAgents, setBenchRunAgents] = useState<Record<string, boolean>>({
+    heuristic_baseline: true, random_valid: true, score_weighted_baseline: true,
+  });
+  const [benchRunAcknowledged, setBenchRunAcknowledged] = useState(false);
+  const [benchRunLoading, setBenchRunLoading] = useState(false);
+  const [benchRunError, setBenchRunError] = useState<string | null>(null);
+  const [benchRunSuccess, setBenchRunSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -306,6 +318,136 @@ export default function AdminPage() {
           </div>
         </section>
       )}
+
+      {/* ── Run Offline Benchmark ── */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Icon name="sparkle" size={15} className="text-accent" />
+          <h3 className="text-[13px] font-semibold text-ink">Run Offline Benchmark</h3>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline / Shadow only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">No broker execution</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">Benchmark name</label>
+            <input
+              type="text" value={benchRunName} onChange={(e) => setBenchRunName(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">Start date</label>
+            <input
+              type="date" value={benchRunStart} onChange={(e) => setBenchRunStart(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">End date</label>
+            <input
+              type="date" value={benchRunEnd} onChange={(e) => setBenchRunEnd(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none"
+            />
+          </div>
+        </div>
+        {/* Agent selection */}
+        <div className="mb-3">
+          <label className="text-[10px] text-ink-4 block mb-1">Agents to compare</label>
+          <div className="flex flex-wrap gap-2">
+            {["heuristic_baseline", "random_valid", "score_weighted_baseline"].map((ak) => (
+              <label key={ak} className="flex items-center gap-1.5 text-[11px] text-ink-2 cursor-pointer">
+                <input
+                  type="checkbox" checked={benchRunAgents[ak] ?? false}
+                  onChange={(e) => setBenchRunAgents((prev) => ({ ...prev, [ak]: e.target.checked }))}
+                  className="rounded"
+                />
+                {ak.replace(/_/g, " ")}
+              </label>
+            ))}
+          </div>
+          {Object.values(benchRunAgents).filter(Boolean).length === 0 && (
+            <p className="text-[10px] text-breach mt-1">At least one agent is required.</p>
+          )}
+          {Object.values(benchRunAgents).filter(Boolean).length > 0 && Object.values(benchRunAgents).filter(Boolean).length < 3 && (
+            <p className="text-[10px] text-caution mt-1">Partial benchmark: not all required baseline agents selected.</p>
+          )}
+        </div>
+        {/* Safety acknowledgment */}
+        <div className="rounded-lg border border-line bg-surface-2 p-3 mb-3">
+          <label className="flex items-start gap-2 text-[11px] text-ink-2 cursor-pointer">
+            <input
+              type="checkbox" checked={benchRunAcknowledged}
+              onChange={(e) => setBenchRunAcknowledged(e.target.checked)}
+              className="rounded mt-0.5"
+            />
+            <span>
+              I understand this is an <strong className="text-ink">offline/shadow benchmark only</strong>.
+              It will not create live recommendations, execute trades, influence production decisions, or affect publication workflow.
+            </span>
+          </label>
+        </div>
+        {/* Validation + submit */}
+        <div className="flex items-center gap-3">
+          <button
+            disabled={
+              benchRunLoading ||
+              !benchRunAcknowledged ||
+              !benchRunName.trim() ||
+              !benchRunStart ||
+              !benchRunEnd ||
+              benchRunStart > benchRunEnd ||
+              Object.values(benchRunAgents).filter(Boolean).length === 0
+            }
+            onClick={async () => {
+              setBenchRunLoading(true);
+              setBenchRunError(null);
+              setBenchRunSuccess(null);
+              try {
+                const agents = Object.entries(benchRunAgents).filter(([, v]) => v).map(([k]) => k);
+                const res = await runRLBenchmark({
+                  name: benchRunName.trim(),
+                  start_date: benchRunStart,
+                  end_date: benchRunEnd,
+                  agent_keys: agents,
+                });
+                const report = res.data;
+                setBenchRunSuccess(`Benchmark ${report.id.slice(0, 8)}... ${report.status} — ${report.executed_agents?.length || 0} agents`);
+                // Refresh benchmarks and select the new one
+                const refreshed = await fetchRLBenchmarks().catch(() => null);
+                if (refreshed && refreshed.data) {
+                  setBenchmarks(refreshed.data);
+                  setSelectedBenchmark(report);
+                }
+              } catch (err: unknown) {
+                setBenchRunError(err instanceof Error ? err.message : "Benchmark run failed");
+              } finally {
+                setBenchRunLoading(false);
+              }
+            }}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[12px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {benchRunLoading ? (
+              <><Icon name="clock" size={13} /> Running offline benchmark...</>
+            ) : (
+              <><Icon name="sparkle" size={13} /> Run offline benchmark</>
+            )}
+          </button>
+          {benchRunStart && benchRunEnd && benchRunStart > benchRunEnd && (
+            <span className="text-[10px] text-breach">Start date must be before end date.</span>
+          )}
+        </div>
+        {/* Result messages */}
+        {benchRunSuccess && (
+          <div className="mt-3 rounded-lg border border-pos bg-pos-soft p-3 text-[11px] text-pos-soft-ink">
+            <Icon name="check" size={12} className="inline mr-1" />{benchRunSuccess}
+          </div>
+        )}
+        {benchRunError && (
+          <div className="mt-3 rounded-lg border border-breach bg-breach-soft p-3 text-[11px] text-breach-soft-ink">
+            <Icon name="alert-triangle" size={12} className="inline mr-1" />{benchRunError}
+          </div>
+        )}
+      </section>
 
       {/* ── RL Offline Benchmark — Forensic Analysis ── */}
       {benchmarks.length === 0 && ops && ops.rl && ops.rl.total_benchmarks === 0 && (
