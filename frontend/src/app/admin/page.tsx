@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  fetchMLOpsSummary,
+  fetchMLOpsSummary, fetchRLBenchmarks,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
+  RLBenchmarkReport,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
@@ -66,13 +67,23 @@ export default function AdminPage() {
   // ML Ops summary
   const [mlSummary, setMlSummary] = useState<MLOpsSummary | null>(null);
 
+  // RL Benchmark
+  const [latestBenchmark, setLatestBenchmark] = useState<RLBenchmarkReport | null>(null);
+
   useEffect(() => {
-    Promise.all([fetchOps(), fetchMLOpsSummary().catch(() => null)])
-      .then(([opsRes, mlRes]) => {
+    Promise.all([
+      fetchOps(),
+      fetchMLOpsSummary().catch(() => null),
+      fetchRLBenchmarks().catch(() => null),
+    ])
+      .then(([opsRes, mlRes, benchRes]) => {
         setOps(opsRes.data);
         setFilteredQueue(opsRes.data.queue);
         setFilteredAudit(opsRes.data.audit);
         if (mlRes) setMlSummary(mlRes.data);
+        if (benchRes && benchRes.data && benchRes.data.length > 0) {
+          setLatestBenchmark(benchRes.data[0]);
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -290,6 +301,205 @@ export default function AdminPage() {
               <p className="text-[10px] text-ink-4">latest agent</p>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* ── RL Benchmark Visualization ── */}
+      {latestBenchmark && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon name="compare" size={15} className="text-accent" />
+            <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark — Forensic Comparison</h3>
+            <StatusBadge status={latestBenchmark.status} />
+            {latestBenchmark.is_complete_comparison ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-pos-soft text-pos-soft-ink">Complete</span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-caution-soft text-caution-soft-ink">Partial</span>
+            )}
+            <span className="text-[10px] text-ink-4 ml-auto font-mono">{latestBenchmark.id.slice(0, 8)}...</span>
+          </div>
+
+          {/* Safety badges */}
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {[
+              { key: "offline_only", label: "Offline only" },
+              { key: "shadow_only", label: "Shadow only" },
+              { key: "no_broker_execution", label: "No broker execution" },
+              { key: "no_publication_influence", label: "No publication influence" },
+              { key: "no_recommendation_pollution", label: "Not a live recommendation" },
+            ].map((f) => {
+              const val = (latestBenchmark.safety_flags as unknown as Record<string, boolean>)?.[f.key];
+              return (
+                <span key={f.key} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                  val ? "bg-surface-3 text-ink-3" : "bg-breach-soft text-breach-soft-ink"
+                }`}>
+                  {val ? f.label : `WARNING: ${f.label} = false`}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Benchmark info */}
+          <div className="flex items-center gap-4 text-[11px] text-ink-3 mb-4">
+            <span>Window: {latestBenchmark.start_date} — {latestBenchmark.end_date}</span>
+            <span>Agents: {latestBenchmark.executed_agents?.length || 0} executed</span>
+            {latestBenchmark.skipped_agents?.length > 0 && (
+              <span className="text-caution">{latestBenchmark.skipped_agents.length} skipped</span>
+            )}
+          </div>
+
+          {/* Skipped agents warning */}
+          {latestBenchmark.skipped_agents?.length > 0 && (
+            <div className="rounded-lg border border-caution bg-caution-soft p-3 mb-4 text-[12px] text-caution-soft-ink">
+              <p className="font-medium mb-1">Skipped agents:</p>
+              {latestBenchmark.skipped_agents.map((s, i) => (
+                <p key={i}>{s.agent_key}: {s.reason}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Agent comparison table */}
+          {latestBenchmark.metrics_by_agent && Object.keys(latestBenchmark.metrics_by_agent).length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-[12px] font-semibold text-ink mb-2">Agent Comparison — Offline Metrics</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                      <th className="text-left py-2 pr-3 font-medium">Agent</th>
+                      <th className="text-right py-2 pr-3 font-medium">Return</th>
+                      <th className="text-right py-2 pr-3 font-medium">Reward</th>
+                      <th className="text-right py-2 pr-3 font-medium">Drawdown</th>
+                      <th className="text-right py-2 pr-3 font-medium">Turnover</th>
+                      <th className="text-right py-2 pr-3 font-medium">Steps</th>
+                      <th className="text-right py-2 font-medium">Violations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const agents = Object.entries(latestBenchmark.metrics_by_agent);
+                      const bestReturn = Math.max(...agents.map(([, m]) => m.total_return ?? -Infinity));
+                      const bestReward = Math.max(...agents.map(([, m]) => m.total_reward ?? -Infinity));
+                      return agents.map(([key, m]) => (
+                        <tr key={key} className="border-b border-line/50 hover:bg-surface-3 transition-colors">
+                          <td className="py-2 pr-3 font-medium text-ink">{key.replace(/_/g, " ")}</td>
+                          <td className={`py-2 pr-3 text-right font-mono ${m.total_return === bestReturn ? "text-pos font-semibold" : "text-ink-2"}`}>
+                            {m.total_return != null ? `${(m.total_return * 100).toFixed(2)}%` : "—"}
+                          </td>
+                          <td className={`py-2 pr-3 text-right font-mono ${m.total_reward === bestReward ? "text-pos font-semibold" : "text-ink-2"}`}>
+                            {m.total_reward?.toFixed(4) ?? "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-mono text-ink-2">
+                            {m.max_drawdown != null ? `${(m.max_drawdown * 100).toFixed(2)}%` : "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-mono text-ink-2">
+                            {m.total_turnover?.toFixed(2) ?? "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-mono text-ink-3">{m.step_count ?? "—"}</td>
+                          <td className={`py-2 text-right font-mono ${(m.violation_count ?? 0) > 0 ? "text-caution" : "text-ink-3"}`}>
+                            {m.violation_count ?? 0}
+                          </td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-ink-4 mt-2">Green highlight = best offline metric in this benchmark. Not a live recommendation.</p>
+            </div>
+          )}
+
+          {/* Reward breakdown */}
+          {latestBenchmark.reward_breakdown_by_agent && Object.keys(latestBenchmark.reward_breakdown_by_agent).length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-[12px] font-semibold text-ink mb-2">Reward Component Breakdown</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                      <th className="text-left py-2 pr-3 font-medium">Agent</th>
+                      <th className="text-right py-2 pr-3 font-medium">Return Component</th>
+                      <th className="text-right py-2 pr-3 font-medium">Drawdown Penalty</th>
+                      <th className="text-right py-2 font-medium">Turnover Penalty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(latestBenchmark.reward_breakdown_by_agent).map(([key, rb]) => (
+                      <tr key={key} className="border-b border-line/50">
+                        <td className="py-2 pr-3 text-ink-2">{key.replace(/_/g, " ")}</td>
+                        <td className="py-2 pr-3 text-right font-mono text-ink-2">{rb.portfolio_return_component?.toFixed(4) ?? "—"}</td>
+                        <td className="py-2 pr-3 text-right font-mono text-caution">{rb.drawdown_penalty_component?.toFixed(4) ?? "—"}</td>
+                        <td className="py-2 text-right font-mono text-ink-3">{rb.turnover_penalty_component?.toFixed(6) ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Forensic step summary */}
+          {latestBenchmark.forensic_summary && latestBenchmark.forensic_summary.length > 0 && (
+            <div className="mb-3">
+              <h4 className="text-[12px] font-semibold text-ink mb-2">Forensic Step Summary</h4>
+              <p className="text-[10px] text-ink-4 mb-2">
+                Step-level forensic rows for: {latestBenchmark.forensic_summary[0]?.agent_key?.replace(/_/g, " ") || "first agent"}
+              </p>
+              <div className="overflow-x-auto max-h-48 overflow-y-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-surface">
+                    <tr className="border-b border-line text-[10px] text-ink-4 uppercase tracking-wider">
+                      <th className="text-left py-1.5 pr-2 font-medium">Step</th>
+                      <th className="text-left py-1.5 pr-2 font-medium">Date</th>
+                      <th className="text-left py-1.5 pr-2 font-medium">Action</th>
+                      <th className="text-right py-1.5 pr-2 font-medium">Reward</th>
+                      <th className="text-right py-1.5 pr-2 font-medium">Value</th>
+                      <th className="text-right py-1.5 pr-2 font-medium">Turnover</th>
+                      <th className="text-right py-1.5 font-medium">Violations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestBenchmark.forensic_summary.slice(0, 20).map((s, i) => (
+                      <tr key={i} className="border-b border-line/30">
+                        <td className="py-1.5 pr-2 font-mono text-ink-3">{s.step_index}</td>
+                        <td className="py-1.5 pr-2 font-mono text-ink-2">{s.as_of_date?.slice(5) || "—"}</td>
+                        <td className="py-1.5 pr-2 text-ink-2">{s.action_type || "—"}</td>
+                        <td className={`py-1.5 pr-2 text-right font-mono ${(s.reward ?? 0) >= 0 ? "text-ink-2" : "text-breach"}`}>{s.reward?.toFixed(4) ?? "—"}</td>
+                        <td className="py-1.5 pr-2 text-right font-mono text-ink-2">{s.portfolio_value?.toFixed(1) ?? "—"}</td>
+                        <td className="py-1.5 pr-2 text-right font-mono text-ink-3">{s.turnover?.toFixed(2) ?? "—"}</td>
+                        <td className={`py-1.5 text-right font-mono ${(s.violations?.length ?? 0) > 0 ? "text-caution" : "text-ink-4"}`}>
+                          {s.violations?.length ?? 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Warnings */}
+          {latestBenchmark.warnings && latestBenchmark.warnings.length > 0 && (
+            <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[11px] text-caution-soft-ink">
+              {latestBenchmark.warnings.map((w, i) => (
+                <p key={i} className="flex items-center gap-1.5">
+                  <Icon name="alert-triangle" size={10} />{w}
+                </p>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* No benchmarks empty state */}
+      {!latestBenchmark && ops && ops.rl && ops.rl.total_benchmarks === 0 && (
+        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon name="compare" size={15} className="text-ink-4" />
+            <h3 className="text-[13px] font-semibold text-ink-3">Offline Benchmark</h3>
+          </div>
+          <p className="text-[12px] text-ink-3">No offline benchmarks have been run yet. Use the RL benchmark API to compare agents on historical data.</p>
+          <p className="text-[10px] text-ink-4 mt-1">This is an offline/shadow forensic tool — not a live recommendation system.</p>
         </section>
       )}
 

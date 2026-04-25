@@ -868,3 +868,77 @@ export interface MLOpsSummary {
 export async function fetchMLOpsSummary(): Promise<ApiResponse<MLOpsSummary>> {
   return apiFetch<MLOpsSummary>("/api/v1/ml-ops/summary");
 }
+
+// RL Benchmark types
+
+export interface RLBenchmarkSafetyFlags {
+  offline_only: boolean;
+  shadow_only: boolean;
+  live_pipeline_influence: boolean;
+  no_broker_execution: boolean;
+  no_publication_influence: boolean;
+  no_recommendation_pollution: boolean;
+}
+
+export interface RLSkippedAgent {
+  agent_key: string;
+  reason: string;
+}
+
+export interface RLAgentMetrics {
+  total_return: number | null;
+  total_reward: number | null;
+  max_drawdown: number | null;
+  total_turnover: number | null;
+  step_count: number | null;
+  violation_count: number | null;
+  status: string | null;
+}
+
+export interface RLRewardBreakdown {
+  portfolio_return_component: number | null;
+  drawdown_penalty_component: number | null;
+  turnover_penalty_component: number | null;
+}
+
+export interface RLForensicStep {
+  step_index: number;
+  as_of_date: string | null;
+  agent_key: string;
+  action_type: string | null;
+  reward: number | null;
+  portfolio_value: number | null;
+  turnover: number | null;
+  violations: string[] | null;
+}
+
+export interface RLBenchmarkReport {
+  id: string;
+  name: string;
+  environment_key: string;
+  universe_id: string | null;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  compared_agents: string[];
+  requested_agents: string[];
+  executed_agents: string[];
+  skipped_agents: RLSkippedAgent[];
+  is_complete_comparison: boolean;
+  metrics_by_agent: Record<string, RLAgentMetrics>;
+  reward_breakdown_by_agent: Record<string, RLRewardBreakdown>;
+  violations_by_agent: Record<string, string[]>;
+  forensic_summary: RLForensicStep[];
+  safety_flags: RLBenchmarkSafetyFlags;
+  warnings: string[] | null;
+  created_at: string | null;
+  completed_at: string | null;
+}
+
+export async function fetchRLBenchmarks(): Promise<ApiResponse<RLBenchmarkReport[]>> {
+  return apiFetch<RLBenchmarkReport[]>("/api/v1/rl/benchmarks");
+}
+
+export async function fetchRLBenchmark(id: string): Promise<ApiResponse<RLBenchmarkReport>> {
+  return apiFetch<RLBenchmarkReport>(`/api/v1/rl/benchmarks/${id}`);
+}
