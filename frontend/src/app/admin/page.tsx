@@ -411,11 +411,28 @@ export default function AdminPage() {
                   agent_keys: agents,
                 });
                 const report = res.data;
-                const isFullPass = report.status === "completed" && report.is_complete_comparison && (report.skipped_agents?.length || 0) === 0;
+                const REQUIRED = ["heuristic_baseline", "random_valid", "score_weighted_baseline"];
+                const selectedAllRequired = REQUIRED.every(a => agents.includes(a));
+                const executedAllRequired = REQUIRED.every(a => report.executed_agents?.includes(a));
+                const isFullPass =
+                  selectedAllRequired &&
+                  executedAllRequired &&
+                  report.status === "completed" &&
+                  report.is_complete_comparison === true &&
+                  (report.skipped_agents?.length || 0) === 0;
+                const partialReason = !selectedAllRequired
+                  ? "not all required baseline agents were selected"
+                  : !executedAllRequired
+                  ? "not all required baseline agents were executed"
+                  : (report.skipped_agents?.length || 0) > 0
+                  ? `${report.skipped_agents!.length} agent(s) skipped`
+                  : report.status !== "completed"
+                  ? `status: ${report.status}`
+                  : "";
                 setBenchRunSuccess(
                   isFullPass
                     ? `Benchmark ${report.id.slice(0, 8)}... completed — ${report.executed_agents?.length || 0} agents compared`
-                    : `partial|Benchmark ${report.id.slice(0, 8)}... ${report.status} — ${report.executed_agents?.length || 0} executed, ${report.skipped_agents?.length || 0} skipped`
+                    : `partial|Offline benchmark created with partial scope — ${partialReason}. ${report.executed_agents?.length || 0} executed.`
                 );
                 // Refresh benchmarks and select the new one
                 const refreshed = await fetchRLBenchmarks().catch(() => null);
@@ -663,7 +680,7 @@ export default function AdminPage() {
                   {hasPerAgent
                     ? `Per-agent portfolio value available for: ${agentKeys.map(k => k.replace(/_/g, " ")).join(", ")}`
                     : `Portfolio value curve based on: ${displaySteps[0]?.agent_key?.replace(/_/g, " ") || "first agent"}`
-                  }. Not a live signal.
+                  }. Offline forensic curve only — no production influence.
                 </p>
                 {/* Simple inline SVG sparkline per agent */}
                 <div className="space-y-3">
