@@ -191,14 +191,24 @@ async def test_cpu_prototype_audit_persisted(client):
     assert len(terminal) >= 1
     td = terminal[0].details or {}
     assert td.get("safety_flags", {}).get("research_only") is True
+    assert td.get("dependency_status") is not None, "terminal event must include dependency_status"
     assert td.get("component_checks") is not None
     assert "recommendations_current" in td["component_checks"]
     assert "publication_status" in td["component_checks"]
     assert "overview" in td["component_checks"]
     assert "production_fingerprints_unchanged" in td
-    if td.get("candidate_id"):
-        assert td.get("isolation_checks") is not None
+
+    # For dependency_unavailable or completed, candidate and run must exist
+    if terminal[0].action in ("finrlx_cpu_research_train_dependency_unavailable",
+                               "finrlx_cpu_research_train_completed"):
+        assert td.get("candidate_id") is not None, "terminal event must include candidate_id"
+        assert td.get("training_run_id") is not None, "terminal event must include training_run_id"
+        assert td.get("isolation_checks") is not None, "terminal event must include isolation_checks"
         assert td["isolation_checks"].get("promotion_blocked") is True
+        assert td["isolation_checks"].get("publication_blocked") is True
+        assert td["isolation_checks"].get("live_recommendation_blocked") is True
+        assert td["isolation_checks"].get("overview_influence_blocked") is True
+        assert td["isolation_checks"].get("broker_execution_blocked") is True
 
 
 # ── Safety regressions ───────────────────────────────────────────────────

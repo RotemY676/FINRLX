@@ -625,6 +625,7 @@ class FinRLXResearchService:
             await self._create_audit_event("finrlx_cpu_research_train_completed", {
                 "candidate_id": candidate_id, "training_run_id": run.id,
                 "algorithm": algorithm, "real_neural_training": True,
+                "dependency_status": dep_status,
                 "safety_flags": FINRLX_SAFETY_FLAGS,
                 "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"],
                 "component_checks": cc, "production_fingerprints_unchanged": overall_unch,
@@ -656,6 +657,7 @@ class FinRLXResearchService:
 
             await self._create_audit_event("finrlx_cpu_research_train_failed", {
                 "algorithm": algorithm, "error": str(e)[:500],
+                "dependency_status": dep_status,
                 "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
                 "production_fingerprints_unchanged": overall_unch,
             })
