@@ -437,10 +437,10 @@ export default function AdminPage() {
               <p className="text-[10px] text-ink-4">broker integration</p>
             </div>
           </div>
-          {/* Candidate isolation badges */}
+          {/* System-level research guardrails (not candidate-specific) */}
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {["Promotion blocked", "Publication blocked", "Recommendation blocked", "Overview blocked", "Broker blocked"].map((c) => (
-              <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-pos-soft text-pos-soft-ink">{c}</span>
+            {["Promotion", "Publication", "Recommendation", "Overview", "Broker"].map((c) => (
+              <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">Research guardrail: {c.toLowerCase()} blocked</span>
             ))}
           </div>
           {finrlxStatus.missing_for_real_training?.length > 0 && (
@@ -531,9 +531,26 @@ export default function AdminPage() {
               <div className="text-[10px]"><span className="text-ink-4">Notes: </span><span className="text-ink-3">{selectedCandidate.notes}</span></div>
             )}
             <div className="flex flex-wrap gap-1.5">
-              {["Promotion blocked", "Publication blocked", "Recommendation blocked", "Overview blocked", "Broker blocked"].map((label) => (
-                <span key={label} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-pos-soft text-pos-soft-ink">{label}</span>
-              ))}
+              {candidateEligibility ? (
+                <>
+                  {([
+                    ["promotion_blocked", "Promotion blocked"],
+                    ["publication_blocked", "Publication blocked"],
+                    ["live_recommendation_blocked", "Recommendation blocked"],
+                    ["overview_influence_blocked", "Overview influence blocked"],
+                    ["broker_execution_blocked", "Broker path blocked"],
+                  ] as const).map(([key, label]) => {
+                    const val = candidateEligibility.isolation_checks?.[key];
+                    return (
+                      <span key={key} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium ${
+                        val === true ? "bg-pos-soft text-pos-soft-ink" : "bg-caution-soft text-caution-soft-ink"
+                      }`}>{val === true ? label : `${label.replace(" blocked", "")} check missing`}</span>
+                    );
+                  })}
+                </>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">Loading isolation checks...</span>
+              )}
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">Not eligible for promotion</span>
             </div>
             <div className="rounded-lg border border-caution bg-caution-soft p-2 text-[10px] text-caution-soft-ink">
