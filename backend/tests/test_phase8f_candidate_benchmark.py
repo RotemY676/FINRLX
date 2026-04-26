@@ -76,6 +76,131 @@ async def test_eligibility_checks_all_safety_flags(client):
     assert "benchmark-eligible" in data["reasons"][0].lower()
 
 
+# ── Stored payload eligibility hardening (Phase 8F.2) ────────────────
+
+async def _import_and_corrupt(client, payload_mutation: dict) -> str:
+    """Import a candidate then corrupt its stored policy_payload directly."""
+    from tests.conftest import test_session_factory
+    from sqlalchemy import select, update
+    from app.models.rl import RLPolicySnapshot
+
+    cid = await _import_candidate(client)
+
+    async with test_session_factory() as db:
+        snap = (await db.execute(
+            select(RLPolicySnapshot).where(RLPolicySnapshot.id == cid)
+        )).scalar_one()
+        pp = dict(snap.policy_payload or {})
+        for key, value in payload_mutation.items():
+            if "." in key:
+                parts = key.split(".", 1)
+                sub = pp.setdefault(parts[0], {})
+                if isinstance(sub, dict):
+                    sub[parts[1]] = value
+            else:
+                pp[key] = value
+        await db.execute(
+            update(RLPolicySnapshot)
+            .where(RLPolicySnapshot.id == cid)
+            .values(policy_payload=pp)
+        )
+        await db.commit()
+    return cid
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_missing_artifact_hash(client):
+    cid = await _import_and_corrupt(client, {"artifact_hash": None})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("artifact_hash" in r.lower() for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_missing_artifact_summary(client):
+    cid = await _import_and_corrupt(client, {"artifact_summary": None})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("artifact_summary" in r.lower() for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_not_eligible_for_promotion_false(client):
+    """Corrupt safety_flags by adding not_eligible_for_promotion=false."""
+    cid = await _import_and_corrupt(client, {"safety_flags.not_eligible_for_promotion": False})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("not_eligible_for_promotion" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_offline_only_false(client):
+    cid = await _import_and_corrupt(client, {"safety_flags.offline_only": False})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("offline_only" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_live_pipeline_true(client):
+    cid = await _import_and_corrupt(client, {"safety_flags.live_pipeline_influence": True})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("live_pipeline_influence" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_no_broker_false(client):
+    cid = await _import_and_corrupt(client, {"safety_flags.no_broker_execution": False})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("no_broker_execution" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_no_publication_false(client):
+    cid = await _import_and_corrupt(client, {"safety_flags.no_publication_influence": False})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("no_publication_influence" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_stored_no_recommendation_false(client):
+    cid = await _import_and_corrupt(client, {"safety_flags.no_recommendation_pollution": False})
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("no_recommendation_pollution" in r for r in data["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_eligibility_rejects_despite_candidate_dict_normalization(client):
+    """Even though _candidate_dict() normalizes safety fields as safe,
+    eligibility must reject when stored payload is corrupt."""
+    cid = await _import_and_corrupt(client, {
+        "safety_flags.no_broker_execution": False,
+        "safety_flags.live_pipeline_influence": True,
+    })
+    # _candidate_dict would still show no_broker_execution=true (hardcoded)
+    r_detail = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}")
+    assert r_detail.json()["data"]["no_broker_execution"] is True  # normalized!
+
+    # But eligibility must still reject based on stored payload
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is False
+    assert any("no_broker_execution" in r for r in data["reasons"])
+    assert any("live_pipeline_influence" in r for r in data["reasons"])
+
+
 # ── Candidate benchmark run ──────────────────────────────────────────
 
 @pytest.mark.asyncio

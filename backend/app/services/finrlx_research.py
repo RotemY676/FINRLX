@@ -969,20 +969,43 @@ class FinRLXResearchService:
         if candidate.get("no_recommendation_pollution") is not True:
             reasons.append("no_recommendation_pollution must be true.")
 
-        # Verify stored payload safety flags match
+        # Verify stored payload directly — do not rely on _candidate_dict() normalization
         s = (await self.db.execute(
             select(RLPolicySnapshot).where(RLPolicySnapshot.id == candidate_id)
             .where(RLPolicySnapshot.policy_type.like("finrlx_%"))
         )).scalar_one_or_none()
-        if s:
+        if not s:
+            reasons.append("Stored policy snapshot not found.")
+        else:
             pp = s.policy_payload or {}
-            pp_sf = pp.get("safety_flags", {})
-            if pp_sf.get("research_only") is not True:
-                reasons.append("Stored payload safety_flags.research_only is not true.")
-            if pp_sf.get("no_broker_execution") is not True:
-                reasons.append("Stored payload safety_flags.no_broker_execution is not true.")
             if pp.get("imported_from_artifact") is not True:
-                reasons.append("Stored payload imported_from_artifact is not true.")
+                reasons.append("Stored payload: imported_from_artifact is not true.")
+            if not pp.get("artifact_hash"):
+                reasons.append("Stored payload: artifact_hash is missing.")
+            if not pp.get("artifact_summary"):
+                reasons.append("Stored payload: artifact_summary is missing.")
+
+            # Stored safety_flags sub-dict (matches FINRLX_SAFETY_FLAGS keys)
+            pp_sf = pp.get("safety_flags", {})
+            for flag, expected in [
+                ("research_only", True), ("offline_only", True), ("shadow_only", True),
+                ("live_pipeline_influence", False), ("no_broker_execution", True),
+                ("no_publication_influence", True), ("no_recommendation_pollution", True),
+            ]:
+                if pp_sf.get(flag) is not expected:
+                    reasons.append(f"Stored payload: safety_flags.{flag} is not {expected}.")
+            # not_eligible_for_promotion may be in safety_flags or absent (checked via top-level)
+            if "not_eligible_for_promotion" in pp_sf and pp_sf["not_eligible_for_promotion"] is not True:
+                reasons.append("Stored payload: safety_flags.not_eligible_for_promotion is not true.")
+
+            # Top-level payload mirrors (if present, must match)
+            for flag, expected in [
+                ("research_only", True), ("offline_only", True), ("shadow_only", True),
+                ("live_pipeline_influence", False), ("no_broker_execution", True),
+                ("no_publication_influence", True), ("no_recommendation_pollution", True),
+            ]:
+                if flag in pp and pp[flag] is not expected:
+                    reasons.append(f"Stored payload: top-level {flag} is not {expected}.")
 
         # Isolation checks
         iso = self.get_candidate_isolation(candidate_id)
