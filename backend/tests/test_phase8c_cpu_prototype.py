@@ -211,6 +211,84 @@ async def test_cpu_prototype_audit_persisted(client):
         assert td["isolation_checks"].get("broker_execution_blocked") is True
 
 
+# ── Production 500 regression (Phase 8C.3) ────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_production_payload_returns_200(client):
+    """Exact production payload must return 200, not 500."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "name": "Phase 8C.2 Production Smoke CPU Prototype",
+        "algorithm": "PPO",
+        "start_date": "2026-03-15",
+        "end_date": "2026-04-15",
+        "timesteps": 50,
+        "seed": 42,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text[:500]}"
+    data = r.json()["data"]
+    assert data["status"] in ("completed", "dependency_unavailable", "dataset_invalid", "failed")
+    assert data["real_neural_training"] is False or data["status"] == "completed"
+    assert data["safety_flags"]["research_only"] is True
+    assert data["dependency_status"] is not None
+    assert data["not_eligible_for_promotion"] is True
+
+
+@pytest.mark.asyncio
+async def test_dependency_unavailable_full_response_shape(client):
+    """dependency_unavailable response includes all required fields."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "timesteps": 30, "research_acknowledgement": True,
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+    })
+    data = r.json()["data"]
+    if data["status"] == "dependency_unavailable":
+        assert data["real_neural_training"] is False
+        assert data["training_mode"] == "dependency_unavailable"
+        assert data["dependency_status"] is not None
+        assert data["safety_flags"]["research_only"] is True
+        assert data["not_eligible_for_promotion"] is True
+        # isolation_checks present when candidate created
+        if data.get("policy_candidate_id"):
+            assert data.get("isolation_checks") is not None
+            assert data["isolated"] is True
+            assert data["all_blocked"] is True
+        # production_fingerprints present when candidate created
+        if data.get("policy_candidate_id"):
+            fp = data.get("production_fingerprints", {})
+            assert "component_checks" in fp
+            assert "recommendations_current" in fp["component_checks"]
+            assert "publication_status" in fp["component_checks"]
+        # warnings present
+        assert len(data.get("warnings", [])) > 0
+
+
+@pytest.mark.asyncio
+async def test_audit_event_details_json_safe(client):
+    """Audit event details must be JSON-serializable (no Decimal/date/UUID objects)."""
+    import json as json_mod
+    from tests.conftest import test_session_factory
+    from sqlalchemy import select
+    from app.models.ops import AuditEvent
+
+    await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "timesteps": 30, "research_acknowledgement": True,
+    })
+
+    async with test_session_factory() as db:
+        events = (await db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.object_type == "finrlx_research")
+            .where(AuditEvent.action.like("finrlx_cpu_%"))
+        )).scalars().all()
+
+    for evt in events:
+        if evt.details:
+            # Must not raise — proves all values are JSON-serializable
+            serialized = json_mod.dumps(evt.details)
+            assert isinstance(serialized, str)
+
+
 # ── Date parsing validation (Phase 8C.2) ─────────────────────────────────
 
 @pytest.mark.asyncio

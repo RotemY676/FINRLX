@@ -12,10 +12,14 @@ Does NOT influence live pipeline, publication, recommendations, or overview.
 """
 import hashlib
 import json
+import logging
 from datetime import date, datetime, timezone, timedelta
+from decimal import Decimal
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.models.rl import RLPolicySnapshot, RLTrainingRun
 from app.models.ops import AuditEvent
@@ -42,6 +46,21 @@ REQUIRED_ASSET_FIELDS = [
 OPTIONAL_ASSET_FIELDS = [
     "next_price", "realized_return",
 ]
+
+
+def _json_safe(obj):
+    """Recursively convert non-JSON-serializable types to safe primitives."""
+    if obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return str(obj)
 
 
 class FinRLXResearchService:
@@ -400,14 +419,19 @@ class FinRLXResearchService:
         overall_str = json.dumps(hashable, sort_keys=True)
         overall_hash = hashlib.sha256(overall_str.encode()).hexdigest()[:16]
 
-        return {**components, "hash": overall_hash}
+        return _json_safe({**components, "hash": overall_hash})
 
     async def _create_audit_event(self, event_type: str, details: dict) -> None:
-        self.db.add(AuditEvent(
-            id=gen_uuid(), actor="system", action=event_type,
-            object_type="finrlx_research", object_id=details.get("candidate_id"),
-            details=details, occurred_at=datetime.now(timezone.utc),
-        ))
+        try:
+            safe_details = _json_safe(details)
+            self.db.add(AuditEvent(
+                id=gen_uuid(), actor="system", action=event_type,
+                object_type="finrlx_research",
+                object_id=str(details.get("candidate_id")) if details.get("candidate_id") else None,
+                details=safe_details, occurred_at=datetime.now(timezone.utc),
+            ))
+        except Exception as e:
+            logger.error("Failed to create audit event %s: %s", event_type, e)
 
     @staticmethod
     def get_neural_dependency_status() -> dict:
@@ -419,7 +443,7 @@ class FinRLXResearchService:
             try:
                 __import__(lib)
                 status[f"{lib}_available"] = True
-            except ImportError as e:
+            except Exception as e:
                 status[f"{lib}_available"] = False
                 import_errors[lib] = str(e)
 
@@ -471,7 +495,7 @@ class FinRLXResearchService:
         # Validate dataset contract before any candidate creation
         validation = await self.validate_dataset_contract(start_date, end_date, limit=10)
         if not validation["valid"]:
-            return {
+            return _json_safe({
                 "policy_candidate_id": None, "training_run_id": None,
                 "name": name, "status": "dataset_invalid",
                 "training_mode": "dataset_invalid", "real_neural_training": False,
@@ -481,7 +505,7 @@ class FinRLXResearchService:
                 "dataset_validation": validation,
                 "warnings": [f"Dataset invalid: {validation.get('missing_fields', [])}"],
                 "created_at": now.isoformat(),
-            }
+            })
 
         pre_fp = await self._capture_production_fingerprints()
 
@@ -496,58 +520,77 @@ class FinRLXResearchService:
 
         if not dep_status["neural_training_available"]:
             # Dependencies unavailable — create honest stub candidate
-            run = RLTrainingRun(
-                id=gen_uuid(), agent_key=f"finrlx_cpu_{algorithm.lower()}_unavailable",
-                environment_key=canonical_key, status="dependency_unavailable",
-                train_start_date=start_date, train_end_date=end_date,
-                config={"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
-                        "training_mode": "dependency_unavailable", "real_neural_training": False},
-            )
-            self.db.add(run)
-            run.completed_at = now
+            try:
+                run = RLTrainingRun(
+                    id=gen_uuid(), agent_key=f"finrlx_cpu_{algorithm.lower()}_unavailable",
+                    environment_key=canonical_key, status="dependency_unavailable",
+                    train_start_date=start_date, train_end_date=end_date,
+                    config=_json_safe({"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
+                            "training_mode": "dependency_unavailable", "real_neural_training": False}),
+                )
+                self.db.add(run)
+                run.completed_at = now
 
-            candidate_id = gen_uuid()
-            self.db.add(RLPolicySnapshot(
-                id=candidate_id, training_run_id=run.id,
-                agent_key=run.agent_key, environment_key=canonical_key,
-                policy_type=f"finrlx_cpu_{algorithm.lower()}_unavailable",
-                policy_payload={"training_mode": "dependency_unavailable", "real_neural_training": False,
-                                "safety_flags": FINRLX_SAFETY_FLAGS, "missing": dep_status["missing_dependencies"]},
-                metrics={"training_mode": "dependency_unavailable"},
-            ))
-            run.metrics = {"policy_candidate_id": candidate_id, "training_mode": "dependency_unavailable"}
+                candidate_id = gen_uuid()
+                self.db.add(RLPolicySnapshot(
+                    id=candidate_id, training_run_id=run.id,
+                    agent_key=run.agent_key, environment_key=canonical_key,
+                    policy_type=f"finrlx_cpu_{algorithm.lower()}_unavailable",
+                    policy_payload=_json_safe({"training_mode": "dependency_unavailable", "real_neural_training": False,
+                                    "safety_flags": FINRLX_SAFETY_FLAGS, "missing": dep_status["missing_dependencies"]}),
+                    metrics=_json_safe({"training_mode": "dependency_unavailable"}),
+                ))
+                run.metrics = _json_safe({"policy_candidate_id": candidate_id, "training_mode": "dependency_unavailable"})
 
-            post_fp = await self._capture_production_fingerprints()
-            cc = self._build_component_checks(pre_fp, post_fp)
-            avail = [c for c in cc.values() if c["snapshot_available"]]
-            overall_unch = all(c["unchanged"] for c in avail) if avail else None
+                post_fp = await self._capture_production_fingerprints()
+                cc = self._build_component_checks(pre_fp, post_fp)
+                avail = [c for c in cc.values() if c["snapshot_available"]]
+                overall_unch = all(c["unchanged"] for c in avail) if avail else None
 
-            iso = self.get_candidate_isolation(candidate_id)
+                iso = self.get_candidate_isolation(candidate_id)
 
-            await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
-                "candidate_id": candidate_id, "training_run_id": run.id,
-                "algorithm": algorithm, "dependency_status": dep_status,
-                "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
-                "production_fingerprints_unchanged": overall_unch,
-                "isolation_checks": iso["checks"],
-            })
-            await self.db.commit()
+                await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
+                    "candidate_id": candidate_id, "training_run_id": run.id,
+                    "algorithm": algorithm, "dependency_status": dep_status,
+                    "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
+                    "production_fingerprints_unchanged": overall_unch,
+                    "isolation_checks": iso["checks"],
+                })
+                await self.db.commit()
 
-            return {
-                "policy_candidate_id": candidate_id, "training_run_id": run.id,
-                "name": name, "status": "dependency_unavailable",
-                "training_mode": "dependency_unavailable", "real_neural_training": False,
-                "algorithm": algorithm, "timesteps": timesteps,
-                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
-                "not_eligible_for_promotion": True,
-                "isolation_checks": iso["checks"], "isolated": True, "all_blocked": True,
-                "production_fingerprints": {"before": pre_fp, "after": post_fp,
-                                            "unchanged": overall_unch, "component_checks": cc},
-                "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
-                             "No real CPU PPO/A2C training was performed.",
-                             "Candidate created as dependency_unavailable stub."],
-                "created_at": now.isoformat(),
-            }
+                return _json_safe({
+                    "policy_candidate_id": candidate_id, "training_run_id": run.id,
+                    "name": name, "status": "dependency_unavailable",
+                    "training_mode": "dependency_unavailable", "real_neural_training": False,
+                    "algorithm": algorithm, "timesteps": timesteps,
+                    "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                    "not_eligible_for_promotion": True,
+                    "isolation_checks": iso["checks"], "isolated": True, "all_blocked": True,
+                    "production_fingerprints": {"before": pre_fp, "after": post_fp,
+                                                "unchanged": overall_unch, "component_checks": cc},
+                    "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
+                                 "No real CPU PPO/A2C training was performed.",
+                                 "Candidate created as dependency_unavailable stub."],
+                    "created_at": now.isoformat(),
+                })
+            except Exception as e:
+                logger.error("dependency_unavailable path failed: %s", e, exc_info=True)
+                try:
+                    await self.db.rollback()
+                except Exception:
+                    pass
+                return _json_safe({
+                    "policy_candidate_id": None, "training_run_id": None,
+                    "name": name, "status": "dependency_unavailable",
+                    "training_mode": "dependency_unavailable", "real_neural_training": False,
+                    "algorithm": algorithm, "timesteps": timesteps,
+                    "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                    "not_eligible_for_promotion": True,
+                    "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
+                                 "No real CPU PPO/A2C training was performed.",
+                                 f"Candidate creation failed: {str(e)[:200]}"],
+                    "created_at": now.isoformat(),
+                })
 
         # Dependencies available — run real CPU-only training
         # This branch only executes if numpy, gymnasium, stable_baselines3, torch are all importable
@@ -633,7 +676,7 @@ class FinRLXResearchService:
             await self.db.commit()
 
             iso = self.get_candidate_isolation(candidate_id)
-            return {
+            return _json_safe({
                 "policy_candidate_id": candidate_id, "training_run_id": run.id,
                 "name": name, "status": "completed",
                 "training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True,
@@ -647,7 +690,7 @@ class FinRLXResearchService:
                 "warnings": ["CPU-only offline research prototype.", "Not eligible for promotion.",
                              "Not used by production decisions."],
                 "created_at": datetime.now(timezone.utc).isoformat(),
-            }
+            })
 
         except Exception as e:
             post_fp = await self._capture_production_fingerprints()
@@ -663,7 +706,7 @@ class FinRLXResearchService:
             })
             await self.db.commit()
 
-            return {
+            return _json_safe({
                 "policy_candidate_id": None, "training_run_id": None,
                 "name": name, "status": "failed",
                 "training_mode": "failed", "real_neural_training": False,
@@ -674,7 +717,7 @@ class FinRLXResearchService:
                                             "unchanged": overall_unch, "component_checks": cc},
                 "warnings": [f"Training failed: {str(e)[:200]}"],
                 "created_at": now.isoformat(),
-            }
+            })
 
     def _build_component_checks(self, pre: dict, post: dict) -> dict:
         cc = {}
