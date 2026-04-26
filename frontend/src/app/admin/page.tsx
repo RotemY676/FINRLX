@@ -117,6 +117,7 @@ export default function AdminPage() {
   const [importValidation, setImportValidation] = useState<FinRLXArtifactValidationResult | null>(null);
   const [importValidateError, setImportValidateError] = useState<string | null>(null);
   const [importAck, setImportAck] = useState(false);
+  const [importAckHash, setImportAckHash] = useState<string | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
@@ -188,6 +189,8 @@ export default function AdminPage() {
     setImportValidateError(null);
     setImportError(null);
     setImportSuccess(null);
+    setImportAck(false);
+    setImportAckHash(null);
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(importJson);
@@ -204,7 +207,7 @@ export default function AdminPage() {
   }, [importJson]);
 
   const handleImportArtifact = useCallback(async () => {
-    if (!importValidation?.valid || !importAck) return;
+    if (!importValidation?.valid || !importAck || !importValidation.artifact_hash || importAckHash !== importValidation.artifact_hash) return;
     setImportLoading(true);
     setImportError(null);
     setImportSuccess(null);
@@ -242,7 +245,7 @@ export default function AdminPage() {
     } finally {
       setImportLoading(false);
     }
-  }, [importJson, importValidation, importAck, importSource, importNotes, selectCandidate]);
+  }, [importJson, importValidation, importAck, importAckHash, importSource, importNotes, selectCandidate]);
 
   useEffect(() => {
     Promise.all([
@@ -567,18 +570,18 @@ export default function AdminPage() {
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Shadow / Offline</span>
         </div>
         <p className="text-[10px] text-ink-4 mb-2">This imports a local research artifact as a shadow-only candidate. It cannot affect recommendations, overview, publication, or broker systems.</p>
-        <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); }}
+        <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); setImportAck(false); setImportAckHash(null); }}
           placeholder="Paste research artifact JSON here..."
           className="w-full border border-line rounded-md px-3 py-2 text-[11px] font-mono bg-canvas focus:border-primary focus:outline-none min-h-[80px] max-h-[200px] resize-y mb-2" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
           <div>
             <label className="block text-ink-4 text-[10px] mb-0.5">Source</label>
-            <input type="text" value={importSource} onChange={e => setImportSource(e.target.value)}
+            <input type="text" value={importSource} onChange={e => { setImportSource(e.target.value); setImportAck(false); setImportAckHash(null); }}
               className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
           </div>
           <div className="sm:col-span-3">
             <label className="block text-ink-4 text-[10px] mb-0.5">Notes (optional)</label>
-            <input type="text" value={importNotes} onChange={e => setImportNotes(e.target.value)}
+            <input type="text" value={importNotes} onChange={e => { setImportNotes(e.target.value); setImportAck(false); setImportAckHash(null); }}
               className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
           </div>
         </div>
@@ -611,10 +614,10 @@ export default function AdminPage() {
         {importValidation?.valid && (
           <div className="border-t border-line pt-2 mt-2">
             <label className="flex items-center gap-2 text-[10px] text-ink-3 mb-2 cursor-pointer">
-              <input type="checkbox" checked={importAck} onChange={e => setImportAck(e.target.checked)} className="rounded" />
+              <input type="checkbox" checked={importAck} onChange={e => { setImportAck(e.target.checked); setImportAckHash(e.target.checked && importValidation?.artifact_hash ? importValidation.artifact_hash : null); }} className="rounded" />
               I confirm this is a research-only artifact. It will be imported as a shadow candidate with no production influence.
             </label>
-            <button onClick={handleImportArtifact} disabled={importLoading || !importAck}
+            <button onClick={handleImportArtifact} disabled={importLoading || !importAck || !importValidation?.artifact_hash || importAckHash !== importValidation?.artifact_hash}
               className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-primary text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
               {importLoading ? "Importing..." : "Import research artifact"}
             </button>
