@@ -86,3 +86,8 @@ Thumbs.db
 # Optional local docs extraction noise
 DOCS/source_packages/*.zip
 
+# Research outputs (local-only artifacts, models, logs)
+research/finrlx_cpu/outputs/*
+!research/finrlx_cpu/outputs/.gitkeep
+research/finrlx_cpu/.venv/
+

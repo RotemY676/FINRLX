@@ -1,0 +1,9 @@
+{
+  "_comment": "Sample config for FinRL-X CPU research. LOCAL RESEARCH ONLY.",
+  "algorithm": "PPO",
+  "timesteps": 200,
+  "seed": 42,
+  "dataset": null,
+  "output_dir": "outputs",
+  "save_model": false
+}
