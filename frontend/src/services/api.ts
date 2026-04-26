@@ -1104,6 +1104,53 @@ export interface FinRLXCandidateBenchmarkHistoryItem {
   occurred_at: string | null;
 }
 
+export interface FinRLXArtifactValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  artifact_hash: string;
+  normalized_artifact_summary: Record<string, unknown>;
+  safety_flags: Record<string, boolean>;
+}
+
+export interface FinRLXArtifactImportResponse {
+  status: string;
+  policy_candidate_id: string | null;
+  policy_type: string;
+  training_mode: string;
+  real_neural_training: boolean;
+  imported_from_artifact: boolean;
+  artifact_hash: string;
+  validation_result: FinRLXArtifactValidationResult;
+  safety_flags: Record<string, boolean>;
+  not_eligible_for_promotion: boolean;
+  isolation_checks: Record<string, boolean>;
+  production_fingerprints: Record<string, unknown>;
+  warnings: string[];
+  created_at: string;
+}
+
+export async function validateFinRLXResearchArtifact(artifact: Record<string, unknown>): Promise<ApiResponse<FinRLXArtifactValidationResult>> {
+  return apiFetch<FinRLXArtifactValidationResult>("/api/v1/rl/finrlx/validate-research-artifact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ artifact }),
+  });
+}
+
+export async function importFinRLXResearchArtifact(payload: {
+  artifact: Record<string, unknown>;
+  import_acknowledgement: boolean;
+  source: string;
+  notes?: string;
+}): Promise<ApiResponse<FinRLXArtifactImportResponse>> {
+  return apiFetch<FinRLXArtifactImportResponse>("/api/v1/rl/finrlx/import-research-artifact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchFinRLXCandidates(): Promise<ApiResponse<FinRLXCandidate[]>> {
   return apiFetch<FinRLXCandidate[]>("/api/v1/rl/finrlx/candidates");
 }

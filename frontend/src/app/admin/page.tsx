@@ -4,14 +4,16 @@ import { useEffect, useState, useCallback } from "react";
 import {
   fetchOps, fetchOpsQueue, fetchOpsAudit,
   approveQueueItem, deferQueueItem, challengeQueueItem,
-  fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
+  fetchMLOpsSummary, fetchRLBenchmarks, fetchRLBenchmark, runRLBenchmark,
   fetchRLBenchmarkAudit, fetchRLBenchmarkAuditForReport,
   fetchFinRLXStatus, fetchFinRLXDependencies,
   fetchFinRLXCandidates, fetchFinRLXBenchmarkEligibility,
   runFinRLXCandidateBenchmark, fetchFinRLXCandidateBenchmarks,
+  validateFinRLXResearchArtifact, importFinRLXResearchArtifact,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   FinRLXDependencyStatus, FinRLXCandidate, FinRLXBenchmarkEligibility,
   FinRLXCandidateBenchmarkResponse, FinRLXCandidateBenchmarkHistoryItem,
+  FinRLXArtifactValidationResult,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -108,6 +110,17 @@ export default function AdminPage() {
   const [candBenchError, setCandBenchError] = useState<string | null>(null);
   const [candBenchResult, setCandBenchResult] = useState<FinRLXCandidateBenchmarkResponse | null>(null);
 
+  // Artifact import workflow
+  const [importJson, setImportJson] = useState("");
+  const [importSource, setImportSource] = useState("admin_ui");
+  const [importNotes, setImportNotes] = useState("");
+  const [importValidation, setImportValidation] = useState<FinRLXArtifactValidationResult | null>(null);
+  const [importValidateError, setImportValidateError] = useState<string | null>(null);
+  const [importAck, setImportAck] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
     setSelectedBenchAudit([]);
@@ -116,6 +129,17 @@ export default function AdminPage() {
       if (res.data) setSelectedBenchAudit(res.data);
     } catch { /* audit unavailable for old benchmarks */ }
   }, []);
+
+  const openBenchmarkById = useCallback(async (reportId: string) => {
+    try {
+      const res = await fetchRLBenchmark(reportId);
+      if (res.data) {
+        selectBenchmark(res.data);
+        // Scroll to benchmark drilldown
+        document.getElementById("benchmark-drilldown")?.scrollIntoView({ behavior: "smooth" });
+      }
+    } catch { /* benchmark may not exist */ }
+  }, [selectBenchmark]);
 
   const selectCandidate = useCallback(async (c: FinRLXCandidate) => {
     setSelectedCandidate(c);
@@ -158,6 +182,67 @@ export default function AdminPage() {
       setCandBenchLoading(false);
     }
   }, [selectedCandidate, candBenchName, candBenchStart, candBenchEnd, candBenchBaselines, candBenchAck]);
+
+  const handleValidateArtifact = useCallback(async () => {
+    setImportValidation(null);
+    setImportValidateError(null);
+    setImportError(null);
+    setImportSuccess(null);
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(importJson);
+    } catch {
+      setImportValidateError("Invalid JSON. Please check the artifact text.");
+      return;
+    }
+    try {
+      const res = await validateFinRLXResearchArtifact(parsed);
+      if (res.data) setImportValidation(res.data);
+    } catch (e: unknown) {
+      setImportValidateError(e instanceof Error ? e.message : "Validation request failed");
+    }
+  }, [importJson]);
+
+  const handleImportArtifact = useCallback(async () => {
+    if (!importValidation?.valid || !importAck) return;
+    setImportLoading(true);
+    setImportError(null);
+    setImportSuccess(null);
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(importJson);
+    } catch {
+      setImportError("Invalid JSON.");
+      setImportLoading(false);
+      return;
+    }
+    try {
+      const res = await importFinRLXResearchArtifact({
+        artifact: parsed,
+        import_acknowledgement: true,
+        source: importSource || "admin_ui",
+        notes: importNotes || undefined,
+      });
+      if (res.data?.policy_candidate_id) {
+        setImportSuccess(`Imported as candidate ${res.data.policy_candidate_id.slice(0, 8)}`);
+        setImportJson("");
+        setImportValidation(null);
+        setImportAck(false);
+        // Refresh candidates and select the new one
+        const candRes = await fetchFinRLXCandidates().catch(() => null);
+        if (candRes?.data) {
+          const imported = candRes.data.filter(c => c.imported_from_artifact);
+          setImportedCandidates(imported);
+          const newCand = imported.find(c => c.id === res.data.policy_candidate_id);
+          if (newCand) selectCandidate(newCand);
+        }
+      }
+    } catch (e: unknown) {
+      setImportError(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importJson, importValidation, importAck, importSource, importNotes, selectCandidate]);
 
   useEffect(() => {
     Promise.all([
@@ -473,6 +558,72 @@ export default function AdminPage() {
         </section>
       )}
 
+      {/* ── Import Research Artifact ── */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Icon name="sparkle" size={15} className="text-accent-2" />
+          <h3 className="text-[13px] font-semibold text-ink">Import Research Artifact</h3>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Shadow / Offline</span>
+        </div>
+        <p className="text-[10px] text-ink-4 mb-2">This imports a local research artifact as a shadow-only candidate. It cannot affect recommendations, overview, publication, or broker systems.</p>
+        <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); }}
+          placeholder="Paste research artifact JSON here..."
+          className="w-full border border-line rounded-md px-3 py-2 text-[11px] font-mono bg-canvas focus:border-primary focus:outline-none min-h-[80px] max-h-[200px] resize-y mb-2" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
+          <div>
+            <label className="block text-ink-4 text-[10px] mb-0.5">Source</label>
+            <input type="text" value={importSource} onChange={e => setImportSource(e.target.value)}
+              className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+          </div>
+          <div className="sm:col-span-3">
+            <label className="block text-ink-4 text-[10px] mb-0.5">Notes (optional)</label>
+            <input type="text" value={importNotes} onChange={e => setImportNotes(e.target.value)}
+              className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <button onClick={handleValidateArtifact} disabled={!importJson.trim()}
+            className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-surface-3 text-ink hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
+            Validate artifact
+          </button>
+          {importValidateError && <span className="text-[10px] text-breach">{importValidateError}</span>}
+        </div>
+
+        {/* Validation result */}
+        {importValidation && (
+          <div className={`rounded-lg border p-2 text-[10px] mb-2 ${importValidation.valid ? "border-pos bg-pos-soft text-pos-soft-ink" : "border-breach bg-breach-soft text-breach-soft-ink"}`}>
+            <span className="font-medium">{importValidation.valid ? "Artifact is valid" : "Artifact is invalid"}</span>
+            {importValidation.artifact_hash && <span className="ml-2 font-mono text-[9px]">hash: {importValidation.artifact_hash.slice(0, 16)}</span>}
+            {importValidation.errors.length > 0 && (
+              <ul className="mt-1 list-disc list-inside">{importValidation.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+            )}
+            {importValidation.warnings.length > 0 && (
+              <ul className="mt-1 list-disc list-inside text-caution-soft-ink">{importValidation.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+            )}
+            {importValidation.normalized_artifact_summary && (
+              <p className="mt-1 font-mono text-[9px]">{JSON.stringify(importValidation.normalized_artifact_summary)}</p>
+            )}
+          </div>
+        )}
+
+        {/* Import action */}
+        {importValidation?.valid && (
+          <div className="border-t border-line pt-2 mt-2">
+            <label className="flex items-center gap-2 text-[10px] text-ink-3 mb-2 cursor-pointer">
+              <input type="checkbox" checked={importAck} onChange={e => setImportAck(e.target.checked)} className="rounded" />
+              I confirm this is a research-only artifact. It will be imported as a shadow candidate with no production influence.
+            </label>
+            <button onClick={handleImportArtifact} disabled={importLoading || !importAck}
+              className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-primary text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+              {importLoading ? "Importing..." : "Import research artifact"}
+            </button>
+            {importError && <span className="ml-2 text-[10px] text-breach">{importError}</span>}
+            {importSuccess && <span className="ml-2 text-[10px] text-pos font-medium">{importSuccess}</span>}
+          </div>
+        )}
+      </section>
+
       {/* ── Imported Research Candidates ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
         <div className="flex items-center gap-2 mb-3">
@@ -645,6 +796,12 @@ export default function AdminPage() {
                     </table>
                   </div>
                 )}
+                {candBenchResult.benchmark_report_id && (
+                  <button onClick={() => openBenchmarkById(candBenchResult.benchmark_report_id)}
+                    className="mt-2 px-3 py-1 rounded-md text-[10px] font-medium bg-surface-3 text-ink hover:bg-surface-2 transition-opacity">
+                    View in benchmark drilldown
+                  </button>
+                )}
                 {candBenchResult.warnings.length > 0 && (
                   <div className="mt-2 rounded-lg border border-caution bg-caution-soft p-2 text-[9px] text-caution-soft-ink">
                     {candBenchResult.warnings.map((w, i) => <p key={i}>{w}</p>)}
@@ -672,6 +829,12 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2 text-ink-4">
                         <span>{h.executed_agents?.length || 0} agents</span>
                         <span>{h.occurred_at?.slice(0, 19) || ""}</span>
+                        {h.benchmark_report_id && (
+                          <button onClick={() => openBenchmarkById(h.benchmark_report_id)}
+                            className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-surface-3 text-ink hover:bg-surface-2">
+                            details
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -680,6 +843,25 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* ── Dataset Export for Local Research ── */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon name="sparkle" size={15} className="text-accent-2" />
+          <h3 className="text-[13px] font-semibold text-ink">Dataset Export for Local Research</h3>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Read-only</span>
+        </div>
+        <p className="text-[10px] text-ink-4 mb-2">
+          Local PPO/A2C research experiments (via <span className="font-mono">research/finrlx_cpu/</span>) use exported offline datasets.
+          The backend provides a dataset validation endpoint to verify the RL training data contract.
+        </p>
+        <div className="text-[10px] text-ink-3 space-y-1">
+          <p><span className="font-medium">Validate dataset:</span> <span className="font-mono">POST /api/v1/rl/finrlx/validate-dataset</span></p>
+          <p><span className="font-medium">Export training data:</span> <span className="font-mono">POST /api/v1/rl/training/export-dataset</span></p>
+          <p><span className="font-medium">Local research folder:</span> <span className="font-mono">research/finrlx_cpu/</span></p>
+          <p className="text-ink-4">Full dataset export UI and one-click workflow planned for Phase 8I.</p>
+        </div>
       </section>
 
       {/* ── Run Offline Benchmark ── */}
@@ -891,7 +1073,7 @@ export default function AdminPage() {
 
       {/* Selected Benchmark Drill-down */}
       {selectedBenchmark && (
-        <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <section id="benchmark-drilldown" className="rounded-lg border border-line bg-surface p-pad shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Icon name="compare" size={15} className="text-accent" />
             <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark — Forensic Comparison</h3>
