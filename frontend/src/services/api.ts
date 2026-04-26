@@ -1024,12 +1024,118 @@ export async function fetchFinRLXDependencies(): Promise<ApiResponse<FinRLXDepen
   return apiFetch<FinRLXDependencyStatus>("/api/v1/rl/finrlx/dependencies");
 }
 
-export async function fetchFinRLXCandidates(): Promise<ApiResponse<Record<string, unknown>[]>> {
-  return apiFetch<Record<string, unknown>[]>("/api/v1/rl/finrlx/candidates");
+export interface FinRLXCandidate {
+  id: string;
+  training_run_id: string | null;
+  agent_key: string;
+  policy_type: string;
+  training_mode: string;
+  real_neural_training: boolean;
+  imported_from_artifact: boolean;
+  artifact_hash: string | null;
+  artifact_summary: Record<string, unknown> | null;
+  source: string | null;
+  notes: string | null;
+  not_eligible_for_promotion: boolean;
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  safety_flags: Record<string, boolean>;
+  metrics: Record<string, unknown> | null;
+  created_at: string | null;
+}
+
+export interface FinRLXBenchmarkEligibility {
+  eligible: boolean;
+  reasons: string[];
+  candidate_summary: Record<string, unknown> | null;
+  safety_flags: Record<string, boolean>;
+  isolation_checks: Record<string, boolean> | null;
+}
+
+export interface FinRLXCandidateBenchmarkContext {
+  candidate_id: string;
+  policy_type: string;
+  training_mode: string;
+  imported_from_artifact: boolean;
+  artifact_hash: string;
+  inference_mode: string;
+  real_neural_inference: boolean;
+  artifact_metadata_used_for_inference: boolean;
+  surrogate_description: string;
+  not_eligible_for_promotion: boolean;
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  surrogate_agent_key: string;
+}
+
+export interface FinRLXCandidateBenchmarkResponse {
+  status: string;
+  benchmark_report_id: string;
+  is_complete_comparison: boolean;
+  requested_agents: string[];
+  executed_agents: string[];
+  skipped_agents: string[];
+  metrics_by_agent: Record<string, Record<string, number>>;
+  reward_breakdown_by_agent: Record<string, Record<string, number>>;
+  forensic_summary_by_agent: Record<string, unknown[]> | null;
+  safety_flags: Record<string, boolean>;
+  result_fingerprint: string | null;
+  invariant_check_results: Record<string, boolean> | null;
+  candidate_benchmark_context: FinRLXCandidateBenchmarkContext;
+  isolation_checks: Record<string, boolean>;
+  isolated: boolean;
+  all_blocked: boolean;
+  production_fingerprints: Record<string, unknown>;
+  warnings: string[];
+  created_at: string;
+}
+
+export interface FinRLXCandidateBenchmarkHistoryItem {
+  benchmark_report_id: string;
+  candidate_id: string;
+  artifact_hash: string;
+  inference_mode: string;
+  real_neural_inference: boolean;
+  executed_agents: string[];
+  result_fingerprint: string | null;
+  safety_flags: Record<string, boolean> | null;
+  occurred_at: string | null;
+}
+
+export async function fetchFinRLXCandidates(): Promise<ApiResponse<FinRLXCandidate[]>> {
+  return apiFetch<FinRLXCandidate[]>("/api/v1/rl/finrlx/candidates");
+}
+
+export async function fetchFinRLXCandidate(id: string): Promise<ApiResponse<FinRLXCandidate>> {
+  return apiFetch<FinRLXCandidate>(`/api/v1/rl/finrlx/candidates/${id}`);
 }
 
 export async function fetchFinRLXCandidateIsolation(id: string): Promise<ApiResponse<FinRLXCandidateIsolation>> {
   return apiFetch<FinRLXCandidateIsolation>(`/api/v1/rl/finrlx/candidates/${id}/isolation`);
+}
+
+export async function fetchFinRLXBenchmarkEligibility(candidateId: string): Promise<ApiResponse<FinRLXBenchmarkEligibility>> {
+  return apiFetch<FinRLXBenchmarkEligibility>(`/api/v1/rl/finrlx/candidates/${candidateId}/benchmark-eligibility`);
+}
+
+export async function runFinRLXCandidateBenchmark(candidateId: string, payload: {
+  name: string;
+  start_date: string;
+  end_date: string;
+  include_baselines: boolean;
+  research_acknowledgement: boolean;
+}): Promise<ApiResponse<FinRLXCandidateBenchmarkResponse>> {
+  return apiFetch<FinRLXCandidateBenchmarkResponse>(`/api/v1/rl/finrlx/candidates/${candidateId}/benchmark`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchFinRLXCandidateBenchmarks(candidateId: string): Promise<ApiResponse<FinRLXCandidateBenchmarkHistoryItem[]>> {
+  return apiFetch<FinRLXCandidateBenchmarkHistoryItem[]>(`/api/v1/rl/finrlx/candidates/${candidateId}/benchmarks`);
 }
 
 export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<ApiResponse<RLBenchmarkReport>> {

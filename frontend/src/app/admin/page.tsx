@@ -7,8 +7,11 @@ import {
   fetchMLOpsSummary, fetchRLBenchmarks, runRLBenchmark,
   fetchRLBenchmarkAudit, fetchRLBenchmarkAuditForReport,
   fetchFinRLXStatus, fetchFinRLXDependencies,
+  fetchFinRLXCandidates, fetchFinRLXBenchmarkEligibility,
+  runFinRLXCandidateBenchmark, fetchFinRLXCandidateBenchmarks,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
-  FinRLXDependencyStatus,
+  FinRLXDependencyStatus, FinRLXCandidate, FinRLXBenchmarkEligibility,
+  FinRLXCandidateBenchmarkResponse, FinRLXCandidateBenchmarkHistoryItem,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -91,6 +94,20 @@ export default function AdminPage() {
   const [finrlxStatus, setFinrlxStatus] = useState<FinRLXAdapterStatus | null>(null);
   const [finrlxDeps, setFinrlxDeps] = useState<FinRLXDependencyStatus | null>(null);
 
+  // Imported candidate benchmark workflow
+  const [importedCandidates, setImportedCandidates] = useState<FinRLXCandidate[]>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState<FinRLXCandidate | null>(null);
+  const [candidateEligibility, setCandidateEligibility] = useState<FinRLXBenchmarkEligibility | null>(null);
+  const [candidateBenchHistory, setCandidateBenchHistory] = useState<FinRLXCandidateBenchmarkHistoryItem[]>([]);
+  const [candBenchName, setCandBenchName] = useState("Imported Candidate Offline Benchmark");
+  const [candBenchStart, setCandBenchStart] = useState("2026-03-15");
+  const [candBenchEnd, setCandBenchEnd] = useState("2026-04-15");
+  const [candBenchBaselines, setCandBenchBaselines] = useState(true);
+  const [candBenchAck, setCandBenchAck] = useState(false);
+  const [candBenchLoading, setCandBenchLoading] = useState(false);
+  const [candBenchError, setCandBenchError] = useState<string | null>(null);
+  const [candBenchResult, setCandBenchResult] = useState<FinRLXCandidateBenchmarkResponse | null>(null);
+
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
     setSelectedBenchAudit([]);
@@ -99,6 +116,48 @@ export default function AdminPage() {
       if (res.data) setSelectedBenchAudit(res.data);
     } catch { /* audit unavailable for old benchmarks */ }
   }, []);
+
+  const selectCandidate = useCallback(async (c: FinRLXCandidate) => {
+    setSelectedCandidate(c);
+    setCandidateEligibility(null);
+    setCandidateBenchHistory([]);
+    setCandBenchResult(null);
+    setCandBenchError(null);
+    setCandBenchAck(false);
+    try {
+      const [eligRes, histRes] = await Promise.all([
+        fetchFinRLXBenchmarkEligibility(c.id).catch(() => null),
+        fetchFinRLXCandidateBenchmarks(c.id).catch(() => null),
+      ]);
+      if (eligRes?.data) setCandidateEligibility(eligRes.data);
+      if (histRes?.data) setCandidateBenchHistory(histRes.data);
+    } catch { /* graceful */ }
+  }, []);
+
+  const runCandidateBenchmark = useCallback(async () => {
+    if (!selectedCandidate || !candBenchAck) return;
+    setCandBenchLoading(true);
+    setCandBenchError(null);
+    setCandBenchResult(null);
+    try {
+      const res = await runFinRLXCandidateBenchmark(selectedCandidate.id, {
+        name: candBenchName,
+        start_date: candBenchStart,
+        end_date: candBenchEnd,
+        include_baselines: candBenchBaselines,
+        research_acknowledgement: true,
+      });
+      if (res.data) {
+        setCandBenchResult(res.data);
+        const histRes = await fetchFinRLXCandidateBenchmarks(selectedCandidate.id).catch(() => null);
+        if (histRes?.data) setCandidateBenchHistory(histRes.data);
+      }
+    } catch (e: unknown) {
+      setCandBenchError(e instanceof Error ? e.message : "Benchmark failed");
+    } finally {
+      setCandBenchLoading(false);
+    }
+  }, [selectedCandidate, candBenchName, candBenchStart, candBenchEnd, candBenchBaselines, candBenchAck]);
 
   useEffect(() => {
     Promise.all([
@@ -120,6 +179,9 @@ export default function AdminPage() {
         if (auditRes && auditRes.data) setBenchAuditEvents(auditRes.data);
         if (finrlxRes && finrlxRes.data) setFinrlxStatus(finrlxRes.data);
         fetchFinRLXDependencies().then(r => { if (r.data) setFinrlxDeps(r.data); }).catch(() => {});
+        fetchFinRLXCandidates().then(r => {
+          if (r.data) setImportedCandidates(r.data.filter(c => c.imported_from_artifact));
+        }).catch(() => {});
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -410,6 +472,198 @@ export default function AdminPage() {
           )}
         </section>
       )}
+
+      {/* ── Imported Research Candidates ── */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Icon name="sparkle" size={15} className="text-accent-2" />
+          <h3 className="text-[13px] font-semibold text-ink">Imported Research Candidates</h3>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Shadow / Offline</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Not eligible for promotion</span>
+        </div>
+
+        {importedCandidates.length === 0 ? (
+          <p className="text-[11px] text-ink-4 py-2">No imported research candidates yet. Import a local research artifact before benchmarking.</p>
+        ) : (
+          <div className="space-y-1.5 mb-3">
+            {importedCandidates.slice(0, 10).map((c) => (
+              <button key={c.id} onClick={() => selectCandidate(c)}
+                className={`w-full text-left rounded-md border px-3 py-2 text-[11px] transition-colors ${
+                  selectedCandidate?.id === c.id ? "border-primary bg-primary/5" : "border-line hover:bg-surface-2"
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-ink-2">{c.id.slice(0, 8)}</span>
+                    <span className="text-ink-3">{c.policy_type}</span>
+                    {c.artifact_hash && <span className="font-mono text-ink-4">#{c.artifact_hash.slice(0, 8)}</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {c.real_neural_training && <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-soft text-accent">neural</span>}
+                    {c.artifact_summary?.synthetic_data === true && <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-caution-soft text-caution-soft-ink">synthetic</span>}
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-pos-soft text-pos-soft-ink">isolated</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Selected Candidate Review ── */}
+        {selectedCandidate && (
+          <div className="border-t border-line pt-3 mt-2 space-y-3">
+            <h4 className="text-[12px] font-semibold text-ink">Candidate Review</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+              <div><span className="text-ink-4">ID:</span> <span className="font-mono text-ink-2">{selectedCandidate.id}</span></div>
+              <div><span className="text-ink-4">Policy type:</span> <span className="text-ink">{selectedCandidate.policy_type}</span></div>
+              <div><span className="text-ink-4">Training mode:</span> <span className="text-ink">{selectedCandidate.training_mode}</span></div>
+              <div><span className="text-ink-4">Artifact hash:</span> <span className="font-mono text-ink-2">{selectedCandidate.artifact_hash || "—"}</span></div>
+              <div><span className="text-ink-4">Source:</span> <span className="text-ink">{selectedCandidate.source || "—"}</span></div>
+              <div><span className="text-ink-4">Created:</span> <span className="text-ink">{selectedCandidate.created_at?.slice(0, 19) || "—"}</span></div>
+            </div>
+            {selectedCandidate.artifact_summary && (
+              <div className="text-[10px]">
+                <span className="text-ink-4">Artifact summary: </span>
+                <span className="font-mono text-ink-3">{JSON.stringify(selectedCandidate.artifact_summary)}</span>
+              </div>
+            )}
+            {selectedCandidate.notes && (
+              <div className="text-[10px]"><span className="text-ink-4">Notes: </span><span className="text-ink-3">{selectedCandidate.notes}</span></div>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {["Promotion blocked", "Publication blocked", "Recommendation blocked", "Overview blocked", "Broker blocked"].map((label) => (
+                <span key={label} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-pos-soft text-pos-soft-ink">{label}</span>
+              ))}
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">Not eligible for promotion</span>
+            </div>
+            <div className="rounded-lg border border-caution bg-caution-soft p-2 text-[10px] text-caution-soft-ink">
+              Production benchmark uses score-weighted fallback surrogate. No neural model is loaded. No production influence.
+            </div>
+
+            {/* Eligibility */}
+            {candidateEligibility && (
+              <div className={`rounded-lg border p-2 text-[10px] ${
+                candidateEligibility.eligible
+                  ? "border-pos bg-pos-soft text-pos-soft-ink"
+                  : "border-breach bg-breach-soft text-breach-soft-ink"
+              }`}>
+                <span className="font-medium">{candidateEligibility.eligible ? "Benchmark eligible" : "Not benchmark eligible"}</span>
+                {!candidateEligibility.eligible && (
+                  <ul className="mt-1 list-disc list-inside">{candidateEligibility.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+                )}
+              </div>
+            )}
+
+            {/* ── Run Candidate Benchmark ── */}
+            {candidateEligibility?.eligible && (
+              <div className="border-t border-line pt-3">
+                <h4 className="text-[12px] font-semibold text-ink mb-2">Run Offline Candidate Benchmark</h4>
+                <p className="text-[10px] text-ink-4 mb-2">This is a research-only offline benchmark. It does not run neural inference in production and cannot affect recommendations, overview, publication, or broker systems.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
+                  <div>
+                    <label className="block text-ink-4 text-[10px] mb-0.5">Name</label>
+                    <input type="text" value={candBenchName} onChange={e => setCandBenchName(e.target.value)}
+                      className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-ink-4 text-[10px] mb-0.5">Start date</label>
+                    <input type="date" value={candBenchStart} onChange={e => setCandBenchStart(e.target.value)}
+                      className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-ink-4 text-[10px] mb-0.5">End date</label>
+                    <input type="date" value={candBenchEnd} onChange={e => setCandBenchEnd(e.target.value)}
+                      className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-1.5 text-[11px] text-ink-2 cursor-pointer">
+                      <input type="checkbox" checked={candBenchBaselines} onChange={e => setCandBenchBaselines(e.target.checked)} className="rounded" />
+                      Include baselines
+                    </label>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-[10px] text-ink-3 mb-2 cursor-pointer">
+                  <input type="checkbox" checked={candBenchAck} onChange={e => setCandBenchAck(e.target.checked)} className="rounded" />
+                  I understand this is an offline/shadow research benchmark only. No neural inference is run. Results are not used by production decisions.
+                </label>
+                <button onClick={runCandidateBenchmark}
+                  disabled={candBenchLoading || !candBenchAck || !candBenchName || !candBenchStart || !candBenchEnd || candBenchStart > candBenchEnd}
+                  className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-primary text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+                  {candBenchLoading ? "Running offline benchmark..." : "Run offline benchmark"}
+                </button>
+                {candBenchError && <p className="mt-2 text-[10px] text-breach">{candBenchError}</p>}
+              </div>
+            )}
+
+            {/* ── Benchmark Result ── */}
+            {candBenchResult && (
+              <div className="border-t border-line pt-3">
+                <h4 className="text-[12px] font-semibold text-ink mb-2">Benchmark Result</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] mb-2">
+                  <div><span className="text-ink-4">Status:</span> <span className={candBenchResult.status === "completed" ? "text-pos font-medium" : "text-caution font-medium"}>{candBenchResult.status}</span></div>
+                  <div><span className="text-ink-4">Inference:</span> <span className="text-ink">{candBenchResult.candidate_benchmark_context.inference_mode}</span></div>
+                  <div><span className="text-ink-4">Neural inference:</span> <span className="text-pos font-medium">none (surrogate)</span></div>
+                  <div><span className="text-ink-4">Fingerprint:</span> <span className="font-mono text-ink-3">{candBenchResult.result_fingerprint?.slice(0, 12) || "—"}</span></div>
+                </div>
+                <div className="text-[10px] text-ink-4 mb-1">Executed agents: <span className="text-ink-2">{candBenchResult.executed_agents.join(", ")}</span></div>
+                {candBenchResult.metrics_by_agent && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[10px] border-collapse">
+                      <thead><tr className="border-b border-line text-ink-4">
+                        <th className="text-left py-1 pr-2">Agent</th>
+                        <th className="text-right py-1 px-1">Return</th>
+                        <th className="text-right py-1 px-1">Reward</th>
+                        <th className="text-right py-1 px-1">Drawdown</th>
+                        <th className="text-right py-1 px-1">Steps</th>
+                      </tr></thead>
+                      <tbody>{Object.entries(candBenchResult.metrics_by_agent).map(([agent, m]) => (
+                        <tr key={agent} className="border-b border-line/50">
+                          <td className="py-1 pr-2 font-mono text-ink-2">{agent.length > 24 ? agent.slice(0, 24) + "…" : agent}</td>
+                          <td className="text-right py-1 px-1">{(m.total_return ?? 0).toFixed(4)}</td>
+                          <td className="text-right py-1 px-1">{(m.total_reward ?? 0).toFixed(4)}</td>
+                          <td className="text-right py-1 px-1">{(m.max_drawdown ?? 0).toFixed(4)}</td>
+                          <td className="text-right py-1 px-1">{m.step_count ?? 0}</td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                )}
+                {candBenchResult.warnings.length > 0 && (
+                  <div className="mt-2 rounded-lg border border-caution bg-caution-soft p-2 text-[9px] text-caution-soft-ink">
+                    {candBenchResult.warnings.map((w, i) => <p key={i}>{w}</p>)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Candidate Benchmark History ── */}
+            <div className="border-t border-line pt-3">
+              <h4 className="text-[12px] font-semibold text-ink mb-2">Candidate Benchmark History</h4>
+              {candidateBenchHistory.length === 0 ? (
+                <p className="text-[10px] text-ink-4">No benchmark history for this imported candidate.</p>
+              ) : (
+                <div className="space-y-1">
+                  {candidateBenchHistory.slice(0, 8).map((h, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-md border border-line px-2 py-1.5 text-[10px]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-ink-3">{h.benchmark_report_id?.slice(0, 8) || "—"}</span>
+                        <span className="text-ink-4">{h.inference_mode}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${h.real_neural_inference ? "bg-breach-soft text-breach-soft-ink" : "bg-pos-soft text-pos-soft-ink"}`}>
+                          {h.real_neural_inference ? "neural" : "surrogate"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-ink-4">
+                        <span>{h.executed_agents?.length || 0} agents</span>
+                        <span>{h.occurred_at?.slice(0, 19) || ""}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* ── Run Offline Benchmark ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
