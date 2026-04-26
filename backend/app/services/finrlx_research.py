@@ -519,78 +519,38 @@ class FinRLXResearchService:
         canonical_key, _ = env_svc.resolve_key("quantpipeline_offline_v1")
 
         if not dep_status["neural_training_available"]:
-            # Dependencies unavailable — create honest stub candidate
-            try:
-                run = RLTrainingRun(
-                    id=gen_uuid(), agent_key=f"finrlx_cpu_{algorithm.lower()}_unavailable",
-                    environment_key=canonical_key, status="dependency_unavailable",
-                    train_start_date=start_date, train_end_date=end_date,
-                    config=_json_safe({"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
-                            "training_mode": "dependency_unavailable", "real_neural_training": False}),
-                )
-                self.db.add(run)
-                run.completed_at = now
+            # Option A: no candidate when dependencies unavailable.
+            # No DB writes keeps the transaction clean; fingerprints are read-only.
+            post_fp = await self._capture_production_fingerprints()
+            cc = self._build_component_checks(pre_fp, post_fp)
+            avail = [c for c in cc.values() if c["snapshot_available"]]
+            overall_unch = all(c["unchanged"] for c in avail) if avail else None
 
-                candidate_id = gen_uuid()
-                self.db.add(RLPolicySnapshot(
-                    id=candidate_id, training_run_id=run.id,
-                    agent_key=run.agent_key, environment_key=canonical_key,
-                    policy_type=f"finrlx_cpu_{algorithm.lower()}_unavailable",
-                    policy_payload=_json_safe({"training_mode": "dependency_unavailable", "real_neural_training": False,
-                                    "safety_flags": FINRLX_SAFETY_FLAGS, "missing": dep_status["missing_dependencies"]}),
-                    metrics=_json_safe({"training_mode": "dependency_unavailable"}),
-                ))
-                run.metrics = _json_safe({"policy_candidate_id": candidate_id, "training_mode": "dependency_unavailable"})
+            await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
+                "algorithm": algorithm, "dependency_status": dep_status,
+                "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
+                "production_fingerprints_unchanged": overall_unch,
+            })
+            await self.db.commit()
 
-                post_fp = await self._capture_production_fingerprints()
-                cc = self._build_component_checks(pre_fp, post_fp)
-                avail = [c for c in cc.values() if c["snapshot_available"]]
-                overall_unch = all(c["unchanged"] for c in avail) if avail else None
-
-                iso = self.get_candidate_isolation(candidate_id)
-
-                await self._create_audit_event("finrlx_cpu_research_train_dependency_unavailable", {
-                    "candidate_id": candidate_id, "training_run_id": run.id,
-                    "algorithm": algorithm, "dependency_status": dep_status,
-                    "safety_flags": FINRLX_SAFETY_FLAGS, "component_checks": cc,
-                    "production_fingerprints_unchanged": overall_unch,
-                    "isolation_checks": iso["checks"],
-                })
-                await self.db.commit()
-
-                return _json_safe({
-                    "policy_candidate_id": candidate_id, "training_run_id": run.id,
-                    "name": name, "status": "dependency_unavailable",
-                    "training_mode": "dependency_unavailable", "real_neural_training": False,
-                    "algorithm": algorithm, "timesteps": timesteps,
-                    "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
-                    "not_eligible_for_promotion": True,
-                    "isolation_checks": iso["checks"], "isolated": True, "all_blocked": True,
-                    "production_fingerprints": {"before": pre_fp, "after": post_fp,
-                                                "unchanged": overall_unch, "component_checks": cc},
-                    "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
-                                 "No real CPU PPO/A2C training was performed.",
-                                 "Candidate created as dependency_unavailable stub."],
-                    "created_at": now.isoformat(),
-                })
-            except Exception as e:
-                logger.error("dependency_unavailable path failed: %s", e, exc_info=True)
-                try:
-                    await self.db.rollback()
-                except Exception:
-                    pass
-                return _json_safe({
-                    "policy_candidate_id": None, "training_run_id": None,
-                    "name": name, "status": "dependency_unavailable",
-                    "training_mode": "dependency_unavailable", "real_neural_training": False,
-                    "algorithm": algorithm, "timesteps": timesteps,
-                    "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
-                    "not_eligible_for_promotion": True,
-                    "warnings": [f"Dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}",
-                                 "No real CPU PPO/A2C training was performed.",
-                                 f"Candidate creation failed: {str(e)[:200]}"],
-                    "created_at": now.isoformat(),
-                })
+            return _json_safe({
+                "policy_candidate_id": None, "training_run_id": None,
+                "name": name, "status": "dependency_unavailable",
+                "training_mode": "dependency_unavailable", "real_neural_training": False,
+                "algorithm": algorithm, "timesteps": timesteps,
+                "dependency_status": dep_status, "safety_flags": FINRLX_SAFETY_FLAGS,
+                "not_eligible_for_promotion": True,
+                "candidate_isolation_applicable": False,
+                "isolation_reason": "No candidate created because neural dependencies are unavailable.",
+                "production_fingerprints": {"before": pre_fp, "after": post_fp,
+                                            "unchanged": overall_unch, "component_checks": cc},
+                "warnings": [
+                    f"Neural dependencies unavailable: {', '.join(dep_status['missing_dependencies'])}.",
+                    "No candidate was created.",
+                    "No real CPU PPO/A2C training was performed.",
+                ],
+                "created_at": now.isoformat(),
+            })
 
         # Dependencies available — run real CPU-only training
         # This branch only executes if numpy, gymnasium, stable_baselines3, torch are all importable

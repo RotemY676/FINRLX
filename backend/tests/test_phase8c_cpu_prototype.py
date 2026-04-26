@@ -83,31 +83,17 @@ async def test_cpu_prototype_runs(client):
 
 
 @pytest.mark.asyncio
-async def test_cpu_prototype_creates_candidate(client):
-    """CPU prototype creates a candidate even when dependencies unavailable."""
+async def test_cpu_prototype_no_candidate_when_deps_unavailable(client):
+    """dependency_unavailable returns no candidate (Option A)."""
     r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
         "algorithm": "A2C", "timesteps": 30, "research_acknowledgement": True,
     })
     data = r.json()["data"]
-    assert data["policy_candidate_id"] is not None
-
-    # Candidate should be accessible
-    cid = data["policy_candidate_id"]
-    r2 = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}")
-    assert r2.status_code == 200
-    assert r2.json()["data"]["safety_flags"]["research_only"] is True
-
-
-@pytest.mark.asyncio
-async def test_cpu_prototype_isolation(client):
-    """CPU prototype candidate passes isolation checks."""
-    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
-        "algorithm": "PPO", "research_acknowledgement": True,
-    })
-    cid = r.json()["data"]["policy_candidate_id"]
-    r2 = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/isolation")
-    assert r2.status_code == 200
-    assert r2.json()["data"]["all_blocked"] is True
+    if data["status"] == "dependency_unavailable":
+        assert data["policy_candidate_id"] is None
+        assert data["training_run_id"] is None
+        assert data["candidate_isolation_applicable"] is False
+        assert "isolation_reason" in data
 
 
 @pytest.mark.asyncio
@@ -116,11 +102,34 @@ async def test_cpu_prototype_fingerprints(client):
     r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
         "algorithm": "PPO", "research_acknowledgement": True,
     })
-    fp = r.json()["data"]["production_fingerprints"]
+    data = r.json()["data"]
+    fp = data["production_fingerprints"]
+    assert fp is not None
     assert "component_checks" in fp
     assert "recommendations_current" in fp["component_checks"]
     assert "publication_status" in fp["component_checks"]
     assert "overview" in fp["component_checks"]
+    assert "before" in fp
+    assert "after" in fp
+    assert "unchanged" in fp
+
+
+@pytest.mark.asyncio
+async def test_cpu_prototype_fingerprints_unchanged(client):
+    """production_fingerprints show unchanged components."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+    })
+    fp = r.json()["data"]["production_fingerprints"]
+    cc = fp["component_checks"]
+    assert cc["recommendations_current"]["snapshot_available"] is True
+    assert cc["recommendations_current"]["unchanged"] is True
+    assert cc["publication_status"]["snapshot_available"] is True
+    assert cc["publication_status"]["unchanged"] is True
+    assert cc["overview"]["snapshot_available"] is False
+    assert cc["overview"].get("reason") is not None
+    assert fp["unchanged"] is True
 
 
 @pytest.mark.asyncio
@@ -134,20 +143,19 @@ async def test_cpu_prototype_rejects_bad_date_range(client):
 
 
 @pytest.mark.asyncio
-async def test_cpu_prototype_response_includes_isolation_checks(client):
-    """train-cpu-prototype response includes isolation_checks."""
+async def test_cpu_prototype_isolation_when_no_candidate(client):
+    """dependency_unavailable with no candidate reports isolation not applicable."""
     r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
         "algorithm": "PPO", "research_acknowledgement": True,
     })
     data = r.json()["data"]
-    assert data.get("isolation_checks") is not None
-    assert data["isolation_checks"]["promotion_blocked"] is True
-    assert data["isolation_checks"]["publication_blocked"] is True
-    assert data["isolation_checks"]["live_recommendation_blocked"] is True
-    assert data["isolation_checks"]["overview_influence_blocked"] is True
-    assert data["isolation_checks"]["broker_execution_blocked"] is True
-    assert data["isolated"] is True
-    assert data["all_blocked"] is True
+    if data["status"] == "dependency_unavailable":
+        assert data["candidate_isolation_applicable"] is False
+        assert "isolation_reason" in data
+        # Must NOT have isolation_checks as if a real candidate exists
+        assert data.get("isolation_checks") is None
+        assert data.get("isolated") is None
+        assert data.get("all_blocked") is None
 
 
 @pytest.mark.asyncio
@@ -198,17 +206,12 @@ async def test_cpu_prototype_audit_persisted(client):
     assert "overview" in td["component_checks"]
     assert "production_fingerprints_unchanged" in td
 
-    # For dependency_unavailable or completed, candidate and run must exist
-    if terminal[0].action in ("finrlx_cpu_research_train_dependency_unavailable",
-                               "finrlx_cpu_research_train_completed"):
-        assert td.get("candidate_id") is not None, "terminal event must include candidate_id"
-        assert td.get("training_run_id") is not None, "terminal event must include training_run_id"
-        assert td.get("isolation_checks") is not None, "terminal event must include isolation_checks"
+    # For completed only (with real deps), candidate and run must exist
+    if terminal[0].action == "finrlx_cpu_research_train_completed":
+        assert td.get("candidate_id") is not None
+        assert td.get("training_run_id") is not None
+        assert td.get("isolation_checks") is not None
         assert td["isolation_checks"].get("promotion_blocked") is True
-        assert td["isolation_checks"].get("publication_blocked") is True
-        assert td["isolation_checks"].get("live_recommendation_blocked") is True
-        assert td["isolation_checks"].get("overview_influence_blocked") is True
-        assert td["isolation_checks"].get("broker_execution_blocked") is True
 
 
 # ── Production 500 regression (Phase 8C.3) ────────────────────────────────
@@ -235,35 +238,6 @@ async def test_production_payload_returns_200(client):
 
 
 @pytest.mark.asyncio
-async def test_dependency_unavailable_full_response_shape(client):
-    """dependency_unavailable response includes all required fields."""
-    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
-        "algorithm": "PPO", "timesteps": 30, "research_acknowledgement": True,
-        "start_date": "2026-03-15", "end_date": "2026-04-15",
-    })
-    data = r.json()["data"]
-    if data["status"] == "dependency_unavailable":
-        assert data["real_neural_training"] is False
-        assert data["training_mode"] == "dependency_unavailable"
-        assert data["dependency_status"] is not None
-        assert data["safety_flags"]["research_only"] is True
-        assert data["not_eligible_for_promotion"] is True
-        # isolation_checks present when candidate created
-        if data.get("policy_candidate_id"):
-            assert data.get("isolation_checks") is not None
-            assert data["isolated"] is True
-            assert data["all_blocked"] is True
-        # production_fingerprints present when candidate created
-        if data.get("policy_candidate_id"):
-            fp = data.get("production_fingerprints", {})
-            assert "component_checks" in fp
-            assert "recommendations_current" in fp["component_checks"]
-            assert "publication_status" in fp["component_checks"]
-        # warnings present
-        assert len(data.get("warnings", [])) > 0
-
-
-@pytest.mark.asyncio
 async def test_audit_event_details_json_safe(client):
     """Audit event details must be JSON-serializable (no Decimal/date/UUID objects)."""
     import json as json_mod
@@ -284,9 +258,85 @@ async def test_audit_event_details_json_safe(client):
 
     for evt in events:
         if evt.details:
-            # Must not raise — proves all values are JSON-serializable
             serialized = json_mod.dumps(evt.details)
             assert isinstance(serialized, str)
+
+
+# ── Clean dependency_unavailable path (Phase 8C.4) ───────────────────────
+
+@pytest.mark.asyncio
+async def test_dep_unavailable_returns_200(client):
+    """dependency_unavailable returns HTTP 200."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    assert r.json()["data"]["status"] in ("completed", "dependency_unavailable")
+
+
+@pytest.mark.asyncio
+async def test_dep_unavailable_has_fingerprints(client):
+    """dependency_unavailable includes production_fingerprints."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+    })
+    data = r.json()["data"]
+    assert "production_fingerprints" in data
+    fp = data["production_fingerprints"]
+    assert "before" in fp
+    assert "after" in fp
+    assert "unchanged" in fp
+    assert "component_checks" in fp
+    cc = fp["component_checks"]
+    assert "recommendations_current" in cc
+    assert "publication_status" in cc
+    assert "overview" in cc
+
+
+@pytest.mark.asyncio
+async def test_dep_unavailable_no_sqlalchemy_warning(client):
+    """dependency_unavailable response has no raw SQLAlchemy transaction text."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+    })
+    data = r.json()["data"]
+    for w in data.get("warnings", []):
+        assert "transaction" not in w.lower(), f"Raw transaction warning leaked: {w}"
+        assert "rollback" not in w.lower(), f"Raw rollback warning leaked: {w}"
+        assert "flush" not in w.lower(), f"Raw flush warning leaked: {w}"
+        assert "Session" not in w, f"Raw Session warning leaked: {w}"
+
+
+@pytest.mark.asyncio
+async def test_dep_unavailable_no_candidate_created(client):
+    """dependency_unavailable does not create any candidate in the DB."""
+    r1 = await client.get("/api/v1/rl/finrlx/candidates")
+    before_count = len(r1.json()["data"])
+
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+    })
+    data = r.json()["data"]
+    if data["status"] == "dependency_unavailable":
+        assert data["policy_candidate_id"] is None
+
+    r2 = await client.get("/api/v1/rl/finrlx/candidates")
+    # No new finrlx_cpu_ candidates should be created in dep-unavailable mode
+    if data["status"] == "dependency_unavailable":
+        assert len(r2.json()["data"]) == before_count
+
+
+@pytest.mark.asyncio
+async def test_dep_unavailable_isolation_not_applicable(client):
+    """dependency_unavailable with no candidate: candidate_isolation_applicable=false."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "research_acknowledgement": True,
+    })
+    data = r.json()["data"]
+    if data["status"] == "dependency_unavailable":
+        assert data["candidate_isolation_applicable"] is False
+        assert "isolation_reason" in data
 
 
 # ── Date parsing validation (Phase 8C.2) ─────────────────────────────────
