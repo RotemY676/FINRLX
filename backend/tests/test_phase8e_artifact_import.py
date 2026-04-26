@@ -313,6 +313,66 @@ async def test_imported_candidate_detail(client):
     assert data["safety_flags"]["research_only"] is True
 
 
+# ── Candidate metadata exposure (Phase 8E.1) ─────────────────────────
+
+@pytest.mark.asyncio
+async def test_imported_candidate_detail_has_artifact_metadata(client):
+    """GET /candidates/{id} returns imported_from_artifact, artifact_hash, artifact_summary."""
+    r = await client.post("/api/v1/rl/finrlx/import-research-artifact", json={
+        "artifact": _sample_artifact(),
+        "import_acknowledgement": True,
+        "source": "metadata_test",
+        "notes": "8E.1 metadata test",
+    })
+    cid = r.json()["data"]["policy_candidate_id"]
+
+    r2 = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}")
+    assert r2.status_code == 200
+    data = r2.json()["data"]
+    assert data["imported_from_artifact"] is True
+    assert data["artifact_hash"] is not None
+    assert len(data["artifact_hash"]) == 32
+    assert data["artifact_summary"] is not None
+    assert data["artifact_summary"]["algorithm"] == "PPO"
+    assert data["not_eligible_for_promotion"] is True
+    assert data["source"] == "metadata_test"
+    assert data["notes"] == "8E.1 metadata test"
+    assert data["training_mode"] == "imported_cpu_ppo_research"
+    assert data["real_neural_training"] is True
+
+
+@pytest.mark.asyncio
+async def test_non_imported_candidate_has_consistent_fields(client):
+    """Non-imported candidate returns imported_from_artifact=false, null hash/summary."""
+    r = await client.post("/api/v1/rl/finrlx/train-research", json={
+        "research_acknowledgement": True,
+    })
+    cid = r.json()["data"]["policy_candidate_id"]
+
+    r2 = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}")
+    data = r2.json()["data"]
+    assert data["imported_from_artifact"] is False
+    assert data["artifact_hash"] is None
+    assert data["artifact_summary"] is None
+    assert data["not_eligible_for_promotion"] is True
+
+
+@pytest.mark.asyncio
+async def test_candidate_list_includes_artifact_metadata(client):
+    """Candidate list includes imported_from_artifact and artifact_hash."""
+    r = await client.post("/api/v1/rl/finrlx/import-research-artifact", json={
+        "artifact": _sample_artifact(),
+        "import_acknowledgement": True,
+        "source": "list_test",
+    })
+    cid = r.json()["data"]["policy_candidate_id"]
+
+    r2 = await client.get("/api/v1/rl/finrlx/candidates")
+    imported = next(c for c in r2.json()["data"] if c["id"] == cid)
+    assert imported["imported_from_artifact"] is True
+    assert imported["artifact_hash"] is not None
+
+
 # ── Safety regressions ───────────────────────────────────────────────
 
 @pytest.mark.asyncio
