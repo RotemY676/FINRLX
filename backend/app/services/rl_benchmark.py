@@ -78,6 +78,7 @@ class RLBenchmarkService:
         end_date: date | None = None,
         agent_keys: list[str] | None = None,
         policy_snapshot_ids: list[str] | None = None,
+        ensure_score_weighted_baseline: bool = True,
     ) -> RLBenchmarkReport:
         """Run benchmark comparing multiple agents on the same window."""
         now = datetime.now(timezone.utc)
@@ -97,7 +98,7 @@ class RLBenchmarkService:
 
         # Determine agents to compare
         agents_to_run = list(agent_keys or DEFAULT_AGENTS_TO_COMPARE)
-        if "score_weighted_baseline" not in agents_to_run:
+        if ensure_score_weighted_baseline and "score_weighted_baseline" not in agents_to_run:
             agents_to_run.append("score_weighted_baseline")
 
         # Register any policy snapshot agents

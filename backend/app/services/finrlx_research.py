@@ -942,13 +942,63 @@ class FinRLXResearchService:
                     "isolation_checks": None}
 
         reasons = []
+
+        # Artifact import metadata
         if not candidate.get("imported_from_artifact"):
             reasons.append("Candidate was not imported from a research artifact.")
         if not candidate.get("artifact_hash"):
             reasons.append("Candidate has no artifact_hash.")
-        sf = candidate.get("safety_flags", {})
-        if not sf.get("research_only"):
-            reasons.append("Candidate is not research_only.")
+        if not candidate.get("artifact_summary"):
+            reasons.append("Candidate has no artifact_summary.")
+
+        # Safety flags — check both candidate dict and underlying payload
+        if candidate.get("not_eligible_for_promotion") is not True:
+            reasons.append("not_eligible_for_promotion must be true.")
+        if candidate.get("research_only") is not True:
+            reasons.append("research_only must be true.")
+        if candidate.get("offline_only") is not True:
+            reasons.append("offline_only must be true.")
+        if candidate.get("shadow_only") is not True:
+            reasons.append("shadow_only must be true.")
+        if candidate.get("live_pipeline_influence") is not False:
+            reasons.append("live_pipeline_influence must be false.")
+        if candidate.get("no_broker_execution") is not True:
+            reasons.append("no_broker_execution must be true.")
+        if candidate.get("no_publication_influence") is not True:
+            reasons.append("no_publication_influence must be true.")
+        if candidate.get("no_recommendation_pollution") is not True:
+            reasons.append("no_recommendation_pollution must be true.")
+
+        # Verify stored payload safety flags match
+        s = (await self.db.execute(
+            select(RLPolicySnapshot).where(RLPolicySnapshot.id == candidate_id)
+            .where(RLPolicySnapshot.policy_type.like("finrlx_%"))
+        )).scalar_one_or_none()
+        if s:
+            pp = s.policy_payload or {}
+            pp_sf = pp.get("safety_flags", {})
+            if pp_sf.get("research_only") is not True:
+                reasons.append("Stored payload safety_flags.research_only is not true.")
+            if pp_sf.get("no_broker_execution") is not True:
+                reasons.append("Stored payload safety_flags.no_broker_execution is not true.")
+            if pp.get("imported_from_artifact") is not True:
+                reasons.append("Stored payload imported_from_artifact is not true.")
+
+        # Isolation checks
+        iso = self.get_candidate_isolation(candidate_id)
+        checks = iso["checks"]
+        if not checks.get("promotion_blocked"):
+            reasons.append("Isolation: promotion not blocked.")
+        if not checks.get("publication_blocked"):
+            reasons.append("Isolation: publication not blocked.")
+        if not checks.get("live_recommendation_blocked"):
+            reasons.append("Isolation: live recommendation not blocked.")
+        if not checks.get("overview_influence_blocked"):
+            reasons.append("Isolation: overview influence not blocked.")
+        if not checks.get("broker_execution_blocked"):
+            reasons.append("Isolation: broker execution not blocked.")
+        if not iso.get("all_blocked"):
+            reasons.append("Isolation: all_blocked is not true.")
 
         eligible = len(reasons) == 0
         return {
@@ -963,7 +1013,7 @@ class FinRLXResearchService:
                 "real_neural_training": candidate.get("real_neural_training"),
             },
             "safety_flags": FINRLX_SAFETY_FLAGS,
-            "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"] if eligible else None,
+            "isolation_checks": checks if eligible else None,
         }
 
     async def run_candidate_benchmark(
@@ -1007,10 +1057,13 @@ class FinRLXResearchService:
         surrogate_key = f"imported_candidate:{candidate_id[:8]}"
         AGENTS[surrogate_key] = _score_weighted_agent_fn({})  # deterministic score-proportional
 
+        inference_mode = "score_weighted_fallback_surrogate"
+
         await self._create_audit_event("finrlx_candidate_benchmark_requested", {
             "candidate_id": candidate_id, "artifact_hash": artifact_hash,
-            "surrogate_key": surrogate_key, "inference_mode": "surrogate_metadata_only",
+            "surrogate_key": surrogate_key, "inference_mode": inference_mode,
             "real_neural_inference": False,
+            "artifact_metadata_used_for_inference": False,
             "include_baselines": include_baselines,
             "safety_flags": FINRLX_SAFETY_FLAGS,
         })
@@ -1026,6 +1079,7 @@ class FinRLXResearchService:
                 start_date=start_date,
                 end_date=end_date,
                 agent_keys=agent_keys,
+                ensure_score_weighted_baseline=include_baselines,
             )
 
             # Convert ORM object to dict
@@ -1037,6 +1091,7 @@ class FinRLXResearchService:
                 "metrics_by_agent": report_obj.metrics_by_agent,
                 "reward_breakdown_by_agent": report_obj.reward_breakdown_by_agent,
                 "forensic_summary": report_obj.forensic_summary,
+                "forensic_summary_by_agent": dl.get("forensic_summary_by_agent"),
                 "result_fingerprint": dl.get("result_fingerprint"),
                 "invariant_check_results": dl.get("invariant_check_results"),
             }
@@ -1052,8 +1107,10 @@ class FinRLXResearchService:
                 "training_mode": candidate.get("training_mode"),
                 "imported_from_artifact": True,
                 "artifact_hash": artifact_hash,
-                "inference_mode": "surrogate_metadata_only",
+                "inference_mode": inference_mode,
                 "real_neural_inference": False,
+                "artifact_metadata_used_for_inference": False,
+                "surrogate_description": "Deterministic score-weighted fallback. No neural model loaded.",
                 "not_eligible_for_promotion": True,
                 "research_only": True,
                 "offline_only": True,
@@ -1065,8 +1122,9 @@ class FinRLXResearchService:
                 "candidate_id": candidate_id, "artifact_hash": artifact_hash,
                 "benchmark_report_id": report["id"],
                 "surrogate_key": surrogate_key,
-                "inference_mode": "surrogate_metadata_only",
+                "inference_mode": inference_mode,
                 "real_neural_inference": False,
+                "artifact_metadata_used_for_inference": False,
                 "executed_agents": report["compared_agents"],
                 "safety_flags": FINRLX_SAFETY_FLAGS,
                 "isolation_checks": iso["checks"],
@@ -1086,6 +1144,7 @@ class FinRLXResearchService:
                 "metrics_by_agent": report["metrics_by_agent"],
                 "reward_breakdown_by_agent": report["reward_breakdown_by_agent"],
                 "forensic_summary": report["forensic_summary"],
+                "forensic_summary_by_agent": report["forensic_summary_by_agent"],
                 "safety_flags": FINRLX_SAFETY_FLAGS,
                 "result_fingerprint": report["result_fingerprint"],
                 "invariant_check_results": report["invariant_check_results"],
@@ -1098,9 +1157,9 @@ class FinRLXResearchService:
                     "unchanged": overall_unch, "component_checks": cc,
                 },
                 "warnings": [
-                    "Imported research candidate — surrogate metadata benchmark.",
+                    "Imported research candidate — score-weighted fallback surrogate benchmark.",
                     "No neural inference was run in production.",
-                    "Benchmark uses deterministic score-weighted surrogate adapter.",
+                    "Benchmark uses deterministic score-weighted fallback. No neural model loaded.",
                     "Not eligible for promotion.",
                     "Not used by production decisions.",
                 ],

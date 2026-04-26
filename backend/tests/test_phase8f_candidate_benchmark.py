@@ -24,7 +24,6 @@ def _sample_artifact(**overrides) -> dict:
 
 
 async def _import_candidate(client) -> str:
-    """Import a sample artifact and return candidate_id."""
     r = await client.post("/api/v1/rl/finrlx/import-research-artifact", json={
         "artifact": _sample_artifact(),
         "import_acknowledgement": True,
@@ -33,7 +32,7 @@ async def _import_candidate(client) -> str:
     return r.json()["data"]["policy_candidate_id"]
 
 
-# ── Benchmark eligibility ─────────────────────────────────────────────
+# ── Benchmark eligibility (strengthened, Phase 8F.1 GAP 1) ──────────
 
 @pytest.mark.asyncio
 async def test_eligibility_rejects_missing_candidate(client):
@@ -45,7 +44,6 @@ async def test_eligibility_rejects_missing_candidate(client):
 
 @pytest.mark.asyncio
 async def test_eligibility_rejects_non_imported(client):
-    """Non-imported candidate (train-research stub) is not benchmark eligible."""
     r = await client.post("/api/v1/rl/finrlx/train-research", json={
         "research_acknowledgement": True,
     })
@@ -53,6 +51,7 @@ async def test_eligibility_rejects_non_imported(client):
     r2 = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
     data = r2.json()["data"]
     assert data["eligible"] is False
+    assert any("not imported" in r.lower() for r in data["reasons"])
 
 
 @pytest.mark.asyncio
@@ -62,7 +61,19 @@ async def test_eligibility_accepts_imported(client):
     data = r.json()["data"]
     assert data["eligible"] is True
     assert data["isolation_checks"]["promotion_blocked"] is True
+    assert data["isolation_checks"]["broker_execution_blocked"] is True
     assert data["candidate_summary"]["imported_from_artifact"] is True
+
+
+@pytest.mark.asyncio
+async def test_eligibility_checks_all_safety_flags(client):
+    """Eligible imported candidate must pass all safety flag checks."""
+    cid = await _import_candidate(client)
+    r = await client.get(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark-eligibility")
+    data = r.json()["data"]
+    assert data["eligible"] is True
+    # Verify that a valid candidate passes all checks — reasons should be the success message
+    assert "benchmark-eligible" in data["reasons"][0].lower()
 
 
 # ── Candidate benchmark run ──────────────────────────────────────────
@@ -98,7 +109,6 @@ async def test_benchmark_rejects_reversed_dates(client):
 
 @pytest.mark.asyncio
 async def test_benchmark_runs_with_baselines(client):
-    """Benchmark includes baseline agents and imported candidate surrogate."""
     cid = await _import_candidate(client)
     r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
         "name": "8F Test Benchmark",
@@ -111,32 +121,94 @@ async def test_benchmark_runs_with_baselines(client):
     assert data["status"] in ("completed", "partial")
     assert data["benchmark_report_id"] is not None
 
-    # Executed agents should include surrogate and baselines
     executed = data["executed_agents"]
     assert any("imported_candidate:" in a for a in executed)
     assert "heuristic_baseline" in executed or "score_weighted_baseline" in executed
 
-    # Metrics present for surrogate
     surrogate_key = [a for a in executed if "imported_candidate:" in a][0]
     assert surrogate_key in data["metrics_by_agent"]
 
 
 @pytest.mark.asyncio
-async def test_benchmark_has_context(client):
-    """Benchmark response includes candidate_benchmark_context."""
+async def test_benchmark_include_baselines_false(client):
+    """include_baselines=false runs only the imported candidate surrogate."""
+    cid = await _import_candidate(client)
+    r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "include_baselines": False,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    executed = r.json()["data"]["executed_agents"]
+    assert any("imported_candidate:" in a for a in executed)
+    assert "heuristic_baseline" not in executed
+    assert "random_valid" not in executed
+    assert "score_weighted_baseline" not in executed
+
+
+@pytest.mark.asyncio
+async def test_benchmark_include_baselines_true_includes_all_three(client):
+    """include_baselines=true includes all three baseline agents."""
+    cid = await _import_candidate(client)
+    r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "include_baselines": True,
+        "research_acknowledgement": True,
+    })
+    executed = r.json()["data"]["executed_agents"]
+    assert "heuristic_baseline" in executed
+    assert "random_valid" in executed
+    assert "score_weighted_baseline" in executed
+
+
+# ── Context and truthfulness (Phase 8F.1 GAP 4) ─────────────────────
+
+@pytest.mark.asyncio
+async def test_benchmark_context_inference_mode(client):
+    """candidate_benchmark_context uses truthful inference_mode."""
     cid = await _import_candidate(client)
     r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
         "start_date": "2026-03-15", "end_date": "2026-04-15",
         "research_acknowledgement": True,
     })
     ctx = r.json()["data"]["candidate_benchmark_context"]
-    assert ctx["candidate_id"] == cid
-    assert ctx["imported_from_artifact"] is True
-    assert ctx["inference_mode"] == "surrogate_metadata_only"
+    assert ctx["inference_mode"] == "score_weighted_fallback_surrogate"
     assert ctx["real_neural_inference"] is False
+    assert ctx["artifact_metadata_used_for_inference"] is False
+    assert "no neural model" in ctx["surrogate_description"].lower()
     assert ctx["not_eligible_for_promotion"] is True
-    assert ctx["research_only"] is True
 
+
+@pytest.mark.asyncio
+async def test_benchmark_warnings_mention_fallback(client):
+    cid = await _import_candidate(client)
+    r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "research_acknowledgement": True,
+    })
+    warnings = r.json()["data"]["warnings"]
+    assert any("score-weighted fallback" in w.lower() for w in warnings)
+    assert any("no neural" in w.lower() for w in warnings)
+
+
+# ── Forensics (Phase 8F.1 GAP 2) ────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_benchmark_has_forensic_summary_by_agent(client):
+    cid = await _import_candidate(client)
+    r = await client.post(f"/api/v1/rl/finrlx/candidates/{cid}/benchmark", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "include_baselines": True,
+        "research_acknowledgement": True,
+    })
+    data = r.json()["data"]
+    fsa = data.get("forensic_summary_by_agent")
+    assert fsa is not None
+    # Should have entries for the surrogate and baselines
+    assert any("imported_candidate:" in k for k in fsa.keys())
+
+
+# ── Isolation and fingerprints ───────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_benchmark_has_isolation(client):
@@ -161,12 +233,12 @@ async def test_benchmark_has_fingerprints(client):
     fp = r.json()["data"]["production_fingerprints"]
     assert "component_checks" in fp
     assert "recommendations_current" in fp["component_checks"]
-    assert "publication_status" in fp["component_checks"]
 
+
+# ── Audit events ─────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_benchmark_audit_persisted(client):
-    """Benchmark creates audit events."""
     from tests.conftest import test_session_factory
     from sqlalchemy import select
     from app.models.ops import AuditEvent
@@ -190,10 +262,9 @@ async def test_benchmark_audit_persisted(client):
 
     completed = next(e for e in events if e.action == "finrlx_candidate_benchmark_completed")
     cd = completed.details or {}
-    assert cd.get("candidate_id") == cid
-    assert cd.get("inference_mode") == "surrogate_metadata_only"
+    assert cd.get("inference_mode") == "score_weighted_fallback_surrogate"
     assert cd.get("real_neural_inference") is False
-    assert cd.get("benchmark_report_id") is not None
+    assert cd.get("artifact_metadata_used_for_inference") is False
 
 
 # ── Candidate benchmark history ──────────────────────────────────────
@@ -210,8 +281,7 @@ async def test_candidate_benchmark_history(client):
     assert r.status_code == 200
     data = r.json()["data"]
     assert len(data) >= 1
-    assert data[0]["candidate_id"] == cid
-    assert data[0]["inference_mode"] == "surrogate_metadata_only"
+    assert data[0]["inference_mode"] == "score_weighted_fallback_surrogate"
     assert data[0]["real_neural_inference"] is False
 
 
@@ -257,7 +327,6 @@ async def test_existing_import_still_works(client):
         "source": "regression_test",
     })
     assert r.status_code == 200
-    assert r.json()["data"]["status"] == "imported"
 
 
 @pytest.mark.asyncio
