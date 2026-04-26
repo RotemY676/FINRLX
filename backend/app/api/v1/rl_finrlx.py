@@ -25,6 +25,16 @@ from app.services.finrlx_research import FinRLXResearchService
 router = APIRouter()
 
 
+def _parse_date(value: str | None, field_name: str) -> date | None:
+    """Parse a date string safely, raising HTTP 422 on invalid format."""
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail=f"Invalid {field_name}. Expected YYYY-MM-DD.")
+
+
 class FinRLXCPUPrototypeRequest(BaseModel):
     name: str = "CPU-only Research Prototype"
     algorithm: str = "PPO"
@@ -68,8 +78,8 @@ async def train_cpu_prototype(body: FinRLXCPUPrototypeRequest, db: AsyncSession 
     if body.timesteps > 500:
         raise HTTPException(status_code=422, detail="Timesteps capped at 500 for research prototype.")
     svc = FinRLXResearchService(db)
-    sd = date.fromisoformat(body.start_date) if body.start_date else None
-    ed = date.fromisoformat(body.end_date) if body.end_date else None
+    sd = _parse_date(body.start_date, "start_date")
+    ed = _parse_date(body.end_date, "end_date")
     if sd and ed and sd > ed:
         raise HTTPException(status_code=422, detail="start_date must be <= end_date.")
     try:
@@ -82,8 +92,8 @@ async def train_cpu_prototype(body: FinRLXCPUPrototypeRequest, db: AsyncSession 
 @router.post("/rl/finrlx/validate-dataset", response_model=ApiResponse[dict])
 async def validate_dataset(body: FinRLXValidateRequest, db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
-    sd = date.fromisoformat(body.start_date) if body.start_date else None
-    ed = date.fromisoformat(body.end_date) if body.end_date else None
+    sd = _parse_date(body.start_date, "start_date")
+    ed = _parse_date(body.end_date, "end_date")
     result = await svc.validate_dataset_contract(sd, ed, body.limit)
     return ApiResponse(meta=make_meta(), data=result)
 
@@ -97,8 +107,8 @@ async def train_research(body: FinRLXTrainRequest, db: AsyncSession = Depends(ge
                    "to confirm this is a research-only offline training stub.",
         )
     svc = FinRLXResearchService(db)
-    sd = date.fromisoformat(body.start_date) if body.start_date else None
-    ed = date.fromisoformat(body.end_date) if body.end_date else None
+    sd = _parse_date(body.start_date, "start_date")
+    ed = _parse_date(body.end_date, "end_date")
     result = await svc.train_research_stub(body.name, sd, ed)
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
 

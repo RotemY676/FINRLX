@@ -211,6 +211,65 @@ async def test_cpu_prototype_audit_persisted(client):
         assert td["isolation_checks"].get("broker_execution_blocked") is True
 
 
+# ── Date parsing validation (Phase 8C.2) ─────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_cpu_prototype_invalid_start_date(client):
+    """train-cpu-prototype rejects malformed start_date with 422."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "start_date": "not-a-date",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+    assert "start_date" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_cpu_prototype_invalid_end_date(client):
+    """train-cpu-prototype rejects malformed end_date with 422."""
+    r = await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "end_date": "31/12/2026",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+    assert "end_date" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_validate_dataset_invalid_start_date(client):
+    """validate-dataset rejects malformed start_date with 422."""
+    r = await client.post("/api/v1/rl/finrlx/validate-dataset", json={
+        "start_date": "abc", "limit": 3,
+    })
+    assert r.status_code == 422
+    assert "start_date" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_train_research_invalid_start_date(client):
+    """train-research rejects malformed start_date with 422."""
+    r = await client.post("/api/v1/rl/finrlx/train-research", json={
+        "start_date": "xyz", "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+    assert "start_date" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_invalid_date_does_not_create_candidate(client):
+    """Malformed date input does not silently create a candidate."""
+    r1 = await client.get("/api/v1/rl/finrlx/candidates")
+    before_count = len(r1.json()["data"])
+
+    await client.post("/api/v1/rl/finrlx/train-cpu-prototype", json={
+        "algorithm": "PPO", "start_date": "bad",
+        "research_acknowledgement": True,
+    })
+
+    r2 = await client.get("/api/v1/rl/finrlx/candidates")
+    assert len(r2.json()["data"]) == before_count
+
+
 # ── Safety regressions ───────────────────────────────────────────────────
 
 @pytest.mark.asyncio
