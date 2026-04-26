@@ -10,6 +10,9 @@ POST /api/v1/rl/finrlx/import-research-artifact
 GET  /api/v1/rl/finrlx/candidates
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}/isolation
+GET  /api/v1/rl/finrlx/candidates/{candidate_id}/benchmark-eligibility
+POST /api/v1/rl/finrlx/candidates/{candidate_id}/benchmark
+GET  /api/v1/rl/finrlx/candidates/{candidate_id}/benchmarks
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -44,6 +47,14 @@ class FinRLXCPUPrototypeRequest(BaseModel):
     end_date: str | None = None
     timesteps: int = 50
     seed: int = 42
+    research_acknowledgement: bool = False
+
+
+class FinRLXCandidateBenchmarkRequest(BaseModel):
+    name: str = "Imported Candidate Benchmark"
+    start_date: str | None = None
+    end_date: str | None = None
+    include_baselines: bool = True
     research_acknowledgement: bool = False
 
 
@@ -169,3 +180,33 @@ async def get_candidate_isolation(candidate_id: str, db: AsyncSession = Depends(
     if not candidate:
         raise HTTPException(status_code=404, detail="Research candidate not found")
     return ApiResponse(meta=make_meta(), data=svc.get_candidate_isolation(candidate_id))
+
+
+@router.get("/rl/finrlx/candidates/{candidate_id}/benchmark-eligibility", response_model=ApiResponse[dict])
+async def get_benchmark_eligibility(candidate_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    result = await svc.check_benchmark_eligibility(candidate_id)
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.post("/rl/finrlx/candidates/{candidate_id}/benchmark", response_model=ApiResponse[dict])
+async def run_candidate_benchmark(
+    candidate_id: str, body: FinRLXCandidateBenchmarkRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.research_acknowledgement:
+        raise HTTPException(status_code=422, detail="Research acknowledgement required.")
+    sd = _parse_date(body.start_date, "start_date")
+    ed = _parse_date(body.end_date, "end_date")
+    if sd and ed and sd > ed:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date.")
+    svc = FinRLXResearchService(db)
+    result = await svc.run_candidate_benchmark(candidate_id, body.name, sd, ed, body.include_baselines)
+    if result.get("status") == "rejected":
+        raise HTTPException(status_code=422, detail=result.get("reasons", ["Benchmark rejected"]))
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.get("/rl/finrlx/candidates/{candidate_id}/benchmarks", response_model=ApiResponse[list[dict]])
+async def get_candidate_benchmarks(candidate_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    return ApiResponse(meta=make_meta(), data=await svc.get_candidate_benchmarks(candidate_id))

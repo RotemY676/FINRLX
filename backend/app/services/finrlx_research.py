@@ -931,6 +931,211 @@ class FinRLXResearchService:
             "created_at": now.isoformat(),
         })
 
+    # ── Candidate benchmark evaluation (Phase 8F) ─────────────────────
+
+    async def check_benchmark_eligibility(self, candidate_id: str) -> dict:
+        """Check whether a candidate is eligible for benchmark evaluation."""
+        candidate = await self.get_candidate(candidate_id)
+        if not candidate:
+            return {"eligible": False, "reasons": ["Candidate not found."],
+                    "candidate_summary": None, "safety_flags": FINRLX_SAFETY_FLAGS,
+                    "isolation_checks": None}
+
+        reasons = []
+        if not candidate.get("imported_from_artifact"):
+            reasons.append("Candidate was not imported from a research artifact.")
+        if not candidate.get("artifact_hash"):
+            reasons.append("Candidate has no artifact_hash.")
+        sf = candidate.get("safety_flags", {})
+        if not sf.get("research_only"):
+            reasons.append("Candidate is not research_only.")
+
+        eligible = len(reasons) == 0
+        return {
+            "eligible": eligible,
+            "reasons": reasons if reasons else ["Candidate is benchmark-eligible."],
+            "candidate_summary": {
+                "id": candidate.get("id"),
+                "policy_type": candidate.get("policy_type"),
+                "training_mode": candidate.get("training_mode"),
+                "imported_from_artifact": candidate.get("imported_from_artifact"),
+                "artifact_hash": candidate.get("artifact_hash"),
+                "real_neural_training": candidate.get("real_neural_training"),
+            },
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+            "isolation_checks": self.get_candidate_isolation(candidate_id)["checks"] if eligible else None,
+        }
+
+    async def run_candidate_benchmark(
+        self,
+        candidate_id: str,
+        name: str = "Imported Candidate Benchmark",
+        start_date: date | None = None,
+        end_date: date | None = None,
+        include_baselines: bool = True,
+    ) -> dict:
+        """Run an offline benchmark comparing an imported candidate against baseline agents."""
+        from app.services.rl_benchmark import RLBenchmarkService
+        from app.services.rl_agents import AGENTS
+        from app.services.rl_training import _score_weighted_agent_fn
+
+        now = datetime.now(timezone.utc)
+
+        # Check eligibility
+        eligibility = await self.check_benchmark_eligibility(candidate_id)
+        if not eligibility["eligible"]:
+            await self._create_audit_event("finrlx_candidate_benchmark_rejected", {
+                "candidate_id": candidate_id, "reasons": eligibility["reasons"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+            })
+            await self.db.commit()
+            return _json_safe({
+                "status": "rejected",
+                "benchmark_report_id": None,
+                "reasons": eligibility["reasons"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "created_at": now.isoformat(),
+            })
+
+        candidate = await self.get_candidate(candidate_id)
+        artifact_hash = candidate.get("artifact_hash")
+        iso = self.get_candidate_isolation(candidate_id)
+
+        pre_fp = await self._capture_production_fingerprints()
+
+        # Register surrogate agent temporarily
+        surrogate_key = f"imported_candidate:{candidate_id[:8]}"
+        AGENTS[surrogate_key] = _score_weighted_agent_fn({})  # deterministic score-proportional
+
+        await self._create_audit_event("finrlx_candidate_benchmark_requested", {
+            "candidate_id": candidate_id, "artifact_hash": artifact_hash,
+            "surrogate_key": surrogate_key, "inference_mode": "surrogate_metadata_only",
+            "real_neural_inference": False,
+            "include_baselines": include_baselines,
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+        })
+
+        try:
+            agent_keys = [surrogate_key]
+            if include_baselines:
+                agent_keys += ["heuristic_baseline", "random_valid", "score_weighted_baseline"]
+
+            bench_svc = RLBenchmarkService(self.db)
+            report_obj = await bench_svc.run_benchmark(
+                name=name,
+                start_date=start_date,
+                end_date=end_date,
+                agent_keys=agent_keys,
+            )
+
+            # Convert ORM object to dict
+            dl = report_obj.dataset_lineage or {}
+            report = {
+                "id": report_obj.id,
+                "status": report_obj.status,
+                "compared_agents": report_obj.compared_agents,
+                "metrics_by_agent": report_obj.metrics_by_agent,
+                "reward_breakdown_by_agent": report_obj.reward_breakdown_by_agent,
+                "forensic_summary": report_obj.forensic_summary,
+                "result_fingerprint": dl.get("result_fingerprint"),
+                "invariant_check_results": dl.get("invariant_check_results"),
+            }
+
+            post_fp = await self._capture_production_fingerprints()
+            cc = self._build_component_checks(pre_fp, post_fp)
+            avail = [c for c in cc.values() if c["snapshot_available"]]
+            overall_unch = all(c["unchanged"] for c in avail) if avail else None
+
+            context = {
+                "candidate_id": candidate_id,
+                "policy_type": candidate.get("policy_type"),
+                "training_mode": candidate.get("training_mode"),
+                "imported_from_artifact": True,
+                "artifact_hash": artifact_hash,
+                "inference_mode": "surrogate_metadata_only",
+                "real_neural_inference": False,
+                "not_eligible_for_promotion": True,
+                "research_only": True,
+                "offline_only": True,
+                "shadow_only": True,
+                "surrogate_agent_key": surrogate_key,
+            }
+
+            await self._create_audit_event("finrlx_candidate_benchmark_completed", {
+                "candidate_id": candidate_id, "artifact_hash": artifact_hash,
+                "benchmark_report_id": report["id"],
+                "surrogate_key": surrogate_key,
+                "inference_mode": "surrogate_metadata_only",
+                "real_neural_inference": False,
+                "executed_agents": report["compared_agents"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "isolation_checks": iso["checks"],
+                "component_checks": cc,
+                "production_fingerprints_unchanged": overall_unch,
+                "result_fingerprint": report["result_fingerprint"],
+            })
+            await self.db.commit()
+
+            return _json_safe({
+                "status": report["status"],
+                "benchmark_report_id": report["id"],
+                "is_complete_comparison": report["status"] == "completed",
+                "requested_agents": agent_keys,
+                "executed_agents": report["compared_agents"] or [],
+                "skipped_agents": [a for a in agent_keys if a not in (report["compared_agents"] or [])],
+                "metrics_by_agent": report["metrics_by_agent"],
+                "reward_breakdown_by_agent": report["reward_breakdown_by_agent"],
+                "forensic_summary": report["forensic_summary"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "result_fingerprint": report["result_fingerprint"],
+                "invariant_check_results": report["invariant_check_results"],
+                "candidate_benchmark_context": context,
+                "isolation_checks": iso["checks"],
+                "isolated": True,
+                "all_blocked": True,
+                "production_fingerprints": {
+                    "before": pre_fp, "after": post_fp,
+                    "unchanged": overall_unch, "component_checks": cc,
+                },
+                "warnings": [
+                    "Imported research candidate — surrogate metadata benchmark.",
+                    "No neural inference was run in production.",
+                    "Benchmark uses deterministic score-weighted surrogate adapter.",
+                    "Not eligible for promotion.",
+                    "Not used by production decisions.",
+                ],
+                "created_at": now.isoformat(),
+            })
+        finally:
+            AGENTS.pop(surrogate_key, None)
+
+    async def get_candidate_benchmarks(self, candidate_id: str) -> list[dict]:
+        """Retrieve benchmark reports linked to a candidate via audit events."""
+        events = (await self.db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.action == "finrlx_candidate_benchmark_completed")
+            .where(AuditEvent.object_type == "finrlx_research")
+            .order_by(AuditEvent.occurred_at.desc())
+            .limit(20)
+        )).scalars().all()
+
+        results = []
+        for e in events:
+            d = e.details or {}
+            if d.get("candidate_id") == candidate_id:
+                results.append({
+                    "benchmark_report_id": d.get("benchmark_report_id"),
+                    "candidate_id": candidate_id,
+                    "artifact_hash": d.get("artifact_hash"),
+                    "inference_mode": d.get("inference_mode"),
+                    "real_neural_inference": d.get("real_neural_inference", False),
+                    "executed_agents": d.get("executed_agents"),
+                    "result_fingerprint": d.get("result_fingerprint"),
+                    "safety_flags": d.get("safety_flags"),
+                    "occurred_at": e.occurred_at.isoformat() if e.occurred_at else None,
+                })
+        return results
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""
