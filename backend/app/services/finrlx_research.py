@@ -694,6 +694,237 @@ class FinRLXResearchService:
                 cc[k]["reason"] = pre_c.get("reason") or post_c.get("reason") or "snapshot unavailable"
         return cc
 
+    # ── Research artifact import (Phase 8E) ────────────────────────────
+
+    ARTIFACT_REQUIRED_FIELDS = [
+        "artifact_type", "schema_version", "research_only", "offline_only",
+        "shadow_only", "not_eligible_for_promotion", "live_pipeline_influence",
+        "no_broker_execution", "no_publication_influence", "no_recommendation_pollution",
+        "algorithm", "real_neural_training", "cpu_only", "synthetic_data",
+        "dataset_summary", "training_config", "training_metrics",
+        "artifact_created_at", "warnings",
+    ]
+
+    @staticmethod
+    def validate_research_artifact(artifact: dict) -> dict:
+        """Validate a research artifact for import. Returns validation result dict."""
+        errors: list[str] = []
+        warnings: list[str] = []
+
+        # Required fields
+        for f in FinRLXResearchService.ARTIFACT_REQUIRED_FIELDS:
+            if f not in artifact:
+                errors.append(f"Missing required field: {f}")
+
+        # Type check
+        if artifact.get("artifact_type") != "finrlx_cpu_rl_research_artifact":
+            errors.append(f"Invalid artifact_type: {artifact.get('artifact_type')}")
+
+        # Safety flags — hard reject on any unsafe value
+        if artifact.get("research_only") is not True:
+            errors.append("research_only must be true")
+        if artifact.get("offline_only") is not True:
+            errors.append("offline_only must be true")
+        if artifact.get("shadow_only") is not True:
+            errors.append("shadow_only must be true")
+        if artifact.get("not_eligible_for_promotion") is not True:
+            errors.append("not_eligible_for_promotion must be true")
+        if artifact.get("live_pipeline_influence") is not False:
+            errors.append("live_pipeline_influence must be false")
+        if artifact.get("no_broker_execution") is not True:
+            errors.append("no_broker_execution must be true")
+        if artifact.get("no_publication_influence") is not True:
+            errors.append("no_publication_influence must be true")
+        if artifact.get("no_recommendation_pollution") is not True:
+            errors.append("no_recommendation_pollution must be true")
+        if artifact.get("cpu_only") is not True:
+            errors.append("cpu_only must be true")
+
+        # Algorithm
+        algo = artifact.get("algorithm")
+        if algo not in ("PPO", "A2C"):
+            errors.append(f"algorithm must be PPO or A2C, got: {algo}")
+
+        # Type checks
+        if not isinstance(artifact.get("real_neural_training"), bool):
+            errors.append("real_neural_training must be boolean")
+        if not isinstance(artifact.get("synthetic_data"), bool):
+            errors.append("synthetic_data must be boolean")
+        if not isinstance(artifact.get("dataset_summary"), dict):
+            errors.append("dataset_summary must be a dict")
+        if not isinstance(artifact.get("training_config"), dict):
+            errors.append("training_config must be a dict")
+        if not isinstance(artifact.get("training_metrics"), dict):
+            errors.append("training_metrics must be a dict")
+        if not isinstance(artifact.get("warnings"), list):
+            errors.append("warnings must be a list")
+
+        # Consistency checks
+        if artifact.get("real_neural_training") is True:
+            tc = artifact.get("training_config", {})
+            tm = artifact.get("training_metrics", {})
+            if "algorithm" not in tc and "algorithm" not in tm:
+                warnings.append("real_neural_training=true but no algorithm in training_config/metrics")
+            if "timesteps" not in tc and "timesteps" not in tm:
+                warnings.append("real_neural_training=true but no timesteps in training_config/metrics")
+            if "seed" not in tc and "seed" not in tm:
+                warnings.append("real_neural_training=true but no seed in training_config/metrics")
+
+        if artifact.get("synthetic_data") is True:
+            ds = artifact.get("dataset_summary", {})
+            w_list = artifact.get("warnings", [])
+            has_synthetic_label = ds.get("synthetic") is True or any(
+                "synthetic" in str(w).lower() for w in w_list
+            )
+            if not has_synthetic_label:
+                warnings.append("synthetic_data=true but no synthetic label in dataset_summary or warnings")
+
+        # Compute artifact hash
+        artifact_hash = FinRLXResearchService._compute_artifact_hash(artifact)
+
+        valid = len(errors) == 0
+        return {
+            "valid": valid,
+            "errors": errors,
+            "warnings": warnings,
+            "artifact_hash": artifact_hash,
+            "normalized_artifact_summary": {
+                "algorithm": artifact.get("algorithm"),
+                "real_neural_training": artifact.get("real_neural_training"),
+                "synthetic_data": artifact.get("synthetic_data"),
+                "cpu_only": artifact.get("cpu_only"),
+                "schema_version": artifact.get("schema_version"),
+                "artifact_created_at": artifact.get("artifact_created_at"),
+            },
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+        }
+
+    @staticmethod
+    def _compute_artifact_hash(artifact: dict) -> str:
+        """Compute deterministic SHA-256 hash of artifact (excluding volatile fields)."""
+        stable = {k: v for k, v in artifact.items() if k != "artifact_created_at"}
+        raw = json.dumps(stable, sort_keys=True, default=str)
+        return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+    async def import_research_artifact(
+        self,
+        artifact: dict,
+        source: str = "unknown",
+        notes: str | None = None,
+    ) -> dict:
+        """Import a validated research artifact as a shadow-only candidate."""
+        now = datetime.now(timezone.utc)
+
+        # Validate first
+        validation = self.validate_research_artifact(artifact)
+        artifact_hash = validation["artifact_hash"]
+
+        # Capture pre-import fingerprints
+        pre_fp = await self._capture_production_fingerprints()
+
+        if not validation["valid"]:
+            await self._create_audit_event("finrlx_research_artifact_import_rejected", {
+                "source": source, "artifact_hash": artifact_hash,
+                "validation_errors": validation["errors"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+            })
+            await self.db.commit()
+            return _json_safe({
+                "status": "rejected",
+                "policy_candidate_id": None,
+                "validation_result": validation,
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "warnings": validation["errors"],
+                "created_at": now.isoformat(),
+            })
+
+        # Audit: requested
+        await self._create_audit_event("finrlx_research_artifact_import_requested", {
+            "source": source, "notes": notes, "artifact_hash": artifact_hash,
+            "algorithm": artifact.get("algorithm"),
+            "real_neural_training": artifact.get("real_neural_training"),
+            "synthetic_data": artifact.get("synthetic_data"),
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+        })
+
+        algo = artifact.get("algorithm", "PPO").lower()
+        env_svc = RLEnvironmentService(self.db)
+        canonical_key, _ = env_svc.resolve_key("quantpipeline_offline_v1")
+
+        # Create candidate
+        candidate_id = gen_uuid()
+        policy_type = f"finrlx_cpu_{algo}_research_import"
+        training_mode = f"imported_cpu_{algo}_research"
+
+        snapshot = RLPolicySnapshot(
+            id=candidate_id,
+            training_run_id=None,
+            agent_key=f"finrlx_cpu_{algo}_research_import",
+            environment_key=canonical_key,
+            policy_type=policy_type,
+            policy_payload=_json_safe({
+                "training_mode": training_mode,
+                "real_neural_training": artifact.get("real_neural_training", False),
+                "imported_from_artifact": True,
+                "artifact_hash": artifact_hash,
+                "artifact_summary": validation["normalized_artifact_summary"],
+                "safety_flags": FINRLX_SAFETY_FLAGS,
+                "source": source,
+                "notes": notes,
+            }),
+            metrics=_json_safe(artifact.get("training_metrics", {})),
+        )
+        self.db.add(snapshot)
+
+        # Post-import fingerprints
+        post_fp = await self._capture_production_fingerprints()
+        cc = self._build_component_checks(pre_fp, post_fp)
+        avail = [c for c in cc.values() if c["snapshot_available"]]
+        overall_unch = all(c["unchanged"] for c in avail) if avail else None
+
+        iso = self.get_candidate_isolation(candidate_id)
+
+        # Audit: completed
+        await self._create_audit_event("finrlx_research_artifact_import_completed", {
+            "candidate_id": candidate_id, "policy_type": policy_type,
+            "training_mode": training_mode, "source": source,
+            "artifact_hash": artifact_hash,
+            "real_neural_training": artifact.get("real_neural_training"),
+            "synthetic_data": artifact.get("synthetic_data"),
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+            "isolation_checks": iso["checks"],
+            "component_checks": cc,
+            "production_fingerprints_unchanged": overall_unch,
+        })
+        await self.db.commit()
+
+        return _json_safe({
+            "status": "imported",
+            "policy_candidate_id": candidate_id,
+            "policy_type": policy_type,
+            "training_mode": training_mode,
+            "real_neural_training": artifact.get("real_neural_training", False),
+            "imported_from_artifact": True,
+            "artifact_hash": artifact_hash,
+            "validation_result": validation,
+            "safety_flags": FINRLX_SAFETY_FLAGS,
+            "not_eligible_for_promotion": True,
+            "isolation_checks": iso["checks"],
+            "isolated": True,
+            "all_blocked": True,
+            "production_fingerprints": {
+                "before": pre_fp, "after": post_fp,
+                "unchanged": overall_unch, "component_checks": cc,
+            },
+            "warnings": [
+                "Research artifact imported as shadow-only candidate.",
+                "Not eligible for promotion.",
+                "Not used by production decisions.",
+                "No broker execution.",
+            ],
+            "created_at": now.isoformat(),
+        })
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""

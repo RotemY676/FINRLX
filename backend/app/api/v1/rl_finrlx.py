@@ -5,6 +5,8 @@ GET  /api/v1/rl/finrlx/dependencies
 POST /api/v1/rl/finrlx/validate-dataset
 POST /api/v1/rl/finrlx/train-research
 POST /api/v1/rl/finrlx/train-cpu-prototype
+POST /api/v1/rl/finrlx/validate-research-artifact
+POST /api/v1/rl/finrlx/import-research-artifact
 GET  /api/v1/rl/finrlx/candidates
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}/isolation
@@ -43,6 +45,17 @@ class FinRLXCPUPrototypeRequest(BaseModel):
     timesteps: int = 50
     seed: int = 42
     research_acknowledgement: bool = False
+
+
+class FinRLXValidateArtifactRequest(BaseModel):
+    artifact: dict
+
+
+class FinRLXImportArtifactRequest(BaseModel):
+    artifact: dict
+    import_acknowledgement: bool = False
+    source: str = "unknown"
+    notes: str | None = None
 
 
 class FinRLXValidateRequest(BaseModel):
@@ -110,6 +123,27 @@ async def train_research(body: FinRLXTrainRequest, db: AsyncSession = Depends(ge
     sd = _parse_date(body.start_date, "start_date")
     ed = _parse_date(body.end_date, "end_date")
     result = await svc.train_research_stub(body.name, sd, ed)
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.post("/rl/finrlx/validate-research-artifact", response_model=ApiResponse[dict])
+async def validate_research_artifact(body: FinRLXValidateArtifactRequest, db: AsyncSession = Depends(get_db)):
+    result = FinRLXResearchService.validate_research_artifact(body.artifact)
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.post("/rl/finrlx/import-research-artifact", response_model=ApiResponse[dict])
+async def import_research_artifact(body: FinRLXImportArtifactRequest, db: AsyncSession = Depends(get_db)):
+    if not body.import_acknowledgement:
+        raise HTTPException(
+            status_code=422,
+            detail="Import acknowledgement required. Set import_acknowledgement=true "
+                   "to confirm this artifact is research-only and not for production use.",
+        )
+    svc = FinRLXResearchService(db)
+    result = await svc.import_research_artifact(body.artifact, body.source, body.notes)
+    if result.get("status") == "rejected":
+        raise HTTPException(status_code=422, detail=result.get("warnings", ["Artifact validation failed"]))
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
 
 
