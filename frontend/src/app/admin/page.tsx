@@ -326,7 +326,7 @@ export default function AdminPage() {
   if (!ops) return null;
 
   return (
-    <div className="space-y-gap max-w-[1400px]">
+    <div className="space-y-gap max-w-[1400px] px-4 md:px-0">
       <div>
         <h1 className="text-[20px] font-semibold text-ink">Ops Command Center</h1>
         <p className="text-[12px] text-ink-3 mt-0.5">
@@ -336,7 +336,7 @@ export default function AdminPage() {
 
       {/* ── KPI Strip ── */}
       {ops.system_kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {ops.system_kpis.map((kpi) => (
             <div key={kpi.key} className="rounded-lg border border-line bg-surface p-3 text-center">
               <p className={`text-[20px] font-semibold font-mono ${KPI_TONE[kpi.tone] || "text-ink"}`}>{kpi.value}</p>
@@ -350,7 +350,7 @@ export default function AdminPage() {
       {/* ── ML Observability ── */}
       {mlSummary && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="compare" size={15} className="text-primary" />
             <h3 className="text-[13px] font-semibold text-ink">ML Observability</h3>
             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-caution-soft text-caution-soft-ink">
@@ -362,7 +362,7 @@ export default function AdminPage() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
             <div className="text-center">
               <p className="text-[11px] text-ink-4 mb-0.5">Model</p>
               <p className="text-[12px] font-medium text-ink font-mono">{mlSummary.model_key}</p>
@@ -445,7 +445,7 @@ export default function AdminPage() {
       {/* ── RL Environment ── */}
       {ops.rl && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="sparkle" size={15} className="text-accent" />
             <h3 className="text-[13px] font-semibold text-ink">RL Environment</h3>
             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">
@@ -457,7 +457,7 @@ export default function AdminPage() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
             <div>
               <p className="text-[14px] font-semibold text-ink font-mono">{ops.rl.total_environments}</p>
               <p className="text-[10px] text-ink-4">environments</p>
@@ -493,13 +493,13 @@ export default function AdminPage() {
       {/* ── FinRL-X Research Spike ── */}
       {finrlxStatus && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="sparkle" size={15} className="text-accent-2" />
             <h3 className="text-[13px] font-semibold text-ink">FinRL-X Research Spike</h3>
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline / Shadow</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center mb-3">
             <div>
               <p className="text-[12px] font-medium text-ink">{finrlxStatus.training_mode}</p>
               <p className="text-[10px] text-ink-4">training mode</p>
@@ -563,7 +563,7 @@ export default function AdminPage() {
 
       {/* ── Import Research Artifact ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <Icon name="sparkle" size={15} className="text-accent-2" />
           <h3 className="text-[13px] font-semibold text-ink">Import Research Artifact</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
@@ -573,7 +573,7 @@ export default function AdminPage() {
         <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); setImportAck(false); setImportAckHash(null); }}
           placeholder="Paste research artifact JSON here..."
           className="w-full border border-line rounded-md px-3 py-2 text-[11px] font-mono bg-canvas focus:border-primary focus:outline-none min-h-[80px] max-h-[200px] resize-y mb-2" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
           <div>
             <label className="block text-ink-4 text-[10px] mb-0.5">Source</label>
             <input type="text" value={importSource} onChange={e => { setImportSource(e.target.value); setImportAck(false); setImportAckHash(null); }}
@@ -585,7 +585,7 @@ export default function AdminPage() {
               className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
           </div>
         </div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
           <button onClick={handleValidateArtifact} disabled={!importJson.trim()}
             className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-surface-3 text-ink hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
             Validate artifact
@@ -605,7 +605,7 @@ export default function AdminPage() {
               <ul className="mt-1 list-disc list-inside text-caution-soft-ink">{importValidation.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
             )}
             {importValidation.normalized_artifact_summary && (
-              <p className="mt-1 font-mono text-[9px]">{JSON.stringify(importValidation.normalized_artifact_summary)}</p>
+              <p className="mt-1 font-mono text-[9px] break-all">{JSON.stringify(importValidation.normalized_artifact_summary)}</p>
             )}
           </div>
         )}
@@ -629,7 +629,7 @@ export default function AdminPage() {
 
       {/* ── Imported Research Candidates ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <Icon name="sparkle" size={15} className="text-accent-2" />
           <h3 className="text-[13px] font-semibold text-ink">Imported Research Candidates</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research only</span>
@@ -646,13 +646,13 @@ export default function AdminPage() {
                 className={`w-full text-left rounded-md border px-3 py-2 text-[11px] transition-colors ${
                   selectedCandidate?.id === c.id ? "border-primary bg-primary/5" : "border-line hover:bg-surface-2"
                 }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-ink-2">{c.id.slice(0, 8)}</span>
                     <span className="text-ink-3">{c.policy_type}</span>
                     {c.artifact_hash && <span className="font-mono text-ink-4">#{c.artifact_hash.slice(0, 8)}</span>}
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {c.real_neural_training && <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-soft text-accent">neural</span>}
                     {c.artifact_summary?.synthetic_data === true && <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-caution-soft text-caution-soft-ink">synthetic</span>}
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-pos-soft text-pos-soft-ink">isolated</span>
@@ -667,7 +667,7 @@ export default function AdminPage() {
         {selectedCandidate && (
           <div className="border-t border-line pt-3 mt-2 space-y-3">
             <h4 className="text-[12px] font-semibold text-ink">Candidate Review</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-[10px] sm:text-[10px]">
               <div><span className="text-ink-4">ID:</span> <span className="font-mono text-ink-2">{selectedCandidate.id}</span></div>
               <div><span className="text-ink-4">Policy type:</span> <span className="text-ink">{selectedCandidate.policy_type}</span></div>
               <div><span className="text-ink-4">Training mode:</span> <span className="text-ink">{selectedCandidate.training_mode}</span></div>
@@ -678,7 +678,7 @@ export default function AdminPage() {
             {selectedCandidate.artifact_summary && (
               <div className="text-[10px]">
                 <span className="text-ink-4">Artifact summary: </span>
-                <span className="font-mono text-ink-3">{JSON.stringify(selectedCandidate.artifact_summary)}</span>
+                <span className="font-mono text-ink-3 break-all">{JSON.stringify(selectedCandidate.artifact_summary)}</span>
               </div>
             )}
             {selectedCandidate.notes && (
@@ -730,7 +730,7 @@ export default function AdminPage() {
               <div className="border-t border-line pt-3">
                 <h4 className="text-[12px] font-semibold text-ink mb-2">Run Offline Candidate Benchmark</h4>
                 <p className="text-[10px] text-ink-4 mb-2">This is a research-only offline benchmark. It does not run neural inference in production and cannot affect recommendations, overview, publication, or broker systems.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
                   <div>
                     <label className="block text-ink-4 text-[10px] mb-0.5">Name</label>
                     <input type="text" value={candBenchName} onChange={e => setCandBenchName(e.target.value)}
@@ -770,7 +770,7 @@ export default function AdminPage() {
             {candBenchResult && (
               <div className="border-t border-line pt-3">
                 <h4 className="text-[12px] font-semibold text-ink mb-2">Benchmark Result</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10px] mb-2">
                   <div><span className="text-ink-4">Status:</span> <span className={candBenchResult.status === "completed" ? "text-pos font-medium" : "text-caution font-medium"}>{candBenchResult.status}</span></div>
                   <div><span className="text-ink-4">Inference:</span> <span className="text-ink">{candBenchResult.candidate_benchmark_context.inference_mode}</span></div>
                   <div><span className="text-ink-4">Neural inference:</span> <span className="text-pos font-medium">none (surrogate)</span></div>
@@ -821,7 +821,7 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-1">
                   {candidateBenchHistory.slice(0, 8).map((h, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-md border border-line px-2 py-1.5 text-[10px]">
+                    <div key={i} className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-line px-2 py-1.5 text-[10px]">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-ink-3">{h.benchmark_report_id?.slice(0, 8) || "—"}</span>
                         <span className="text-ink-4">{h.inference_mode}</span>
@@ -850,7 +850,7 @@ export default function AdminPage() {
 
       {/* ── Dataset Export for Local Research ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
           <Icon name="sparkle" size={15} className="text-accent-2" />
           <h3 className="text-[13px] font-semibold text-ink">Dataset Export for Local Research</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Read-only</span>
@@ -869,7 +869,7 @@ export default function AdminPage() {
 
       {/* ── Run Offline Benchmark ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <Icon name="sparkle" size={15} className="text-accent" />
           <h3 className="text-[13px] font-semibold text-ink">Run Offline Benchmark</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline / Shadow only</span>
@@ -1029,7 +1029,7 @@ export default function AdminPage() {
       {/* ── RL Offline Benchmark — Forensic Analysis ── */}
       {benchmarks.length === 0 && ops && ops.rl && ops.rl.total_benchmarks === 0 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <Icon name="compare" size={15} className="text-ink-4" />
             <h3 className="text-[13px] font-semibold text-ink-3">Offline Benchmark</h3>
           </div>
@@ -1041,7 +1041,7 @@ export default function AdminPage() {
       {/* Benchmark History */}
       {benchmarks.length > 0 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="history" size={15} className="text-accent" />
             <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark History</h3>
             <span className="text-[10px] text-ink-4 ml-auto">{benchmarks.length} report{benchmarks.length !== 1 ? "s" : ""}</span>
@@ -1077,7 +1077,7 @@ export default function AdminPage() {
       {/* Selected Benchmark Drill-down */}
       {selectedBenchmark && (
         <section id="benchmark-drilldown" className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="compare" size={15} className="text-accent" />
             <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark — Forensic Comparison</h3>
             <StatusBadge status={selectedBenchmark.status} />
@@ -1352,7 +1352,7 @@ export default function AdminPage() {
       {/* Benchmark Governance & Audit Trail */}
       {benchAuditEvents.length > 0 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="history" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Benchmark Governance & Audit Trail</h3>
             <span className="text-[10px] text-ink-4 ml-auto">{benchAuditEvents.length} event{benchAuditEvents.length !== 1 ? "s" : ""} — offline forensic audit</span>
@@ -1403,7 +1403,7 @@ export default function AdminPage() {
       {/* Audit Trail — Selected Benchmark */}
       {selectedBenchmark && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="history" size={14} className="text-ink-3" />
             <h4 className="text-[12px] font-semibold text-ink">Audit Trail — Selected Benchmark</h4>
             <span className="text-[10px] text-ink-4 font-mono ml-auto">{selectedBenchmark.id.slice(0, 8)}...</span>
@@ -1473,7 +1473,7 @@ export default function AdminPage() {
       {/* Benchmark Trend Table */}
       {benchmarks.length > 1 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Icon name="trend-up" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Offline Benchmark Trend</h3>
             <span className="text-[10px] text-ink-4 ml-auto">Across {benchmarks.length} reports — not live performance</span>
@@ -1513,7 +1513,7 @@ export default function AdminPage() {
 
       {/* ── Publication Queue ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <Icon name="decision" size={15} className="text-primary" />
           <h3 className="text-[13px] font-semibold text-ink">Publication Queue</h3>
           <div className="flex items-center gap-1 ml-4">
@@ -1602,10 +1602,10 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gap">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-gap">
         {/* ── Data Feeds ── */}
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="database" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Data Feeds</h3>
           </div>
@@ -1626,7 +1626,7 @@ export default function AdminPage() {
 
         {/* ── Engine Health ── */}
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="compare" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Engine Health</h3>
           </div>
@@ -1647,15 +1647,15 @@ export default function AdminPage() {
       </div>
 
       {/* ── Policy / Integrations / Universe strip ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gap">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gap">
         {/* Policy Rules */}
         {ops.policy && (
           <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Icon name="risk" size={14} className="text-ink-3" />
               <h3 className="text-[13px] font-semibold text-ink">Policy Rules</h3>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-center">
               <div>
                 <p className="text-[18px] font-display font-semibold text-ink">{ops.policy.active_rules}</p>
                 <p className="text-[10px] text-ink-4">active rules</p>
@@ -1679,11 +1679,11 @@ export default function AdminPage() {
         {/* Integrations */}
         {ops.integrations_summary && (
           <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Icon name="database" size={14} className="text-ink-3" />
               <h3 className="text-[13px] font-semibold text-ink">Integrations</h3>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-center">
               <div>
                 <p className={`text-[18px] font-display font-semibold ${ops.integrations_summary.healthy > 0 ? "text-pos" : "text-ink-3"}`}>{ops.integrations_summary.healthy}</p>
                 <p className="text-[10px] text-ink-4">healthy</p>
@@ -1707,11 +1707,11 @@ export default function AdminPage() {
         {/* Universe */}
         {ops.universe && (
           <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Icon name="universe" size={14} className="text-ink-3" />
               <h3 className="text-[13px] font-semibold text-ink">Universe</h3>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-center">
               <div>
                 <p className="text-[18px] font-display font-semibold text-ink">{ops.universe.total_assets}</p>
                 <p className="text-[10px] text-ink-4">assets</p>
@@ -1735,7 +1735,7 @@ export default function AdminPage() {
 
       {/* ── Breach Watch ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <Icon name="risk" size={15} className="text-breach" />
           <h3 className="text-[13px] font-semibold text-ink">Breach Watch</h3>
           <span className="text-[11px] text-ink-4 ml-auto">{ops.breaches.length} active</span>
@@ -1766,10 +1766,10 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gap">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-gap">
         {/* ── Incidents ── */}
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="alert-triangle" size={15} className="text-caution" />
             <h3 className="text-[13px] font-semibold text-ink">Incidents</h3>
           </div>
@@ -1795,7 +1795,7 @@ export default function AdminPage() {
 
         {/* ── Audit Trail ── */}
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Icon name="history" size={15} className="text-ink-3" />
             <h3 className="text-[13px] font-semibold text-ink">Audit Trail</h3>
             <div className="flex items-center gap-1 ml-4">
