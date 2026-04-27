@@ -275,6 +275,10 @@ async def create_dataset_export(body: FinRLXDatasetExportRequest, db: AsyncSessi
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
 
 
+def _handle_corrupt_registry(exc: FinRLXResearchService.RegistryCorruptError):
+    raise HTTPException(status_code=409, detail=str(exc))
+
+
 @router.get("/rl/finrlx/dataset-exports", response_model=ApiResponse[list[dict]])
 async def list_dataset_exports(
     lifecycle_state: str | None = None,
@@ -282,13 +286,20 @@ async def list_dataset_exports(
     db: AsyncSession = Depends(get_db),
 ):
     svc = FinRLXResearchService(db)
-    return ApiResponse(meta=make_meta(), data=svc.list_dataset_exports(lifecycle_state=lifecycle_state, limit=limit))
+    try:
+        data = svc.list_dataset_exports(lifecycle_state=lifecycle_state, limit=limit)
+    except FinRLXResearchService.RegistryCorruptError as exc:
+        _handle_corrupt_registry(exc)
+    return ApiResponse(meta=make_meta(), data=data)
 
 
 @router.get("/rl/finrlx/dataset-exports/{export_id}", response_model=ApiResponse[dict])
 async def get_dataset_export(export_id: str, db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
-    result = svc.get_dataset_export(export_id)
+    try:
+        result = svc.get_dataset_export(export_id)
+    except FinRLXResearchService.RegistryCorruptError as exc:
+        _handle_corrupt_registry(exc)
     if not result:
         raise HTTPException(status_code=404, detail="Dataset export not found.")
     return ApiResponse(meta=make_meta(), data=result)
@@ -312,7 +323,10 @@ async def mark_dataset_export_stale(
     if not body.acknowledgement:
         raise HTTPException(status_code=422, detail="Acknowledgement required to mark export as stale.")
     svc = FinRLXResearchService(db)
-    result = svc.mark_dataset_export_stale(export_id, reason=body.reason)
+    try:
+        result = svc.mark_dataset_export_stale(export_id, reason=body.reason)
+    except FinRLXResearchService.RegistryCorruptError as exc:
+        _handle_corrupt_registry(exc)
     if not result:
         raise HTTPException(status_code=404, detail="Dataset export not found in registry.")
     return ApiResponse(meta=make_meta(), data=result)
@@ -321,7 +335,10 @@ async def mark_dataset_export_stale(
 @router.get("/rl/finrlx/dataset-exports/{export_id}/verify", response_model=ApiResponse[dict])
 async def verify_dataset_export(export_id: str, db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
-    result = svc.verify_dataset_export_artifact(export_id)
+    try:
+        result = svc.verify_dataset_export_artifact(export_id)
+    except FinRLXResearchService.RegistryCorruptError as exc:
+        _handle_corrupt_registry(exc)
     if not result:
         raise HTTPException(status_code=404, detail="Dataset export not found in registry.")
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)

@@ -259,20 +259,132 @@ async def test_rebuild_scans_exports_directory(client):
 
 # ── Corrupt registry ───────────────────────────────────────────────
 
-@pytest.mark.asyncio
-async def test_corrupt_registry_returns_safe_warning(client):
-    """Corrupt registry returns safe error/warning, not secret leakage."""
+def _corrupt_registry():
     path = _registry_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write("{{{invalid json")
 
+
+@pytest.mark.asyncio
+async def test_corrupt_registry_returns_safe_warning(client):
+    """Corrupt registry load returns safe warning with corrupt marker."""
+    _corrupt_registry()
     reg = FinRLXResearchService.load_dataset_export_registry()
     assert isinstance(reg["exports"], list)
+    assert reg.get("registry_corrupt") is True
     assert len(reg.get("warnings", [])) > 0
     assert "corrupt" in reg["warnings"][0].lower()
+    _clear_registry()
 
-    # Clean up
+
+@pytest.mark.asyncio
+async def test_corrupt_registry_not_overwritten_by_export(client):
+    """Creating an export does not overwrite a corrupt registry."""
+    _clear_registry()
+    _corrupt_registry()
+
+    # Read the corrupt content
+    with open(_registry_path(), "r") as f:
+        corrupt_content = f.read()
+
+    # Create export — should succeed but skip registry
+    r = await client.post("/api/v1/rl/finrlx/dataset-export", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["status"] == "completed"
+    # Export response should include a warning about skipped registry
+    assert any("registry" in w.lower() and "corrupt" in w.lower() for w in data.get("warnings", []))
+
+    # Registry file should NOT have been overwritten
+    with open(_registry_path(), "r") as f:
+        after_content = f.read()
+    assert after_content == corrupt_content
+
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_registry_requires_rebuild(client):
+    """Corrupt registry requires explicit rebuild before registry writes resume."""
+    _clear_registry()
+    _corrupt_registry()
+
+    # Rebuild with acknowledgement
+    r = await client.post("/api/v1/rl/finrlx/dataset-exports/rebuild-registry", json={
+        "acknowledgement": True,
+    })
+    assert r.status_code == 200
+
+    # Now creating an export should register normally
+    r2 = await client.post("/api/v1/rl/finrlx/dataset-export", json={
+        "start_date": "2026-03-15", "end_date": "2026-04-15",
+        "research_acknowledgement": True,
+    })
+    assert r2.status_code == 200
+    export_id = r2.json()["data"]["export_id"]
+
+    reg = FinRLXResearchService.load_dataset_export_registry()
+    assert reg.get("registry_corrupt") is not True
+    ids = [e["export_id"] for e in reg["exports"]]
+    assert export_id in ids
+
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_list_returns_409(client):
+    """List endpoint returns 409 when registry is corrupt."""
+    _corrupt_registry()
+    r = await client.get("/api/v1/rl/finrlx/dataset-exports")
+    assert r.status_code == 409
+    assert "corrupt" in r.json()["detail"].lower()
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_get_returns_409(client):
+    """Get endpoint returns 409 when registry is corrupt."""
+    _corrupt_registry()
+    r = await client.get("/api/v1/rl/finrlx/dataset-exports/any-id")
+    assert r.status_code == 409
+    assert "corrupt" in r.json()["detail"].lower()
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_verify_returns_409(client):
+    """Verify endpoint returns 409 when registry is corrupt."""
+    _corrupt_registry()
+    r = await client.get("/api/v1/rl/finrlx/dataset-exports/any-id/verify")
+    assert r.status_code == 409
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_mark_stale_returns_409(client):
+    """Mark-stale endpoint returns 409 when registry is corrupt."""
+    _corrupt_registry()
+    r = await client.post("/api/v1/rl/finrlx/dataset-exports/any-id/mark-stale", json={
+        "acknowledgement": True,
+    })
+    assert r.status_code == 409
+    _clear_registry()
+
+
+@pytest.mark.asyncio
+async def test_corrupt_errors_contain_no_secrets(client):
+    """Corrupt registry errors do not leak secrets or absolute paths."""
+    _corrupt_registry()
+    r = await client.get("/api/v1/rl/finrlx/dataset-exports")
+    body = r.text
+    assert "C:\\" not in body
+    assert "C:/" not in body
+    for pattern in ["PASSWORD", "SECRET", "API_KEY", "BROKER", "DATABASE_URL"]:
+        assert pattern not in body
     _clear_registry()
 
 

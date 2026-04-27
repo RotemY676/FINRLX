@@ -280,11 +280,22 @@ The export registry and artifact files are stored on the local filesystem at
 
 ## 18. Stop/Go Recommendation
 
-**GO** — Phase 8I.2 is complete:
-- 46/46 Phase 8I+8I.2 tests pass
-- 132/132 Phase 8 regression tests pass
+**GO** — Phase 8I.2 (with corrupt-registry fix) is complete:
+- 53/53 Phase 8I+8I.2 tests pass (7 new corrupt-registry tests)
+- 139/139 Phase 8 regression tests pass
 - Frontend build/typecheck/lint clean
 - No unsafe language
 - Registry persistence verified
+- Corrupt-registry protection verified
 - Artifact health model verified
 - All safety invariants preserved
+
+### Corrupt-Registry Fix (8I.2-fix)
+
+1. `load_dataset_export_registry()` now sets `registry_corrupt: true` on corrupt state
+2. `register_dataset_export()` skips save when registry is corrupt; export files are still created
+3. Export response includes warning about skipped registry
+4. `list/get/verify/mark-stale` endpoints return HTTP 409 when registry is corrupt
+5. Only `rebuild-registry` with explicit acknowledgement can overwrite a corrupt registry
+6. Corrupt error responses contain no secrets or absolute paths
+7. 7 new tests verify all corrupt-registry behaviors

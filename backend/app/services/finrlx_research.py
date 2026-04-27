@@ -1451,9 +1451,23 @@ class FinRLXResearchService:
         })
 
         # Register in persistent local registry
-        self.register_dataset_export(result)
+        reg_result = self.register_dataset_export(result)
+        if reg_result.get("registry_skipped"):
+            result.setdefault("warnings", []).append(reg_result["warning"])
 
         return result
+
+    class RegistryCorruptError(Exception):
+        """Raised when the export registry is corrupt and cannot be used."""
+        pass
+
+    def _require_healthy_registry(self) -> dict:
+        """Load registry and raise RegistryCorruptError if corrupt."""
+        registry = self.load_dataset_export_registry()
+        if registry.get("registry_corrupt"):
+            raise self.RegistryCorruptError(
+                "Dataset export registry is corrupt. Use rebuild-registry with acknowledgement to recreate it.")
+        return registry
 
     # ── Export registry persistence (Phase 8I.2) ───────────────────────
 
@@ -1480,7 +1494,7 @@ class FinRLXResearchService:
 
     @staticmethod
     def load_dataset_export_registry() -> dict:
-        """Load registry from disk. Returns empty registry if missing. Returns error dict if corrupt."""
+        """Load registry from disk. Returns empty registry if missing. Marks corrupt if unreadable."""
         path = FinRLXResearchService._registry_path()
         if not os.path.exists(path):
             reg = FinRLXResearchService._empty_registry()
@@ -1491,14 +1505,17 @@ class FinRLXResearchService:
                 data = json.load(f)
             if not isinstance(data, dict) or "exports" not in data:
                 return {"version": 1, "updated_at": None, "exports": [],
-                        "warnings": ["Registry file exists but has invalid structure."]}
+                        "registry_corrupt": True,
+                        "warnings": ["Registry file exists but has invalid structure. Use rebuild-registry to recreate."]}
             return data
         except json.JSONDecodeError:
             return {"version": 1, "updated_at": None, "exports": [],
-                    "warnings": ["Registry file is corrupt (invalid JSON). Use rebuild-registry to recreate."]}
+                    "registry_corrupt": True,
+                    "warnings": ["Registry file is corrupt (invalid JSON). Use rebuild-registry with acknowledgement to recreate."]}
         except Exception:
             return {"version": 1, "updated_at": None, "exports": [],
-                    "warnings": ["Registry file could not be read."]}
+                    "registry_corrupt": True,
+                    "warnings": ["Registry file could not be read. Use rebuild-registry with acknowledgement to recreate."]}
 
     @staticmethod
     def save_dataset_export_registry(registry: dict) -> dict:
@@ -1536,8 +1553,15 @@ class FinRLXResearchService:
         }
 
     def register_dataset_export(self, export_response: dict) -> dict:
-        """Register an export in the persistent local registry."""
+        """Register an export in the persistent local registry. Skips save if registry is corrupt."""
         registry = self.load_dataset_export_registry()
+
+        if registry.get("registry_corrupt"):
+            logger.warning("Registry is corrupt — skipping registration for export %s", export_response.get("export_id"))
+            return {"registry_skipped": True,
+                    "warning": "Export artifact was created, but registry update was skipped because "
+                               "export_registry.json is corrupt. Use rebuild-registry with acknowledgement to recreate it."}
+
         export_id = export_response.get("export_id")
         export_format = export_response.get("export_format", "jsonl")
 
@@ -1583,8 +1607,8 @@ class FinRLXResearchService:
         return entry
 
     def list_dataset_exports(self, lifecycle_state: str | None = None, limit: int = 50) -> list[dict]:
-        """List exports from the persistent registry, newest first."""
-        registry = self.load_dataset_export_registry()
+        """List exports from the persistent registry, newest first. Raises on corrupt."""
+        registry = self._require_healthy_registry()
         exports = registry.get("exports", [])
         # Sort newest first
         exports.sort(key=lambda e: e.get("created_at") or "", reverse=True)
@@ -1593,8 +1617,8 @@ class FinRLXResearchService:
         return exports[:limit]
 
     def get_dataset_export(self, export_id: str) -> dict | None:
-        """Get a specific export by ID from registry, enriched with full schema."""
-        registry = self.load_dataset_export_registry()
+        """Get a specific export by ID from registry, enriched with full schema. Raises on corrupt."""
+        registry = self._require_healthy_registry()
         entry = None
         for e in registry.get("exports", []):
             if e.get("export_id") == export_id:
@@ -1666,8 +1690,8 @@ class FinRLXResearchService:
         }
 
     def mark_dataset_export_stale(self, export_id: str, reason: str | None = None) -> dict | None:
-        """Mark an export as stale. Does not delete files."""
-        registry = self.load_dataset_export_registry()
+        """Mark an export as stale. Does not delete files. Raises on corrupt."""
+        registry = self._require_healthy_registry()
         for entry in registry.get("exports", []):
             if entry.get("export_id") == export_id:
                 entry["lifecycle_state"] = "stale"
@@ -1679,8 +1703,8 @@ class FinRLXResearchService:
         return None
 
     def verify_dataset_export_artifact(self, export_id: str) -> dict | None:
-        """Verify artifact files exist on disk for an export. Read-only."""
-        registry = self.load_dataset_export_registry()
+        """Verify artifact files exist on disk for an export. Read-only. Raises on corrupt."""
+        registry = self._require_healthy_registry()
         entry = None
         for e in registry.get("exports", []):
             if e.get("export_id") == export_id:
