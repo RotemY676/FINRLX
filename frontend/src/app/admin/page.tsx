@@ -273,7 +273,7 @@ export default function AdminPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectBenchmark]);
 
   // Queue filter handler
   const handleQueueFilter = useCallback(async (filter: string) => {
