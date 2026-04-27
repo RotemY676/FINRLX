@@ -209,7 +209,7 @@ async def test_list_dataset_exports(client):
     assert isinstance(data, list)
     assert len(data) >= 1
     assert data[0]["export_id"] is not None
-    assert data[0]["safety_flags"]["research_only"] is True
+    assert data[0]["research_only"] is True
 
 
 @pytest.mark.asyncio

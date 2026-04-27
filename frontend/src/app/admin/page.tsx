@@ -10,12 +10,13 @@ import {
   fetchFinRLXCandidates, fetchFinRLXBenchmarkEligibility,
   runFinRLXCandidateBenchmark, fetchFinRLXCandidateBenchmarks,
   validateFinRLXResearchArtifact, importFinRLXResearchArtifact,
-  createFinrlxDatasetExport, listFinrlxDatasetExports,
+  createFinrlxDatasetExport, listFinrlxDatasetExports, getFinrlxDatasetExport,
+  markFinrlxDatasetExportStale, verifyFinrlxDatasetExport, rebuildFinrlxDatasetExportRegistry,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   FinRLXDependencyStatus, FinRLXCandidate, FinRLXBenchmarkEligibility,
   FinRLXCandidateBenchmarkResponse, FinRLXCandidateBenchmarkHistoryItem,
   FinRLXArtifactValidationResult,
-  DatasetExportResponse, DatasetExportListItem,
+  DatasetExportResponse, DatasetExportRegistryEntry, DatasetExportVerifyResult,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -138,7 +139,15 @@ export default function AdminPage() {
   const [dsExportLoading, setDsExportLoading] = useState(false);
   const [dsExportError, setDsExportError] = useState<string | null>(null);
   const [dsExportResult, setDsExportResult] = useState<DatasetExportResponse | null>(null);
-  const [dsExportHistory, setDsExportHistory] = useState<DatasetExportListItem[]>([]);
+  const [dsExportHistory, setDsExportHistory] = useState<DatasetExportRegistryEntry[]>([]);
+  const [dsSelectedExport, setDsSelectedExport] = useState<DatasetExportResponse | null>(null);
+  const [dsVerifyResult, setDsVerifyResult] = useState<DatasetExportVerifyResult | null>(null);
+  const [dsStaleAck, setDsStaleAck] = useState(false);
+  const [dsStaleReason, setDsStaleReason] = useState("");
+  const [dsRebuildAck, setDsRebuildAck] = useState(false);
+  const [dsGovLoading, setDsGovLoading] = useState<string | null>(null);
+  const [dsGovError, setDsGovError] = useState<string | null>(null);
+  const [dsGovSuccess, setDsGovSuccess] = useState<string | null>(null);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -293,6 +302,74 @@ export default function AdminPage() {
       setDsExportLoading(false);
     }
   }, [dsExportName, dsExportStart, dsExportEnd, dsExportCandidateId, dsExportBenchmarkId, dsExportFormat, dsExportFeatures, dsExportTargets, dsExportWarnings, dsExportAck]);
+
+  const refreshExportHistory = useCallback(() => {
+    listFinrlxDatasetExports().then(r => { if (r.data) setDsExportHistory(r.data); }).catch(() => {});
+  }, []);
+
+  const selectExportEntry = useCallback(async (entry: DatasetExportRegistryEntry) => {
+    setDsSelectedExport(null);
+    setDsVerifyResult(null);
+    setDsStaleAck(false);
+    setDsStaleReason("");
+    setDsGovError(null);
+    setDsGovSuccess(null);
+    try {
+      const res = await getFinrlxDatasetExport(entry.export_id);
+      if (res.data) setDsSelectedExport(res.data);
+    } catch { /* graceful */ }
+  }, []);
+
+  const handleVerifyExport = useCallback(async () => {
+    if (!dsSelectedExport) return;
+    setDsGovLoading("verify");
+    setDsGovError(null);
+    setDsVerifyResult(null);
+    try {
+      const res = await verifyFinrlxDatasetExport(dsSelectedExport.export_id);
+      if (res.data) setDsVerifyResult(res.data);
+    } catch (e: unknown) {
+      setDsGovError(e instanceof Error ? e.message : "Verify failed");
+    } finally {
+      setDsGovLoading(null);
+    }
+  }, [dsSelectedExport]);
+
+  const handleMarkStale = useCallback(async () => {
+    if (!dsSelectedExport || !dsStaleAck) return;
+    setDsGovLoading("stale");
+    setDsGovError(null);
+    setDsGovSuccess(null);
+    try {
+      await markFinrlxDatasetExportStale(dsSelectedExport.export_id, {
+        acknowledgement: true, reason: dsStaleReason || undefined,
+      });
+      setDsGovSuccess("Export marked as stale.");
+      refreshExportHistory();
+      selectExportEntry({ ...dsExportHistory.find(e => e.export_id === dsSelectedExport.export_id)! });
+    } catch (e: unknown) {
+      setDsGovError(e instanceof Error ? e.message : "Mark stale failed");
+    } finally {
+      setDsGovLoading(null);
+    }
+  }, [dsSelectedExport, dsStaleAck, dsStaleReason, refreshExportHistory, selectExportEntry, dsExportHistory]);
+
+  const handleRebuildRegistry = useCallback(async () => {
+    if (!dsRebuildAck) return;
+    setDsGovLoading("rebuild");
+    setDsGovError(null);
+    setDsGovSuccess(null);
+    try {
+      const res = await rebuildFinrlxDatasetExportRegistry({ acknowledgement: true });
+      setDsGovSuccess(`Registry rebuilt: ${res.data.export_count} exports found.`);
+      setDsRebuildAck(false);
+      refreshExportHistory();
+    } catch (e: unknown) {
+      setDsGovError(e instanceof Error ? e.message : "Rebuild failed");
+    } finally {
+      setDsGovLoading(null);
+    }
+  }, [dsRebuildAck, refreshExportHistory]);
 
   useEffect(() => {
     Promise.all([
@@ -1023,23 +1100,115 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Export history */}
-        {dsExportHistory.length > 0 && (
-          <div className="mt-3">
-            <h4 className="text-[11px] font-medium text-ink-3 mb-1.5">Export History</h4>
-            <div className="space-y-1">
-              {dsExportHistory.map((h) => (
-                <div key={h.export_id} className="flex flex-wrap items-center gap-2 text-[10px] py-1 border-b border-line/30">
-                  <span className="font-mono text-ink-2 break-all">{h.export_id?.slice(0, 8)}</span>
-                  <span className="text-ink">{h.name}</span>
-                  <span className="text-ink-3">{h.row_count} rows</span>
-                  <span className="text-ink-4">{h.format}</span>
-                  <span className="text-ink-4">{h.occurred_at?.slice(0, 19)}</span>
-                </div>
-              ))}
-            </div>
+        {/* Export registry / governance */}
+        <div className="mt-4 border-t border-line pt-3">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <h4 className="text-[12px] font-semibold text-ink">Dataset Export Governance</h4>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Local export registry</span>
           </div>
-        )}
+
+          {dsGovError && <div className="mb-2 p-2 rounded-md bg-breach/10 border border-breach/20 text-[10px] text-breach break-words">{dsGovError}</div>}
+          {dsGovSuccess && <div className="mb-2 p-2 rounded-md bg-pos/10 border border-pos/20 text-[10px] text-pos">{dsGovSuccess}</div>}
+
+          {/* Export registry list */}
+          {dsExportHistory.length > 0 && (
+            <div className="mb-3">
+              <div className="space-y-1">
+                {dsExportHistory.map((h) => (
+                  <button key={h.export_id} onClick={() => selectExportEntry(h)}
+                    className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                      dsSelectedExport?.export_id === h.export_id ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                    }`}>
+                    <span className="font-mono text-ink-2 break-all">{h.export_id?.slice(0, 8)}</span>
+                    <span className="text-ink font-medium truncate max-w-[150px]">{h.name}</span>
+                    <span className="text-ink-3">{h.row_count} rows</span>
+                    <span className="text-ink-4">{h.export_format}</span>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                      h.lifecycle_state === "active" ? "bg-pos/10 text-pos" : "bg-caution/10 text-caution"
+                    }`}>{h.lifecycle_state}</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${h.artifact_exists ? "bg-pos" : "bg-breach"}`} title={h.artifact_exists ? "Artifact exists" : "Artifact missing"} />
+                    <span className="text-ink-4 ml-auto">{h.created_at?.slice(0, 19)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Selected export detail */}
+          {dsSelectedExport && (
+            <div className="p-3 rounded-md bg-surface-2 border border-line text-[10px] space-y-2 mb-3">
+              <div className="font-semibold text-[11px] text-ink mb-1">Export Detail</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div><span className="text-ink-4">Export ID:</span> <span className="font-mono text-ink-2 break-all">{dsSelectedExport.export_id}</span></div>
+                <div><span className="text-ink-4">Status:</span> <span className="text-ink">{dsSelectedExport.status}</span> / <span className={dsSelectedExport.lifecycle_state === "active" ? "text-pos" : "text-caution"}>{dsSelectedExport.lifecycle_state}</span></div>
+                <div><span className="text-ink-4">Row count:</span> <span className="text-ink">{dsSelectedExport.row_count}</span></div>
+                <div><span className="text-ink-4">Format:</span> <span className="text-ink">{dsSelectedExport.export_format}</span></div>
+                <div className="sm:col-span-2"><span className="text-ink-4">Path:</span> <span className="font-mono text-ink-2 break-all">{dsSelectedExport.export_path}</span></div>
+                <div className="sm:col-span-2"><span className="text-ink-4">Checksum:</span> <span className="font-mono text-ink-2 break-all">{dsSelectedExport.checksum}</span></div>
+                <div><span className="text-ink-4">Fingerprint:</span> <span className="font-mono text-ink-2 break-all">{dsSelectedExport.fingerprint}</span></div>
+                <div><span className="text-ink-4">Artifact:</span> <span className={dsSelectedExport.artifact_exists ? "text-pos" : "text-breach"}>{dsSelectedExport.artifact_exists ? "exists" : "missing"}</span></div>
+              </div>
+              {dsSelectedExport.warnings && dsSelectedExport.warnings.length > 0 && (
+                <div className="text-caution">Warnings: {dsSelectedExport.warnings.join("; ")}</div>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(dsSelectedExport.safety_flags || {}).map(([k, v]) => (
+                  <span key={k} className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${v ? "bg-pos/10 text-pos" : "bg-breach/10 text-breach"}`}>
+                    {k.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+
+              {/* Operator controls */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-line/30">
+                <button onClick={handleVerifyExport} disabled={dsGovLoading === "verify"}
+                  className="px-3 py-1 rounded-md text-[10px] font-medium bg-surface-3 text-ink-2 hover:bg-surface-3/80 disabled:opacity-40 transition-colors">
+                  {dsGovLoading === "verify" ? "Verifying..." : "Verify Artifact"}
+                </button>
+              </div>
+
+              {dsVerifyResult && (
+                <div className="p-2 rounded-md bg-surface-3 text-[10px] space-y-1">
+                  <div className="font-medium text-ink">Artifact Verification</div>
+                  <div>Metadata: <span className={dsVerifyResult.metadata_exists ? "text-pos" : "text-breach"}>{dsVerifyResult.metadata_exists ? "found" : "missing"}</span></div>
+                  <div>Data: <span className={dsVerifyResult.data_exists ? "text-pos" : "text-breach"}>{dsVerifyResult.data_exists ? "found" : "missing"}</span></div>
+                  {dsVerifyResult.warnings.length > 0 && <div className="text-caution">{dsVerifyResult.warnings.join("; ")}</div>}
+                </div>
+              )}
+
+              {/* Mark stale control */}
+              {dsSelectedExport.lifecycle_state === "active" && (
+                <div className="pt-2 border-t border-line/30 space-y-2">
+                  <div className="text-[10px] text-ink-3 font-medium">Mark as Stale</div>
+                  <input type="text" value={dsStaleReason} onChange={(e) => setDsStaleReason(e.target.value)}
+                    placeholder="Reason (optional)"
+                    className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
+                    <input type="checkbox" checked={dsStaleAck} onChange={(e) => setDsStaleAck(e.target.checked)} className="rounded" />
+                    <span className="text-ink-3">I acknowledge this marks the export as stale (does not delete files)</span>
+                  </label>
+                  <button onClick={handleMarkStale} disabled={!dsStaleAck || dsGovLoading === "stale"}
+                    className="px-3 py-1 rounded-md text-[10px] font-medium bg-caution/20 text-caution hover:bg-caution/30 disabled:opacity-40 transition-colors">
+                    {dsGovLoading === "stale" ? "Marking..." : "Mark Stale"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Rebuild registry control */}
+          <div className="pt-2 border-t border-line/30">
+            <div className="text-[10px] text-ink-3 font-medium mb-1">Rebuild Registry from Files</div>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[10px] mb-1.5">
+              <input type="checkbox" checked={dsRebuildAck} onChange={(e) => setDsRebuildAck(e.target.checked)} className="rounded" />
+              <span className="text-ink-3">I acknowledge this scans research/finrlx_cpu/exports/ and rebuilds the registry</span>
+            </label>
+            <button onClick={handleRebuildRegistry} disabled={!dsRebuildAck || dsGovLoading === "rebuild"}
+              className="px-3 py-1 rounded-md text-[10px] font-medium bg-surface-3 text-ink-2 hover:bg-surface-3/80 disabled:opacity-40 transition-colors">
+              {dsGovLoading === "rebuild" ? "Rebuilding..." : "Rebuild Registry"}
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ── Run Offline Benchmark ── */}

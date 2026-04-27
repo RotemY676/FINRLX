@@ -1216,7 +1216,9 @@ export interface DatasetExportAsset {
 export interface DatasetExportResponse {
   export_id: string;
   created_at: string;
+  updated_at?: string | null;
   status: string;
+  lifecycle_state?: string;
   name: string;
   scope: string;
   research_only: boolean;
@@ -1234,24 +1236,53 @@ export interface DatasetExportResponse {
   warning_schema: string[];
   export_format: string;
   export_path: string;
+  metadata_path?: string;
+  data_path?: string;
   checksum: string;
   fingerprint: string;
   limitations: string[];
   warnings: string[];
   safety_flags: Record<string, boolean>;
+  artifact_exists?: boolean;
+  metadata_exists?: boolean;
+  data_exists?: boolean;
 }
 
-export interface DatasetExportListItem {
+export interface DatasetExportRegistryEntry {
   export_id: string;
   name: string;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  lifecycle_state: string;
   row_count: number;
-  format: string;
+  export_format: string;
+  export_path: string;
   checksum: string;
   fingerprint: string;
-  candidate_id: string | null;
-  benchmark_report_id: string | null;
+  source_candidate_id: string | null;
+  source_benchmark_report_id: string | null;
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  no_production_influence: boolean;
+  not_eligible_for_promotion: boolean;
+  artifact_exists: boolean;
+  metadata_exists: boolean;
+  data_exists: boolean;
+}
+
+export interface DatasetExportVerifyResult {
+  export_id: string;
+  export_format: string;
+  metadata_path: string;
+  data_path: string;
+  metadata_exists: boolean;
+  data_exists: boolean;
+  artifact_exists: boolean;
+  lifecycle_state: string;
+  warnings: string[];
   safety_flags: Record<string, boolean>;
-  occurred_at: string | null;
 }
 
 export async function createFinrlxDatasetExport(
@@ -1264,12 +1295,46 @@ export async function createFinrlxDatasetExport(
   });
 }
 
-export async function listFinrlxDatasetExports(): Promise<ApiResponse<DatasetExportListItem[]>> {
-  return apiFetch<DatasetExportListItem[]>("/api/v1/rl/finrlx/dataset-exports");
+export async function listFinrlxDatasetExports(params?: {
+  lifecycle_state?: string;
+  limit?: number;
+}): Promise<ApiResponse<DatasetExportRegistryEntry[]>> {
+  const qs = new URLSearchParams();
+  if (params?.lifecycle_state) qs.set("lifecycle_state", params.lifecycle_state);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return apiFetch<DatasetExportRegistryEntry[]>(`/api/v1/rl/finrlx/dataset-exports${query ? `?${query}` : ""}`);
 }
 
 export async function getFinrlxDatasetExport(
   exportId: string
 ): Promise<ApiResponse<DatasetExportResponse>> {
   return apiFetch<DatasetExportResponse>(`/api/v1/rl/finrlx/dataset-exports/${exportId}`);
+}
+
+export async function markFinrlxDatasetExportStale(
+  exportId: string,
+  payload: { acknowledgement: boolean; reason?: string }
+): Promise<ApiResponse<DatasetExportRegistryEntry>> {
+  return apiFetch<DatasetExportRegistryEntry>(`/api/v1/rl/finrlx/dataset-exports/${exportId}/mark-stale`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyFinrlxDatasetExport(
+  exportId: string
+): Promise<ApiResponse<DatasetExportVerifyResult>> {
+  return apiFetch<DatasetExportVerifyResult>(`/api/v1/rl/finrlx/dataset-exports/${exportId}/verify`);
+}
+
+export async function rebuildFinrlxDatasetExportRegistry(
+  payload: { acknowledgement: boolean }
+): Promise<ApiResponse<{ rebuilt: boolean; export_count: number }>> {
+  return apiFetch<{ rebuilt: boolean; export_count: number }>("/api/v1/rl/finrlx/dataset-exports/rebuild-registry", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }

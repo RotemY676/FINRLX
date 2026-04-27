@@ -13,6 +13,7 @@ Does NOT influence live pipeline, publication, recommendations, or overview.
 import hashlib
 import json
 import logging
+import os
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
 
@@ -1241,7 +1242,6 @@ class FinRLXResearchService:
         export_format: str = "jsonl",
     ) -> dict:
         """Export a dataset for local research use only. No production influence."""
-        import os
         now = datetime.now(timezone.utc)
         export_id = gen_uuid()
 
@@ -1416,7 +1416,7 @@ class FinRLXResearchService:
         })
         await self.db.commit()
 
-        return _json_safe({
+        result = _json_safe({
             "export_id": export_id,
             "created_at": now.isoformat(),
             "status": "completed",
@@ -1450,109 +1450,376 @@ class FinRLXResearchService:
             "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
         })
 
-    async def list_dataset_exports(self) -> list[dict]:
-        """List completed dataset exports from audit trail."""
-        events = (await self.db.execute(
-            select(AuditEvent)
-            .where(AuditEvent.action == "finrlx_dataset_export_completed")
-            .where(AuditEvent.object_type == "finrlx_research")
-            .order_by(AuditEvent.occurred_at.desc())
-            .limit(50)
-        )).scalars().all()
+        # Register in persistent local registry
+        self.register_dataset_export(result)
 
-        results = []
-        for e in events:
-            d = e.details or {}
-            results.append({
-                "export_id": d.get("export_id"),
-                "name": d.get("name"),
-                "row_count": d.get("row_count"),
-                "format": d.get("format"),
-                "checksum": d.get("checksum"),
-                "fingerprint": d.get("fingerprint"),
-                "candidate_id": d.get("candidate_id"),
-                "benchmark_report_id": d.get("benchmark_report_id"),
-                "safety_flags": d.get("safety_flags"),
-                "occurred_at": e.occurred_at.isoformat() if e.occurred_at else None,
-            })
-        return results
+        return result
 
-    async def get_dataset_export(self, export_id: str) -> dict | None:
-        """Get a specific dataset export by ID — returns full response schema."""
-        import os
+    # ── Export registry persistence (Phase 8I.2) ───────────────────────
 
-        events = (await self.db.execute(
-            select(AuditEvent)
-            .where(AuditEvent.action == "finrlx_dataset_export_completed")
-            .where(AuditEvent.object_type == "finrlx_research")
-            .order_by(AuditEvent.occurred_at.desc())
-            .limit(50)
-        )).scalars().all()
+    _DEFAULT_LIMITATIONS = [
+        "Research-only, offline-only, shadow-only dataset.",
+        "Not used by production recommendations.",
+        "Not eligible for promotion.",
+        "No broker execution.",
+        "No real-time production signal generation.",
+    ]
 
-        for e in events:
-            d = e.details or {}
-            if d.get("export_id") != export_id:
-                continue
+    @staticmethod
+    def _exports_dir() -> str:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        return os.path.join(project_root, "research", "finrlx_cpu", "exports")
 
-            export_format = d.get("format", "jsonl")
-            export_path = d.get("export_path", f"research/finrlx_cpu/exports/{export_id}.{export_format}")
-            warnings_list = list(d.get("warnings") or [])
+    @staticmethod
+    def _registry_path() -> str:
+        return os.path.join(FinRLXResearchService._exports_dir(), "export_registry.json")
 
-            # Try to read richer metadata from the on-disk metadata file
-            enriched: dict = {}
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-            if export_format == "jsonl":
-                meta_file = os.path.join(project_root, "research", "finrlx_cpu", "exports", f"{export_id}.meta.json")
-            else:
-                meta_file = os.path.join(project_root, "research", "finrlx_cpu", "exports", f"{export_id}.json")
+    @staticmethod
+    def _empty_registry() -> dict:
+        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "exports": []}
 
-            try:
-                with open(meta_file, "r", encoding="utf-8") as f:
-                    file_data = json.load(f)
-                    # For json format the metadata is under "metadata" key
-                    if export_format == "json" and "metadata" in file_data:
-                        enriched = file_data["metadata"]
-                    else:
-                        enriched = file_data
-            except (FileNotFoundError, json.JSONDecodeError):
-                warnings_list.append("Local export artifact not found on disk. Metadata reconstructed from audit trail.")
+    @staticmethod
+    def load_dataset_export_registry() -> dict:
+        """Load registry from disk. Returns empty registry if missing. Returns error dict if corrupt."""
+        path = FinRLXResearchService._registry_path()
+        if not os.path.exists(path):
+            reg = FinRLXResearchService._empty_registry()
+            FinRLXResearchService.save_dataset_export_registry(reg)
+            return reg
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict) or "exports" not in data:
+                return {"version": 1, "updated_at": None, "exports": [],
+                        "warnings": ["Registry file exists but has invalid structure."]}
+            return data
+        except json.JSONDecodeError:
+            return {"version": 1, "updated_at": None, "exports": [],
+                    "warnings": ["Registry file is corrupt (invalid JSON). Use rebuild-registry to recreate."]}
+        except Exception:
+            return {"version": 1, "updated_at": None, "exports": [],
+                    "warnings": ["Registry file could not be read."]}
 
-            sf = d.get("safety_flags") or self.DATASET_EXPORT_SAFETY_FLAGS
+    @staticmethod
+    def save_dataset_export_registry(registry: dict) -> dict:
+        """Atomically save registry to disk."""
+        export_dir = FinRLXResearchService._exports_dir()
+        os.makedirs(export_dir, exist_ok=True)
+        path = FinRLXResearchService._registry_path()
+        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, default=str)
+        os.replace(tmp_path, path)
+        return registry
 
-            return {
-                "export_id": d.get("export_id"),
-                "created_at": d.get("created_at") or enriched.get("created_at") or (e.occurred_at.isoformat() if e.occurred_at else None),
-                "status": "completed",
-                "name": d.get("name") or enriched.get("name"),
-                "scope": d.get("scope") or enriched.get("scope", "local_research"),
-                "research_only": sf.get("research_only", True),
-                "offline_only": sf.get("offline_only", True),
-                "shadow_only": sf.get("shadow_only", True),
-                "no_production_influence": sf.get("no_production_influence", True),
-                "not_eligible_for_promotion": sf.get("not_eligible_for_promotion", True),
-                "source_candidate_id": d.get("candidate_id") or enriched.get("source_candidate_id"),
-                "source_benchmark_report_id": d.get("benchmark_report_id") or enriched.get("source_benchmark_report_id"),
-                "row_count": d.get("row_count") or enriched.get("row_count", 0),
-                "date_range": d.get("date_range") or enriched.get("date_range"),
-                "assets": d.get("assets") or enriched.get("assets", []),
-                "feature_schema": d.get("feature_schema") or enriched.get("feature_schema", []),
-                "target_schema": d.get("target_schema") or enriched.get("target_schema", []),
-                "warning_schema": d.get("warning_schema") or enriched.get("warning_schema", []),
-                "export_format": export_format,
-                "export_path": export_path,
-                "checksum": d.get("checksum") or enriched.get("checksum"),
-                "fingerprint": d.get("fingerprint") or enriched.get("fingerprint"),
-                "limitations": d.get("limitations") or enriched.get("limitations", [
-                    "Research-only, offline-only, shadow-only dataset.",
-                    "Not used by production recommendations.",
-                    "Not eligible for promotion.",
-                    "No broker execution.",
-                    "No real-time production signal generation.",
-                ]),
-                "warnings": warnings_list,
-                "safety_flags": sf,
-            }
+    @staticmethod
+    def _check_artifact_files(export_id: str, export_format: str) -> dict:
+        """Check existence of artifact files on disk."""
+        export_dir = FinRLXResearchService._exports_dir()
+        if export_format == "jsonl":
+            meta_path = f"research/finrlx_cpu/exports/{export_id}.meta.json"
+            data_path = f"research/finrlx_cpu/exports/{export_id}.jsonl"
+            meta_exists = os.path.exists(os.path.join(export_dir, f"{export_id}.meta.json"))
+            data_exists = os.path.exists(os.path.join(export_dir, f"{export_id}.jsonl"))
+        else:
+            meta_path = f"research/finrlx_cpu/exports/{export_id}.json"
+            data_path = meta_path
+            meta_exists = os.path.exists(os.path.join(export_dir, f"{export_id}.json"))
+            data_exists = meta_exists
+        return {
+            "metadata_path": meta_path,
+            "data_path": data_path,
+            "metadata_exists": meta_exists,
+            "data_exists": data_exists,
+            "artifact_exists": meta_exists and data_exists,
+        }
+
+    def register_dataset_export(self, export_response: dict) -> dict:
+        """Register an export in the persistent local registry."""
+        registry = self.load_dataset_export_registry()
+        export_id = export_response.get("export_id")
+        export_format = export_response.get("export_format", "jsonl")
+
+        file_check = self._check_artifact_files(export_id, export_format)
+
+        entry = {
+            "export_id": export_id,
+            "created_at": export_response.get("created_at"),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "status": "completed",
+            "lifecycle_state": "active",
+            "name": export_response.get("name"),
+            "row_count": export_response.get("row_count", 0),
+            "date_range": export_response.get("date_range"),
+            "assets": export_response.get("assets", []),
+            "export_format": export_format,
+            "export_path": export_response.get("export_path"),
+            "metadata_path": file_check["metadata_path"],
+            "data_path": file_check["data_path"],
+            "checksum": export_response.get("checksum"),
+            "fingerprint": export_response.get("fingerprint"),
+            "source_candidate_id": export_response.get("source_candidate_id"),
+            "source_benchmark_report_id": export_response.get("source_benchmark_report_id"),
+            "feature_schema": export_response.get("feature_schema", []),
+            "target_schema": export_response.get("target_schema", []),
+            "warning_schema": export_response.get("warning_schema", []),
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+            "warnings": export_response.get("warnings", []),
+            "limitations": export_response.get("limitations", self._DEFAULT_LIMITATIONS),
+            "artifact_exists": file_check["artifact_exists"],
+            "metadata_exists": file_check["metadata_exists"],
+            "data_exists": file_check["data_exists"],
+        }
+
+        # Remove existing entry with same export_id if present (idempotent)
+        registry["exports"] = [e for e in registry["exports"] if e.get("export_id") != export_id]
+        registry["exports"].insert(0, entry)
+        self.save_dataset_export_registry(registry)
+        return entry
+
+    def list_dataset_exports(self, lifecycle_state: str | None = None, limit: int = 50) -> list[dict]:
+        """List exports from the persistent registry, newest first."""
+        registry = self.load_dataset_export_registry()
+        exports = registry.get("exports", [])
+        # Sort newest first
+        exports.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+        if lifecycle_state:
+            exports = [e for e in exports if e.get("lifecycle_state") == lifecycle_state]
+        return exports[:limit]
+
+    def get_dataset_export(self, export_id: str) -> dict | None:
+        """Get a specific export by ID from registry, enriched with full schema."""
+        registry = self.load_dataset_export_registry()
+        entry = None
+        for e in registry.get("exports", []):
+            if e.get("export_id") == export_id:
+                entry = dict(e)
+                break
+        if not entry:
+            return None
+
+        # Refresh artifact existence
+        export_format = entry.get("export_format", "jsonl")
+        file_check = self._check_artifact_files(export_id, export_format)
+        entry.update(file_check)
+
+        # Enrich from metadata file if available
+        warnings_list = list(entry.get("warnings") or [])
+        export_dir = self._exports_dir()
+        if export_format == "jsonl":
+            meta_file = os.path.join(export_dir, f"{export_id}.meta.json")
+        else:
+            meta_file = os.path.join(export_dir, f"{export_id}.json")
+
+        enriched: dict = {}
+        try:
+            with open(meta_file, "r", encoding="utf-8") as f:
+                file_data = json.load(f)
+                if export_format == "json" and "metadata" in file_data:
+                    enriched = file_data["metadata"]
+                else:
+                    enriched = file_data
+        except (FileNotFoundError, json.JSONDecodeError):
+            if file_check["metadata_exists"] is False:
+                warnings_list.append("Local export artifact not found on disk.")
+
+        sf = self.DATASET_EXPORT_SAFETY_FLAGS
+
+        return {
+            "export_id": export_id,
+            "created_at": entry.get("created_at") or enriched.get("created_at"),
+            "updated_at": entry.get("updated_at"),
+            "status": entry.get("status", "completed"),
+            "lifecycle_state": entry.get("lifecycle_state", "active"),
+            "name": entry.get("name") or enriched.get("name"),
+            "scope": "local_research",
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+            "source_candidate_id": entry.get("source_candidate_id") or enriched.get("source_candidate_id"),
+            "source_benchmark_report_id": entry.get("source_benchmark_report_id") or enriched.get("source_benchmark_report_id"),
+            "row_count": entry.get("row_count") or enriched.get("row_count", 0),
+            "date_range": entry.get("date_range") or enriched.get("date_range"),
+            "assets": entry.get("assets") or enriched.get("assets", []),
+            "feature_schema": entry.get("feature_schema") or enriched.get("feature_schema", []),
+            "target_schema": entry.get("target_schema") or enriched.get("target_schema", []),
+            "warning_schema": entry.get("warning_schema") or enriched.get("warning_schema", []),
+            "export_format": export_format,
+            "export_path": entry.get("export_path", f"research/finrlx_cpu/exports/{export_id}.{export_format}"),
+            "metadata_path": file_check["metadata_path"],
+            "data_path": file_check["data_path"],
+            "checksum": entry.get("checksum") or enriched.get("checksum"),
+            "fingerprint": entry.get("fingerprint") or enriched.get("fingerprint"),
+            "limitations": entry.get("limitations") or enriched.get("limitations", self._DEFAULT_LIMITATIONS),
+            "warnings": warnings_list,
+            "safety_flags": sf,
+            "artifact_exists": file_check["artifact_exists"],
+            "metadata_exists": file_check["metadata_exists"],
+            "data_exists": file_check["data_exists"],
+        }
+
+    def mark_dataset_export_stale(self, export_id: str, reason: str | None = None) -> dict | None:
+        """Mark an export as stale. Does not delete files."""
+        registry = self.load_dataset_export_registry()
+        for entry in registry.get("exports", []):
+            if entry.get("export_id") == export_id:
+                entry["lifecycle_state"] = "stale"
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                if reason:
+                    entry.setdefault("warnings", []).append(f"Marked stale: {reason}")
+                self.save_dataset_export_registry(registry)
+                return entry
         return None
+
+    def verify_dataset_export_artifact(self, export_id: str) -> dict | None:
+        """Verify artifact files exist on disk for an export. Read-only."""
+        registry = self.load_dataset_export_registry()
+        entry = None
+        for e in registry.get("exports", []):
+            if e.get("export_id") == export_id:
+                entry = e
+                break
+        if not entry:
+            return None
+
+        export_format = entry.get("export_format", "jsonl")
+        file_check = self._check_artifact_files(export_id, export_format)
+
+        # Update registry with fresh artifact status
+        entry["artifact_exists"] = file_check["artifact_exists"]
+        entry["metadata_exists"] = file_check["metadata_exists"]
+        entry["data_exists"] = file_check["data_exists"]
+        entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        self.save_dataset_export_registry(registry)
+
+        warnings = []
+        if not file_check["metadata_exists"]:
+            warnings.append("Metadata file not found on disk.")
+        if not file_check["data_exists"]:
+            warnings.append("Data file not found on disk.")
+
+        return {
+            "export_id": export_id,
+            "export_format": export_format,
+            "metadata_path": file_check["metadata_path"],
+            "data_path": file_check["data_path"],
+            "metadata_exists": file_check["metadata_exists"],
+            "data_exists": file_check["data_exists"],
+            "artifact_exists": file_check["artifact_exists"],
+            "lifecycle_state": entry.get("lifecycle_state", "active"),
+            "warnings": warnings,
+            "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+        }
+
+    def rebuild_dataset_export_registry_from_files(self) -> dict:
+        """Rebuild registry by scanning exports directory. Only reads, never fabricates."""
+        export_dir = self._exports_dir()
+        os.makedirs(export_dir, exist_ok=True)
+
+        entries: list[dict] = []
+        seen_ids: set[str] = set()
+
+        # Scan for .meta.json files (jsonl exports)
+        for fname in os.listdir(export_dir):
+            if fname.endswith(".meta.json"):
+                export_id = fname.replace(".meta.json", "")
+                if export_id in seen_ids:
+                    continue
+                seen_ids.add(export_id)
+                try:
+                    with open(os.path.join(export_dir, fname), "r", encoding="utf-8") as f:
+                        meta = json.load(f)
+                    file_check = self._check_artifact_files(export_id, "jsonl")
+                    entries.append({
+                        "export_id": export_id,
+                        "created_at": meta.get("created_at"),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "status": "completed",
+                        "lifecycle_state": "active",
+                        "name": meta.get("name"),
+                        "row_count": meta.get("row_count", 0),
+                        "date_range": meta.get("date_range"),
+                        "assets": meta.get("assets", []),
+                        "export_format": "jsonl",
+                        "export_path": f"research/finrlx_cpu/exports/{export_id}.jsonl",
+                        "metadata_path": file_check["metadata_path"],
+                        "data_path": file_check["data_path"],
+                        "checksum": meta.get("checksum"),
+                        "fingerprint": meta.get("fingerprint"),
+                        "source_candidate_id": meta.get("source_candidate_id"),
+                        "source_benchmark_report_id": meta.get("source_benchmark_report_id"),
+                        "feature_schema": meta.get("feature_schema", []),
+                        "target_schema": meta.get("target_schema", []),
+                        "warning_schema": meta.get("warning_schema", []),
+                        "research_only": True, "offline_only": True, "shadow_only": True,
+                        "no_production_influence": True, "not_eligible_for_promotion": True,
+                        "warnings": meta.get("warnings", []),
+                        "limitations": meta.get("limitations", self._DEFAULT_LIMITATIONS),
+                        "artifact_exists": file_check["artifact_exists"],
+                        "metadata_exists": file_check["metadata_exists"],
+                        "data_exists": file_check["data_exists"],
+                    })
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        # Scan for .json files (combined json exports, not .meta.json)
+        for fname in os.listdir(export_dir):
+            if fname.endswith(".json") and not fname.endswith(".meta.json") and fname != "export_registry.json" and fname != "export_registry.json.tmp":
+                export_id = fname.replace(".json", "")
+                if export_id in seen_ids:
+                    continue
+                seen_ids.add(export_id)
+                try:
+                    with open(os.path.join(export_dir, fname), "r", encoding="utf-8") as f:
+                        file_data = json.load(f)
+                    meta = file_data.get("metadata", file_data)
+                    file_check = self._check_artifact_files(export_id, "json")
+                    entries.append({
+                        "export_id": export_id,
+                        "created_at": meta.get("created_at"),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "status": "completed",
+                        "lifecycle_state": "active",
+                        "name": meta.get("name"),
+                        "row_count": meta.get("row_count", 0),
+                        "date_range": meta.get("date_range"),
+                        "assets": meta.get("assets", []),
+                        "export_format": "json",
+                        "export_path": f"research/finrlx_cpu/exports/{export_id}.json",
+                        "metadata_path": file_check["metadata_path"],
+                        "data_path": file_check["data_path"],
+                        "checksum": meta.get("checksum"),
+                        "fingerprint": meta.get("fingerprint"),
+                        "source_candidate_id": meta.get("source_candidate_id"),
+                        "source_benchmark_report_id": meta.get("source_benchmark_report_id"),
+                        "feature_schema": meta.get("feature_schema", []),
+                        "target_schema": meta.get("target_schema", []),
+                        "warning_schema": meta.get("warning_schema", []),
+                        "research_only": True, "offline_only": True, "shadow_only": True,
+                        "no_production_influence": True, "not_eligible_for_promotion": True,
+                        "warnings": meta.get("warnings", []),
+                        "limitations": meta.get("limitations", self._DEFAULT_LIMITATIONS),
+                        "artifact_exists": file_check["artifact_exists"],
+                        "metadata_exists": file_check["metadata_exists"],
+                        "data_exists": file_check["data_exists"],
+                    })
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        # Sort newest first
+        entries.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+
+        registry = {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "exports": entries}
+        self.save_dataset_export_registry(registry)
+
+        return {"rebuilt": True, "export_count": len(entries), "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS}
 
     @staticmethod
     def safety_guard(action: str) -> dict:

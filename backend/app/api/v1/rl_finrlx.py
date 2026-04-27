@@ -16,6 +16,9 @@ GET  /api/v1/rl/finrlx/candidates/{candidate_id}/benchmarks
 POST /api/v1/rl/finrlx/dataset-export
 GET  /api/v1/rl/finrlx/dataset-exports
 GET  /api/v1/rl/finrlx/dataset-exports/{export_id}
+POST /api/v1/rl/finrlx/dataset-exports/{export_id}/mark-stale
+GET  /api/v1/rl/finrlx/dataset-exports/{export_id}/verify
+POST /api/v1/rl/finrlx/dataset-exports/rebuild-registry
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -273,15 +276,63 @@ async def create_dataset_export(body: FinRLXDatasetExportRequest, db: AsyncSessi
 
 
 @router.get("/rl/finrlx/dataset-exports", response_model=ApiResponse[list[dict]])
-async def list_dataset_exports(db: AsyncSession = Depends(get_db)):
+async def list_dataset_exports(
+    lifecycle_state: str | None = None,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
     svc = FinRLXResearchService(db)
-    return ApiResponse(meta=make_meta(), data=await svc.list_dataset_exports())
+    return ApiResponse(meta=make_meta(), data=svc.list_dataset_exports(lifecycle_state=lifecycle_state, limit=limit))
 
 
 @router.get("/rl/finrlx/dataset-exports/{export_id}", response_model=ApiResponse[dict])
 async def get_dataset_export(export_id: str, db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
-    result = await svc.get_dataset_export(export_id)
+    result = svc.get_dataset_export(export_id)
     if not result:
         raise HTTPException(status_code=404, detail="Dataset export not found.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+# ── Dataset Export Governance (Phase 8I.2) ───────────────────────────
+
+class FinRLXMarkStaleRequest(BaseModel):
+    acknowledgement: bool = False
+    reason: str | None = None
+
+
+class FinRLXRebuildRegistryRequest(BaseModel):
+    acknowledgement: bool = False
+
+
+@router.post("/rl/finrlx/dataset-exports/{export_id}/mark-stale", response_model=ApiResponse[dict])
+async def mark_dataset_export_stale(
+    export_id: str, body: FinRLXMarkStaleRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required to mark export as stale.")
+    svc = FinRLXResearchService(db)
+    result = svc.mark_dataset_export_stale(export_id, reason=body.reason)
+    if not result:
+        raise HTTPException(status_code=404, detail="Dataset export not found in registry.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.get("/rl/finrlx/dataset-exports/{export_id}/verify", response_model=ApiResponse[dict])
+async def verify_dataset_export(export_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    result = svc.verify_dataset_export_artifact(export_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Dataset export not found in registry.")
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.post("/rl/finrlx/dataset-exports/rebuild-registry", response_model=ApiResponse[dict])
+async def rebuild_dataset_export_registry(
+    body: FinRLXRebuildRegistryRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required to rebuild registry.")
+    svc = FinRLXResearchService(db)
+    result = svc.rebuild_dataset_export_registry_from_files()
     return ApiResponse(meta=make_meta(), data=result)
