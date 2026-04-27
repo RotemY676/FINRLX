@@ -1703,7 +1703,7 @@ class FinRLXResearchService:
         return None
 
     def verify_dataset_export_artifact(self, export_id: str) -> dict | None:
-        """Verify artifact files exist on disk for an export. Read-only. Raises on corrupt."""
+        """Verify artifact files exist on disk. Strictly read-only — no registry writes."""
         registry = self._require_healthy_registry()
         entry = None
         for e in registry.get("exports", []):
@@ -1715,13 +1715,6 @@ class FinRLXResearchService:
 
         export_format = entry.get("export_format", "jsonl")
         file_check = self._check_artifact_files(export_id, export_format)
-
-        # Update registry with fresh artifact status
-        entry["artifact_exists"] = file_check["artifact_exists"]
-        entry["metadata_exists"] = file_check["metadata_exists"]
-        entry["data_exists"] = file_check["data_exists"]
-        entry["updated_at"] = datetime.now(timezone.utc).isoformat()
-        self.save_dataset_export_registry(registry)
 
         warnings = []
         if not file_check["metadata_exists"]:
@@ -1740,6 +1733,9 @@ class FinRLXResearchService:
             "lifecycle_state": entry.get("lifecycle_state", "active"),
             "warnings": warnings,
             "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+            "registry_snapshot_artifact_exists": entry.get("artifact_exists"),
+            "registry_snapshot_metadata_exists": entry.get("metadata_exists"),
+            "registry_snapshot_data_exists": entry.get("data_exists"),
         }
 
     def rebuild_dataset_export_registry_from_files(self) -> dict:

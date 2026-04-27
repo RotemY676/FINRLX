@@ -228,6 +228,55 @@ async def test_verify_invalid_id_returns_404(client):
     assert r.status_code == 404
 
 
+@pytest.mark.asyncio
+async def test_verify_does_not_modify_registry_for_existing_files(client):
+    """Verify is read-only: registry file unchanged when artifacts exist."""
+    _clear_registry()
+    data = await _create_export(client)
+    export_id = data["export_id"]
+
+    with open(_registry_path(), "r") as f:
+        before = f.read()
+
+    r = await client.get(f"/api/v1/rl/finrlx/dataset-exports/{export_id}/verify")
+    assert r.status_code == 200
+    assert r.json()["data"]["artifact_exists"] is True
+
+    with open(_registry_path(), "r") as f:
+        after = f.read()
+
+    assert before == after
+
+
+@pytest.mark.asyncio
+async def test_verify_does_not_modify_registry_for_missing_files(client):
+    """Verify is read-only: registry file unchanged even when artifacts are missing."""
+    _clear_registry()
+    data = await _create_export(client)
+    export_id = data["export_id"]
+
+    # Delete artifact files
+    export_dir = FinRLXResearchService._exports_dir()
+    for ext in [".jsonl", ".meta.json", ".json"]:
+        p = os.path.join(export_dir, f"{export_id}{ext}")
+        if os.path.exists(p):
+            os.remove(p)
+
+    with open(_registry_path(), "r") as f:
+        before = f.read()
+
+    r = await client.get(f"/api/v1/rl/finrlx/dataset-exports/{export_id}/verify")
+    assert r.status_code == 200
+    d = r.json()["data"]
+    assert d["artifact_exists"] is False
+    assert len(d["warnings"]) > 0
+
+    with open(_registry_path(), "r") as f:
+        after = f.read()
+
+    assert before == after
+
+
 # ── Rebuild registry ────────────────────────────────────────────────
 
 @pytest.mark.asyncio

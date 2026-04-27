@@ -1,10 +1,9 @@
-PHASE 8I.2 LOCAL VERIFICATION EVIDENCE (corrupt-registry fix)
-Timestamp: 2026-04-27T20:33:02.9382003+03:00
+PHASE 8I.2 LOCAL VERIFICATION EVIDENCE (verify-readonly fix)
+Timestamp: 2026-04-27T20:45:30.5130639+03:00
 
 === GIT STATUS ===
  M DOCS/handoff/PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md
  M DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt
- M backend/app/api/v1/rl_finrlx.py
  M backend/app/services/finrlx_research.py
  M backend/tests/test_phase8i2_dataset_export_governance.py
 ?? DOCS/handoff/PHASE_8I0_LOCAL_AUDIT_EVIDENCE.txt
@@ -15,25 +14,23 @@ Timestamp: 2026-04-27T20:33:02.9382003+03:00
 warning: in the working copy of 'DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt', LF will be replaced by CRLF the next time Git touches it
 DOCS/handoff/PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md
 DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt
-backend/app/api/v1/rl_finrlx.py
 backend/app/services/finrlx_research.py
 backend/tests/test_phase8i2_dataset_export_governance.py
 
 === GIT DIFF STAT ===
 warning: in the working copy of 'DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt', LF will be replaced by CRLF the next time Git touches it
- .../PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md  |  17 ++-
- .../PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt      | Bin 29515 -> 951 bytes
- backend/app/api/v1/rl_finrlx.py                    |  25 ++++-
- backend/app/services/finrlx_research.py            |  52 ++++++---
- .../test_phase8i2_dataset_export_governance.py     | 120 ++++++++++++++++++++-
- 5 files changed, 189 insertions(+), 25 deletions(-)
+ .../PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md  |  17 +-
+ .../PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt      | 219 +--------------------
+ backend/app/services/finrlx_research.py            |  12 +-
+ .../test_phase8i2_dataset_export_governance.py     |  49 +++++
+ 4 files changed, 67 insertions(+), 230 deletions(-)
 
-=== BACKEND TARGETED TEST (8I + 8I.2) ===
+=== BACKEND TARGETED (8I+8I.2) ===
 C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
 The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
 System.Management.Automation.RemoteException
   warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
-.....................................................                    [100%]
+.......................................................                  [100%]
 ============================== warnings summary ===============================
 tests/test_phase8i_dataset_export.py::test_export_requires_acknowledgement
   C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:783: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
@@ -48,15 +45,15 @@ tests/test_phase8i_dataset_export.py::test_export_requires_acknowledgement
     warnings.warn(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-53 passed, 1 warning in 30.42s
+55 passed, 1 warning in 34.36s
 
-=== BACKEND PHASE 8 REGRESSION ===
+=== BACKEND REGRESSION ===
 C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
 The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
 System.Management.Automation.RemoteException
   warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
 ........................................................................ [ 51%]
-...................................................................      [100%]
+.....................................................................    [100%]
 ============================== warnings summary ===============================
 tests/test_phase8a_finrlx_research.py::test_finrlx_status
   C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:783: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
@@ -71,7 +68,7 @@ tests/test_phase8a_finrlx_research.py::test_finrlx_status
     warnings.warn(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-139 passed, 1 warning in 71.43s (0:01:11)
+141 passed, 1 warning in 73.44s (0:01:13)
 
 === FRONTEND BUILD ===
 
@@ -128,108 +125,112 @@ Route (app)                              Size     First Load JS
 === UNSAFE LANGUAGE GREP ===
 No matches found.
 
-=== EXPORT DIRECTORY ===
+=== EXPORT DIR ===
 .gitkeep
-027a1890-5184-4b40-ad4d-67241728c8b8.jsonl
-027a1890-5184-4b40-ad4d-67241728c8b8.meta.json
-068f0dc7-bec6-4020-ba4f-7a36f5838599.jsonl
-068f0dc7-bec6-4020-ba4f-7a36f5838599.meta.json
-07de4a87-dac4-42c4-9cb9-7b90772bb0b9.jsonl
-07de4a87-dac4-42c4-9cb9-7b90772bb0b9.meta.json
-0abf867a-5732-4c97-b1c3-cb45e1c045f2.jsonl
-0abf867a-5732-4c97-b1c3-cb45e1c045f2.meta.json
-11e7f7c3-1ba6-41c4-8d52-82bb11fc525c.jsonl
-11e7f7c3-1ba6-41c4-8d52-82bb11fc525c.meta.json
-18d21b75-a216-422f-99bb-3183c7f094b3.json
-20da44fa-5500-4680-8f8b-0db8253c1cfc.jsonl
-20da44fa-5500-4680-8f8b-0db8253c1cfc.meta.json
-24ad9a09-42e8-46d4-b187-39a68e25fb17.jsonl
-24ad9a09-42e8-46d4-b187-39a68e25fb17.meta.json
-32c9c043-311d-4ed8-9f0e-7effd26501e0.jsonl
-32c9c043-311d-4ed8-9f0e-7effd26501e0.meta.json
-36454ba1-8a1f-4556-9506-e4b40b43a4a0.jsonl
-36454ba1-8a1f-4556-9506-e4b40b43a4a0.meta.json
-3d61a5ab-fd17-4f29-8b06-2c5c70b12b80.jsonl
-3d61a5ab-fd17-4f29-8b06-2c5c70b12b80.meta.json
-43374c9d-9d65-440c-a19a-585490bc07e1.jsonl
-43374c9d-9d65-440c-a19a-585490bc07e1.meta.json
-4a4e6705-6d61-46ce-8a38-ff43dfc504b9.jsonl
-4a4e6705-6d61-46ce-8a38-ff43dfc504b9.meta.json
-4e9290c9-3b01-4e08-b422-6760d60f8cc9.jsonl
-4e9290c9-3b01-4e08-b422-6760d60f8cc9.meta.json
-52131283-92eb-4d15-bbff-8f9b4ec66687.jsonl
-52131283-92eb-4d15-bbff-8f9b4ec66687.meta.json
-52cfb53e-c075-4c27-bf78-ced292d57527.jsonl
-52cfb53e-c075-4c27-bf78-ced292d57527.meta.json
-541dbf7e-4462-4eb5-81f3-20d01906f8c1.jsonl
-541dbf7e-4462-4eb5-81f3-20d01906f8c1.meta.json
-57ae9872-be0a-4cb4-938a-33eb095cf796.jsonl
-57ae9872-be0a-4cb4-938a-33eb095cf796.meta.json
-5d700bcc-90e6-4c19-b8a3-f75b1727c9e4.jsonl
-5d700bcc-90e6-4c19-b8a3-f75b1727c9e4.meta.json
-5f07f05a-60ef-4f34-8a6d-3ee6fdd67573.jsonl
-5f07f05a-60ef-4f34-8a6d-3ee6fdd67573.meta.json
-603ab919-0709-487f-b8d6-d8d701cb4aec.jsonl
-603ab919-0709-487f-b8d6-d8d701cb4aec.meta.json
-6722b528-dc12-4942-8298-6ec62bc12546.jsonl
-6722b528-dc12-4942-8298-6ec62bc12546.meta.json
-68b79a39-453f-4821-b2c7-c30832edc685.jsonl
-68b79a39-453f-4821-b2c7-c30832edc685.meta.json
-6c2af421-d1d4-47ac-83b5-46403afb8848.jsonl
-6c2af421-d1d4-47ac-83b5-46403afb8848.meta.json
-6e3a28dc-9b8a-4ae2-a295-1ea02e32d718.jsonl
-6e3a28dc-9b8a-4ae2-a295-1ea02e32d718.meta.json
-72808f34-d5d0-450d-85b6-9a88ace1822d.jsonl
-72808f34-d5d0-450d-85b6-9a88ace1822d.meta.json
-76dfdadd-aa58-406d-9b3f-f6c308e4e9b0.jsonl
-76dfdadd-aa58-406d-9b3f-f6c308e4e9b0.meta.json
-771894e2-ba14-4677-ae11-b5a7495cf7c3.jsonl
-771894e2-ba14-4677-ae11-b5a7495cf7c3.meta.json
-80052724-22d7-4bc9-9268-06bfee6c6058.jsonl
-80052724-22d7-4bc9-9268-06bfee6c6058.meta.json
-8290c7f7-0836-4a0b-abaa-efa7badbcc23.jsonl
-8290c7f7-0836-4a0b-abaa-efa7badbcc23.meta.json
-87bdfb33-e55d-4cf9-ae1e-9cf730c4f81e.jsonl
-87bdfb33-e55d-4cf9-ae1e-9cf730c4f81e.meta.json
-89f4c098-7088-4383-af01-32c1376d6326.jsonl
-89f4c098-7088-4383-af01-32c1376d6326.meta.json
-8fe44ae9-5ca3-4132-9a3e-9b1fa884d467.jsonl
-8fe44ae9-5ca3-4132-9a3e-9b1fa884d467.meta.json
-939f6a89-5e84-41c5-b1f4-f1068a205469.jsonl
-939f6a89-5e84-41c5-b1f4-f1068a205469.meta.json
-98f8f9d0-d464-4c16-916f-35aaa2a1a95f.jsonl
-98f8f9d0-d464-4c16-916f-35aaa2a1a95f.meta.json
-9f7151bc-7058-47e8-9551-013c0bf87838.jsonl
-9f7151bc-7058-47e8-9551-013c0bf87838.meta.json
-a0e4b78c-df3d-4e33-97ec-c403a3a73cc0.jsonl
-a0e4b78c-df3d-4e33-97ec-c403a3a73cc0.meta.json
-a32c8636-1471-4d17-8831-34b859650d40.json
-ad9aeced-287c-475a-a4b4-79ecc88ec4e5.jsonl
-ad9aeced-287c-475a-a4b4-79ecc88ec4e5.meta.json
-b092c9fb-670f-4cb7-96df-be5efbd907c0.jsonl
-b092c9fb-670f-4cb7-96df-be5efbd907c0.meta.json
-b165e4fa-58b9-4335-b50a-4142935991e2.jsonl
-b165e4fa-58b9-4335-b50a-4142935991e2.meta.json
-b34cfc04-2a1f-4048-ac50-c1782f91765c.jsonl
-b34cfc04-2a1f-4048-ac50-c1782f91765c.meta.json
-bf5dec31-4bcb-44d8-98c3-ed52477eb931.jsonl
-bf5dec31-4bcb-44d8-98c3-ed52477eb931.meta.json
-c03d04f6-fef9-4f63-a892-d193487150c2.jsonl
-c03d04f6-fef9-4f63-a892-d193487150c2.meta.json
-c27be56b-0348-473e-afd9-d9141c72b11c.jsonl
-c27be56b-0348-473e-afd9-d9141c72b11c.meta.json
-cb977d0b-f287-4497-a9d4-e7e4e5be7336.jsonl
-cb977d0b-f287-4497-a9d4-e7e4e5be7336.meta.json
-d1e44f5f-3c41-4115-9748-8c8f704a0c24.jsonl
-d1e44f5f-3c41-4115-9748-8c8f704a0c24.meta.json
-e1f1cf27-bbe4-4520-9a0b-db200e5597a9.jsonl
-e1f1cf27-bbe4-4520-9a0b-db200e5597a9.meta.json
-e24da869-72db-4e5a-8ef6-a4e7d165dacf.jsonl
-e24da869-72db-4e5a-8ef6-a4e7d165dacf.meta.json
-ed740983-1ec2-4ee1-ba13-ec1c46428df3.jsonl
-ed740983-1ec2-4ee1-ba13-ec1c46428df3.meta.json
+0575b27a-8913-453c-8eca-2b946bd05e12.jsonl
+0575b27a-8913-453c-8eca-2b946bd05e12.meta.json
+0c37f13f-3d1f-4706-a7b3-de779fe5e357.jsonl
+0c37f13f-3d1f-4706-a7b3-de779fe5e357.meta.json
+0d448c18-de7c-4300-8df8-8e1d5ce5c9f3.jsonl
+0d448c18-de7c-4300-8df8-8e1d5ce5c9f3.meta.json
+150b7f4c-6cc0-4790-be49-18512f93f881.jsonl
+150b7f4c-6cc0-4790-be49-18512f93f881.meta.json
+157422ae-83f2-45a3-a7a6-5c3cc24805d9.jsonl
+157422ae-83f2-45a3-a7a6-5c3cc24805d9.meta.json
+1671c718-4aac-46a6-949f-4f7f8b0e9c36.jsonl
+1671c718-4aac-46a6-949f-4f7f8b0e9c36.meta.json
+171a3d87-3f21-4d25-8a54-a9c8b1affae0.jsonl
+171a3d87-3f21-4d25-8a54-a9c8b1affae0.meta.json
+1b883cf9-537f-4a80-bf97-a82943103239.jsonl
+1b883cf9-537f-4a80-bf97-a82943103239.meta.json
+2b339892-8e61-4bb5-91a3-a5e700bff914.jsonl
+2b339892-8e61-4bb5-91a3-a5e700bff914.meta.json
+308b15fd-1662-4cb6-b55a-8544388451fd.jsonl
+308b15fd-1662-4cb6-b55a-8544388451fd.meta.json
+30918213-2c62-40c8-8bf1-13ea59fa99a4.jsonl
+30918213-2c62-40c8-8bf1-13ea59fa99a4.meta.json
+329562ff-085a-4fbe-bf76-6e6e5e05bcc6.jsonl
+329562ff-085a-4fbe-bf76-6e6e5e05bcc6.meta.json
+3cf5d929-8759-4133-8620-ddfff7dca80b.jsonl
+3cf5d929-8759-4133-8620-ddfff7dca80b.meta.json
+3d42ff5d-a3c9-4fe0-8b7d-41306f7d046d.jsonl
+3d42ff5d-a3c9-4fe0-8b7d-41306f7d046d.meta.json
+45b7e675-74bc-4c9a-82e7-38e8f57f2f45.jsonl
+45b7e675-74bc-4c9a-82e7-38e8f57f2f45.meta.json
+45bdb253-0649-44da-bf16-589fa989fcab.jsonl
+45bdb253-0649-44da-bf16-589fa989fcab.meta.json
+46699696-43bd-479e-ae66-33daf0eef11a.jsonl
+46699696-43bd-479e-ae66-33daf0eef11a.meta.json
+4fbfa759-3a1a-42da-91e2-42cf203034c5.jsonl
+4fbfa759-3a1a-42da-91e2-42cf203034c5.meta.json
+5567e4ee-fae4-44ae-9b85-427d96195649.jsonl
+5567e4ee-fae4-44ae-9b85-427d96195649.meta.json
+55a3c14f-4aa8-4f61-97e1-55b9138ee153.jsonl
+55a3c14f-4aa8-4f61-97e1-55b9138ee153.meta.json
+55dbf45d-8773-471c-8468-c59689fb9737.jsonl
+55dbf45d-8773-471c-8468-c59689fb9737.meta.json
+5af0d2ef-b3c2-427f-aed5-69f71adbaaaf.jsonl
+5af0d2ef-b3c2-427f-aed5-69f71adbaaaf.meta.json
+5d88ae4a-a6dd-4bb8-9e22-f658b65e8efd.jsonl
+5d88ae4a-a6dd-4bb8-9e22-f658b65e8efd.meta.json
+62a055af-bb7a-443b-8d21-15224e585a28.jsonl
+62a055af-bb7a-443b-8d21-15224e585a28.meta.json
+69d334ac-e0e9-42e1-9551-8a172b2eae69.json
+6ca0ad90-fa2b-4e56-9265-f0333082fb2c.jsonl
+6ca0ad90-fa2b-4e56-9265-f0333082fb2c.meta.json
+6d522937-432b-42ef-acef-e64405bf88f0.json
+7b5f376a-f8a4-46ca-85f2-d7bc641cbd1c.jsonl
+7b5f376a-f8a4-46ca-85f2-d7bc641cbd1c.meta.json
+7f2ba44a-84b1-4dd5-9f13-bd64ea2ab61d.jsonl
+7f2ba44a-84b1-4dd5-9f13-bd64ea2ab61d.meta.json
+89263ca6-a185-4cca-9515-3ab7665e869c.jsonl
+89263ca6-a185-4cca-9515-3ab7665e869c.meta.json
+918e65fb-21bc-430b-bb22-c7f22e1a763c.jsonl
+918e65fb-21bc-430b-bb22-c7f22e1a763c.meta.json
+9ab4f79b-d405-4417-ae40-92249cd7474a.jsonl
+9ab4f79b-d405-4417-ae40-92249cd7474a.meta.json
+9d95d458-20ea-41b1-bc08-6f8d02661a16.jsonl
+9d95d458-20ea-41b1-bc08-6f8d02661a16.meta.json
+9e00dbe3-8f8e-447b-9264-701454524c71.jsonl
+9e00dbe3-8f8e-447b-9264-701454524c71.meta.json
+a03e11c1-087e-4579-a664-623c7458cb5b.jsonl
+a03e11c1-087e-4579-a664-623c7458cb5b.meta.json
+a9f1470f-106f-4c2a-a494-86b9b500f071.jsonl
+a9f1470f-106f-4c2a-a494-86b9b500f071.meta.json
+ad351322-341e-4ce5-bf63-37d732ddcdbf.jsonl
+ad351322-341e-4ce5-bf63-37d732ddcdbf.meta.json
+b66d4012-5544-40d5-adb1-0d7eb9f83456.jsonl
+b66d4012-5544-40d5-adb1-0d7eb9f83456.meta.json
+ba194160-c8e2-4ca0-98a9-2802587f2353.jsonl
+ba194160-c8e2-4ca0-98a9-2802587f2353.meta.json
+bae225dc-1306-485f-a822-fe3def8ec31d.jsonl
+bae225dc-1306-485f-a822-fe3def8ec31d.meta.json
+bc162472-b5e1-4cdb-ad5b-354b70922c76.jsonl
+bc162472-b5e1-4cdb-ad5b-354b70922c76.meta.json
+c82006af-8ef7-4237-b099-d98f61c816b8.jsonl
+c82006af-8ef7-4237-b099-d98f61c816b8.meta.json
+ce248ca4-e380-4d37-9f09-70d649605884.jsonl
+ce248ca4-e380-4d37-9f09-70d649605884.meta.json
+d1744cd3-56b0-4956-a675-fcd96dff6ac4.jsonl
+d1744cd3-56b0-4956-a675-fcd96dff6ac4.meta.json
+d78a3586-1ddd-417e-bea8-c8b036064042.jsonl
+d78a3586-1ddd-417e-bea8-c8b036064042.meta.json
+dcebda95-81c5-416c-90be-fc5aa3103fa9.jsonl
+dcebda95-81c5-416c-90be-fc5aa3103fa9.meta.json
+e3bd9e88-ab42-4b21-bd01-8feed5d692b0.jsonl
+e3bd9e88-ab42-4b21-bd01-8feed5d692b0.meta.json
+e4f46485-7ab4-4dc0-81cb-5a26af157465.jsonl
+e4f46485-7ab4-4dc0-81cb-5a26af157465.meta.json
+e5083f61-3f20-41ec-abb3-53215e33f3bc.jsonl
+e5083f61-3f20-41ec-abb3-53215e33f3bc.meta.json
+e8df8a46-839a-4247-afdc-7daf6b13335b.jsonl
+e8df8a46-839a-4247-afdc-7daf6b13335b.meta.json
+e999061b-32b8-4bf3-a649-8fd7690b0ef6.jsonl
+e999061b-32b8-4bf3-a649-8fd7690b0ef6.meta.json
+ea0882e2-c210-4f8b-90b4-ab0e2bedd6f6.jsonl
+ea0882e2-c210-4f8b-90b4-ab0e2bedd6f6.meta.json
+eedd2520-5c18-478d-b60d-b36f9a435980.jsonl
+eedd2520-5c18-478d-b60d-b36f9a435980.meta.json
+ef46fc2c-b663-4547-91dc-bf720f3a7713.jsonl
+ef46fc2c-b663-4547-91dc-bf720f3a7713.meta.json
 export_registry.json
-f71c9d52-8c7d-4f9b-93d0-7c50c46bbf69.jsonl
-f71c9d52-8c7d-4f9b-93d0-7c50c46bbf69.meta.json
-fe4b2251-8bab-419c-bf81-8ed87834ebe9.jsonl
-fe4b2251-8bab-419c-bf81-8ed87834ebe9.meta.json

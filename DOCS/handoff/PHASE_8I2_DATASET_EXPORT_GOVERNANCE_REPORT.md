@@ -175,7 +175,7 @@ Missing files do not crash — they produce warnings.
 
 | Control | Behavior |
 |---------|----------|
-| Verify Artifact | Read-only check of file existence |
+| Verify Artifact | Strictly read-only: checks file existence on disk, does not modify registry, does not update timestamps. Returns live filesystem state alongside registry snapshot values. |
 | Mark Stale | Sets lifecycle_state="stale", preserves files, requires acknowledgement |
 | Rebuild Registry | Scans exports dir, rebuilds from metadata files, requires acknowledgement |
 
@@ -280,14 +280,14 @@ The export registry and artifact files are stored on the local filesystem at
 
 ## 18. Stop/Go Recommendation
 
-**GO** — Phase 8I.2 (with corrupt-registry fix) is complete:
-- 53/53 Phase 8I+8I.2 tests pass (7 new corrupt-registry tests)
-- 139/139 Phase 8 regression tests pass
+**GO** — Phase 8I.2 (with corrupt-registry + verify-readonly fixes) is complete:
+- 55/55 Phase 8I+8I.2 tests pass
+- 141/141 Phase 8 regression tests pass
 - Frontend build/typecheck/lint clean
 - No unsafe language
 - Registry persistence verified
 - Corrupt-registry protection verified
-- Artifact health model verified
+- Verify endpoint is strictly read-only (tested)
 - All safety invariants preserved
 
 ### Corrupt-Registry Fix (8I.2-fix)
@@ -299,3 +299,10 @@ The export registry and artifact files are stored on the local filesystem at
 5. Only `rebuild-registry` with explicit acknowledgement can overwrite a corrupt registry
 6. Corrupt error responses contain no secrets or absolute paths
 7. 7 new tests verify all corrupt-registry behaviors
+
+### Verify Read-Only Fix (8I.2-fix2)
+
+1. `verify_dataset_export_artifact()` no longer mutates registry entries or calls `save_dataset_export_registry()`
+2. Artifact health is computed dynamically from the filesystem at request time
+3. Response includes `registry_snapshot_*` fields showing the stored registry state for comparison
+4. 2 new tests prove registry file content is unchanged after verify (both existing and missing artifacts)
