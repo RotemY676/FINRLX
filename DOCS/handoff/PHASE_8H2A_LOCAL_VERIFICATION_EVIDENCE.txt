@@ -1,0 +1,210 @@
+=== PHASE 8H.2A LOCAL VERIFICATION EVIDENCE ===
+Timestamp: 2026-04-27 06:56:16
+
+=== GIT STATUS ===
+ M "design/handoff-package/Decision Workspace.html"
+ M design/handoff-package/HANDOFF.md
+ M design/handoff-package/icons.jsx
+ M design/handoff-package/shell.jsx
+?? DOCS/handoff/PHASE_8H2A_LOCAL_VERIFICATION_EVIDENCE.txt
+?? DOCS/manual/
+?? _railway_oneclick_backup_20260424_175509/
+?? _railway_oneclick_backup_20260424_180610/
+?? _railway_oneclick_report_20260424_175509.txt
+?? _railway_oneclick_report_20260424_180610.txt
+?? design/handoff-package/01-compare-lower.png
+?? design/handoff-package/01-preview-compare-low.png
+?? design/handoff-package/01-preview-compare-scroll.png
+?? design/handoff-package/01-preview-overview-mid.png
+?? design/handoff-package/01-preview-scroll2.png
+?? design/handoff-package/02-compare-lower.png
+?? design/handoff-package/02-preview-compare-low.png
+?? design/handoff-package/02-preview-compare-scroll.png
+?? design/handoff-package/02-preview-overview-mid.png
+?? design/handoff-package/02-preview-scroll2.png
+?? design/handoff-package/03-compare-lower.png
+?? design/handoff-package/03-preview-compare-scroll.png
+?? design/handoff-package/03-preview-scroll2.png
+?? design/handoff-package/04-preview-scroll2.png
+?? design/handoff-package/Backtests.html
+?? "design/handoff-package/Design System.html"
+?? design/handoff-package/Index.html
+?? design/handoff-package/Integrations.html
+?? design/handoff-package/Onboarding.html
+?? "design/handoff-package/Paper Portfolio.html"
+?? "design/handoff-package/Policy Editor.html"
+?? design/handoff-package/Replay.html
+?? design/handoff-package/States.html
+?? design/handoff-package/Universe.html
+?? design/handoff-package/backtests-app.jsx
+?? design/handoff-package/backtests-data.jsx
+?? design/handoff-package/backtests.css
+?? design/handoff-package/backtests.jsx
+?? design/handoff-package/design-system.css
+?? design/handoff-package/ds-app.jsx
+?? design/handoff-package/ds-components.jsx
+?? design/handoff-package/ds-foundations.jsx
+?? design/handoff-package/handoff-package/
+?? design/handoff-package/index-app.jsx
+?? design/handoff-package/index-page.css
+?? design/handoff-package/index-previews.jsx
+?? design/handoff-package/integrations-app.jsx
+?? design/handoff-package/integrations-data.jsx
+?? design/handoff-package/integrations.css
+?? design/handoff-package/integrations.jsx
+?? design/handoff-package/onboarding-app.jsx
+?? design/handoff-package/onboarding-data.jsx
+?? design/handoff-package/onboarding.css
+?? design/handoff-package/onboarding.jsx
+?? design/handoff-package/paper-app.jsx
+?? design/handoff-package/paper-data.jsx
+?? design/handoff-package/paper.css
+?? design/handoff-package/paper.jsx
+?? design/handoff-package/policy-app.jsx
+?? design/handoff-package/policy-data.jsx
+?? design/handoff-package/policy.css
+?? design/handoff-package/policy.jsx
+?? design/handoff-package/preview-compare.png
+?? design/handoff-package/preview-compare2.png
+?? design/handoff-package/preview-full.png
+?? design/handoff-package/preview-overview.png
+?? design/handoff-package/replay-app.jsx
+?? design/handoff-package/replay-data.jsx
+?? design/handoff-package/replay.css
+?? design/handoff-package/replay.jsx
+?? design/handoff-package/source/
+?? design/handoff-package/states.css
+?? design/handoff-package/tokens.css
+?? design/handoff-package/universe-app.jsx
+?? design/handoff-package/universe-data.jsx
+?? design/handoff-package/universe.css
+?? design/handoff-package/universe.jsx
+?? "~$\327\234\327\252 \327\251\327\234\327\221\327\231 \327\224\327\244\327\231\327\252\327\225\327\227 \327\224\327\221\327\220\327\231\327\235 \327\242\327\223 \327\222\327\236\327\250 \327\236\327\225\327\246\327\250.docx"
+?? "\327\230\327\221\327\234\327\252 \327\251\327\234\327\221\327\231 \327\224\327\244\327\231\327\252\327\225\327\227 \327\224\327\221\327\220\327\231\327\235 \327\242\327\223 \327\222\327\236\327\250 \327\236\327\225\327\246\327\250.docx"
+
+=== GIT DIFF NAME ONLY ===
+warning: in the working copy of 'design/handoff-package/Decision Workspace.html', LF will be replaced by CRLF the next time Git touches it
+design/handoff-package/Decision Workspace.html
+design/handoff-package/HANDOFF.md
+design/handoff-package/icons.jsx
+design/handoff-package/shell.jsx
+
+=== GIT DIFF STAT ===
+warning: in the working copy of 'design/handoff-package/Decision Workspace.html', LF will be replaced by CRLF the next time Git touches it
+ design/handoff-package/Decision Workspace.html |   1 +
+ design/handoff-package/HANDOFF.md              | 796 ++++++++++++++++---------
+ design/handoff-package/icons.jsx               |   5 +-
+ design/handoff-package/shell.jsx               |  30 +-
+ 4 files changed, 527 insertions(+), 305 deletions(-)
+
+=== FRONTEND PACKAGE SCRIPTS ===
+{
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint"
+}
+
+=== NPM RUN BUILD ===
+
+> finrlx-frontend@0.2.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/11) ...
+   Generating static pages (2/11) 
+   Generating static pages (5/11) 
+   Generating static pages (8/11) 
+ Γ£ô Generating static pages (11/11)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Γöî Γùï /                                    4.72 kB        95.1 kB
+Γö£ Γùï /_not-found                          876 B          88.4 kB
+Γö£ Γùï /admin                               15.9 kB         106 kB
+Γö£ Γùï /backtests                           2.55 kB         197 kB
+Γö£ Γùï /comparison                          10.4 kB         198 kB
+Γö£ Γùï /decision                            13 kB           208 kB
+Γö£ Γùï /icon.svg                            0 B                0 B
+Γö£ Γùï /paper                               3.41 kB         194 kB
+Γöö Γùï /replay                              3.62 kB        96.7 kB
++ First Load JS shared by all            87.5 kB
+  Γö£ chunks/117-d70f252e30bdb96b.js       31.9 kB
+  Γö£ chunks/fd9d1056-8fb6bfb5a9bc068a.js  53.6 kB
+  Γöö other shared chunks (total)          2 kB
+
+
+Γùï  (Static)  prerendered as static content
+
+
+=== NPM RUN TYPECHECK ===
+npm error Missing script: "typecheck"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: C:\Users\Rotem\AppData\Local\npm-cache\_logs\2026-04-27T03_56_55_991Z-debug-0.log
+
+=== NPM RUN LINT ===
+
+> finrlx-frontend@0.2.0 lint
+> next lint
+
+? How would you like to configure ESLint? https://nextjs.org/docs/basic-features/eslint
+[?25lΓ¥»  Strict (recommended)
+   Base
+   Cancel[2K[1A[2K[1A[2K[G[?25h
+Installing devDependencies (npm):
+- eslint@^8
+- eslint-config-next
+
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: finrlx-frontend@0.2.0
+npm error Found: eslint@8.57.1
+npm error node_modules/eslint
+npm error   dev eslint@"^8" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer eslint@">=9.0.0" from eslint-config-next@16.2.4
+npm error node_modules/eslint-config-next
+npm error   dev eslint-config-next@"*" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\Rotem\AppData\Local\npm-cache\_logs\2026-04-27T03_57_11_503Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\Rotem\AppData\Local\npm-cache\_logs\2026-04-27T03_57_11_503Z-debug-0.log
+undefined
+
+=== UNSAFE LANGUAGE GREP ===
+
+=== ACK HASH-BOUND CODE REFERENCES ===
+
+src\app\admin\page.tsx:119:  const [importAck, setImportAck] = useState(false);
+src\app\admin\page.tsx:120:  const [importAckHash, setImportAckHash] = useState<string | null>(null);
+src\app\admin\page.tsx:192:    setImportAck(false);
+src\app\admin\page.tsx:193:    setImportAckHash(null);
+src\app\admin\page.tsx:210:    if (!importValidation?.valid || !importAck || !importValidation.artifact_hash || importAckHash !== importValidation.artifact_hash) return;
+src\app\admin\page.tsx:233:        setImportAck(false);
+src\app\admin\page.tsx:248:  }, [importJson, importValidation, importAck, importAckHash, importSource, importNotes, selectCandidate]);
+src\app\admin\page.tsx:573:        <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); setImportAck(false); setImportAckHash(null); }}
+src\app\admin\page.tsx:579:            <input type="text" value={importSource} onChange={e => { setImportSource(e.target.value); setImportAck(false); setImportAckHash(null); }}
+src\app\admin\page.tsx:584:            <input type="text" value={importNotes} onChange={e => { setImportNotes(e.target.value); setImportAck(false); setImportAckHash(null); }}
+src\app\admin\page.tsx:600:            {importValidation.artifact_hash && <span className="ml-2 font-mono text-[9px]">hash: {importValidation.artifact_hash.slice(0, 16)}</span>}
+src\app\admin\page.tsx:617:              <input type="checkbox" checked={importAck} onChange={e => { setImportAck(e.target.checked); setImportAckHash(e.target.checked && importValidation?.artifact_hash ? importValidation.artifact_hash : null); }} className="rounded" />
+src\app\admin\page.tsx:620:            <button onClick={handleImportArtifact} disabled={importLoading || !importAck || !importValidation?.artifact_hash || importAckHash !== importValidation?.artifact_hash}
+src\app\admin\page.tsx:653:                    {c.artifact_hash && <span className="font-mono text-ink-4">#{c.artifact_hash.slice(0, 8)}</span>}
+src\app\admin\page.tsx:674:              <div><span className="text-ink-4">Artifact hash:</span> <span className="font-mono text-ink-2">{selectedCandidate.artifact_hash || "—"}</span></div>
+
+
