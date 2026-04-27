@@ -1270,6 +1270,6 @@ export async function listFinrlxDatasetExports(): Promise<ApiResponse<DatasetExp
 
 export async function getFinrlxDatasetExport(
   exportId: string
-): Promise<ApiResponse<DatasetExportListItem>> {
-  return apiFetch<DatasetExportListItem>(`/api/v1/rl/finrlx/dataset-exports/${exportId}`);
+): Promise<ApiResponse<DatasetExportResponse>> {
+  return apiFetch<DatasetExportResponse>(`/api/v1/rl/finrlx/dataset-exports/${exportId}`);
 }

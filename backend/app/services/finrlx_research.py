@@ -1368,7 +1368,7 @@ class FinRLXResearchService:
                 "Not used by production recommendations.",
                 "Not eligible for promotion.",
                 "No broker execution.",
-                "No live signal generation.",
+                "No real-time production signal generation.",
             ],
             "warnings": warnings,
         })
@@ -1397,12 +1397,22 @@ class FinRLXResearchService:
                 {"type": "combined", "path": f"research/finrlx_cpu/exports/{export_id}.json"},
             ]
 
-        # Audit
+        # Audit — store full metadata for GET reconstruction
         await self._create_audit_event("finrlx_dataset_export_completed", {
             "export_id": export_id, "name": name, "row_count": len(export_rows),
             "format": export_format, "checksum": checksum, "fingerprint": fingerprint,
             "candidate_id": candidate_id, "benchmark_report_id": benchmark_report_id,
             "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+            "created_at": now.isoformat(),
+            "scope": "local_research",
+            "date_range": date_range,
+            "feature_schema": feature_schema,
+            "target_schema": target_schema,
+            "warning_schema": warning_schema,
+            "assets": assets_list,
+            "export_path": f"research/finrlx_cpu/exports/{export_id}.{export_format}",
+            "limitations": metadata["limitations"],
+            "warnings": warnings,
         })
         await self.db.commit()
 
@@ -1434,7 +1444,7 @@ class FinRLXResearchService:
                 "Not used by production recommendations.",
                 "Not eligible for promotion.",
                 "No broker execution.",
-                "No live signal generation.",
+                "No real-time production signal generation.",
             ],
             "warnings": warnings,
             "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
@@ -1468,7 +1478,9 @@ class FinRLXResearchService:
         return results
 
     async def get_dataset_export(self, export_id: str) -> dict | None:
-        """Get a specific dataset export by ID from audit trail."""
+        """Get a specific dataset export by ID — returns full response schema."""
+        import os
+
         events = (await self.db.execute(
             select(AuditEvent)
             .where(AuditEvent.action == "finrlx_dataset_export_completed")
@@ -1479,19 +1491,67 @@ class FinRLXResearchService:
 
         for e in events:
             d = e.details or {}
-            if d.get("export_id") == export_id:
-                return {
-                    "export_id": d.get("export_id"),
-                    "name": d.get("name"),
-                    "row_count": d.get("row_count"),
-                    "format": d.get("format"),
-                    "checksum": d.get("checksum"),
-                    "fingerprint": d.get("fingerprint"),
-                    "candidate_id": d.get("candidate_id"),
-                    "benchmark_report_id": d.get("benchmark_report_id"),
-                    "safety_flags": d.get("safety_flags"),
-                    "occurred_at": e.occurred_at.isoformat() if e.occurred_at else None,
-                }
+            if d.get("export_id") != export_id:
+                continue
+
+            export_format = d.get("format", "jsonl")
+            export_path = d.get("export_path", f"research/finrlx_cpu/exports/{export_id}.{export_format}")
+            warnings_list = list(d.get("warnings") or [])
+
+            # Try to read richer metadata from the on-disk metadata file
+            enriched: dict = {}
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            if export_format == "jsonl":
+                meta_file = os.path.join(project_root, "research", "finrlx_cpu", "exports", f"{export_id}.meta.json")
+            else:
+                meta_file = os.path.join(project_root, "research", "finrlx_cpu", "exports", f"{export_id}.json")
+
+            try:
+                with open(meta_file, "r", encoding="utf-8") as f:
+                    file_data = json.load(f)
+                    # For json format the metadata is under "metadata" key
+                    if export_format == "json" and "metadata" in file_data:
+                        enriched = file_data["metadata"]
+                    else:
+                        enriched = file_data
+            except (FileNotFoundError, json.JSONDecodeError):
+                warnings_list.append("Local export artifact not found on disk. Metadata reconstructed from audit trail.")
+
+            sf = d.get("safety_flags") or self.DATASET_EXPORT_SAFETY_FLAGS
+
+            return {
+                "export_id": d.get("export_id"),
+                "created_at": d.get("created_at") or enriched.get("created_at") or (e.occurred_at.isoformat() if e.occurred_at else None),
+                "status": "completed",
+                "name": d.get("name") or enriched.get("name"),
+                "scope": d.get("scope") or enriched.get("scope", "local_research"),
+                "research_only": sf.get("research_only", True),
+                "offline_only": sf.get("offline_only", True),
+                "shadow_only": sf.get("shadow_only", True),
+                "no_production_influence": sf.get("no_production_influence", True),
+                "not_eligible_for_promotion": sf.get("not_eligible_for_promotion", True),
+                "source_candidate_id": d.get("candidate_id") or enriched.get("source_candidate_id"),
+                "source_benchmark_report_id": d.get("benchmark_report_id") or enriched.get("source_benchmark_report_id"),
+                "row_count": d.get("row_count") or enriched.get("row_count", 0),
+                "date_range": d.get("date_range") or enriched.get("date_range"),
+                "assets": d.get("assets") or enriched.get("assets", []),
+                "feature_schema": d.get("feature_schema") or enriched.get("feature_schema", []),
+                "target_schema": d.get("target_schema") or enriched.get("target_schema", []),
+                "warning_schema": d.get("warning_schema") or enriched.get("warning_schema", []),
+                "export_format": export_format,
+                "export_path": export_path,
+                "checksum": d.get("checksum") or enriched.get("checksum"),
+                "fingerprint": d.get("fingerprint") or enriched.get("fingerprint"),
+                "limitations": d.get("limitations") or enriched.get("limitations", [
+                    "Research-only, offline-only, shadow-only dataset.",
+                    "Not used by production recommendations.",
+                    "Not eligible for promotion.",
+                    "No broker execution.",
+                    "No real-time production signal generation.",
+                ]),
+                "warnings": warnings_list,
+                "safety_flags": sf,
+            }
         return None
 
     @staticmethod

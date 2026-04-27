@@ -102,7 +102,7 @@ async def test_export_path_inside_research_dir(client):
 
 @pytest.mark.asyncio
 async def test_no_data_export_returns_warning(client):
-    """Export with no available data returns warning and row_count=0."""
+    """Export with sparse/empty data range includes warnings. Does not fabricate rows."""
     # Use a very old date range with no seeded market data
     r = await client.post("/api/v1/rl/finrlx/dataset-export", json={
         "start_date": "2010-01-01", "end_date": "2010-01-02",
@@ -110,11 +110,11 @@ async def test_no_data_export_returns_warning(client):
     })
     assert r.status_code == 200
     data = r.json()["data"]
-    # The export should still succeed but may return 0 rows or rows with no assets
-    # depending on whether the environment builds empty states for dates without data.
-    # Either way, warnings should be present if no meaningful data exists.
-    assert data["row_count"] >= 0
     assert isinstance(data["warnings"], list)
+    assert data["row_count"] >= 0
+    # If row_count is 0, there must be an explicit no-data warning
+    if data["row_count"] == 0:
+        assert any("no dataset rows" in w.lower() for w in data["warnings"])
 
 
 # ── Invalid date range ──────────────────────────────────────────────
@@ -214,7 +214,7 @@ async def test_list_dataset_exports(client):
 
 @pytest.mark.asyncio
 async def test_get_dataset_export_by_id(client):
-    """GET /rl/finrlx/dataset-exports/{id} returns specific export."""
+    """GET /rl/finrlx/dataset-exports/{id} returns full required schema."""
     cr = await client.post("/api/v1/rl/finrlx/dataset-export", json={
         "name": "Get By ID Test",
         "start_date": "2026-03-15", "end_date": "2026-04-15",
@@ -225,8 +225,48 @@ async def test_get_dataset_export_by_id(client):
     r = await client.get(f"/api/v1/rl/finrlx/dataset-exports/{export_id}")
     assert r.status_code == 200
     data = r.json()["data"]
+
+    # Identity
     assert data["export_id"] == export_id
     assert data["name"] == "Get By ID Test"
+    assert data["status"] == "completed"
+    assert data["created_at"] is not None
+
+    # Safety flags — top-level booleans
+    assert data["research_only"] is True
+    assert data["offline_only"] is True
+    assert data["shadow_only"] is True
+    assert data["no_production_influence"] is True
+    assert data["not_eligible_for_promotion"] is True
+
+    # Safety flags dict
+    sf = data["safety_flags"]
+    assert sf["research_only"] is True
+    assert sf["offline_only"] is True
+
+    # Scope
+    assert data["scope"] == "local_research"
+
+    # Schema lists
+    assert isinstance(data["assets"], list)
+    assert isinstance(data["feature_schema"], list)
+    assert isinstance(data["target_schema"], list)
+    assert isinstance(data["warning_schema"], list)
+    assert isinstance(data["limitations"], list)
+    assert isinstance(data["warnings"], list)
+    assert len(data["limitations"]) > 0
+
+    # Export path
+    assert data["export_path"].startswith("research/finrlx_cpu/exports/")
+    assert data["export_format"] in ("jsonl", "json")
+
+    # Checksum/fingerprint
+    assert data["checksum"] is not None
+    assert data["fingerprint"] is not None
+
+    # Row count and date range
+    assert data["row_count"] >= 0
+    assert data["date_range"] is not None or data["row_count"] == 0
 
 
 @pytest.mark.asyncio
