@@ -1192,3 +1192,84 @@ export async function runRLBenchmark(payload: RunRLBenchmarkRequest): Promise<Ap
     body: JSON.stringify(payload),
   });
 }
+
+// ── Dataset Export for Local Research (Phase 8I) ──────────────────
+
+export interface DatasetExportRequest {
+  name: string;
+  candidate_id?: string | null;
+  benchmark_report_id?: string | null;
+  start_date: string;
+  end_date: string;
+  include_features: boolean;
+  include_targets: boolean;
+  include_warnings: boolean;
+  format: "jsonl" | "json";
+  research_acknowledgement: boolean;
+}
+
+export interface DatasetExportAsset {
+  type: string;
+  path: string;
+}
+
+export interface DatasetExportResponse {
+  export_id: string;
+  created_at: string;
+  status: string;
+  name: string;
+  scope: string;
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  no_production_influence: boolean;
+  not_eligible_for_promotion: boolean;
+  source_candidate_id: string | null;
+  source_benchmark_report_id: string | null;
+  row_count: number;
+  date_range: { start: string; end: string } | null;
+  assets: DatasetExportAsset[];
+  feature_schema: string[];
+  target_schema: string[];
+  warning_schema: string[];
+  export_format: string;
+  export_path: string;
+  checksum: string;
+  fingerprint: string;
+  limitations: string[];
+  warnings: string[];
+  safety_flags: Record<string, boolean>;
+}
+
+export interface DatasetExportListItem {
+  export_id: string;
+  name: string;
+  row_count: number;
+  format: string;
+  checksum: string;
+  fingerprint: string;
+  candidate_id: string | null;
+  benchmark_report_id: string | null;
+  safety_flags: Record<string, boolean>;
+  occurred_at: string | null;
+}
+
+export async function createFinrlxDatasetExport(
+  payload: DatasetExportRequest
+): Promise<ApiResponse<DatasetExportResponse>> {
+  return apiFetch<DatasetExportResponse>("/api/v1/rl/finrlx/dataset-export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listFinrlxDatasetExports(): Promise<ApiResponse<DatasetExportListItem[]>> {
+  return apiFetch<DatasetExportListItem[]>("/api/v1/rl/finrlx/dataset-exports");
+}
+
+export async function getFinrlxDatasetExport(
+  exportId: string
+): Promise<ApiResponse<DatasetExportListItem>> {
+  return apiFetch<DatasetExportListItem>(`/api/v1/rl/finrlx/dataset-exports/${exportId}`);
+}

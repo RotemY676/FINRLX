@@ -10,10 +10,12 @@ import {
   fetchFinRLXCandidates, fetchFinRLXBenchmarkEligibility,
   runFinRLXCandidateBenchmark, fetchFinRLXCandidateBenchmarks,
   validateFinRLXResearchArtifact, importFinRLXResearchArtifact,
+  createFinrlxDatasetExport, listFinrlxDatasetExports,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   FinRLXDependencyStatus, FinRLXCandidate, FinRLXBenchmarkEligibility,
   FinRLXCandidateBenchmarkResponse, FinRLXCandidateBenchmarkHistoryItem,
   FinRLXArtifactValidationResult,
+  DatasetExportResponse, DatasetExportListItem,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -121,6 +123,22 @@ export default function AdminPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
+
+  // Dataset export workflow (Phase 8I)
+  const [dsExportName, setDsExportName] = useState("Local Research Dataset Export");
+  const [dsExportStart, setDsExportStart] = useState("2026-03-15");
+  const [dsExportEnd, setDsExportEnd] = useState("2026-04-15");
+  const [dsExportCandidateId, setDsExportCandidateId] = useState("");
+  const [dsExportBenchmarkId, setDsExportBenchmarkId] = useState("");
+  const [dsExportFormat, setDsExportFormat] = useState<"jsonl" | "json">("jsonl");
+  const [dsExportFeatures, setDsExportFeatures] = useState(true);
+  const [dsExportTargets, setDsExportTargets] = useState(true);
+  const [dsExportWarnings, setDsExportWarnings] = useState(true);
+  const [dsExportAck, setDsExportAck] = useState(false);
+  const [dsExportLoading, setDsExportLoading] = useState(false);
+  const [dsExportError, setDsExportError] = useState<string | null>(null);
+  const [dsExportResult, setDsExportResult] = useState<DatasetExportResponse | null>(null);
+  const [dsExportHistory, setDsExportHistory] = useState<DatasetExportListItem[]>([]);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -247,6 +265,35 @@ export default function AdminPage() {
     }
   }, [importJson, importValidation, importAck, importAckHash, importSource, importNotes, selectCandidate]);
 
+  const runDatasetExport = useCallback(async () => {
+    if (!dsExportAck) return;
+    setDsExportLoading(true);
+    setDsExportError(null);
+    setDsExportResult(null);
+    try {
+      const res = await createFinrlxDatasetExport({
+        name: dsExportName,
+        start_date: dsExportStart,
+        end_date: dsExportEnd,
+        candidate_id: dsExportCandidateId || null,
+        benchmark_report_id: dsExportBenchmarkId || null,
+        format: dsExportFormat,
+        include_features: dsExportFeatures,
+        include_targets: dsExportTargets,
+        include_warnings: dsExportWarnings,
+        research_acknowledgement: true,
+      });
+      if (res.data) {
+        setDsExportResult(res.data);
+        listFinrlxDatasetExports().then(r => { if (r.data) setDsExportHistory(r.data); }).catch(() => {});
+      }
+    } catch (e: unknown) {
+      setDsExportError(e instanceof Error ? e.message : "Dataset export failed");
+    } finally {
+      setDsExportLoading(false);
+    }
+  }, [dsExportName, dsExportStart, dsExportEnd, dsExportCandidateId, dsExportBenchmarkId, dsExportFormat, dsExportFeatures, dsExportTargets, dsExportWarnings, dsExportAck]);
+
   useEffect(() => {
     Promise.all([
       fetchOps(),
@@ -270,6 +317,7 @@ export default function AdminPage() {
         fetchFinRLXCandidates().then(r => {
           if (r.data) setImportedCandidates(r.data.filter(c => c.imported_from_artifact));
         }).catch(() => {});
+        listFinrlxDatasetExports().then(r => { if (r.data) setDsExportHistory(r.data); }).catch(() => {});
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -850,21 +898,148 @@ export default function AdminPage() {
 
       {/* ── Dataset Export for Local Research ── */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <Icon name="sparkle" size={15} className="text-accent-2" />
           <h3 className="text-[13px] font-semibold text-ink">Dataset Export for Local Research</h3>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Read-only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research-only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline-only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">No production influence</span>
         </div>
-        <p className="text-[10px] text-ink-4 mb-2">
-          Local PPO/A2C research experiments (via <span className="font-mono">research/finrlx_cpu/</span>) use exported offline datasets.
-          The backend provides a dataset validation endpoint to verify the RL training data contract.
+        <p className="text-[10px] text-ink-4 mb-3">
+          Export shadow dataset for local offline research. Not used by production decisions. Not eligible for promotion. No broker execution.
         </p>
-        <div className="text-[10px] text-ink-3 space-y-1">
-          <p><span className="font-medium">Validate dataset:</span> <span className="font-mono">POST /api/v1/rl/finrlx/validate-dataset</span></p>
-          <p><span className="font-medium">Export training data:</span> <span className="font-mono">POST /api/v1/rl/training/export-dataset</span></p>
-          <p><span className="font-medium">Local research folder:</span> <span className="font-mono">research/finrlx_cpu/</span></p>
-          <p className="text-ink-4">Full dataset export UI and one-click workflow planned for Phase 8I.</p>
+
+        {/* Export form */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <div className="sm:col-span-3">
+            <label className="text-[10px] text-ink-4 block mb-1">Export name</label>
+            <input type="text" value={dsExportName} onChange={(e) => setDsExportName(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">Start date</label>
+            <input type="date" value={dsExportStart} onChange={(e) => setDsExportStart(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">End date</label>
+            <input type="date" value={dsExportEnd} onChange={(e) => setDsExportEnd(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-[10px] text-ink-4 block mb-1">Format</label>
+            <select value={dsExportFormat} onChange={(e) => setDsExportFormat(e.target.value as "jsonl" | "json")}
+              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none">
+              <option value="jsonl">JSONL</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+          <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-1">Candidate ID (optional)</label>
+              <input type="text" value={dsExportCandidateId} onChange={(e) => setDsExportCandidateId(e.target.value)}
+                placeholder="Leave empty for general export"
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-1">Benchmark report ID (optional)</label>
+              <input type="text" value={dsExportBenchmarkId} onChange={(e) => setDsExportBenchmarkId(e.target.value)}
+                placeholder="Leave empty"
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+            </div>
+          </div>
         </div>
+
+        {/* Checkboxes */}
+        <div className="flex flex-wrap gap-4 mb-3 text-[11px]">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" checked={dsExportFeatures} onChange={(e) => setDsExportFeatures(e.target.checked)} className="rounded" />
+            <span className="text-ink-2">Include features</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" checked={dsExportTargets} onChange={(e) => setDsExportTargets(e.target.checked)} className="rounded" />
+            <span className="text-ink-2">Include targets</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" checked={dsExportWarnings} onChange={(e) => setDsExportWarnings(e.target.checked)} className="rounded" />
+            <span className="text-ink-2">Include warnings</span>
+          </label>
+        </div>
+
+        {/* Acknowledgement */}
+        <label className="flex items-start gap-2 mb-3 cursor-pointer">
+          <input type="checkbox" checked={dsExportAck} onChange={(e) => setDsExportAck(e.target.checked)} className="mt-0.5 rounded" />
+          <span className="text-[10px] text-ink-3">
+            I acknowledge this is a research-only, offline-only, shadow-only dataset export.
+            It is not used by production decisions and is not eligible for promotion.
+          </span>
+        </label>
+
+        {/* Run button */}
+        <button
+          onClick={runDatasetExport}
+          disabled={dsExportLoading || !dsExportAck || !dsExportStart || !dsExportEnd}
+          className="px-4 py-1.5 rounded-md text-[12px] font-medium bg-primary text-primary-ink hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {dsExportLoading ? "Exporting..." : "Run Dataset Export"}
+        </button>
+
+        {dsExportError && (
+          <div className="mt-3 p-3 rounded-md bg-breach/10 border border-breach/20 text-[11px] text-breach break-words">{dsExportError}</div>
+        )}
+
+        {/* Result panel */}
+        {dsExportResult && (
+          <div className="mt-3 p-3 rounded-md bg-surface-2 border border-line text-[11px] space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="font-semibold text-ink">Export completed</span>
+              <span className="text-pos text-[10px]">{dsExportResult.status}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
+              <div><span className="text-ink-4">Export ID:</span> <span className="font-mono text-ink-2 break-all">{dsExportResult.export_id}</span></div>
+              <div><span className="text-ink-4">Row count:</span> <span className="text-ink">{dsExportResult.row_count}</span></div>
+              <div><span className="text-ink-4">Date range:</span> <span className="text-ink">{dsExportResult.date_range ? `${dsExportResult.date_range.start} - ${dsExportResult.date_range.end}` : "N/A"}</span></div>
+              <div><span className="text-ink-4">Format:</span> <span className="text-ink">{dsExportResult.export_format}</span></div>
+              <div className="sm:col-span-2"><span className="text-ink-4">Export path:</span> <span className="font-mono text-ink-2 break-all">{dsExportResult.export_path}</span></div>
+              <div className="sm:col-span-2"><span className="text-ink-4">Checksum:</span> <span className="font-mono text-ink-2 break-all">{dsExportResult.checksum}</span></div>
+              <div><span className="text-ink-4">Fingerprint:</span> <span className="font-mono text-ink-2 break-all">{dsExportResult.fingerprint}</span></div>
+            </div>
+            {dsExportResult.feature_schema.length > 0 && (
+              <div className="text-[10px]"><span className="text-ink-4">Features:</span> <span className="text-ink-2">{dsExportResult.feature_schema.join(", ")}</span></div>
+            )}
+            {dsExportResult.target_schema.length > 0 && (
+              <div className="text-[10px]"><span className="text-ink-4">Targets:</span> <span className="text-ink-2">{dsExportResult.target_schema.join(", ")}</span></div>
+            )}
+            {dsExportResult.warnings.length > 0 && (
+              <div className="text-[10px] text-caution">Warnings: {dsExportResult.warnings.join("; ")}</div>
+            )}
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {Object.entries(dsExportResult.safety_flags).map(([k, v]) => (
+                <span key={k} className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${v ? "bg-pos/10 text-pos" : "bg-breach/10 text-breach"}`}>
+                  {k.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Export history */}
+        {dsExportHistory.length > 0 && (
+          <div className="mt-3">
+            <h4 className="text-[11px] font-medium text-ink-3 mb-1.5">Export History</h4>
+            <div className="space-y-1">
+              {dsExportHistory.map((h) => (
+                <div key={h.export_id} className="flex flex-wrap items-center gap-2 text-[10px] py-1 border-b border-line/30">
+                  <span className="font-mono text-ink-2 break-all">{h.export_id?.slice(0, 8)}</span>
+                  <span className="text-ink">{h.name}</span>
+                  <span className="text-ink-3">{h.row_count} rows</span>
+                  <span className="text-ink-4">{h.format}</span>
+                  <span className="text-ink-4">{h.occurred_at?.slice(0, 19)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Run Offline Benchmark ── */}

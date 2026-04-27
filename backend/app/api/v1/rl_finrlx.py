@@ -13,6 +13,9 @@ GET  /api/v1/rl/finrlx/candidates/{candidate_id}/isolation
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}/benchmark-eligibility
 POST /api/v1/rl/finrlx/candidates/{candidate_id}/benchmark
 GET  /api/v1/rl/finrlx/candidates/{candidate_id}/benchmarks
+POST /api/v1/rl/finrlx/dataset-export
+GET  /api/v1/rl/finrlx/dataset-exports
+GET  /api/v1/rl/finrlx/dataset-exports/{export_id}
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -67,6 +70,19 @@ class FinRLXImportArtifactRequest(BaseModel):
     import_acknowledgement: bool = False
     source: str = "unknown"
     notes: str | None = None
+
+
+class FinRLXDatasetExportRequest(BaseModel):
+    name: str = "Local Research Dataset Export"
+    candidate_id: str | None = None
+    benchmark_report_id: str | None = None
+    start_date: str = ""
+    end_date: str = ""
+    include_features: bool = True
+    include_targets: bool = True
+    include_warnings: bool = True
+    format: str = "jsonl"
+    research_acknowledgement: bool = False
 
 
 class FinRLXValidateRequest(BaseModel):
@@ -210,3 +226,62 @@ async def run_candidate_benchmark(
 async def get_candidate_benchmarks(candidate_id: str, db: AsyncSession = Depends(get_db)):
     svc = FinRLXResearchService(db)
     return ApiResponse(meta=make_meta(), data=await svc.get_candidate_benchmarks(candidate_id))
+
+
+# ── Dataset Export for Local Research (Phase 8I) ─────────────────────
+
+@router.post("/rl/finrlx/dataset-export", response_model=ApiResponse[dict])
+async def create_dataset_export(body: FinRLXDatasetExportRequest, db: AsyncSession = Depends(get_db)):
+    if not body.research_acknowledgement:
+        raise HTTPException(
+            status_code=422,
+            detail="Research acknowledgement required. Set research_acknowledgement=true "
+                   "to confirm this is a research-only offline dataset export.",
+        )
+    if body.format not in ("jsonl", "json"):
+        raise HTTPException(status_code=422, detail="format must be 'jsonl' or 'json'.")
+    sd = _parse_date(body.start_date, "start_date")
+    ed = _parse_date(body.end_date, "end_date")
+    if not sd or not ed:
+        raise HTTPException(status_code=422, detail="start_date and end_date are required.")
+    if sd > ed:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date.")
+
+    svc = FinRLXResearchService(db)
+
+    if body.candidate_id:
+        candidate = await svc.get_candidate(body.candidate_id)
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Research candidate not found.")
+
+    result = await svc.export_local_research_dataset(
+        name=body.name,
+        candidate_id=body.candidate_id,
+        benchmark_report_id=body.benchmark_report_id,
+        start_date=sd,
+        end_date=ed,
+        include_features=body.include_features,
+        include_targets=body.include_targets,
+        include_warnings=body.include_warnings,
+        export_format=body.format,
+    )
+
+    if result.get("error"):
+        raise HTTPException(status_code=422, detail=result["error"])
+
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.get("/rl/finrlx/dataset-exports", response_model=ApiResponse[list[dict]])
+async def list_dataset_exports(db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    return ApiResponse(meta=make_meta(), data=await svc.list_dataset_exports())
+
+
+@router.get("/rl/finrlx/dataset-exports/{export_id}", response_model=ApiResponse[dict])
+async def get_dataset_export(export_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    result = await svc.get_dataset_export(export_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Dataset export not found.")
+    return ApiResponse(meta=make_meta(), data=result)

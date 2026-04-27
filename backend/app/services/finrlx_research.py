@@ -1218,6 +1218,282 @@ class FinRLXResearchService:
                 })
         return results
 
+    # ── Dataset export for local research (Phase 8I) ───────────────────
+
+    DATASET_EXPORT_SAFETY_FLAGS = {
+        "research_only": True,
+        "offline_only": True,
+        "shadow_only": True,
+        "no_production_influence": True,
+        "not_eligible_for_promotion": True,
+    }
+
+    async def export_local_research_dataset(
+        self,
+        name: str = "Local Research Dataset Export",
+        candidate_id: str | None = None,
+        benchmark_report_id: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        include_features: bool = True,
+        include_targets: bool = True,
+        include_warnings: bool = True,
+        export_format: str = "jsonl",
+    ) -> dict:
+        """Export a dataset for local research use only. No production influence."""
+        import os
+        now = datetime.now(timezone.utc)
+        export_id = gen_uuid()
+
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=60)
+
+        warnings: list[str] = []
+
+        # Validate candidate if provided
+        candidate_meta = None
+        if candidate_id:
+            candidate = await self.get_candidate(candidate_id)
+            if not candidate:
+                return {"error": "Research candidate not found", "export_id": None, "status": "failed"}
+            candidate_meta = {
+                "id": candidate.get("id"),
+                "policy_type": candidate.get("policy_type"),
+                "training_mode": candidate.get("training_mode"),
+                "artifact_hash": candidate.get("artifact_hash"),
+            }
+
+        # Validate benchmark if provided
+        benchmark_meta = None
+        if benchmark_report_id:
+            benchmark_meta = {"benchmark_report_id": benchmark_report_id}
+
+        # Use existing safe dataset source
+        train_svc = RLTrainingService(self.db)
+        rows = await train_svc.export_training_dataset(
+            start_date=start_date, end_date=end_date, limit=500,
+        )
+
+        if not rows:
+            warnings.append("No dataset rows available for the specified date range.")
+
+        # Build export rows
+        export_rows = []
+        feature_schema: list[str] = []
+        target_schema: list[str] = []
+        warning_schema: list[str] = []
+
+        for row in rows:
+            export_row: dict = {
+                "date": row.get("as_of_date"),
+                "next_date": row.get("next_date"),
+            }
+            assets = row.get("assets", [])
+            asset_data = []
+            for a in assets:
+                entry: dict = {"ticker": a.get("ticker")}
+                if include_features:
+                    entry["price"] = a.get("price")
+                    entry["engine_score"] = a.get("engine_score")
+                    if "price" not in feature_schema:
+                        feature_schema.extend(["price", "engine_score"])
+                if include_targets:
+                    entry["next_price"] = a.get("next_price")
+                    entry["realized_return"] = a.get("realized_return")
+                    if "next_price" not in target_schema:
+                        target_schema.extend(["next_price", "realized_return"])
+                asset_data.append(entry)
+            export_row["assets"] = asset_data
+
+            row_warnings = row.get("warnings") or []
+            if include_warnings and row_warnings:
+                export_row["warnings"] = row_warnings
+                for w in row_warnings:
+                    if w not in warning_schema:
+                        warning_schema.append(w)
+
+            export_row["universe_tickers"] = row.get("universe_tickers", [])
+            export_row["policy_constraints"] = row.get("policy_constraints", {})
+            export_rows.append(export_row)
+
+        # Date range from actual data
+        dates = [r["date"] for r in export_rows if r.get("date")]
+        date_range = {"start": min(dates), "end": max(dates)} if dates else None
+
+        # Compute checksum/fingerprint
+        content_str = json.dumps(_json_safe(export_rows), sort_keys=True, default=str)
+        checksum = hashlib.sha256(content_str.encode()).hexdigest()[:32]
+        meta_str = json.dumps({
+            "export_id": export_id, "name": name,
+            "start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+            "row_count": len(export_rows), "format": export_format,
+        }, sort_keys=True)
+        fingerprint = hashlib.sha256(meta_str.encode()).hexdigest()[:16]
+
+        # Write export files
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        export_dir = os.path.join(project_root, "research", "finrlx_cpu", "exports")
+        os.makedirs(export_dir, exist_ok=True)
+
+        export_path = os.path.join(export_dir, f"{export_id}.{export_format}")
+        safe_export_rows = _json_safe(export_rows)
+
+        metadata = _json_safe({
+            "export_id": export_id,
+            "created_at": now.isoformat(),
+            "name": name,
+            "scope": "local_research",
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+            "source_candidate_id": candidate_id,
+            "source_benchmark_report_id": benchmark_report_id,
+            "candidate_metadata": candidate_meta,
+            "benchmark_metadata": benchmark_meta,
+            "row_count": len(export_rows),
+            "date_range": date_range,
+            "export_format": export_format,
+            "feature_schema": feature_schema,
+            "target_schema": target_schema,
+            "warning_schema": warning_schema,
+            "checksum": checksum,
+            "fingerprint": fingerprint,
+            "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+            "limitations": [
+                "Research-only, offline-only, shadow-only dataset.",
+                "Not used by production recommendations.",
+                "Not eligible for promotion.",
+                "No broker execution.",
+                "No live signal generation.",
+            ],
+            "warnings": warnings,
+        })
+
+        if export_format == "json":
+            with open(export_path, "w", encoding="utf-8") as f:
+                json.dump({"metadata": metadata, "rows": safe_export_rows}, f, indent=2, default=str)
+        else:
+            # jsonl: metadata file + rows file
+            meta_path = os.path.join(export_dir, f"{export_id}.meta.json")
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2, default=str)
+            with open(export_path, "w", encoding="utf-8") as f:
+                for row in safe_export_rows:
+                    f.write(json.dumps(row, default=str) + "\n")
+
+        # Build assets list for response
+        assets_list = []
+        if export_format == "jsonl":
+            assets_list = [
+                {"type": "metadata", "path": f"research/finrlx_cpu/exports/{export_id}.meta.json"},
+                {"type": "data", "path": f"research/finrlx_cpu/exports/{export_id}.jsonl"},
+            ]
+        else:
+            assets_list = [
+                {"type": "combined", "path": f"research/finrlx_cpu/exports/{export_id}.json"},
+            ]
+
+        # Audit
+        await self._create_audit_event("finrlx_dataset_export_completed", {
+            "export_id": export_id, "name": name, "row_count": len(export_rows),
+            "format": export_format, "checksum": checksum, "fingerprint": fingerprint,
+            "candidate_id": candidate_id, "benchmark_report_id": benchmark_report_id,
+            "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+        })
+        await self.db.commit()
+
+        return _json_safe({
+            "export_id": export_id,
+            "created_at": now.isoformat(),
+            "status": "completed",
+            "name": name,
+            "scope": "local_research",
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+            "source_candidate_id": candidate_id,
+            "source_benchmark_report_id": benchmark_report_id,
+            "row_count": len(export_rows),
+            "date_range": date_range,
+            "assets": assets_list,
+            "feature_schema": feature_schema,
+            "target_schema": target_schema,
+            "warning_schema": warning_schema,
+            "export_format": export_format,
+            "export_path": f"research/finrlx_cpu/exports/{export_id}.{export_format}",
+            "checksum": checksum,
+            "fingerprint": fingerprint,
+            "limitations": [
+                "Research-only, offline-only, shadow-only dataset.",
+                "Not used by production recommendations.",
+                "Not eligible for promotion.",
+                "No broker execution.",
+                "No live signal generation.",
+            ],
+            "warnings": warnings,
+            "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS,
+        })
+
+    async def list_dataset_exports(self) -> list[dict]:
+        """List completed dataset exports from audit trail."""
+        events = (await self.db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.action == "finrlx_dataset_export_completed")
+            .where(AuditEvent.object_type == "finrlx_research")
+            .order_by(AuditEvent.occurred_at.desc())
+            .limit(50)
+        )).scalars().all()
+
+        results = []
+        for e in events:
+            d = e.details or {}
+            results.append({
+                "export_id": d.get("export_id"),
+                "name": d.get("name"),
+                "row_count": d.get("row_count"),
+                "format": d.get("format"),
+                "checksum": d.get("checksum"),
+                "fingerprint": d.get("fingerprint"),
+                "candidate_id": d.get("candidate_id"),
+                "benchmark_report_id": d.get("benchmark_report_id"),
+                "safety_flags": d.get("safety_flags"),
+                "occurred_at": e.occurred_at.isoformat() if e.occurred_at else None,
+            })
+        return results
+
+    async def get_dataset_export(self, export_id: str) -> dict | None:
+        """Get a specific dataset export by ID from audit trail."""
+        events = (await self.db.execute(
+            select(AuditEvent)
+            .where(AuditEvent.action == "finrlx_dataset_export_completed")
+            .where(AuditEvent.object_type == "finrlx_research")
+            .order_by(AuditEvent.occurred_at.desc())
+            .limit(50)
+        )).scalars().all()
+
+        for e in events:
+            d = e.details or {}
+            if d.get("export_id") == export_id:
+                return {
+                    "export_id": d.get("export_id"),
+                    "name": d.get("name"),
+                    "row_count": d.get("row_count"),
+                    "format": d.get("format"),
+                    "checksum": d.get("checksum"),
+                    "fingerprint": d.get("fingerprint"),
+                    "candidate_id": d.get("candidate_id"),
+                    "benchmark_report_id": d.get("benchmark_report_id"),
+                    "safety_flags": d.get("safety_flags"),
+                    "occurred_at": e.occurred_at.isoformat() if e.occurred_at else None,
+                }
+        return None
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""
