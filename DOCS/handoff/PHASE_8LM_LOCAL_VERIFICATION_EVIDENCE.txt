@@ -1,7 +1,7 @@
-=== Phase 8LM-fix2 Local Verification Evidence ===
+=== Phase 8LM-fix3 Local Verification Evidence ===
 
 Date: 2026-04-28
-Fix: Nested metric coverage sanitization + linked ID sanitization
+Fix: linked_comparison_id sanitization + verify safety
 
 === git diff --name-only (this fix) ===
 backend/app/services/finrlx_research.py
@@ -10,24 +10,23 @@ DOCS/handoff/PHASE_8LM_RESEARCH_READINESS_AND_ADMIN_UX_REPORT.md
 DOCS/handoff/PHASE_8LM_LOCAL_VERIFICATION_EVIDENCE.txt
 
 === Fix summary ===
-1. metric_coverage nested values: Only safe primitives stored (available_count,
-   missing_count, coverage_ratio as int/float). All other nested keys dropped.
-   Uses new _sanitize_metric_coverage_entry() helper.
-2. linked IDs: experiment_ids and export_ids filtered through new
-   _sanitize_registry_id() / _sanitize_registry_id_list() helpers.
-   IDs containing paths, secrets, env vars are dropped.
-3. missing_metrics keys (experiment IDs) also sanitized via _sanitize_registry_id().
+1. linked_comparison_id sanitized via _sanitize_registry_id() before storage.
+   Unsafe IDs rejected with safe 422 error (no raw ID echoed).
+2. Evidence and entry use safe_cmp_id exclusively.
+3. Verify response sanitizes linked_comparison_id and experiment IDs.
+   Unsafe stored IDs redacted to "[redacted]" with warning.
+4. Error messages do not echo raw unsafe IDs.
 
 === Backend targeted test result ===
-Total: 177 passed, 0 failed
+Total: 180 passed, 0 failed
 
 === Phase 8 regression test result ===
-Total: 263 passed, 0 failed
+Total: 266 passed, 0 failed
 
-=== New sanitization tests ===
-test_readiness_sanitizes_metric_coverage_nested_values: PASSED
-test_readiness_sanitizes_legacy_unsafe_linked_ids: PASSED
-test_readiness_registry_clean_after_nested_and_id_injection: PASSED
+=== New tests ===
+test_readiness_rejects_unsafe_linked_comparison_id: PASSED
+test_readiness_does_not_store_legacy_unsafe_comparison_id: PASSED
+test_verify_readiness_does_not_echo_unsafe_linked_comparison_id: PASSED
 
 === Frontend build result ===
 npm run build: SUCCESS

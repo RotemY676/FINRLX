@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-28
 **Accepted checkpoint:** Phase 8K.1-fix (commit 6148046)
-**Fix applied:** 8LM-fix2 — nested metric coverage + linked ID sanitization
+**Fix applied:** 8LM-fix3 — linked_comparison_id sanitization + verify safety
 **Classification:** PASS
 
 ---
@@ -74,13 +74,13 @@ Phase 8LM combines two goals: (A) Phase 8L.1 adds a research-only readiness revi
 
 ## 14. Safety: research_only=true, offline_only=true, shadow_only=true, no_production_influence=true, not_eligible_for_promotion=true. /rl/execute=404.
 
-## 15. Tests: 44 in test_phase8l1_readiness_review.py (38 original + 3 evidence sanitization + 3 nested/ID sanitization)
+## 15. Tests: 47 in test_phase8l1_readiness_review.py (38 original + 3 evidence + 3 nested/ID + 3 comparison_id)
 
 ## 16. Test Results
 
-- Phase 8L.1: **44 passed**
-- Targeted (8I+8I.2+8J.1+8K.1+8L.1): **177 passed**
-- Full Phase 8 regression: **263 passed**
+- Phase 8L.1: **47 passed**
+- Targeted (8I+8I.2+8J.1+8K.1+8L.1): **180 passed**
+- Full Phase 8 regression: **266 passed**
 
 ## 17. Frontend: build SUCCESS (23.5 kB), typecheck SUCCESS, lint SUCCESS
 

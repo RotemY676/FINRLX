@@ -2752,6 +2752,12 @@ class FinRLXResearchService:
         """Create a research readiness review linked to a comparison."""
         rd_registry = self._require_healthy_readiness_registry()
 
+        # Sanitize linked_comparison_id before any storage or echo
+        safe_cmp_id = self._sanitize_registry_id(linked_comparison_id)
+        if safe_cmp_id is None:
+            return {"error": "Linked comparison ID is invalid or unsafe.",
+                    "readiness_id": None, "status": "failed"}
+
         # Load comparison
         try:
             cmp_registry = self._require_healthy_comparison_registry()
@@ -2760,11 +2766,11 @@ class FinRLXResearchService:
 
         comparison = None
         for c in cmp_registry.get("comparisons", []):
-            if c.get("comparison_id") == linked_comparison_id:
+            if c.get("comparison_id") == safe_cmp_id:
                 comparison = c
                 break
         if not comparison:
-            return {"error": f"Comparison '{linked_comparison_id}' not found.",
+            return {"error": "Linked comparison not found.",
                     "readiness_id": None, "status": "failed"}
 
         # Resolve linked IDs — sanitize to prevent unsafe values from leaking
@@ -2869,7 +2875,7 @@ class FinRLXResearchService:
             })
 
         evidence = {
-            "comparison": {"comparison_id": linked_comparison_id, "name": safe_cmp_name,
+            "comparison": {"comparison_id": safe_cmp_id, "name": safe_cmp_name,
                            "experiment_count": len(experiment_ids), "lifecycle_state": safe_cmp_state},
             "experiments": safe_exp_evidence,
             "exports": [{"export_id": eid} for eid in export_ids],
@@ -2905,7 +2911,7 @@ class FinRLXResearchService:
             "updated_at": now.isoformat(),
             "readiness_state": "draft",
             "name": safe_name,
-            "linked_comparison_id": linked_comparison_id,
+            "linked_comparison_id": safe_cmp_id,
             "linked_experiment_ids": experiment_ids,
             "linked_export_ids": export_ids,
             "operator_notes": safe_notes,
@@ -3006,14 +3012,20 @@ class FinRLXResearchService:
             return None
 
         warnings: list[str] = []
-        cmp_id = entry.get("linked_comparison_id")
+        raw_cmp_id = entry.get("linked_comparison_id")
+        safe_cmp_id = self._sanitize_registry_id(raw_cmp_id) if raw_cmp_id else None
+        if raw_cmp_id and safe_cmp_id is None:
+            warnings.append("Linked comparison ID contains unsafe content and was redacted.")
+        cmp_id = safe_cmp_id or "[redacted]"
+
+        safe_exp_ids = self._sanitize_registry_id_list(entry.get("linked_experiment_ids") or [])
 
         try:
             cmp_registry = self.load_comparison_registry()
             if cmp_registry.get("registry_corrupt"):
                 warnings.append("Comparison registry is corrupt.")
-            else:
-                found = any(c.get("comparison_id") == cmp_id for c in cmp_registry.get("comparisons", []))
+            elif safe_cmp_id:
+                found = any(c.get("comparison_id") == safe_cmp_id for c in cmp_registry.get("comparisons", []))
                 if not found:
                     warnings.append("Linked comparison not found in registry.")
         except Exception:
@@ -3024,7 +3036,7 @@ class FinRLXResearchService:
             if exp_registry.get("registry_corrupt"):
                 warnings.append("Experiment registry is corrupt.")
             else:
-                for eid in entry.get("linked_experiment_ids") or []:
+                for eid in safe_exp_ids:
                     found = any(e.get("experiment_id") == eid for e in exp_registry.get("experiments", []))
                     if not found:
                         warnings.append(f"Experiment {eid[:8]} not found.")
@@ -3038,7 +3050,7 @@ class FinRLXResearchService:
         return {
             "readiness_id": readiness_id,
             "linked_comparison_id": cmp_id,
-            "linked_experiment_ids": entry.get("linked_experiment_ids") or [],
+            "linked_experiment_ids": safe_exp_ids,
             "readiness_state": entry.get("readiness_state"),
             "warnings": warnings,
             "healthy": len(warnings) == 0,

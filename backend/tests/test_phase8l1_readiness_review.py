@@ -812,6 +812,107 @@ async def test_readiness_registry_clean_after_nested_and_id_injection(client):
         assert pattern not in content_lower, f"Found '{pattern}'"
 
 
+# ── Linked comparison ID sanitization ────────────────────────────
+
+@pytest.mark.asyncio
+async def test_readiness_rejects_unsafe_linked_comparison_id(client):
+    """Unsafe linked_comparison_id is rejected, never stored."""
+    _clear_rd_registry()
+    _clear_cmp_registry()
+    # Create a comparison with unsafe ID
+    cmp_path = FinRLXResearchService._comparison_registry_path()
+    os.makedirs(os.path.dirname(cmp_path), exist_ok=True)
+    reg = {"version": 1, "updated_at": "2026-04-28", "comparisons": [{
+        "comparison_id": "api_key=sk-test-secret",
+        "name": "Unsafe CMP", "lifecycle_state": "active",
+        "experiment_ids": [], "experiment_snapshots": [],
+        "comparison_summary": {}, "warnings": [], "limitations": [],
+        "research_only": True, "offline_only": True, "shadow_only": True,
+        "no_production_influence": True, "not_eligible_for_promotion": True,
+    }]}
+    with open(cmp_path, "w") as f:
+        json.dump(reg, f)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Test", "linked_comparison_id": "api_key=sk-test-secret",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+    resp_str = json.dumps(r.json())
+    assert "sk-test-secret" not in resp_str
+
+    # Registry must not contain unsafe ID
+    rd_path = _rd_registry_path()
+    if os.path.exists(rd_path):
+        with open(rd_path, "r") as f:
+            content = f.read()
+        assert "sk-test-secret" not in content
+    _clear_cmp_registry()
+
+
+@pytest.mark.asyncio
+async def test_readiness_does_not_store_legacy_unsafe_comparison_id(client):
+    """Legacy unsafe comparison_id is never stored in readiness registry."""
+    _clear_rd_registry()
+    _clear_cmp_registry()
+    cmp_path = FinRLXResearchService._comparison_registry_path()
+    os.makedirs(os.path.dirname(cmp_path), exist_ok=True)
+    reg = {"version": 1, "updated_at": "2026-04-28", "comparisons": [{
+        "comparison_id": r"C:\Users\Rotem\.env",
+        "name": "Legacy", "lifecycle_state": "active",
+        "experiment_ids": [], "experiment_snapshots": [],
+        "comparison_summary": {}, "warnings": [], "limitations": [],
+        "research_only": True, "offline_only": True, "shadow_only": True,
+        "no_production_influence": True, "not_eligible_for_promotion": True,
+    }]}
+    with open(cmp_path, "w") as f:
+        json.dump(reg, f)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Test", "linked_comparison_id": r"C:\Users\Rotem\.env",
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 422
+
+    rd_path = _rd_registry_path()
+    if os.path.exists(rd_path):
+        with open(rd_path, "r") as f:
+            content = f.read()
+        assert "C:\\Users" not in content
+        assert ".env" not in content
+    _clear_cmp_registry()
+
+
+@pytest.mark.asyncio
+async def test_verify_readiness_does_not_echo_unsafe_linked_comparison_id(client):
+    """Verify does not echo unsafe linked_comparison_id from legacy registry."""
+    _clear_rd_registry()
+    # Inject a readiness record with unsafe linked_comparison_id
+    rd_path = _rd_registry_path()
+    os.makedirs(os.path.dirname(rd_path), exist_ok=True)
+    reg = {"version": 1, "updated_at": "2026-04-28", "readiness_reviews": [{
+        "readiness_id": "test-rd-verify-id",
+        "readiness_state": "draft",
+        "linked_comparison_id": r"C:\Users\Rotem\DATABASE_URL=postgres://secret",
+        "linked_experiment_ids": ["safe-exp-1"],
+        "name": "Legacy RD", "warnings": [], "limitations": [],
+        "checklist": {}, "evidence_summary": {}, "readiness_findings": [],
+        "research_only": True, "offline_only": True, "shadow_only": True,
+        "no_production_influence": True, "not_eligible_for_promotion": True,
+    }]}
+    with open(rd_path, "w") as f:
+        json.dump(reg, f)
+
+    r = await client.get("/api/v1/rl/finrlx/research-readiness/test-rd-verify-id/verify")
+    assert r.status_code == 200
+    resp_str = json.dumps(r.json())
+    for unsafe in ["C:\\Users", "DATABASE_URL", "postgres://", "secret"]:
+        assert unsafe not in resp_str, f"Found '{unsafe}' in verify response"
+    # Should contain redacted warning
+    assert "redacted" in resp_str.lower()
+    _clear_rd_registry()
+
+
 @pytest.mark.asyncio
 async def test_rl_execute_remains_absent(client):
     r = await client.post("/api/v1/rl/execute", json={})
