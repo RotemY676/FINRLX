@@ -2695,8 +2695,10 @@ class FinRLXResearchService:
                     "message": f"Experiment {eid} has no result metrics.",
                     "operator_action": "Import result metadata for this experiment."})
             if exp.get("lifecycle_state") != "completed":
+                raw_state = exp.get("lifecycle_state") or "unknown"
+                safe_state = raw_state if not self._is_disallowed_experiment_text(str(raw_state)) else "[redacted]"
                 findings.append({"finding_id": f"not_completed_{eid}", "severity": "info",
-                    "message": f"Experiment {eid} lifecycle is '{exp.get('lifecycle_state')}', not 'completed'.",
+                    "message": f"Experiment {eid} lifecycle is not 'completed' (current: {safe_state}).",
                     "operator_action": "Consider completing the experiment before final review."})
 
         # Check warnings in comparison
@@ -2780,20 +2782,65 @@ class FinRLXResearchService:
                 if k in checklist and isinstance(checklist[k], bool):
                     default_checklist[k] = checklist[k]
 
-        # Build evidence summary (sanitized)
+        # Build evidence summary — defensively sanitize all registry-derived fields
+        evidence_redacted = False
         cmp_summary = comparison.get("comparison_summary") or {}
+
+        safe_cmp_name = self._sanitize_experiment_text(comparison.get("name") or "", 200)
+        safe_cmp_state = self._sanitize_experiment_text(comparison.get("lifecycle_state") or "", 50)
+        if safe_cmp_name == "[redacted]" or safe_cmp_state == "[redacted]":
+            evidence_redacted = True
+
+        # Sanitize metric_coverage: filter out unsafe metric keys
+        raw_mc = cmp_summary.get("metric_coverage") or {}
+        safe_mc = {}
+        for mk, mv in raw_mc.items():
+            sk = self._sanitize_experiment_metric_key(mk)
+            if sk is None:
+                evidence_redacted = True
+                continue
+            safe_mc[sk] = mv if isinstance(mv, dict) else {}
+
+        # Sanitize missing_metrics: filter out unsafe metric names and experiment-id keys pass through
+        raw_mm = cmp_summary.get("missing_metrics") or {}
+        safe_mm = {}
+        for exp_id_key, metric_list in raw_mm.items():
+            safe_metrics = []
+            if isinstance(metric_list, list):
+                for m in metric_list:
+                    sm = self._sanitize_experiment_metric_key(m)
+                    if sm is not None:
+                        safe_metrics.append(sm)
+                    else:
+                        evidence_redacted = True
+            safe_mm[exp_id_key] = safe_metrics
+
+        # Sanitize experiment evidence
+        safe_exp_evidence = []
+        for e in experiments:
+            se_name = self._sanitize_experiment_text(e.get("name") or "", 200)
+            se_state = self._sanitize_experiment_text(e.get("lifecycle_state") or "", 50)
+            if se_name == "[redacted]" or se_state == "[redacted]":
+                evidence_redacted = True
+            safe_exp_evidence.append({
+                "experiment_id": e.get("experiment_id"),
+                "name": se_name,
+                "lifecycle_state": se_state,
+                "has_results": bool(e.get("result_metrics")),
+            })
+
         evidence = {
-            "comparison": {"comparison_id": linked_comparison_id, "name": comparison.get("name"),
-                           "experiment_count": len(experiment_ids), "lifecycle_state": comparison.get("lifecycle_state")},
-            "experiments": [{"experiment_id": e.get("experiment_id"), "name": self._sanitize_experiment_text(e.get("name") or "", 200),
-                             "lifecycle_state": e.get("lifecycle_state"),
-                             "has_results": bool(e.get("result_metrics"))} for e in experiments],
+            "comparison": {"comparison_id": linked_comparison_id, "name": safe_cmp_name,
+                           "experiment_count": len(experiment_ids), "lifecycle_state": safe_cmp_state},
+            "experiments": safe_exp_evidence,
             "exports": [{"export_id": eid} for eid in export_ids],
-            "metric_coverage": cmp_summary.get("metric_coverage") or {},
-            "missing_metrics": cmp_summary.get("missing_metrics") or {},
+            "metric_coverage": safe_mc,
+            "missing_metrics": safe_mm,
             "warnings": self._sanitize_experiment_list(comparison.get("warnings") or []),
             "limitations": self._sanitize_experiment_list(comparison.get("limitations") or []),
         }
+        if evidence_redacted:
+            warnings.append("Some readiness evidence was redacted or dropped because it looked like a path or secret.")
 
         # Build findings
         findings = self._build_readiness_findings(comparison, experiments)

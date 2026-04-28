@@ -572,6 +572,107 @@ async def test_does_not_promote_candidates(client):
     assert r.json()["data"]["not_eligible_for_promotion"] is True
 
 
+# ── Readiness evidence sanitization (legacy unsafe data) ─────────
+
+def _inject_unsafe_comparison_data(comparison_id: str):
+    """Directly edit comparison_registry.json to simulate legacy unsafe data."""
+    path = FinRLXResearchService._comparison_registry_path()
+    with open(path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for cmp in reg.get("comparisons", []):
+        if cmp.get("comparison_id") == comparison_id:
+            cmp["name"] = r"Loaded from C:\Users\Rotem\.env"
+            cs = cmp.get("comparison_summary") or {}
+            cs["metric_coverage"] = {
+                "sharpe_ratio": {"available_count": 2, "missing_count": 0, "coverage_ratio": 1.0},
+                "api_key": {"available_count": 1, "missing_count": 1, "coverage_ratio": 0.5},
+                "/etc/passwd": {"available_count": 1, "missing_count": 1, "coverage_ratio": 0.5},
+            }
+            cs["missing_metrics"] = {
+                "exp-1": ["DATABASE_URL", "/etc/passwd", "safe_metric"],
+            }
+            cmp["comparison_summary"] = cs
+            cmp["warnings"] = ["token=abc123"]
+            cmp["limitations"] = ["broker credential leaked"]
+            break
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+
+@pytest.mark.asyncio
+async def test_readiness_sanitizes_legacy_unsafe_comparison_evidence(client):
+    """Readiness evidence defensively sanitizes legacy unsafe comparison data."""
+    cmp_id = await _setup_comparison(client)
+    _inject_unsafe_comparison_data(cmp_id)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Legacy Sanitize", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+
+    resp_str = json.dumps(data)
+    for unsafe in ["C:\\Users", ".env", "/etc/passwd", "DATABASE_URL",
+                    "token=abc123", "broker credential", "postgres://"]:
+        assert unsafe not in resp_str, f"Found '{unsafe}' in readiness response"
+
+    # safe metric keys should remain
+    ev = data["evidence_summary"]
+    assert "sharpe_ratio" in ev.get("metric_coverage", {})
+
+    # Check registry file
+    with open(_rd_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["C:\\Users", ".env", "/etc/passwd", "DATABASE_URL",
+                    "token=abc123", "broker credential", "postgres://"]:
+        assert unsafe not in content, f"Found '{unsafe}' in readiness registry"
+
+
+@pytest.mark.asyncio
+async def test_readiness_findings_do_not_leak_unsafe_text(client):
+    """Readiness findings do not include unsafe lifecycle/registry text."""
+    cmp_id = await _setup_comparison(client)
+    # Inject unsafe lifecycle_state into experiment
+    exp_path = _exp_registry_path()
+    with open(exp_path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    if reg.get("experiments"):
+        reg["experiments"][0]["lifecycle_state"] = r"C:\Users\Rotem\secret"
+    with open(exp_path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Finding Sanitize", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    findings_str = json.dumps(r.json()["data"].get("readiness_findings", []))
+    for unsafe in ["C:\\Users", "/etc/passwd", "DATABASE_URL", "api_key"]:
+        assert unsafe not in findings_str, f"Found '{unsafe}' in findings"
+
+
+@pytest.mark.asyncio
+async def test_readiness_registry_clean_after_legacy_evidence(client):
+    """Readiness registry contains no unsafe patterns after legacy data."""
+    cmp_id = await _setup_comparison(client)
+    _inject_unsafe_comparison_data(cmp_id)
+
+    await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Registry Clean", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+
+    with open(_rd_registry_path(), "r") as f:
+        content = f.read()
+    content_lower = content.lower()
+
+    for pattern in ["c:\\users", "/etc/", "postgres://"]:
+        assert pattern not in content_lower, f"Found '{pattern}' in readiness registry"
+    for pattern in ["api_key", "database_url", "credential"]:
+        assert pattern not in content_lower, f"Found '{pattern}' in readiness registry"
+
+
 @pytest.mark.asyncio
 async def test_rl_execute_remains_absent(client):
     r = await client.post("/api/v1/rl/execute", json={})

@@ -2,6 +2,7 @@
 
 **Date:** 2026-04-28
 **Accepted checkpoint:** Phase 8K.1-fix (commit 6148046)
+**Fix applied:** 8LM-fix — defensive readiness evidence/findings sanitization
 **Classification:** PASS
 
 ---
@@ -65,7 +66,7 @@ Phase 8LM combines two goals: (A) Phase 8L.1 adds a research-only readiness revi
 
 ## 10. State/verify/archive: State update with gates for research_review_ready. Verify strictly read-only (proven by test). Archive is lifecycle change only.
 
-## 11. Path safety: Confined to research/finrlx_cpu/readiness/. No absolute paths or secrets stored.
+## 11. Path safety: Confined to research/finrlx_cpu/readiness/. No absolute paths or secrets stored. **Readiness evidence defensively sanitized:** comparison name, lifecycle_state, metric_coverage keys, missing_metrics keys/values, experiment names/states, warnings, limitations all filtered through Phase 8J.1 sanitizer. Findings do not leak raw unsafe registry text.
 
 ## 12. Sanitization: Reuses Phase 8J.1 sanitizer for name, notes, state reason, archive reason.
 
@@ -73,13 +74,13 @@ Phase 8LM combines two goals: (A) Phase 8L.1 adds a research-only readiness revi
 
 ## 14. Safety: research_only=true, offline_only=true, shadow_only=true, no_production_influence=true, not_eligible_for_promotion=true. /rl/execute=404.
 
-## 15. Tests: 38 in test_phase8l1_readiness_review.py
+## 15. Tests: 41 in test_phase8l1_readiness_review.py (38 original + 3 evidence sanitization)
 
 ## 16. Test Results
 
-- Phase 8L.1: **38 passed**
-- Targeted (8I+8I.2+8J.1+8K.1+8L.1): **171 passed**
-- Full Phase 8 regression: **257 passed**
+- Phase 8L.1: **41 passed**
+- Targeted (8I+8I.2+8J.1+8K.1+8L.1): **174 passed**
+- Full Phase 8 regression: **260 passed**
 
 ## 17. Frontend: build SUCCESS (23.5 kB), typecheck SUCCESS, lint SUCCESS
 
