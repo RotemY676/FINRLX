@@ -1,0 +1,55 @@
+=== Phase 8K.1 Local Verification Evidence ===
+
+Date: 2026-04-28
+
+=== git diff --name-only (Phase 8K.1 files) ===
+backend/app/api/v1/rl_finrlx.py
+backend/app/services/finrlx_research.py
+backend/tests/test_phase8k1_experiment_comparison.py (new)
+frontend/src/services/api.ts
+frontend/src/app/admin/page.tsx
+research/finrlx_cpu/comparisons/.gitkeep (new)
+DOCS/handoff/PHASE_8K1_OFFLINE_EXPERIMENT_COMPARISON_WORKBENCH_REPORT.md (new)
+DOCS/handoff/PHASE_8K1_LOCAL_VERIFICATION_EVIDENCE.txt (new)
+
+=== Backend targeted test result ===
+tests/test_phase8i_dataset_export.py: 25 passed
+tests/test_phase8i2_dataset_export_governance.py: 30 passed
+tests/test_phase8j1_experiment_tracking.py: 37 passed
+tests/test_phase8k1_experiment_comparison.py: 38 passed
+Total: 130 passed, 0 failed
+
+=== Phase 8 regression test result ===
+test_phase8a + test_phase8b + test_phase8e + test_phase8f +
+test_phase8i + test_phase8i2 + test_phase8j1 + test_phase8k1
+Total: 216 passed, 0 failed
+
+=== Frontend build result ===
+npm run build: SUCCESS (/admin: 21.7 kB)
+
+=== Frontend typecheck result ===
+npm run typecheck: SUCCESS (no errors)
+
+=== Frontend lint result ===
+npm run lint: SUCCESS (no warnings or errors)
+
+=== Unsafe language grep result ===
+Searched: frontend/src/app/admin/page.tsx, frontend/src/services/api.ts,
+  backend/app/api/v1/rl_finrlx.py, backend/app/services/finrlx_research.py
+Patterns: buy, sell, trade now, execute trade, live signal, best investment,
+  production alpha, deploy policy
+Result: No matches (PASS)
+
+=== Comparison directory summary ===
+research/finrlx_cpu/comparisons/.gitkeep (marker file)
+research/finrlx_cpu/comparisons/comparison_registry.json (generated at runtime, not committed)
+
+=== Design handoff files inspected ===
+- design/handoff-package/HANDOFF.md
+- design/handoff-package/shell.jsx
+- design/handoff-package/icons.jsx
+- design/handoff-package/Decision Workspace.html
+No design files were modified.
+
+=== Review package contents ===
+DOCS/handoff/FINRLX_PHASE_8K1_REVIEW_PACKAGE.zip (11 files)

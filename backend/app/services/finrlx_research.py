@@ -2252,6 +2252,321 @@ class FinRLXResearchService:
         self.save_experiment_registry(registry)
         return {"rebuilt": True, "experiment_count": 0, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
 
+    # ── Offline Experiment Comparison Workbench (Phase 8K.1) ────────────
+
+    COMPARISON_SAFETY_FLAGS = {
+        "research_only": True,
+        "offline_only": True,
+        "shadow_only": True,
+        "no_production_influence": True,
+        "not_eligible_for_promotion": True,
+    }
+
+    class ComparisonRegistryCorruptError(Exception):
+        """Raised when the comparison registry is corrupt and cannot be used."""
+        pass
+
+    @staticmethod
+    def _comparisons_dir() -> str:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        return os.path.join(project_root, "research", "finrlx_cpu", "comparisons")
+
+    @staticmethod
+    def _comparison_registry_path() -> str:
+        return os.path.join(FinRLXResearchService._comparisons_dir(), "comparison_registry.json")
+
+    @staticmethod
+    def _empty_comparison_registry() -> dict:
+        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "comparisons": []}
+
+    @staticmethod
+    def load_comparison_registry() -> dict:
+        path = FinRLXResearchService._comparison_registry_path()
+        if not os.path.exists(path):
+            reg = FinRLXResearchService._empty_comparison_registry()
+            FinRLXResearchService.save_comparison_registry(reg)
+            return reg
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict) or "comparisons" not in data:
+                return {"version": 1, "updated_at": None, "comparisons": [],
+                        "registry_corrupt": True,
+                        "warnings": ["Comparison registry has invalid structure. Use rebuild with acknowledgement."]}
+            return data
+        except json.JSONDecodeError:
+            return {"version": 1, "updated_at": None, "comparisons": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Comparison registry is corrupt (invalid JSON). Use rebuild with acknowledgement."]}
+        except Exception:
+            return {"version": 1, "updated_at": None, "comparisons": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Comparison registry could not be read. Use rebuild with acknowledgement."]}
+
+    @staticmethod
+    def save_comparison_registry(registry: dict) -> dict:
+        cmp_dir = FinRLXResearchService._comparisons_dir()
+        os.makedirs(cmp_dir, exist_ok=True)
+        path = FinRLXResearchService._comparison_registry_path()
+        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, default=str)
+        os.replace(tmp_path, path)
+        return registry
+
+    def _require_healthy_comparison_registry(self) -> dict:
+        registry = self.load_comparison_registry()
+        if registry.get("registry_corrupt"):
+            raise self.ComparisonRegistryCorruptError(
+                "Comparison registry is corrupt. Use rebuild with acknowledgement to recreate.")
+        return registry
+
+    def _build_comparison_summary(self, experiments: list[dict], metric_priority: list[str]) -> dict:
+        """Build deterministic comparison summary from experiment result_metrics. No ML, no inference."""
+        all_metric_names: set[str] = set()
+        for exp in experiments:
+            rm = exp.get("result_metrics") or {}
+            all_metric_names.update(rm.keys())
+        for mp in metric_priority:
+            all_metric_names.add(mp)
+        metric_names = sorted(all_metric_names)
+
+        metric_coverage: dict[str, dict] = {}
+        missing_metrics: dict[str, list[str]] = {}
+        ranked_metrics: dict[str, list[dict]] = {}
+        warnings: list[str] = []
+
+        for mn in metric_names:
+            avail = 0
+            miss = 0
+            values: list[dict] = []
+            mixed = False
+            for exp in experiments:
+                eid = exp.get("experiment_id", "")
+                rm = exp.get("result_metrics") or {}
+                if mn in rm:
+                    v = rm[mn]
+                    avail += 1
+                    if isinstance(v, (int, float)):
+                        values.append({"experiment_id": eid, "value": v})
+                    else:
+                        mixed = True
+                else:
+                    miss += 1
+                    missing_metrics.setdefault(eid, []).append(mn)
+            total = avail + miss
+            metric_coverage[mn] = {
+                "available_count": avail,
+                "missing_count": miss,
+                "coverage_ratio": round(avail / total, 2) if total > 0 else 0,
+            }
+            if values:
+                ranked_metrics[mn] = sorted(values, key=lambda x: x["value"], reverse=True)
+            if mixed:
+                warnings.append(f"Metric '{mn}' has mixed types across experiments.")
+
+        for exp in experiments:
+            eid = exp.get("experiment_id", "")
+            if not exp.get("result_metrics"):
+                warnings.append(f"Experiment {eid[:8]} has no result metrics.")
+            if exp.get("lifecycle_state") != "completed":
+                warnings.append(f"Experiment {eid[:8]} lifecycle is '{exp.get('lifecycle_state')}', not 'completed'.")
+
+        if not metric_names:
+            warnings.append("No comparable metrics found across selected experiments.")
+
+        return {
+            "experiment_count": len(experiments),
+            "metric_names": metric_names,
+            "metric_coverage": metric_coverage,
+            "missing_metrics": missing_metrics,
+            "ranked_metrics": ranked_metrics,
+            "warnings": warnings,
+        }
+
+    def create_experiment_comparison(
+        self,
+        name: str,
+        experiment_ids: list[str],
+        metric_priority: list[str] | None = None,
+        notes: str = "",
+    ) -> dict:
+        """Create offline comparison of 2+ experiments. No training, no inference, no promotion."""
+        comp_registry = self._require_healthy_comparison_registry()
+
+        # Validate experiment IDs from experiment registry
+        try:
+            exp_registry = self._require_healthy_experiment_registry()
+        except self.ExperimentRegistryCorruptError:
+            return {"error": "Experiment registry is corrupt. Cannot validate experiments.",
+                    "comparison_id": None, "status": "failed"}
+
+        experiments: list[dict] = []
+        warnings: list[str] = []
+        for eid in experiment_ids:
+            found = None
+            for e in exp_registry.get("experiments", []):
+                if e.get("experiment_id") == eid:
+                    found = e
+                    break
+            if not found:
+                return {"error": f"Experiment '{eid}' not found in experiment registry.",
+                        "comparison_id": None, "status": "failed"}
+            experiments.append(found)
+
+        # Sanitize user-controlled fields
+        redacted = False
+        safe_name = self._sanitize_experiment_text(name, max_len=200)
+        if safe_name == "[redacted]":
+            redacted = True
+        safe_notes = self._sanitize_experiment_text(notes, max_len=1000)
+        if safe_notes == "[redacted]":
+            redacted = True
+        safe_priority = self._sanitize_experiment_list(metric_priority or [])
+        if len(safe_priority) < len(metric_priority or []):
+            redacted = True
+        if redacted:
+            warnings.append("Some comparison metadata fields were redacted or dropped because they looked like paths or secrets.")
+
+        # Build experiment snapshots
+        snapshots = []
+        for exp in experiments:
+            snapshots.append({
+                "experiment_id": exp.get("experiment_id"),
+                "name": exp.get("name"),
+                "lifecycle_state": exp.get("lifecycle_state"),
+                "linked_export_id": exp.get("linked_export_id"),
+                "linked_export_checksum": exp.get("linked_export_checksum"),
+                "linked_export_fingerprint": exp.get("linked_export_fingerprint"),
+                "linked_export_row_count": exp.get("linked_export_row_count", 0),
+                "result_summary": exp.get("result_summary"),
+                "result_metrics": exp.get("result_metrics") or {},
+                "warnings": exp.get("warnings") or [],
+                "limitations": exp.get("limitations") or [],
+            })
+
+        # Build comparison summary
+        summary = self._build_comparison_summary(experiments, safe_priority)
+        warnings.extend(summary.get("warnings", []))
+
+        now = datetime.now(timezone.utc)
+        comparison_id = gen_uuid()
+
+        entry = {
+            "comparison_id": comparison_id,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "lifecycle_state": "active",
+            "name": safe_name,
+            "experiment_ids": experiment_ids,
+            "metric_priority": safe_priority,
+            "notes": safe_notes,
+            "comparison_summary": summary,
+            "experiment_snapshots": snapshots,
+            "warnings": warnings,
+            "limitations": [
+                "Research-only, offline-only, shadow comparison.",
+                "Metric sorting is numeric-only and does not imply production suitability.",
+                "Not used by production recommendations.",
+                "Not eligible for promotion.",
+                "No broker execution.",
+            ],
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+        }
+
+        comp_registry["comparisons"].insert(0, entry)
+        self.save_comparison_registry(comp_registry)
+
+        return {**entry, "status": "created", "safety_flags": self.COMPARISON_SAFETY_FLAGS}
+
+    def list_experiment_comparisons(self, lifecycle_state: str | None = None, limit: int = 50) -> list[dict]:
+        registry = self._require_healthy_comparison_registry()
+        comparisons = registry.get("comparisons", [])
+        comparisons.sort(key=lambda c: c.get("created_at") or "", reverse=True)
+        if lifecycle_state:
+            comparisons = [c for c in comparisons if c.get("lifecycle_state") == lifecycle_state]
+        return comparisons[:limit]
+
+    def get_experiment_comparison(self, comparison_id: str) -> dict | None:
+        registry = self._require_healthy_comparison_registry()
+        for c in registry.get("comparisons", []):
+            if c.get("comparison_id") == comparison_id:
+                result = dict(c)
+                result["safety_flags"] = self.COMPARISON_SAFETY_FLAGS
+                return result
+        return None
+
+    def archive_experiment_comparison(self, comparison_id: str, reason: str | None = None) -> dict | None:
+        registry = self._require_healthy_comparison_registry()
+        for entry in registry.get("comparisons", []):
+            if entry.get("comparison_id") == comparison_id:
+                entry["lifecycle_state"] = "archived"
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                if reason:
+                    safe_reason = self._sanitize_experiment_text(reason, max_len=500)
+                    entry.setdefault("warnings", []).append(f"Archived: {safe_reason}")
+                    if safe_reason == "[redacted]":
+                        entry["warnings"].append(
+                            "Some archive reason text was redacted because it looked like a path or secret.")
+                self.save_comparison_registry(registry)
+                return {**entry, "safety_flags": self.COMPARISON_SAFETY_FLAGS}
+        return None
+
+    def verify_experiment_comparison(self, comparison_id: str) -> dict | None:
+        """Verify comparison inputs. Strictly read-only — no registry writes."""
+        registry = self._require_healthy_comparison_registry()
+        entry = None
+        for c in registry.get("comparisons", []):
+            if c.get("comparison_id") == comparison_id:
+                entry = c
+                break
+        if not entry:
+            return None
+
+        warnings: list[str] = []
+        experiment_ids = entry.get("experiment_ids", [])
+
+        try:
+            exp_registry = self.load_experiment_registry()
+            if exp_registry.get("registry_corrupt"):
+                warnings.append("Experiment registry is corrupt — cannot verify experiments.")
+            else:
+                for eid in experiment_ids:
+                    found = None
+                    for e in exp_registry.get("experiments", []):
+                        if e.get("experiment_id") == eid:
+                            found = e
+                            break
+                    if not found:
+                        warnings.append(f"Experiment {eid[:8]} not found in registry.")
+                    elif not found.get("result_metrics"):
+                        warnings.append(f"Experiment {eid[:8]} has no result metrics.")
+                    elif found.get("lifecycle_state") != "completed":
+                        warnings.append(f"Experiment {eid[:8]} lifecycle is '{found.get('lifecycle_state')}', not 'completed'.")
+        except Exception:
+            warnings.append("Could not load experiment registry for verification.")
+
+        return {
+            "comparison_id": comparison_id,
+            "experiment_ids": experiment_ids,
+            "lifecycle_state": entry.get("lifecycle_state"),
+            "warnings": warnings,
+            "healthy": len(warnings) == 0,
+            "safety_flags": self.COMPARISON_SAFETY_FLAGS,
+        }
+
+    def rebuild_comparison_registry_from_files(self) -> dict:
+        cmp_dir = self._comparisons_dir()
+        os.makedirs(cmp_dir, exist_ok=True)
+        registry = self._empty_comparison_registry()
+        self.save_comparison_registry(registry)
+        return {"rebuilt": True, "comparison_count": 0, "safety_flags": self.COMPARISON_SAFETY_FLAGS}
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""

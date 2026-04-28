@@ -15,12 +15,15 @@ import {
   createFinrlxResearchExperiment, listFinrlxResearchExperiments, getFinrlxResearchExperiment,
   updateFinrlxResearchExperimentState, importFinrlxResearchExperimentResults,
   verifyFinrlxResearchExperiment, rebuildFinrlxResearchExperimentRegistry,
+  createFinrlxExperimentComparison, listFinrlxExperimentComparisons, getFinrlxExperimentComparison,
+  archiveFinrlxExperimentComparison, verifyFinrlxExperimentComparison,
   OpsData, OpsQueueItem, OpsAuditEntry, OpsIncident, MLOpsSummary,
   FinRLXDependencyStatus, FinRLXCandidate, FinRLXBenchmarkEligibility,
   FinRLXCandidateBenchmarkResponse, FinRLXCandidateBenchmarkHistoryItem,
   FinRLXArtifactValidationResult,
   DatasetExportResponse, DatasetExportRegistryEntry, DatasetExportVerifyResult,
   ResearchExperiment, ExperimentVerifyResult, ExperimentLifecycleState,
+  ExperimentComparison, ComparisonVerifyResult,
   RLBenchmarkReport, RLBenchmarkAuditEvent, FinRLXAdapterStatus,
 } from "@/services/api";
 import { Icon } from "@/components/icons/Icon";
@@ -177,6 +180,24 @@ export default function AdminPage() {
   const [expError, setExpError] = useState<string | null>(null);
   const [expSuccess, setExpSuccess] = useState<string | null>(null);
   const [expRebuildAck, setExpRebuildAck] = useState(false);
+
+  // Comparison workbench (Phase 8K.1)
+  const [cmpName, setCmpName] = useState("Offline experiment comparison");
+  const [cmpExpIds, setCmpExpIds] = useState("");
+  const [cmpPriority, setCmpPriority] = useState("");
+  const [cmpNotes, setCmpNotes] = useState("");
+  const [cmpAck, setCmpAck] = useState(false);
+  const [cmpCreateLoading, setCmpCreateLoading] = useState(false);
+  const [cmpCreateError, setCmpCreateError] = useState<string | null>(null);
+  const [cmpCreateSuccess, setCmpCreateSuccess] = useState<string | null>(null);
+  const [cmpList, setCmpList] = useState<ExperimentComparison[]>([]);
+  const [cmpSelected, setCmpSelected] = useState<ExperimentComparison | null>(null);
+  const [cmpVerifyResult, setCmpVerifyResult] = useState<ComparisonVerifyResult | null>(null);
+  const [cmpArchiveAck, setCmpArchiveAck] = useState(false);
+  const [cmpArchiveReason, setCmpArchiveReason] = useState("");
+  const [cmpLoading, setCmpLoading] = useState<string | null>(null);
+  const [cmpError, setCmpError] = useState<string | null>(null);
+  const [cmpSuccess, setCmpSuccess] = useState<string | null>(null);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -530,6 +551,87 @@ export default function AdminPage() {
     }
   }, [expRebuildAck, refreshExperiments]);
 
+  // ── Comparison workbench callbacks ──
+  const refreshComparisons = useCallback(() => {
+    listFinrlxExperimentComparisons().then(r => { if (r.data) setCmpList(r.data); }).catch(() => {});
+  }, []);
+
+  const handleCreateComparison = useCallback(async () => {
+    if (!cmpAck || !cmpName.trim() || !cmpExpIds.trim()) return;
+    setCmpCreateLoading(true);
+    setCmpCreateError(null);
+    setCmpCreateSuccess(null);
+    const ids = cmpExpIds.split(",").map(s => s.trim()).filter(Boolean);
+    const priority = cmpPriority ? cmpPriority.split(",").map(s => s.trim()).filter(Boolean) : [];
+    try {
+      const res = await createFinrlxExperimentComparison({
+        name: cmpName.trim(),
+        experiment_ids: ids,
+        metric_priority: priority,
+        notes: cmpNotes,
+        research_acknowledgement: true,
+      });
+      if (res.data?.comparison_id) {
+        setCmpCreateSuccess(`Comparison ${res.data.comparison_id.slice(0, 8)} created.`);
+        setCmpAck(false);
+        refreshComparisons();
+      }
+    } catch (e: unknown) {
+      setCmpCreateError(e instanceof Error ? e.message : "Create comparison failed");
+    } finally {
+      setCmpCreateLoading(false);
+    }
+  }, [cmpAck, cmpName, cmpExpIds, cmpPriority, cmpNotes, refreshComparisons]);
+
+  const selectComparison = useCallback(async (cmp: ExperimentComparison) => {
+    setCmpSelected(null);
+    setCmpVerifyResult(null);
+    setCmpArchiveAck(false);
+    setCmpArchiveReason("");
+    setCmpError(null);
+    setCmpSuccess(null);
+    try {
+      const res = await getFinrlxExperimentComparison(cmp.comparison_id);
+      if (res.data) setCmpSelected(res.data);
+    } catch { /* graceful */ }
+  }, []);
+
+  const handleCmpVerify = useCallback(async () => {
+    if (!cmpSelected) return;
+    setCmpLoading("verify");
+    setCmpError(null);
+    setCmpVerifyResult(null);
+    try {
+      const res = await verifyFinrlxExperimentComparison(cmpSelected.comparison_id);
+      if (res.data) setCmpVerifyResult(res.data);
+    } catch (e: unknown) {
+      setCmpError(e instanceof Error ? e.message : "Verify failed");
+    } finally {
+      setCmpLoading(null);
+    }
+  }, [cmpSelected]);
+
+  const handleCmpArchive = useCallback(async () => {
+    if (!cmpSelected || !cmpArchiveAck) return;
+    setCmpLoading("archive");
+    setCmpError(null);
+    setCmpSuccess(null);
+    try {
+      await archiveFinrlxExperimentComparison(cmpSelected.comparison_id, {
+        acknowledgement: true,
+        reason: cmpArchiveReason || undefined,
+      });
+      setCmpSuccess("Comparison archived.");
+      setCmpArchiveAck(false);
+      refreshComparisons();
+      selectComparison({ ...cmpSelected, lifecycle_state: "archived" });
+    } catch (e: unknown) {
+      setCmpError(e instanceof Error ? e.message : "Archive failed");
+    } finally {
+      setCmpLoading(null);
+    }
+  }, [cmpSelected, cmpArchiveAck, cmpArchiveReason, refreshComparisons, selectComparison]);
+
   useEffect(() => {
     Promise.all([
       fetchOps(),
@@ -555,6 +657,7 @@ export default function AdminPage() {
         }).catch(() => {});
         listFinrlxDatasetExports().then(r => { if (r.data) setDsExportHistory(r.data); }).catch(() => {});
         listFinrlxResearchExperiments().then(r => { if (r.data) setExpList(r.data); }).catch(() => {});
+        listFinrlxExperimentComparisons().then(r => { if (r.data) setCmpList(r.data); }).catch(() => {});
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -1599,6 +1702,202 @@ export default function AdminPage() {
             {expLoading === "rebuild" ? "Rebuilding..." : "Rebuild Registry"}
           </button>
         </div>
+      </section>
+
+      {/* ── Offline Experiment Comparison Workbench (Phase 8K.1) ── */}
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <Icon name="compare" size={15} className="text-primary" />
+          <h3 className="text-[13px] font-semibold text-ink">Offline Experiment Comparison Workbench</h3>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">research-only</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">metadata-only comparison</span>
+        </div>
+        <p className="text-[10px] text-ink-4 mb-3">
+          Compare offline research experiments using imported result metadata. Numeric metric sorting only — does not imply production suitability. Not eligible for promotion.
+        </p>
+
+        {/* Create comparison form */}
+        <div className="space-y-2 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-0.5">Comparison name</label>
+              <input type="text" value={cmpName} onChange={(e) => setCmpName(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-0.5">Experiment IDs (comma-separated, min 2)</label>
+              <input type="text" value={cmpExpIds} onChange={(e) => setCmpExpIds(e.target.value)}
+                placeholder="exp-id-1, exp-id-2"
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink font-mono focus:border-primary focus:outline-none" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-0.5">Metric priority (comma-separated)</label>
+              <input type="text" value={cmpPriority} onChange={(e) => setCmpPriority(e.target.value)}
+                placeholder="sharpe_ratio, max_drawdown"
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-[10px] text-ink-4 block mb-0.5">Notes</label>
+              <input type="text" value={cmpNotes} onChange={(e) => setCmpNotes(e.target.value)}
+                placeholder="Research comparison notes"
+                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            </div>
+          </div>
+          <div className="rounded-lg border border-line bg-surface-2 p-3">
+            <label className="flex items-start gap-2 text-[11px] text-ink-2 cursor-pointer">
+              <input type="checkbox" checked={cmpAck} onChange={(e) => setCmpAck(e.target.checked)} className="rounded mt-0.5" />
+              <span>
+                I understand this creates a <strong className="text-ink">research-only offline comparison</strong>.
+                It does not run training, benchmarks, or affect production recommendations.
+              </span>
+            </label>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleCreateComparison}
+              disabled={cmpCreateLoading || !cmpAck || !cmpName.trim() || !cmpExpIds.trim()}
+              className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40">
+              {cmpCreateLoading ? "Creating..." : "Create Comparison"}
+            </button>
+          </div>
+          {cmpCreateError && <div className="p-2 rounded-md bg-breach/10 border border-breach/20 text-[10px] text-breach break-words">{cmpCreateError}</div>}
+          {cmpCreateSuccess && <div className="p-2 rounded-md bg-pos/10 border border-pos/20 text-[10px] text-pos">{cmpCreateSuccess}</div>}
+        </div>
+
+        {/* Comparison list */}
+        {cmpList.length > 0 && (
+          <div className="border-t border-line pt-3 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h4 className="text-[12px] font-semibold text-ink">Comparison Registry</h4>
+              <span className="text-[10px] text-ink-4">{cmpList.length} comparison{cmpList.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="space-y-1">
+              {cmpList.map((cmp) => (
+                <button key={cmp.comparison_id} onClick={() => selectComparison(cmp)}
+                  className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                    cmpSelected?.comparison_id === cmp.comparison_id ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                  }`}>
+                  <span className="font-mono text-ink-2 break-all">{cmp.comparison_id?.slice(0, 8)}</span>
+                  <span className="text-ink font-medium truncate max-w-[150px]">{cmp.name}</span>
+                  <span className="text-ink-3">{cmp.experiment_ids?.length} experiments</span>
+                  <span className="text-ink-4">{cmp.comparison_summary?.metric_names?.length || 0} metrics</span>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                    cmp.lifecycle_state === "active" ? "bg-pos/10 text-pos" : "bg-surface-3 text-ink-4"
+                  }`}>{cmp.lifecycle_state}</span>
+                  <span className="text-ink-4 ml-auto">{cmp.created_at?.slice(0, 19)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Selected comparison detail */}
+        {cmpSelected && (
+          <div className="border-t border-line pt-3">
+            {cmpError && <div className="mb-2 p-2 rounded-md bg-breach/10 border border-breach/20 text-[10px] text-breach break-words">{cmpError}</div>}
+            {cmpSuccess && <div className="mb-2 p-2 rounded-md bg-pos/10 border border-pos/20 text-[10px] text-pos">{cmpSuccess}</div>}
+
+            <div className="p-3 rounded-md bg-surface-2 border border-line text-[10px] space-y-2">
+              <div className="font-semibold text-[11px] text-ink mb-1">Comparison Detail</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div><span className="text-ink-4">ID:</span> <span className="font-mono text-ink-2 break-all">{cmpSelected.comparison_id}</span></div>
+                <div><span className="text-ink-4">State:</span> <span className={cmpSelected.lifecycle_state === "active" ? "text-pos" : "text-ink-3"}>{cmpSelected.lifecycle_state}</span></div>
+                <div><span className="text-ink-4">Name:</span> <span className="text-ink">{cmpSelected.name}</span></div>
+                <div><span className="text-ink-4">Experiments:</span> <span className="text-ink">{cmpSelected.experiment_ids?.length}</span></div>
+              </div>
+              {cmpSelected.notes && <div><span className="text-ink-4">Notes:</span> <span className="text-ink">{cmpSelected.notes}</span></div>}
+
+              {/* Experiment snapshots */}
+              {cmpSelected.experiment_snapshots && cmpSelected.experiment_snapshots.length > 0 && (
+                <div className="pt-2 border-t border-line/30">
+                  <div className="text-[10px] text-ink-3 font-medium mb-1">Experiment Snapshots</div>
+                  {cmpSelected.experiment_snapshots.map((snap) => (
+                    <div key={snap.experiment_id} className="p-2 rounded bg-surface-3 mb-1">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <span className="font-mono text-ink-2">{snap.experiment_id?.slice(0, 8)}</span>
+                        <span className="text-ink font-medium truncate max-w-[120px]">{snap.name}</span>
+                        <span className="text-ink-4">{snap.lifecycle_state}</span>
+                        <span className="text-ink-4">export:{snap.linked_export_id?.slice(0, 8)}</span>
+                      </div>
+                      {snap.result_metrics && Object.keys(snap.result_metrics).length > 0 && (
+                        <div className="mt-1 text-[9px] text-ink-3">
+                          {Object.entries(snap.result_metrics).map(([k, v]) => (
+                            <span key={k} className="mr-2">{k}: <span className="font-mono text-ink-2">{String(v)}</span></span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Ranked metrics */}
+              {cmpSelected.comparison_summary?.ranked_metrics && Object.keys(cmpSelected.comparison_summary.ranked_metrics).length > 0 && (
+                <div className="pt-2 border-t border-line/30">
+                  <div className="text-[10px] text-ink-3 font-medium mb-1">Numeric Metric Comparison (descending sort, offline only)</div>
+                  {Object.entries(cmpSelected.comparison_summary.ranked_metrics).map(([metric, entries]) => (
+                    <div key={metric} className="mb-1.5">
+                      <div className="text-[9px] text-ink-4 font-medium">{metric}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(entries as Array<{experiment_id: string; value: number}>).map((e, i) => (
+                          <span key={e.experiment_id} className={`font-mono text-[9px] ${i === 0 ? "text-primary" : "text-ink-2"}`}>
+                            {e.experiment_id?.slice(0, 8)}: {e.value}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[8px] text-ink-4 mt-1">Numeric sorting only. Does not imply production suitability.</p>
+                </div>
+              )}
+
+              {/* Warnings and limitations */}
+              {cmpSelected.warnings && cmpSelected.warnings.length > 0 && (
+                <div className="text-caution text-[9px]">Warnings: {cmpSelected.warnings.join("; ")}</div>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(cmpSelected.safety_flags || {}).map(([k, v]) => (
+                  <span key={k} className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${v ? "bg-pos/10 text-pos" : "bg-breach/10 text-breach"}`}>
+                    {k.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+
+              {/* Verify and archive controls */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-line/30">
+                <button onClick={handleCmpVerify} disabled={cmpLoading === "verify"}
+                  className="px-3 py-1 rounded-md text-[10px] font-medium bg-surface-3 text-ink-2 hover:bg-surface-3/80 disabled:opacity-40 transition-colors">
+                  {cmpLoading === "verify" ? "Verifying..." : "Verify Comparison"}
+                </button>
+              </div>
+              {cmpVerifyResult && (
+                <div className="p-2 rounded-md bg-surface-3 text-[10px] space-y-1">
+                  <div className="font-medium text-ink">Comparison Verification</div>
+                  <div>Status: <span className={cmpVerifyResult.healthy ? "text-pos" : "text-caution"}>{cmpVerifyResult.healthy ? "healthy" : "warnings"}</span></div>
+                  {cmpVerifyResult.warnings.length > 0 && <div className="text-caution">{cmpVerifyResult.warnings.join("; ")}</div>}
+                </div>
+              )}
+
+              {cmpSelected.lifecycle_state === "active" && (
+                <div className="pt-2 border-t border-line/30 space-y-2">
+                  <div className="text-[10px] text-ink-3 font-medium">Archive Comparison</div>
+                  <input type="text" value={cmpArchiveReason} onChange={(e) => setCmpArchiveReason(e.target.value)}
+                    placeholder="Reason (optional)"
+                    className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
+                    <input type="checkbox" checked={cmpArchiveAck} onChange={(e) => setCmpArchiveAck(e.target.checked)} className="rounded" />
+                    <span className="text-ink-3">I acknowledge this archives the comparison (does not delete data or affect experiments)</span>
+                  </label>
+                  <button onClick={handleCmpArchive} disabled={!cmpArchiveAck || cmpLoading === "archive"}
+                    className="px-3 py-1 rounded-md text-[10px] font-medium bg-caution/20 text-caution hover:bg-caution/30 disabled:opacity-40 transition-colors">
+                    {cmpLoading === "archive" ? "Archiving..." : "Archive"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Run Offline Benchmark ── */}

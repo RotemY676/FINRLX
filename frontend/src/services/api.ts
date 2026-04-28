@@ -1471,3 +1471,139 @@ export async function rebuildFinrlxResearchExperimentRegistry(
     body: JSON.stringify(payload),
   });
 }
+
+// ── Offline Experiment Comparison Workbench (Phase 8K.1) ───────────
+
+export type ComparisonLifecycleState = "active" | "archived";
+
+export interface MetricCoverage {
+  available_count: number;
+  missing_count: number;
+  coverage_ratio: number;
+}
+
+export interface RankedMetricEntry {
+  experiment_id: string;
+  value: number;
+}
+
+export interface ComparisonSummary {
+  experiment_count: number;
+  metric_names: string[];
+  metric_coverage: Record<string, MetricCoverage>;
+  missing_metrics: Record<string, string[]>;
+  ranked_metrics: Record<string, RankedMetricEntry[]>;
+  warnings: string[];
+}
+
+export interface ExperimentSnapshot {
+  experiment_id: string;
+  name: string;
+  lifecycle_state: string;
+  linked_export_id: string;
+  linked_export_checksum: string | null;
+  linked_export_fingerprint: string | null;
+  linked_export_row_count: number;
+  result_summary: string | null;
+  result_metrics: Record<string, number | string>;
+  warnings: string[];
+  limitations: string[];
+}
+
+export interface ExperimentComparison {
+  comparison_id: string;
+  created_at: string;
+  updated_at: string;
+  lifecycle_state: ComparisonLifecycleState;
+  name: string;
+  experiment_ids: string[];
+  metric_priority: string[];
+  notes: string;
+  comparison_summary: ComparisonSummary;
+  experiment_snapshots: ExperimentSnapshot[];
+  warnings: string[];
+  limitations: string[];
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  no_production_influence: boolean;
+  not_eligible_for_promotion: boolean;
+  safety_flags?: Record<string, boolean>;
+  status?: string;
+}
+
+export interface CreateComparisonPayload {
+  name: string;
+  experiment_ids: string[];
+  metric_priority?: string[];
+  notes?: string;
+  research_acknowledgement: boolean;
+}
+
+export interface ArchiveComparisonPayload {
+  acknowledgement: boolean;
+  reason?: string;
+}
+
+export interface ComparisonVerifyResult {
+  comparison_id: string;
+  experiment_ids: string[];
+  lifecycle_state: string;
+  warnings: string[];
+  healthy: boolean;
+  safety_flags: Record<string, boolean>;
+}
+
+export async function createFinrlxExperimentComparison(
+  payload: CreateComparisonPayload
+): Promise<ApiResponse<ExperimentComparison>> {
+  return apiFetch<ExperimentComparison>("/api/v1/rl/finrlx/experiment-comparisons", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listFinrlxExperimentComparisons(params?: {
+  lifecycle_state?: string;
+  limit?: number;
+}): Promise<ApiResponse<ExperimentComparison[]>> {
+  const qs = new URLSearchParams();
+  if (params?.lifecycle_state) qs.set("lifecycle_state", params.lifecycle_state);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return apiFetch<ExperimentComparison[]>(`/api/v1/rl/finrlx/experiment-comparisons${query ? `?${query}` : ""}`);
+}
+
+export async function getFinrlxExperimentComparison(
+  comparisonId: string
+): Promise<ApiResponse<ExperimentComparison>> {
+  return apiFetch<ExperimentComparison>(`/api/v1/rl/finrlx/experiment-comparisons/${comparisonId}`);
+}
+
+export async function archiveFinrlxExperimentComparison(
+  comparisonId: string,
+  payload: ArchiveComparisonPayload
+): Promise<ApiResponse<ExperimentComparison>> {
+  return apiFetch<ExperimentComparison>(`/api/v1/rl/finrlx/experiment-comparisons/${comparisonId}/archive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyFinrlxExperimentComparison(
+  comparisonId: string
+): Promise<ApiResponse<ComparisonVerifyResult>> {
+  return apiFetch<ComparisonVerifyResult>(`/api/v1/rl/finrlx/experiment-comparisons/${comparisonId}/verify`);
+}
+
+export async function rebuildFinrlxExperimentComparisonRegistry(
+  payload: { acknowledgement: boolean }
+): Promise<ApiResponse<{ rebuilt: boolean; comparison_count: number }>> {
+  return apiFetch<{ rebuilt: boolean; comparison_count: number }>("/api/v1/rl/finrlx/experiment-comparisons/rebuild-registry", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
