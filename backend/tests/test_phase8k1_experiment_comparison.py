@@ -616,6 +616,135 @@ async def test_rebuild_succeeds(client):
     _clear_cmp_registry()
 
 
+# ── Snapshot sanitization (legacy unsafe metadata) ───────────────
+
+def _inject_unsafe_experiment_metadata(experiment_id: str):
+    """Directly edit experiment_registry.json to simulate legacy unsafe metadata."""
+    path = _exp_registry_path()
+    with open(path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for exp in reg.get("experiments", []):
+        if exp.get("experiment_id") == experiment_id:
+            exp["name"] = r"Loaded from C:\Users\Rotem\.env"
+            exp["result_summary"] = "DATABASE_URL=postgres://secret"
+            exp["result_metrics"] = {
+                "safe_metric": 1.23,
+                "api_key": "sk-test-secret",
+                "path": "/etc/passwd",
+                "nested_obj": {"a": 1},
+            }
+            exp["warnings"] = ["token=abc123"]
+            exp["limitations"] = ["broker credential leaked"]
+            break
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+
+@pytest.mark.asyncio
+async def test_comparison_sanitizes_legacy_unsafe_experiment_snapshot(client):
+    """Comparison defensively sanitizes experiment snapshot data from legacy unsafe metadata."""
+    exp1, exp2 = await _setup_two_experiments(client)
+    # Inject unsafe metadata into exp1
+    _inject_unsafe_experiment_metadata(exp1["experiment_id"])
+
+    r = await client.post("/api/v1/rl/finrlx/experiment-comparisons", json={
+        "name": "Legacy Sanitize Test",
+        "experiment_ids": [exp1["experiment_id"], exp2["experiment_id"]],
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+
+    # Check response does not contain unsafe values
+    resp_str = json.dumps(data)
+    for unsafe in ["C:\\Users", ".env", "DATABASE_URL", "postgres://",
+                    "sk-test-secret", "/etc/passwd", "token=abc123", "broker credential"]:
+        assert unsafe not in resp_str, f"Found '{unsafe}' in comparison response"
+
+    # safe_metric should remain
+    found_safe = False
+    for snap in data["experiment_snapshots"]:
+        if "safe_metric" in snap.get("result_metrics", {}):
+            assert snap["result_metrics"]["safe_metric"] == 1.23
+            found_safe = True
+    assert found_safe
+
+    # Check registry file
+    with open(_cmp_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["C:\\Users", ".env", "DATABASE_URL", "postgres://",
+                    "sk-test-secret", "/etc/passwd", "token=abc123", "broker credential"]:
+        assert unsafe not in content, f"Found '{unsafe}' in comparison registry"
+
+
+@pytest.mark.asyncio
+async def test_comparison_summary_sanitizes_metric_names(client):
+    """Comparison summary only includes safe metric names, not unsafe keys."""
+    exp1, exp2 = await _setup_two_experiments(client)
+    # Inject unsafe metric keys into exp1
+    path = _exp_registry_path()
+    with open(path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for exp in reg.get("experiments", []):
+        if exp.get("experiment_id") == exp1["experiment_id"]:
+            exp["result_metrics"] = {
+                "sharpe_ratio": 1.1,
+                "api_key": 123,
+                "/etc/passwd": 999,
+                "DATABASE_URL": "postgres://secret",
+            }
+            break
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+    r = await client.post("/api/v1/rl/finrlx/experiment-comparisons", json={
+        "name": "Summary Sanitize Test",
+        "experiment_ids": [exp1["experiment_id"], exp2["experiment_id"]],
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    summary = r.json()["data"]["comparison_summary"]
+
+    # Safe metric should be present
+    assert "sharpe_ratio" in summary["metric_names"]
+
+    # Unsafe metric names must not be present
+    for unsafe_name in ["api_key", "/etc/passwd", "DATABASE_URL"]:
+        assert unsafe_name not in summary["metric_names"]
+        assert unsafe_name not in summary.get("metric_coverage", {})
+        assert unsafe_name not in summary.get("ranked_metrics", {})
+
+    # Warnings should not contain unsafe metric names
+    warnings_str = " ".join(summary.get("warnings", []))
+    for unsafe_name in ["api_key", "/etc/passwd", "DATABASE_URL", "postgres://"]:
+        assert unsafe_name not in warnings_str
+
+
+@pytest.mark.asyncio
+async def test_comparison_registry_clean_after_legacy_snapshot(client):
+    """Comparison registry contains no unsafe patterns after legacy unsafe experiment data."""
+    exp1, exp2 = await _setup_two_experiments(client)
+    _inject_unsafe_experiment_metadata(exp1["experiment_id"])
+
+    await client.post("/api/v1/rl/finrlx/experiment-comparisons", json={
+        "name": "Registry Clean Test",
+        "experiment_ids": [exp1["experiment_id"], exp2["experiment_id"]],
+        "research_acknowledgement": True,
+    })
+
+    with open(_cmp_registry_path(), "r") as f:
+        content = f.read()
+    content_lower = content.lower()
+
+    for pattern in ["c:\\users", "/etc/", "sk-test-secret", "postgres://"]:
+        assert pattern not in content_lower, f"Found '{pattern}' in comparison registry"
+
+    for pattern in ["api_key", "database_url", "credential"]:
+        assert pattern not in content_lower, f"Found '{pattern}' in comparison registry"
+    # "broker" appears in the safe limitation "No broker execution." — check for "broker credential" specifically
+    assert "broker credential" not in content_lower, "Found 'broker credential' in comparison registry"
+
+
 # ── /rl/execute absent ───────────────────────────────────────────
 
 @pytest.mark.asyncio

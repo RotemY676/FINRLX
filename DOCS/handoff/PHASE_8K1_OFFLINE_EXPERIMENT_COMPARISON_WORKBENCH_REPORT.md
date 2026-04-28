@@ -2,6 +2,7 @@
 
 **Date:** 2026-04-28
 **Accepted checkpoint:** Phase 8J.1-fix2 (commit 90bb22d)
+**Fix applied:** 8K.1-fix — defensive snapshot and summary sanitization
 **Classification:** PASS
 
 ---
@@ -145,7 +146,11 @@ All registry operations confined to `research/finrlx_cpu/comparisons/`. No absol
 
 ## 12. Sanitization Model
 
-Reuses `_sanitize_experiment_text()`, `_sanitize_experiment_list()`, `_sanitize_experiment_dict()` from Phase 8J.1. Applied to: comparison name, notes, metric_priority, archive reason. Disallowed values redacted to "[redacted]" or dropped.
+Reuses `_sanitize_experiment_text()`, `_sanitize_experiment_list()`, `_sanitize_experiment_dict()`, `_sanitize_experiment_metric_key()` from Phase 8J.1. Applied to:
+- Comparison name, notes, metric_priority, archive reason
+- **Experiment snapshot fields**: name, result_summary, result_metrics (keys+values), warnings, limitations
+- **Comparison summary inputs**: metric_names filtered through `_sanitize_experiment_metric_key()`, metric warnings only include safe metric names
+- Legacy/manual unsafe experiment metadata cannot leak into comparison_registry.json
 
 ---
 
@@ -191,7 +196,7 @@ Two states: active, archived. Archive is a lifecycle label change only — does 
 
 ## 17. Tests Added
 
-**File:** `backend/tests/test_phase8k1_experiment_comparison.py` — 38 tests
+**File:** `backend/tests/test_phase8k1_experiment_comparison.py` — 41 tests
 
 Covering: registry creation, acknowledgement, min 2 IDs, valid IDs, success, safety flags, snapshots, linked export in snapshots, path safety, no absolute paths, no secrets, sanitization, list newest first, get by ID, invalid ID 404, archive acknowledgement, archive lifecycle, verify read-only, verify missing experiment, verify no result metrics, metric coverage, missing metrics per experiment, ranked metrics deterministic, mixed type warnings, no training, no benchmark, no altered recommendations, no altered overview, no altered publication, no promotion, corrupt comparison registry, corrupt experiment registry, rebuild acknowledgement, rebuild success, /rl/execute absent, Phase 8J.1 regression, pipeline regression.
 
@@ -199,9 +204,9 @@ Covering: registry creation, acknowledgement, min 2 IDs, valid IDs, success, saf
 
 ## 18. Tests Run and Results
 
-- Phase 8K.1 targeted: **38 passed**
-- Phase 8I + 8I.2 + 8J.1 + 8K.1 targeted: **130 passed**
-- Full Phase 8 regression: **216 passed**
+- Phase 8K.1 targeted: **41 passed**
+- Phase 8I + 8I.2 + 8J.1 + 8K.1 targeted: **133 passed**
+- Full Phase 8 regression: **219 passed**
 
 ---
 

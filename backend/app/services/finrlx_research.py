@@ -2327,9 +2327,14 @@ class FinRLXResearchService:
         all_metric_names: set[str] = set()
         for exp in experiments:
             rm = exp.get("result_metrics") or {}
-            all_metric_names.update(rm.keys())
+            for k in rm.keys():
+                sk = self._sanitize_experiment_metric_key(k)
+                if sk is not None:
+                    all_metric_names.add(sk)
         for mp in metric_priority:
-            all_metric_names.add(mp)
+            sk = self._sanitize_experiment_metric_key(mp)
+            if sk is not None:
+                all_metric_names.add(sk)
         metric_names = sorted(all_metric_names)
 
         metric_coverage: dict[str, dict] = {}
@@ -2363,7 +2368,7 @@ class FinRLXResearchService:
             }
             if values:
                 ranked_metrics[mn] = sorted(values, key=lambda x: x["value"], reverse=True)
-            if mixed:
+            if mixed and not self._is_disallowed_experiment_text(mn):
                 warnings.append(f"Metric '{mn}' has mixed types across experiments.")
 
         for exp in experiments:
@@ -2429,25 +2434,47 @@ class FinRLXResearchService:
         if redacted:
             warnings.append("Some comparison metadata fields were redacted or dropped because they looked like paths or secrets.")
 
-        # Build experiment snapshots
+        # Build experiment snapshots — defensively sanitize all user-controlled fields
+        snapshot_redacted = False
         snapshots = []
         for exp in experiments:
+            safe_exp_name = self._sanitize_experiment_text(exp.get("name") or "", max_len=200)
+            safe_result_summary = self._sanitize_experiment_text(exp.get("result_summary") or "", max_len=2000)
+            safe_result_metrics = self._sanitize_experiment_dict(exp.get("result_metrics") or {})
+            safe_snap_warnings = self._sanitize_experiment_list(exp.get("warnings") or [])
+            safe_snap_limitations = self._sanitize_experiment_list(exp.get("limitations") or [])
+            if (safe_exp_name == "[redacted]" or safe_result_summary == "[redacted]"
+                    or len(safe_result_metrics) < len(exp.get("result_metrics") or {})
+                    or len(safe_snap_warnings) < len(exp.get("warnings") or [])
+                    or len(safe_snap_limitations) < len(exp.get("limitations") or [])):
+                snapshot_redacted = True
             snapshots.append({
                 "experiment_id": exp.get("experiment_id"),
-                "name": exp.get("name"),
+                "name": safe_exp_name,
                 "lifecycle_state": exp.get("lifecycle_state"),
                 "linked_export_id": exp.get("linked_export_id"),
                 "linked_export_checksum": exp.get("linked_export_checksum"),
                 "linked_export_fingerprint": exp.get("linked_export_fingerprint"),
                 "linked_export_row_count": exp.get("linked_export_row_count", 0),
-                "result_summary": exp.get("result_summary"),
-                "result_metrics": exp.get("result_metrics") or {},
-                "warnings": exp.get("warnings") or [],
-                "limitations": exp.get("limitations") or [],
+                "result_summary": safe_result_summary,
+                "result_metrics": safe_result_metrics,
+                "warnings": safe_snap_warnings,
+                "limitations": safe_snap_limitations,
+            })
+        if snapshot_redacted:
+            warnings.append("Some experiment snapshot metadata was redacted or dropped because it looked like a path or secret.")
+
+        # Build sanitized experiment dicts for comparison summary (use snapshot-safe metrics)
+        sanitized_experiments = []
+        for exp, snap in zip(experiments, snapshots):
+            sanitized_experiments.append({
+                "experiment_id": exp.get("experiment_id"),
+                "lifecycle_state": exp.get("lifecycle_state"),
+                "result_metrics": snap["result_metrics"],
             })
 
         # Build comparison summary
-        summary = self._build_comparison_summary(experiments, safe_priority)
+        summary = self._build_comparison_summary(sanitized_experiments, safe_priority)
         warnings.extend(summary.get("warnings", []))
 
         now = datetime.now(timezone.utc)
