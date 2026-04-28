@@ -2138,7 +2138,11 @@ class FinRLXResearchService:
                 entry["lifecycle_state"] = lifecycle_state
                 entry["updated_at"] = datetime.now(timezone.utc).isoformat()
                 if reason:
-                    entry.setdefault("warnings", []).append(f"State changed to {lifecycle_state}: {reason}")
+                    safe_reason = self._sanitize_experiment_text(reason, max_len=500)
+                    entry.setdefault("warnings", []).append(f"State changed to {lifecycle_state}: {safe_reason}")
+                    if safe_reason == "[redacted]":
+                        entry["warnings"].append(
+                            "Some lifecycle reason text was redacted because it looked like a path or secret.")
                 self.save_experiment_registry(registry)
                 return {**entry, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
         return None

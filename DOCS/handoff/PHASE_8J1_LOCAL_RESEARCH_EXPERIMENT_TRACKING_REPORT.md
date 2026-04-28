@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-28
 **Accepted checkpoint:** Phase 8I.2-fix2 (commit aa8c020)
-**Fix applied:** 8J.1-fix — experiment metadata sanitizer for unsafe paths/secrets
+**Fix applied:** 8J.1-fix2 — lifecycle reason sanitizer + metadata sanitizer for unsafe paths/secrets
 **Classification:** PASS
 
 ---
@@ -185,6 +185,7 @@ All endpoints require explicit acknowledgement for write operations.
 - Disallowed values are redacted to "[redacted]" or dropped entirely
 - Warning added when redaction/dropping occurs
 - Safe numeric values and normal research strings preserved
+- **Lifecycle update reason** is also sanitized via `_sanitize_experiment_text()` — no lifecycle reason can store absolute paths, secrets, or env vars in the registry
 
 ---
 
@@ -283,9 +284,9 @@ All endpoints require explicit acknowledgement for write operations.
 
 ## 16. Tests Run and Results
 
-**Phase 8J.1 targeted tests:** 36 passed, 0 failed
-**Phase 8I + 8I.2 + 8J.1 targeted tests:** 91 passed, 0 failed
-**Full Phase 8 regression (8A, 8B, 8E, 8F, 8I, 8I.2, 8J.1):** 177 passed, 0 failed
+**Phase 8J.1 targeted tests:** 37 passed, 0 failed
+**Phase 8I + 8I.2 + 8J.1 targeted tests:** 92 passed, 0 failed
+**Full Phase 8 regression (8A, 8B, 8E, 8F, 8I, 8I.2, 8J.1):** 178 passed, 0 failed
 
 ---
 

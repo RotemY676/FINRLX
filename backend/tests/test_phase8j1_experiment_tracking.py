@@ -301,6 +301,44 @@ async def test_lifecycle_update_succeeds(client):
     assert data["not_eligible_for_promotion"] is True
 
 
+# ── Lifecycle reason sanitizes unsafe paths/secrets ───────────────
+
+@pytest.mark.asyncio
+async def test_lifecycle_reason_sanitizes_unsafe_paths_and_secrets(client):
+    """Lifecycle update reason is sanitized — unsafe paths/secrets redacted."""
+    _clear_exp_registry()
+    _clear_export_registry()
+    export = await _create_export(client)
+    created = await _create_experiment(client, export["export_id"])
+
+    r = await client.post(f"/api/v1/rl/finrlx/research-experiments/{created['experiment_id']}/state", json={
+        "lifecycle_state": "running_offline",
+        "acknowledgement": True,
+        "reason": r"Started from C:\Users\Rotem\.env with api_key=sk-test-secret and DATABASE_URL=postgres://secret",
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["lifecycle_state"] == "running_offline"
+
+    # Response warnings should not contain the actual unsafe input values
+    warnings_text = " ".join(data.get("warnings", []))
+    for unsafe in ["C:\\Users", "sk-test-secret", "DATABASE_URL", "postgres://"]:
+        assert unsafe not in warnings_text, f"Found '{unsafe}' in response warnings"
+
+    # Should contain redaction warning
+    assert any("redacted" in w.lower() for w in data.get("warnings", []))
+
+    # Registry file must not contain any of the actual unsafe input values
+    with open(_exp_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["C:\\Users", "sk-test-secret", "DATABASE_URL", "postgres://"]:
+        assert unsafe not in content, f"Found '{unsafe}' in registry file"
+    # "api_key" as a key name (not in redaction warnings) should not appear as stored data
+    # Count occurrences — the only "api_key" allowed would be inside disallowed-pattern constants,
+    # but those are in .py not in registry JSON
+    assert "api_key" not in content, "Found 'api_key' in registry file"
+
+
 # ── Result import requires acknowledgement ────────────────────────
 
 @pytest.mark.asyncio

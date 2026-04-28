@@ -1,83 +1,44 @@
-=== Phase 8J.1-fix Local Verification Evidence ===
+=== Phase 8J.1-fix2 Local Verification Evidence ===
 
 Date: 2026-04-28
-Fix: Experiment metadata sanitizer — unsafe path/secret prevention
+Fix: Lifecycle update reason sanitization (+ prior metadata sanitizer)
 
-=== git status --short (Phase 8J.1 files only) ===
- M backend/app/services/finrlx_research.py
- M backend/tests/test_phase8j1_experiment_tracking.py
- M DOCS/handoff/PHASE_8J1_LOCAL_RESEARCH_EXPERIMENT_TRACKING_REPORT.md
- M DOCS/handoff/PHASE_8J1_LOCAL_VERIFICATION_EVIDENCE.txt
-
-=== git diff --name-only (Phase 8J.1 files) ===
+=== git diff --name-only (this fix) ===
 backend/app/services/finrlx_research.py
 backend/tests/test_phase8j1_experiment_tracking.py
 DOCS/handoff/PHASE_8J1_LOCAL_RESEARCH_EXPERIMENT_TRACKING_REPORT.md
 DOCS/handoff/PHASE_8J1_LOCAL_VERIFICATION_EVIDENCE.txt
 
 === Fix summary ===
-Added dedicated experiment metadata sanitizer with:
-- _is_disallowed_experiment_text(): checks for Windows/Unix paths, env vars, secret patterns
-- _sanitize_experiment_text(): redacts disallowed text to "[redacted]"
-- _sanitize_experiment_metric_key(): drops disallowed metric keys
-- _sanitize_experiment_value(): drops non-primitives and disallowed values
-- _sanitize_experiment_dict(): recursively sanitizes key-value pairs
-- _sanitize_experiment_list(): drops disallowed list entries
+update_research_experiment_state() now sanitizes the `reason` parameter
+via _sanitize_experiment_text(reason, max_len=500). If the reason contains
+disallowed patterns (absolute paths, secrets, env vars), it is stored as
+"[redacted]" and a warning is appended:
+"Some lifecycle reason text was redacted because it looked like a path or secret."
 
-Applied to:
-- create_research_experiment(): sanitizes name, hypothesis, method_notes, parameters, expected_metrics
-- import_research_experiment_results(): sanitizes result_summary, result_metrics, warnings, limitations
-
-Disallowed patterns:
-- Windows paths: C:\, C:/, D:\, D:/
-- Unix sensitive paths: /etc/, /home/, /Users/, /var/, /root/, /mnt/
-- User-home paths: ~/, ~\
-- Env var references: $env:, ${...}, %USERPROFILE%, %APPDATA%, %LOCALAPPDATA%
-- Secret patterns: password, passwd, secret, token, api_key, apikey, access_key,
-  private_key, database_url, broker, credential, auth, bearer
+Safe reasons like "Starting offline analysis" are preserved unchanged.
 
 === Backend targeted test result ===
-tests/test_phase8i_dataset_export.py ... 25 passed
-tests/test_phase8i2_dataset_export_governance.py ... 30 passed
-tests/test_phase8j1_experiment_tracking.py ... 36 passed
-Total: 91 passed, 0 failed
+tests/test_phase8i_dataset_export.py: 25 passed
+tests/test_phase8i2_dataset_export_governance.py: 30 passed
+tests/test_phase8j1_experiment_tracking.py: 37 passed
+Total: 92 passed, 0 failed
 
 === Phase 8 regression test result ===
-test_phase8a_finrlx_research.py
-test_phase8b_finrlx_safety_hardening.py
-test_phase8e_artifact_import.py
-test_phase8f_candidate_benchmark.py
-test_phase8i_dataset_export.py
-test_phase8i2_dataset_export_governance.py
-test_phase8j1_experiment_tracking.py
-Total: 177 passed, 0 failed
+test_phase8a + test_phase8b + test_phase8e + test_phase8f +
+test_phase8i + test_phase8i2 + test_phase8j1
+Total: 178 passed, 0 failed
 
-=== Unsafe path/secret sanitization tests ===
-test_create_experiment_sanitizes_unsafe_metadata: PASSED
-  - Verified /etc/passwd, C:\Users, sk-test-secret, api_key dropped from params
-  - Verified hypothesis and method_notes redacted to "[redacted]"
-  - Verified token_leak dropped from expected_metrics
-  - Verified safe_lr preserved
-  - Verified registry file contains none of the unsafe strings
-
-test_result_import_sanitizes_unsafe_paths_and_secrets: PASSED
-  - Verified result_summary with C:\Users path redacted to "[redacted]"
-  - Verified path, api_key, nested_obj dropped from result_metrics
-  - Verified safe_metric preserved at 1.23
-  - Verified token=abc123 dropped from warnings
-  - Verified DATABASE_URL dropped from limitations
-  - Verified registry file contains none of the unsafe strings
-
-test_registry_clean_after_create_and_result_import: PASSED
-  - Verified no Windows absolute paths (C:\, C:/, D:\)
-  - Verified no Unix sensitive paths (/etc/, /home/, /root/)
-  - Verified no secret patterns (password, api_key, credential, bearer, database_url, broker)
-  - Verified safe values (sharpe, epochs, numeric) preserved
+=== Lifecycle reason sanitization test ===
+test_lifecycle_reason_sanitizes_unsafe_paths_and_secrets: PASSED
+  - Sent reason containing C:\Users\Rotem\.env, api_key=sk-test-secret, DATABASE_URL=postgres://secret
+  - Verified response warnings do not contain C:\Users, sk-test-secret, DATABASE_URL, postgres://
+  - Verified registry file does not contain those unsafe strings
+  - Verified lifecycle_state changed to running_offline
+  - Verified redaction warning present
 
 === Frontend build result ===
 npm run build: SUCCESS
-  /admin: 20.4 kB
-  All routes compiled
 
 === Frontend typecheck result ===
 npm run typecheck: SUCCESS (no errors)
@@ -91,17 +52,6 @@ Searched: frontend/src/app/admin/page.tsx, frontend/src/services/api.ts,
 Patterns: buy, sell, trade now, execute trade, live signal, best investment,
   production alpha, deploy policy
 Result: No matches (PASS)
-
-=== Experiment directory summary ===
-research/finrlx_cpu/experiments/.gitkeep (marker file)
-research/finrlx_cpu/experiments/experiment_registry.json (generated at runtime, not committed)
-
-=== Design handoff files inspected ===
-- design/handoff-package/HANDOFF.md
-- design/handoff-package/shell.jsx
-- design/handoff-package/icons.jsx
-- design/handoff-package/Decision Workspace.html
-No design files were modified.
 
 === Review package contents ===
 DOCS/handoff/FINRLX_PHASE_8J1_REVIEW_PACKAGE.zip (10 files)
