@@ -1,82 +1,100 @@
-=== Phase 8J.1 Local Verification Evidence ===
+=== Phase 8J.1-fix Local Verification Evidence ===
 
 Date: 2026-04-28
+Fix: Experiment metadata sanitizer — unsafe path/secret prevention
 
-=== git status --short ===
- M backend/app/api/v1/rl_finrlx.py
+=== git status --short (Phase 8J.1 files only) ===
  M backend/app/services/finrlx_research.py
- M frontend/src/app/admin/page.tsx
- M frontend/src/services/api.ts
-?? backend/tests/test_phase8j1_experiment_tracking.py
-?? frontend/tsconfig.tsbuildinfo
-?? research/finrlx_cpu/experiments/
+ M backend/tests/test_phase8j1_experiment_tracking.py
+ M DOCS/handoff/PHASE_8J1_LOCAL_RESEARCH_EXPERIMENT_TRACKING_REPORT.md
+ M DOCS/handoff/PHASE_8J1_LOCAL_VERIFICATION_EVIDENCE.txt
 
-=== git diff --name-only (Phase 8J.1 files only) ===
-backend/app/api/v1/rl_finrlx.py
+=== git diff --name-only (Phase 8J.1 files) ===
 backend/app/services/finrlx_research.py
-frontend/src/app/admin/page.tsx
-frontend/src/services/api.ts
+backend/tests/test_phase8j1_experiment_tracking.py
+DOCS/handoff/PHASE_8J1_LOCAL_RESEARCH_EXPERIMENT_TRACKING_REPORT.md
+DOCS/handoff/PHASE_8J1_LOCAL_VERIFICATION_EVIDENCE.txt
 
-=== git diff --stat (Phase 8J.1 files only) ===
- backend/app/api/v1/rl_finrlx.py         | 168 ++++++++++++++
- backend/app/services/finrlx_research.py | 279 +++++++++++++++++++++++
- frontend/src/app/admin/page.tsx         | 390 ++++++++++++++++++++++++++++++++
- frontend/src/services/api.ts            | 133 +++++++++++
- 4 files changed, 970 insertions(+)
+=== Fix summary ===
+Added dedicated experiment metadata sanitizer with:
+- _is_disallowed_experiment_text(): checks for Windows/Unix paths, env vars, secret patterns
+- _sanitize_experiment_text(): redacts disallowed text to "[redacted]"
+- _sanitize_experiment_metric_key(): drops disallowed metric keys
+- _sanitize_experiment_value(): drops non-primitives and disallowed values
+- _sanitize_experiment_dict(): recursively sanitizes key-value pairs
+- _sanitize_experiment_list(): drops disallowed list entries
+
+Applied to:
+- create_research_experiment(): sanitizes name, hypothesis, method_notes, parameters, expected_metrics
+- import_research_experiment_results(): sanitizes result_summary, result_metrics, warnings, limitations
+
+Disallowed patterns:
+- Windows paths: C:\, C:/, D:\, D:/
+- Unix sensitive paths: /etc/, /home/, /Users/, /var/, /root/, /mnt/
+- User-home paths: ~/, ~\
+- Env var references: $env:, ${...}, %USERPROFILE%, %APPDATA%, %LOCALAPPDATA%
+- Secret patterns: password, passwd, secret, token, api_key, apikey, access_key,
+  private_key, database_url, broker, credential, auth, bearer
 
 === Backend targeted test result ===
-  
-    warnings.warn(
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-89 passed, 1 warning in 63.26s (0:01:03)
+tests/test_phase8i_dataset_export.py ... 25 passed
+tests/test_phase8i2_dataset_export_governance.py ... 30 passed
+tests/test_phase8j1_experiment_tracking.py ... 36 passed
+Total: 91 passed, 0 failed
 
 === Phase 8 regression test result ===
-  
-    warnings.warn(
+test_phase8a_finrlx_research.py
+test_phase8b_finrlx_safety_hardening.py
+test_phase8e_artifact_import.py
+test_phase8f_candidate_benchmark.py
+test_phase8i_dataset_export.py
+test_phase8i2_dataset_export_governance.py
+test_phase8j1_experiment_tracking.py
+Total: 177 passed, 0 failed
 
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-175 passed, 1 warning in 102.44s (0:01:42)
+=== Unsafe path/secret sanitization tests ===
+test_create_experiment_sanitizes_unsafe_metadata: PASSED
+  - Verified /etc/passwd, C:\Users, sk-test-secret, api_key dropped from params
+  - Verified hypothesis and method_notes redacted to "[redacted]"
+  - Verified token_leak dropped from expected_metrics
+  - Verified safe_lr preserved
+  - Verified registry file contains none of the unsafe strings
+
+test_result_import_sanitizes_unsafe_paths_and_secrets: PASSED
+  - Verified result_summary with C:\Users path redacted to "[redacted]"
+  - Verified path, api_key, nested_obj dropped from result_metrics
+  - Verified safe_metric preserved at 1.23
+  - Verified token=abc123 dropped from warnings
+  - Verified DATABASE_URL dropped from limitations
+  - Verified registry file contains none of the unsafe strings
+
+test_registry_clean_after_create_and_result_import: PASSED
+  - Verified no Windows absolute paths (C:\, C:/, D:\)
+  - Verified no Unix sensitive paths (/etc/, /home/, /root/)
+  - Verified no secret patterns (password, api_key, credential, bearer, database_url, broker)
+  - Verified safe values (sharpe, epochs, numeric) preserved
 
 === Frontend build result ===
-├ ○ /admin                               20.4 kB         111 kB
-├ ○ /backtests                           2.55 kB         198 kB
-├ ○ /comparison                          10.4 kB         198 kB
-├ ○ /decision                            13 kB           208 kB
-├ ○ /icon.svg                            0 B                0 B
-├ ○ /paper                               3.41 kB         194 kB
-└ ○ /replay                              3.62 kB          97 kB
-+ First Load JS shared by all            87.5 kB
-  ├ chunks/117-d70f252e30bdb96b.js       31.9 kB
-  ├ chunks/fd9d1056-8fb6bfb5a9bc068a.js  53.6 kB
-  └ other shared chunks (total)          2 kB
-
-
-○  (Static)  prerendered as static content
-
+npm run build: SUCCESS
+  /admin: 20.4 kB
+  All routes compiled
 
 === Frontend typecheck result ===
-
-> finrlx-frontend@0.2.0 typecheck
-> tsc --noEmit
-
+npm run typecheck: SUCCESS (no errors)
 
 === Frontend lint result ===
-
-> finrlx-frontend@0.2.0 lint
-> next lint
-
-✔ No ESLint warnings or errors
+npm run lint: SUCCESS (no warnings or errors)
 
 === Unsafe language grep result ===
-No matches (PASS)
+Searched: frontend/src/app/admin/page.tsx, frontend/src/services/api.ts,
+  backend/app/api/v1/rl_finrlx.py, backend/app/services/finrlx_research.py
+Patterns: buy, sell, trade now, execute trade, live signal, best investment,
+  production alpha, deploy policy
+Result: No matches (PASS)
 
 === Experiment directory summary ===
-total 12
-drwxr-xr-x 1 Rotem 197121    0 Apr 28 18:13 .
-drwxr-xr-x 1 Rotem 197121    0 Apr 28 17:57 ..
--rw-r--r-- 1 Rotem 197121    0 Apr 28 17:57 .gitkeep
--rw-r--r-- 1 Rotem 197121 1516 Apr 28 18:13 experiment_registry.json
+research/finrlx_cpu/experiments/.gitkeep (marker file)
+research/finrlx_cpu/experiments/experiment_registry.json (generated at runtime, not committed)
 
 === Design handoff files inspected ===
 - design/handoff-package/HANDOFF.md
@@ -86,4 +104,4 @@ drwxr-xr-x 1 Rotem 197121    0 Apr 28 17:57 ..
 No design files were modified.
 
 === Review package contents ===
-See FINRLX_PHASE_8J1_REVIEW_PACKAGE.zip
+DOCS/handoff/FINRLX_PHASE_8J1_REVIEW_PACKAGE.zip (10 files)

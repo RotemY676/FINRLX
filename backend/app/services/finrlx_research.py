@@ -1853,6 +1853,100 @@ class FinRLXResearchService:
 
     ALLOWED_LIFECYCLE_STATES = {"planned", "running_offline", "completed", "failed", "archived"}
 
+    # ── Experiment metadata sanitizer ─────────────────────────────────
+
+    _DISALLOWED_PATH_PREFIXES = (
+        "C:\\", "C:/", "D:\\", "D:/",
+        "/etc/", "/home/", "/Users/", "/var/", "/root/", "/mnt/",
+        "~/", "~\\",
+    )
+    _DISALLOWED_SECRET_PATTERNS = (
+        "password", "passwd", "secret", "token", "api_key", "apikey",
+        "access_key", "private_key", "database_url", "broker",
+        "credential", "auth", "bearer",
+    )
+    _DISALLOWED_ENV_PATTERNS = (
+        "$env:", "${", "%USERPROFILE%", "%APPDATA%", "%LOCALAPPDATA%",
+    )
+
+    @staticmethod
+    def _is_disallowed_experiment_text(text: str) -> bool:
+        """Check if a string contains path-like or secret-like patterns."""
+        if not isinstance(text, str):
+            return False
+        lower = text.lower()
+        for prefix in FinRLXResearchService._DISALLOWED_PATH_PREFIXES:
+            if prefix.lower() in lower:
+                return True
+        for pat in FinRLXResearchService._DISALLOWED_SECRET_PATTERNS:
+            if pat in lower:
+                return True
+        for pat in FinRLXResearchService._DISALLOWED_ENV_PATTERNS:
+            if pat.lower() in lower:
+                return True
+        return False
+
+    @staticmethod
+    def _sanitize_experiment_text(value, max_len: int = 500) -> str:
+        """Sanitize a text field: truncate and redact if it contains disallowed patterns."""
+        if not isinstance(value, str):
+            value = str(value) if value is not None else ""
+        value = value[:max_len]
+        if FinRLXResearchService._is_disallowed_experiment_text(value):
+            return "[redacted]"
+        return value
+
+    @staticmethod
+    def _sanitize_experiment_metric_key(key) -> str | None:
+        """Sanitize a metric key. Returns None if key is disallowed."""
+        if not isinstance(key, str):
+            key = str(key)
+        key = key[:100]
+        if FinRLXResearchService._is_disallowed_experiment_text(key):
+            return None
+        return key
+
+    @staticmethod
+    def _sanitize_experiment_value(value, max_len: int = 500):
+        """Sanitize a metric/parameter value. Returns None if disallowed or non-primitive."""
+        if isinstance(value, (int, float)):
+            return value
+        if isinstance(value, str):
+            value = value[:max_len]
+            if FinRLXResearchService._is_disallowed_experiment_text(value):
+                return None
+            return value
+        # Drop non-primitive (dict, list, etc.)
+        return None
+
+    @staticmethod
+    def _sanitize_experiment_dict(value: dict) -> dict:
+        """Recursively sanitize a dict, dropping disallowed keys/values."""
+        if not isinstance(value, dict):
+            return {}
+        result = {}
+        for k, v in value.items():
+            sk = FinRLXResearchService._sanitize_experiment_metric_key(k)
+            if sk is None:
+                continue
+            sv = FinRLXResearchService._sanitize_experiment_value(v)
+            if sv is None:
+                continue
+            result[sk] = sv
+        return result
+
+    @staticmethod
+    def _sanitize_experiment_list(value: list, max_len: int = 500) -> list:
+        """Sanitize a list of strings, dropping disallowed entries."""
+        if not isinstance(value, list):
+            return []
+        result = []
+        for item in value[:50]:
+            s = str(item)[:max_len] if item is not None else ""
+            if not FinRLXResearchService._is_disallowed_experiment_text(s):
+                result.append(s)
+        return result
+
     class ExperimentRegistryCorruptError(Exception):
         """Raised when the experiment registry is corrupt and cannot be used."""
         pass
@@ -1952,23 +2046,41 @@ class FinRLXResearchService:
         now = datetime.now(timezone.utc)
         experiment_id = gen_uuid()
 
-        # Sanitize parameters
-        safe_params = _json_safe(parameters) if parameters else {}
-        safe_metrics = [str(m) for m in (expected_metrics or [])]
+        # Sanitize all user-controlled metadata
+        redacted = False
+        safe_name = self._sanitize_experiment_text(name, max_len=200)
+        if safe_name == "[redacted]":
+            redacted = True
+        safe_hypothesis = self._sanitize_experiment_text(hypothesis, max_len=1000)
+        if safe_hypothesis == "[redacted]":
+            redacted = True
+        safe_method_notes = self._sanitize_experiment_text(method_notes, max_len=1000)
+        if safe_method_notes == "[redacted]":
+            redacted = True
+        raw_params = _json_safe(parameters) if parameters else {}
+        safe_params = self._sanitize_experiment_dict(raw_params) if isinstance(raw_params, dict) else {}
+        if len(safe_params) < len(raw_params if isinstance(raw_params, dict) else {}):
+            redacted = True
+        safe_metrics = self._sanitize_experiment_list(expected_metrics or [])
+        if len(safe_metrics) < len(expected_metrics or []):
+            redacted = True
+
+        if redacted:
+            warnings.append("Some experiment metadata fields were redacted or dropped because they looked like paths or secrets.")
 
         entry = {
             "experiment_id": experiment_id,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "lifecycle_state": "planned",
-            "name": name,
+            "name": safe_name,
             "linked_export_id": linked_export_id,
             "linked_export_fingerprint": linked_export.get("fingerprint"),
             "linked_export_checksum": linked_export.get("checksum"),
             "linked_export_row_count": linked_export.get("row_count", 0),
             "linked_export_date_range": linked_export.get("date_range"),
-            "hypothesis": hypothesis,
-            "method_notes": method_notes,
+            "hypothesis": safe_hypothesis,
+            "method_notes": safe_method_notes,
             "parameters": safe_params,
             "expected_metrics": safe_metrics,
             "result_summary": None,
@@ -2040,22 +2152,38 @@ class FinRLXResearchService:
         registry = self._require_healthy_experiment_registry()
         for entry in registry.get("experiments", []):
             if entry.get("experiment_id") == experiment_id:
-                entry["result_summary"] = str(result_summary)[:2000] if result_summary else None
-                # Sanitize metrics — only allow JSON-safe numeric/string values
-                safe_metrics = {}
-                if result_metrics and isinstance(result_metrics, dict):
-                    for k, v in result_metrics.items():
-                        sk = str(k)[:100]
-                        if isinstance(v, (int, float)):
-                            safe_metrics[sk] = v
-                        elif isinstance(v, str):
-                            safe_metrics[sk] = v[:500]
-                        # Skip non-primitive values
+                redacted = False
+
+                # Sanitize result_summary
+                safe_summary = self._sanitize_experiment_text(
+                    result_summary, max_len=2000) if result_summary else None
+                if safe_summary == "[redacted]":
+                    redacted = True
+                entry["result_summary"] = safe_summary
+
+                # Sanitize result_metrics — drop disallowed keys/values and non-primitives
+                raw_metrics = result_metrics if isinstance(result_metrics, dict) else {}
+                safe_metrics = self._sanitize_experiment_dict(raw_metrics)
+                if len(safe_metrics) < len(raw_metrics):
+                    redacted = True
                 entry["result_metrics"] = safe_metrics
+
+                # Sanitize warnings and limitations
                 if warnings and isinstance(warnings, list):
-                    entry["warnings"] = [str(w)[:500] for w in warnings[:20]]
+                    safe_warnings = self._sanitize_experiment_list(warnings)
+                    if len(safe_warnings) < len(warnings):
+                        redacted = True
+                    entry["warnings"] = safe_warnings
                 if limitations and isinstance(limitations, list):
-                    entry["limitations"] = [str(l)[:500] for l in limitations[:20]]
+                    safe_limitations = self._sanitize_experiment_list(limitations)
+                    if len(safe_limitations) < len(limitations):
+                        redacted = True
+                    entry["limitations"] = safe_limitations
+
+                if redacted:
+                    entry.setdefault("warnings", []).append(
+                        "Some result metadata fields were redacted or dropped because they looked like paths or secrets.")
+
                 entry["updated_at"] = datetime.now(timezone.utc).isoformat()
                 self.save_experiment_registry(registry)
                 return {**entry, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}

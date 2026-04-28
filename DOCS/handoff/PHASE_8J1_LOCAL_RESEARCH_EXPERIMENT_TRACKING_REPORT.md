@@ -2,6 +2,7 @@
 
 **Date:** 2026-04-28
 **Accepted checkpoint:** Phase 8I.2-fix2 (commit aa8c020)
+**Fix applied:** 8J.1-fix — experiment metadata sanitizer for unsafe paths/secrets
 **Classification:** PASS
 
 ---
@@ -175,6 +176,15 @@ All endpoints require explicit acknowledgement for write operations.
 - No absolute filesystem paths stored in registry
 - No secrets, env vars, API keys, or credentials stored
 - API-returned paths are relative safe paths
+- **Dedicated experiment metadata sanitizer** prevents storing:
+  - Windows absolute paths (C:\, D:\)
+  - Unix sensitive paths (/etc/, /home/, /Users/, /var/, /root/, /mnt/)
+  - User-home paths (~/, ~\)
+  - Environment variable references ($env:, ${...}, %USERPROFILE%, %APPDATA%)
+  - Secret-like patterns (password, passwd, secret, token, api_key, apikey, access_key, private_key, database_url, broker, credential, auth, bearer)
+- Disallowed values are redacted to "[redacted]" or dropped entirely
+- Warning added when redaction/dropping occurs
+- Safe numeric values and normal research strings preserved
 
 ---
 
@@ -230,7 +240,7 @@ All endpoints require explicit acknowledgement for write operations.
 
 ## 15. Tests Added
 
-**File:** `backend/tests/test_phase8j1_experiment_tracking.py` — 34 tests
+**File:** `backend/tests/test_phase8j1_experiment_tracking.py` — 36 tests
 
 1. Experiment registry created when missing
 2. Create requires acknowledgement
@@ -249,8 +259,10 @@ All endpoints require explicit acknowledgement for write operations.
 15. Lifecycle update succeeds
 16. Result import requires acknowledgement
 17. Result import is metadata-only
-18. Result import sanitizes unsafe fields
-19. Verify is read-only (no registry modification)
+18. Create experiment sanitizes unsafe metadata (paths, secrets, env vars)
+19. Result import sanitizes unsafe paths and secrets
+20. Registry clean after create + result import (no absolute paths or secrets)
+21. Verify is read-only (no registry modification)
 20. Verify reports stale linked export
 21. Corrupt registry not silently overwritten
 22. Corrupt registry returns safe warning
@@ -271,9 +283,9 @@ All endpoints require explicit acknowledgement for write operations.
 
 ## 16. Tests Run and Results
 
-**Phase 8J.1 targeted tests:** 34 passed, 0 failed
-**Phase 8I + 8I.2 + 8J.1 targeted tests:** 89 passed, 0 failed
-**Full Phase 8 regression (8A, 8B, 8E, 8F, 8I, 8I.2, 8J.1):** 175 passed, 0 failed
+**Phase 8J.1 targeted tests:** 36 passed, 0 failed
+**Phase 8I + 8I.2 + 8J.1 targeted tests:** 91 passed, 0 failed
+**Full Phase 8 regression (8A, 8B, 8E, 8F, 8I, 8I.2, 8J.1):** 177 passed, 0 failed
 
 ---
 

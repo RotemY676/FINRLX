@@ -342,11 +342,55 @@ async def test_result_import_is_metadata_only(client):
     assert data["result_metrics"]["max_drawdown"] == -0.05
 
 
+# ── Create experiment sanitizes unsafe metadata ──────────────────
+
+@pytest.mark.asyncio
+async def test_create_experiment_sanitizes_unsafe_metadata(client):
+    """Create experiment redacts/drops unsafe paths, secrets, env vars from metadata."""
+    _clear_exp_registry()
+    _clear_export_registry()
+    export = await _create_export(client)
+
+    r = await client.post("/api/v1/rl/finrlx/research-experiments", json={
+        "name": "Safe experiment name",
+        "linked_export_id": export["export_id"],
+        "hypothesis": r"Loaded data from C:\Users\Rotem\.env and analyzed",
+        "method_notes": "Used /etc/passwd as config source",
+        "parameters": {"path": "/etc/passwd", "api_key": "sk-test-secret", "safe_lr": 0.001},
+        "expected_metrics": ["sharpe_ratio", "token_leak"],
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+
+    # hypothesis and method_notes should be redacted
+    assert data["hypothesis"] == "[redacted]"
+    assert data["method_notes"] == "[redacted]"
+
+    # unsafe params dropped, safe_lr preserved
+    assert "path" not in data["parameters"]
+    assert "api_key" not in data["parameters"]
+    assert data["parameters"]["safe_lr"] == 0.001
+
+    # token_leak dropped from expected_metrics
+    assert "sharpe_ratio" in data["expected_metrics"]
+    assert "token_leak" not in data["expected_metrics"]
+
+    # Verify registry file itself does not contain unsafe values
+    with open(_exp_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["/etc/passwd", "C:\\Users", "sk-test-secret", "api_key"]:
+        assert unsafe not in content
+
+    # Warning about redaction should be present
+    assert any("redacted" in w.lower() or "dropped" in w.lower() for w in data.get("warnings", []))
+
+
 # ── Result import sanitizes unsafe paths/secrets ──────────────────
 
 @pytest.mark.asyncio
-async def test_result_import_sanitizes_unsafe_fields(client):
-    """Result import rejects or sanitizes unsafe absolute paths/secrets."""
+async def test_result_import_sanitizes_unsafe_paths_and_secrets(client):
+    """Result import drops/redacts unsafe absolute paths, secrets, nested objects."""
     _clear_exp_registry()
     _clear_export_registry()
     export = await _create_export(client)
@@ -354,15 +398,95 @@ async def test_result_import_sanitizes_unsafe_fields(client):
 
     r = await client.post(f"/api/v1/rl/finrlx/research-experiments/{created['experiment_id']}/results", json={
         "acknowledgement": True,
-        "result_summary": "test",
-        "result_metrics": {"path": "/etc/passwd", "nested_obj": {"a": 1}},
+        "result_summary": r"saved at C:\Users\Rotem\secret.txt",
+        "result_metrics": {
+            "safe_metric": 1.23,
+            "path": "/etc/passwd",
+            "api_key": "sk-test-secret",
+            "nested_obj": {"a": 1},
+        },
+        "warnings": ["token=abc123"],
+        "limitations": ["DATABASE_URL=postgres://secret"],
     })
     assert r.status_code == 200
     data = r.json()["data"]
-    # nested_obj should be skipped (non-primitive)
+
+    # result_summary should be redacted
+    assert data["result_summary"] == "[redacted]"
+
+    # safe_metric preserved, unsafe keys and nested_obj dropped
+    assert data["result_metrics"]["safe_metric"] == 1.23
+    assert "path" not in data["result_metrics"]
+    assert "api_key" not in data["result_metrics"]
     assert "nested_obj" not in data["result_metrics"]
-    # path stored as string, no execution
-    assert isinstance(data["result_metrics"].get("path"), str)
+
+    # unsafe warnings and limitations dropped
+    assert not any("token=abc123" in w for w in data.get("warnings", []))
+    assert not any("DATABASE_URL" in l for l in data.get("limitations", []))
+
+    # Verify registry file itself does not contain any unsafe values
+    with open(_exp_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["/etc/passwd", "C:\\Users", "sk-test-secret",
+                   "token=abc123", "DATABASE_URL", "postgres://", "secret.txt"]:
+        assert unsafe not in content
+
+
+# ── Registry never stores unsafe content after create + result import ─
+
+@pytest.mark.asyncio
+async def test_registry_clean_after_create_and_result_import(client):
+    """Registry JSON contains no absolute paths or secret-like patterns after create + result import."""
+    _clear_exp_registry()
+    _clear_export_registry()
+    export = await _create_export(client)
+
+    # Create with some unsafe params
+    r1 = await client.post("/api/v1/rl/finrlx/research-experiments", json={
+        "name": "Clean registry test",
+        "linked_export_id": export["export_id"],
+        "hypothesis": "Testing password leak prevention",
+        "parameters": {"database_url": "postgres://admin:pw@host/db", "epochs": 10},
+        "research_acknowledgement": True,
+    })
+    assert r1.status_code == 200
+    exp_id = r1.json()["data"]["experiment_id"]
+
+    # Import results with unsafe content
+    r2 = await client.post(f"/api/v1/rl/finrlx/research-experiments/{exp_id}/results", json={
+        "acknowledgement": True,
+        "result_summary": "Model achieved good results",
+        "result_metrics": {"sharpe": 1.5, "credential": "leaked", "bearer": "xyz"},
+        "warnings": ["low sample size"],
+        "limitations": ["synthetic data only"],
+    })
+    assert r2.status_code == 200
+
+    # Read full registry file and scan for disallowed patterns
+    with open(_exp_registry_path(), "r") as f:
+        content = f.read()
+
+    # No Windows absolute paths
+    assert "C:\\" not in content
+    assert "C:/" not in content
+    assert "D:\\" not in content
+
+    # No Unix sensitive paths
+    assert "/etc/" not in content
+    assert "/home/" not in content
+    assert "/root/" not in content
+
+    # No secret-like values
+    content_lower = content.lower()
+    for pattern in ["password", "passwd", "api_key", "apikey", "private_key",
+                    "database_url", "broker", "credential", "bearer"]:
+        assert pattern not in content_lower, f"Found disallowed pattern '{pattern}' in registry"
+
+    # Safe values should still be present
+    assert "sharpe" in content
+    assert "1.5" in content
+    assert "epochs" in content
+    assert "10" in content
 
 
 # ── Verify experiment is read-only ────────────────────────────────
