@@ -1,7 +1,7 @@
-=== Phase 8LM-fix Local Verification Evidence ===
+=== Phase 8LM-fix2 Local Verification Evidence ===
 
 Date: 2026-04-28
-Fix: Defensive readiness evidence and findings sanitization
+Fix: Nested metric coverage sanitization + linked ID sanitization
 
 === git diff --name-only (this fix) ===
 backend/app/services/finrlx_research.py
@@ -10,28 +10,24 @@ DOCS/handoff/PHASE_8LM_RESEARCH_READINESS_AND_ADMIN_UX_REPORT.md
 DOCS/handoff/PHASE_8LM_LOCAL_VERIFICATION_EVIDENCE.txt
 
 === Fix summary ===
-1. Evidence summary defensively sanitized:
-   - comparison.name -> _sanitize_experiment_text()
-   - comparison.lifecycle_state -> _sanitize_experiment_text()
-   - metric_coverage keys -> _sanitize_experiment_metric_key()
-   - missing_metrics keys -> _sanitize_experiment_metric_key()
-   - experiment names/states -> _sanitize_experiment_text()
-   - warnings/limitations -> _sanitize_experiment_list()
-2. Findings sanitized:
-   - lifecycle_state in findings -> checked via _is_disallowed_experiment_text()
-   - Unsafe values redacted to "[redacted]" in finding messages
-3. Warning appended when evidence redacted/dropped
+1. metric_coverage nested values: Only safe primitives stored (available_count,
+   missing_count, coverage_ratio as int/float). All other nested keys dropped.
+   Uses new _sanitize_metric_coverage_entry() helper.
+2. linked IDs: experiment_ids and export_ids filtered through new
+   _sanitize_registry_id() / _sanitize_registry_id_list() helpers.
+   IDs containing paths, secrets, env vars are dropped.
+3. missing_metrics keys (experiment IDs) also sanitized via _sanitize_registry_id().
 
 === Backend targeted test result ===
-Total: 174 passed, 0 failed
+Total: 177 passed, 0 failed
 
 === Phase 8 regression test result ===
-Total: 260 passed, 0 failed
+Total: 263 passed, 0 failed
 
-=== Evidence sanitization tests ===
-test_readiness_sanitizes_legacy_unsafe_comparison_evidence: PASSED
-test_readiness_findings_do_not_leak_unsafe_text: PASSED
-test_readiness_registry_clean_after_legacy_evidence: PASSED
+=== New sanitization tests ===
+test_readiness_sanitizes_metric_coverage_nested_values: PASSED
+test_readiness_sanitizes_legacy_unsafe_linked_ids: PASSED
+test_readiness_registry_clean_after_nested_and_id_injection: PASSED
 
 === Frontend build result ===
 npm run build: SUCCESS

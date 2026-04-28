@@ -2606,6 +2606,41 @@ class FinRLXResearchService:
 
     ALLOWED_READINESS_STATES = {"draft", "needs_more_evidence", "research_review_ready", "archived"}
 
+    @staticmethod
+    def _sanitize_registry_id(value) -> str | None:
+        """Sanitize a registry ID. Returns None if it contains disallowed patterns."""
+        if not isinstance(value, str):
+            return None
+        if not value or len(value) > 200:
+            return None
+        if FinRLXResearchService._is_disallowed_experiment_text(value):
+            return None
+        return value
+
+    @staticmethod
+    def _sanitize_registry_id_list(values: list) -> list[str]:
+        """Sanitize a list of registry IDs, dropping unsafe entries."""
+        if not isinstance(values, list):
+            return []
+        result = []
+        for v in values:
+            sv = FinRLXResearchService._sanitize_registry_id(v)
+            if sv is not None:
+                result.append(sv)
+        return result
+
+    @staticmethod
+    def _sanitize_metric_coverage_entry(entry: dict) -> dict:
+        """Sanitize a single metric coverage dict, keeping only safe primitive fields."""
+        if not isinstance(entry, dict):
+            return {}
+        safe = {}
+        allowed_keys = {"available_count", "missing_count", "coverage_ratio"}
+        for k, v in entry.items():
+            if k in allowed_keys and isinstance(v, (int, float)):
+                safe[k] = v
+        return safe
+
     class ReadinessRegistryCorruptError(Exception):
         pass
 
@@ -2732,11 +2767,11 @@ class FinRLXResearchService:
             return {"error": f"Comparison '{linked_comparison_id}' not found.",
                     "readiness_id": None, "status": "failed"}
 
-        # Resolve linked IDs
-        experiment_ids = comparison.get("experiment_ids") or []
+        # Resolve linked IDs — sanitize to prevent unsafe values from leaking
+        experiment_ids = self._sanitize_registry_id_list(comparison.get("experiment_ids") or [])
         export_ids = []
         for snap in comparison.get("experiment_snapshots") or []:
-            eid = snap.get("linked_export_id")
+            eid = self._sanitize_registry_id(snap.get("linked_export_id"))
             if eid and eid not in export_ids:
                 export_ids.append(eid)
 
@@ -2791,7 +2826,7 @@ class FinRLXResearchService:
         if safe_cmp_name == "[redacted]" or safe_cmp_state == "[redacted]":
             evidence_redacted = True
 
-        # Sanitize metric_coverage: filter out unsafe metric keys
+        # Sanitize metric_coverage: filter unsafe keys AND sanitize nested values
         raw_mc = cmp_summary.get("metric_coverage") or {}
         safe_mc = {}
         for mk, mv in raw_mc.items():
@@ -2799,12 +2834,16 @@ class FinRLXResearchService:
             if sk is None:
                 evidence_redacted = True
                 continue
-            safe_mc[sk] = mv if isinstance(mv, dict) else {}
+            safe_mc[sk] = self._sanitize_metric_coverage_entry(mv) if isinstance(mv, dict) else {}
 
-        # Sanitize missing_metrics: filter out unsafe metric names and experiment-id keys pass through
+        # Sanitize missing_metrics: filter unsafe metric names AND sanitize experiment-id keys
         raw_mm = cmp_summary.get("missing_metrics") or {}
         safe_mm = {}
         for exp_id_key, metric_list in raw_mm.items():
+            safe_key = self._sanitize_registry_id(exp_id_key)
+            if safe_key is None:
+                evidence_redacted = True
+                continue
             safe_metrics = []
             if isinstance(metric_list, list):
                 for m in metric_list:
@@ -2813,7 +2852,7 @@ class FinRLXResearchService:
                         safe_metrics.append(sm)
                     else:
                         evidence_redacted = True
-            safe_mm[exp_id_key] = safe_metrics
+            safe_mm[safe_key] = safe_metrics
 
         # Sanitize experiment evidence
         safe_exp_evidence = []

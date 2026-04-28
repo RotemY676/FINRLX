@@ -673,6 +673,145 @@ async def test_readiness_registry_clean_after_legacy_evidence(client):
         assert pattern not in content_lower, f"Found '{pattern}' in readiness registry"
 
 
+# ── Nested metric coverage and linked ID sanitization ────────────
+
+@pytest.mark.asyncio
+async def test_readiness_sanitizes_metric_coverage_nested_values(client):
+    """Metric coverage nested values are sanitized — only safe primitives stored."""
+    cmp_id = await _setup_comparison(client)
+    # Inject unsafe nested values into metric_coverage
+    cmp_path = FinRLXResearchService._comparison_registry_path()
+    with open(cmp_path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for cmp in reg.get("comparisons", []):
+        if cmp.get("comparison_id") == cmp_id:
+            cmp["comparison_summary"]["metric_coverage"] = {
+                "sharpe_ratio": {
+                    "available_count": 2,
+                    "missing_count": 0,
+                    "coverage_ratio": 1.0,
+                    "debug_path": r"C:\Users\Rotem\.env",
+                    "database_url": "postgres://secret",
+                    "token": "abc123",
+                },
+            }
+            break
+    with open(cmp_path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Nested MC Test", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+
+    # Safe fields preserved
+    ev = data["evidence_summary"]
+    mc = ev.get("metric_coverage", {})
+    assert "sharpe_ratio" in mc
+    sr = mc["sharpe_ratio"]
+    assert sr.get("available_count") == 2
+    assert sr.get("missing_count") == 0
+    assert sr.get("coverage_ratio") == 1.0
+
+    # Unsafe nested values dropped
+    assert "debug_path" not in sr
+    assert "database_url" not in sr
+    assert "token" not in sr
+
+    # Registry file check
+    with open(_rd_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["C:\\Users", ".env", "database_url", "postgres://", "abc123"]:
+        assert unsafe not in content, f"Found '{unsafe}' in readiness registry"
+
+
+@pytest.mark.asyncio
+async def test_readiness_sanitizes_legacy_unsafe_linked_ids(client):
+    """Unsafe linked experiment/export IDs are dropped from readiness."""
+    cmp_id = await _setup_comparison(client)
+    # Inject unsafe IDs into comparison
+    cmp_path = FinRLXResearchService._comparison_registry_path()
+    with open(cmp_path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for cmp in reg.get("comparisons", []):
+        if cmp.get("comparison_id") == cmp_id:
+            # Add unsafe experiment IDs
+            cmp["experiment_ids"].extend([
+                r"C:\Users\Rotem\.env",
+                "api_key=sk-test-secret",
+            ])
+            # Add unsafe export IDs in snapshots
+            cmp["experiment_snapshots"].append({
+                "experiment_id": "safe-snap",
+                "linked_export_id": "/etc/passwd",
+                "name": "test", "lifecycle_state": "completed",
+                "result_metrics": {}, "warnings": [], "limitations": [],
+            })
+            cmp["experiment_snapshots"].append({
+                "experiment_id": "safe-snap-2",
+                "linked_export_id": "DATABASE_URL=postgres://secret",
+                "name": "test2", "lifecycle_state": "completed",
+                "result_metrics": {}, "warnings": [], "limitations": [],
+            })
+            break
+    with open(cmp_path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+    r = await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Linked ID Test", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+    assert r.status_code == 200
+    data = r.json()["data"]
+
+    # Unsafe IDs should not be in linked lists
+    resp_str = json.dumps(data)
+    for unsafe in ["C:\\Users", ".env", "api_key", "sk-test-secret",
+                    "/etc/passwd", "DATABASE_URL", "postgres://"]:
+        assert unsafe not in resp_str, f"Found '{unsafe}' in response"
+
+    # Registry file check
+    with open(_rd_registry_path(), "r") as f:
+        content = f.read()
+    for unsafe in ["C:\\Users", "sk-test-secret", "/etc/passwd", "DATABASE_URL", "postgres://"]:
+        assert unsafe not in content, f"Found '{unsafe}' in readiness registry"
+
+
+@pytest.mark.asyncio
+async def test_readiness_registry_clean_after_nested_and_id_injection(client):
+    """Full registry scan after nested metric and linked ID injection."""
+    cmp_id = await _setup_comparison(client)
+    cmp_path = FinRLXResearchService._comparison_registry_path()
+    with open(cmp_path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+    for cmp in reg.get("comparisons", []):
+        if cmp.get("comparison_id") == cmp_id:
+            cmp["experiment_ids"].append("token=leaked")
+            cmp["comparison_summary"]["metric_coverage"]["sharpe_ratio"] = {
+                "available_count": 2, "coverage_ratio": 1.0,
+                "secret": "password123", "broker": "cred",
+            }
+            break
+    with open(cmp_path, "w", encoding="utf-8") as f:
+        json.dump(reg, f, indent=2)
+
+    await client.post("/api/v1/rl/finrlx/research-readiness", json={
+        "name": "Full Scan", "linked_comparison_id": cmp_id,
+        "research_acknowledgement": True,
+    })
+
+    with open(_rd_registry_path(), "r") as f:
+        content = f.read()
+    content_lower = content.lower()
+
+    for pattern in ["c:\\", "/etc/", "postgres://"]:
+        assert pattern not in content_lower, f"Found '{pattern}'"
+    for pattern in ["password123", "token=leaked"]:
+        assert pattern not in content_lower, f"Found '{pattern}'"
+
+
 @pytest.mark.asyncio
 async def test_rl_execute_remains_absent(client):
     r = await client.post("/api/v1/rl/execute", json={})
