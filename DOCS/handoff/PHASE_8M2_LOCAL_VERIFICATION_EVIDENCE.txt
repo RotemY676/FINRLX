@@ -1,0 +1,46 @@
+=== Phase 8M.2 Local Verification Evidence ===
+
+Date: 2026-04-28
+
+=== git diff --name-only ===
+frontend/src/app/admin/page.tsx
+DOCS/handoff/PHASE_8M2_GUIDED_RESEARCH_WORKFLOW_WIZARD_REPORT.md (new)
+DOCS/handoff/PHASE_8M2_LOCAL_VERIFICATION_EVIDENCE.txt (new)
+
+=== Backend targeted test result ===
+Total: 177 passed, 0 failed (no backend changes)
+
+=== Phase 8 regression test result ===
+Total: 263 passed, 0 failed
+
+=== Frontend build result ===
+npm run build: SUCCESS (/admin compiled)
+
+=== Frontend typecheck result ===
+npm run typecheck: SUCCESS (no errors)
+
+=== Frontend lint result ===
+npm run lint: SUCCESS (no warnings or errors)
+
+=== Unsafe language grep result ===
+No matches (PASS)
+
+=== Manual/visual verification from code review ===
+- Wizard opens: CTA "Start Research Workflow" renders, sets wizardOpen=true
+- Wizard closes: X button and Done button set wizardOpen=false
+- Step navigation: Back/Next buttons update wizardStep 0-3
+- Expert tabs still work: setAdminTab preserved, tabs render when wizard closed
+- "Open in Expert Tab": closes wizard and sets relevant tab
+- Long IDs: font-mono + slice(0,8) or slice(0,16) truncation
+- Mobile responsive: w-full modal, flex-wrap controls, max-h scrollable lists
+- No existing Admin functionality removed: all sections conditionally rendered by adminTab
+
+=== Design handoff files inspected ===
+- design/handoff-package/HANDOFF.md
+- design/handoff-package/shell.jsx
+- design/handoff-package/icons.jsx
+- design/handoff-package/Decision Workspace.html
+No design files modified.
+
+=== Review package ===
+DOCS/handoff/FINRLX_PHASE_8M2_REVIEW_PACKAGE.zip

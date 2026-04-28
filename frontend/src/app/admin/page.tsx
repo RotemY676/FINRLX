@@ -224,6 +224,25 @@ export default function AdminPage() {
   // Admin workflow tab (Phase 8M.1)
   const [adminTab, setAdminTab] = useState<"research-data" | "experiments" | "comparisons" | "readiness" | "safety">("research-data");
 
+  // Guided Research Workflow Wizard (Phase 8M.2)
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [wzExportId, setWzExportId] = useState("");
+  const [wzExpIds, setWzExpIds] = useState<string[]>([]);
+  const [wzCmpId, setWzCmpId] = useState("");
+  const [wzRdId, setWzRdId] = useState("");
+  const [wzLoading, setWzLoading] = useState(false);
+  const [wzError, setWzError] = useState<string | null>(null);
+  const [wzSuccess, setWzSuccess] = useState<string | null>(null);
+  // Wizard step-local form state
+  const [wzExpName, setWzExpName] = useState("Research experiment");
+  const [wzExpHyp, setWzExpHyp] = useState("");
+  const [wzExpAck, setWzExpAck] = useState(false);
+  const [wzCmpName, setWzCmpName] = useState("Offline comparison");
+  const [wzCmpAck, setWzCmpAck] = useState(false);
+  const [wzRdName, setWzRdName] = useState("Research readiness review");
+  const [wzRdAck, setWzRdAck] = useState(false);
+
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
     setSelectedBenchAudit([]);
@@ -851,6 +870,15 @@ export default function AdminPage() {
           <strong className="text-ink">Next step:</strong> Create a readiness review linked to an existing comparison.
         </div>
       )}
+
+      {/* ── Guided Research Workflow CTA ── */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => { setWizardOpen(true); setWizardStep(0); setWzError(null); setWzSuccess(null); }}
+          className="px-4 py-2 rounded-md bg-primary text-primary-ink text-[12px] font-medium hover:opacity-90 transition-opacity">
+          Start Research Workflow
+        </button>
+        <span className="text-[10px] text-ink-4">Guided flow for research-only dataset export, experiment tracking, comparison, and readiness review.</span>
+      </div>
 
       {/* ── KPI Strip ── */}
       {adminTab === "safety" && <>
@@ -3185,6 +3213,316 @@ export default function AdminPage() {
       </div>
 
       </>}
+
+      {/* ── Guided Research Workflow Wizard Modal (Phase 8M.2) ── */}
+      {wizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-sm">
+          <div className="bg-surface border border-line rounded-xl shadow-xl w-full max-w-[700px] max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[16px] font-semibold text-ink">Guided Research Workflow</h2>
+                <p className="text-[10px] text-ink-4">Research-only, offline-only. Does not imply production suitability.</p>
+              </div>
+              <button onClick={() => setWizardOpen(false)} className="text-ink-3 hover:text-ink text-[18px] px-2">×</button>
+            </div>
+
+            {/* Stepper */}
+            <div className="flex gap-1">
+              {["Research Data", "Experiment", "Comparison", "Readiness"].map((label, i) => (
+                <button key={label} onClick={() => setWizardStep(i)}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
+                    wizardStep === i ? "bg-primary text-primary-ink" :
+                    (i === 0 && wzExportId) || (i === 1 && wzExpIds.length > 0) || (i === 2 && wzCmpId) || (i === 3 && wzRdId)
+                      ? "bg-pos/10 text-pos" : "bg-surface-2 text-ink-3"
+                  }`}>
+                  {i + 1}. {label}
+                </button>
+              ))}
+            </div>
+
+            {wzError && <div className="p-2 rounded-md bg-breach/10 border border-breach/20 text-[10px] text-breach break-words">{wzError}</div>}
+            {wzSuccess && <div className="p-2 rounded-md bg-pos/10 border border-pos/20 text-[10px] text-pos">{wzSuccess}</div>}
+
+            {/* Step 1: Research Data */}
+            {wizardStep === 0 && (
+              <div className="space-y-3">
+                <h3 className="text-[13px] font-semibold text-ink">Step 1: Select or Create Dataset Export</h3>
+                <p className="text-[10px] text-ink-4">Choose an existing governed dataset export or create a new one.</p>
+
+                {dsExportHistory.length > 0 && (
+                  <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                    {dsExportHistory.slice(0, 10).map(exp => (
+                      <button key={exp.export_id} onClick={() => { setWzExportId(exp.export_id); setWzSuccess(`Selected export ${exp.export_id.slice(0, 8)}`); setWzError(null); }}
+                        className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                          wzExportId === exp.export_id ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                        }`}>
+                        <span className="font-mono text-ink-2">{exp.export_id?.slice(0, 8)}</span>
+                        <span className="text-ink font-medium truncate max-w-[120px]">{exp.name}</span>
+                        <span className="text-ink-3">{exp.row_count} rows</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                          exp.lifecycle_state === "active" ? "bg-pos/10 text-pos" : "bg-caution/10 text-caution"
+                        }`}>{exp.lifecycle_state}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {dsExportHistory.length === 0 && (
+                  <p className="text-[10px] text-caution">No dataset exports yet. Use the Research Data tab to create one, or create via the expert panel.</p>
+                )}
+
+                <button onClick={() => { setWizardOpen(false); setAdminTab("research-data"); }}
+                  className="text-[10px] text-primary hover:underline">Open in Expert Tab →</button>
+
+                {wzExportId && (
+                  <div className="p-2 rounded-md bg-pos/5 border border-pos/20 text-[10px] text-pos">
+                    Selected: <span className="font-mono">{wzExportId.slice(0, 16)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Experiment */}
+            {wizardStep === 1 && (
+              <div className="space-y-3">
+                <h3 className="text-[13px] font-semibold text-ink">Step 2: Select or Create Experiment</h3>
+                <p className="text-[10px] text-ink-4">Select existing experiments or create a new one linked to the selected export. For comparison, you need at least 2 experiments with results.</p>
+
+                {expList.length > 0 && (
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                    {expList.slice(0, 10).map(exp => (
+                      <button key={exp.experiment_id} onClick={() => {
+                        setWzExpIds(prev => prev.includes(exp.experiment_id) ? prev.filter(id => id !== exp.experiment_id) : [...prev, exp.experiment_id]);
+                        setWzError(null);
+                      }}
+                        className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                          wzExpIds.includes(exp.experiment_id) ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                        }`}>
+                        <span className="font-mono text-ink-2">{exp.experiment_id?.slice(0, 8)}</span>
+                        <span className="text-ink font-medium truncate max-w-[120px]">{exp.name}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                          exp.lifecycle_state === "completed" ? "bg-pos/10 text-pos" : "bg-surface-3 text-ink-4"
+                        }`}>{exp.lifecycle_state}</span>
+                        {exp.result_summary && <span className="text-ink-4">has results</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {wzExportId && (
+                  <div className="border-t border-line/30 pt-2 space-y-2">
+                    <div className="text-[10px] text-ink-3 font-medium">Create new experiment (linked to export {wzExportId.slice(0, 8)})</div>
+                    <input type="text" value={wzExpName} onChange={e => setWzExpName(e.target.value)} placeholder="Experiment name"
+                      className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                    <input type="text" value={wzExpHyp} onChange={e => setWzExpHyp(e.target.value)} placeholder="Hypothesis (optional)"
+                      className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                    <label className="flex items-center gap-1.5 text-[10px] text-ink-2 cursor-pointer">
+                      <input type="checkbox" checked={wzExpAck} onChange={e => setWzExpAck(e.target.checked)} className="rounded" />
+                      Research-only offline experiment (required)
+                    </label>
+                    <button disabled={wzLoading || !wzExpAck || !wzExpName.trim()} onClick={async () => {
+                      setWzLoading(true); setWzError(null); setWzSuccess(null);
+                      try {
+                        const res = await createFinrlxResearchExperiment({
+                          name: wzExpName.trim(), linked_export_id: wzExportId,
+                          hypothesis: wzExpHyp, research_acknowledgement: true,
+                        });
+                        if (res.data?.experiment_id) {
+                          setWzExpIds(prev => [...prev, res.data.experiment_id]);
+                          setWzSuccess(`Experiment ${res.data.experiment_id.slice(0, 8)} created.`);
+                          setWzExpAck(false);
+                          refreshExperiments();
+                        }
+                      } catch (e: unknown) { setWzError(e instanceof Error ? e.message : "Failed"); }
+                      finally { setWzLoading(false); }
+                    }} className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[10px] font-medium disabled:opacity-40">
+                      {wzLoading ? "Creating..." : "Create Experiment"}
+                    </button>
+                  </div>
+                )}
+
+                <button onClick={() => { setWizardOpen(false); setAdminTab("experiments"); }}
+                  className="text-[10px] text-primary hover:underline">Open in Expert Tab →</button>
+
+                {wzExpIds.length > 0 && (
+                  <div className="p-2 rounded-md bg-pos/5 border border-pos/20 text-[10px] text-pos">
+                    Selected: {wzExpIds.length} experiment{wzExpIds.length !== 1 ? "s" : ""} ({wzExpIds.map(id => id.slice(0, 8)).join(", ")})
+                  </div>
+                )}
+                {wzExpIds.length === 1 && (
+                  <p className="text-[9px] text-caution">Need at least 2 experiments for comparison in the next step.</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Comparison */}
+            {wizardStep === 2 && (
+              <div className="space-y-3">
+                <h3 className="text-[13px] font-semibold text-ink">Step 3: Create or Select Comparison</h3>
+                <p className="text-[10px] text-ink-4">Compare experiments using imported result metadata. Numeric metric sorting only — does not imply production suitability.</p>
+
+                {cmpList.length > 0 && (
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                    {cmpList.slice(0, 8).map(cmp => (
+                      <button key={cmp.comparison_id} onClick={() => { setWzCmpId(cmp.comparison_id); setWzSuccess(`Selected comparison ${cmp.comparison_id.slice(0, 8)}`); setWzError(null); }}
+                        className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                          wzCmpId === cmp.comparison_id ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                        }`}>
+                        <span className="font-mono text-ink-2">{cmp.comparison_id?.slice(0, 8)}</span>
+                        <span className="text-ink font-medium truncate max-w-[120px]">{cmp.name}</span>
+                        <span className="text-ink-3">{cmp.experiment_ids?.length} experiments</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {wzExpIds.length >= 2 && (
+                  <div className="border-t border-line/30 pt-2 space-y-2">
+                    <div className="text-[10px] text-ink-3 font-medium">Create comparison from selected experiments</div>
+                    <input type="text" value={wzCmpName} onChange={e => setWzCmpName(e.target.value)} placeholder="Comparison name"
+                      className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                    <label className="flex items-center gap-1.5 text-[10px] text-ink-2 cursor-pointer">
+                      <input type="checkbox" checked={wzCmpAck} onChange={e => setWzCmpAck(e.target.checked)} className="rounded" />
+                      Research-only offline comparison (required)
+                    </label>
+                    <button disabled={wzLoading || !wzCmpAck || !wzCmpName.trim()} onClick={async () => {
+                      setWzLoading(true); setWzError(null); setWzSuccess(null);
+                      try {
+                        const res = await createFinrlxExperimentComparison({
+                          name: wzCmpName.trim(), experiment_ids: wzExpIds,
+                          research_acknowledgement: true,
+                        });
+                        if (res.data?.comparison_id) {
+                          setWzCmpId(res.data.comparison_id);
+                          setWzSuccess(`Comparison ${res.data.comparison_id.slice(0, 8)} created.`);
+                          setWzCmpAck(false);
+                          refreshComparisons();
+                        }
+                      } catch (e: unknown) { setWzError(e instanceof Error ? e.message : "Failed"); }
+                      finally { setWzLoading(false); }
+                    }} className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[10px] font-medium disabled:opacity-40">
+                      {wzLoading ? "Creating..." : "Create Comparison"}
+                    </button>
+                  </div>
+                )}
+                {wzExpIds.length < 2 && (
+                  <p className="text-[9px] text-caution">Go back to Step 2 and select at least 2 experiments.</p>
+                )}
+
+                <button onClick={() => { setWizardOpen(false); setAdminTab("comparisons"); }}
+                  className="text-[10px] text-primary hover:underline">Open in Expert Tab →</button>
+
+                {wzCmpId && (
+                  <div className="p-2 rounded-md bg-pos/5 border border-pos/20 text-[10px] text-pos">
+                    Selected: <span className="font-mono">{wzCmpId.slice(0, 16)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Readiness Review */}
+            {wizardStep === 3 && (
+              <div className="space-y-3">
+                <h3 className="text-[13px] font-semibold text-ink">Step 4: Readiness Review</h3>
+                <p className="text-[10px] text-ink-4">Assess whether this research package has enough evidence for deeper research review. &quot;Research review ready&quot; does not mean production-ready.</p>
+
+                {rdList.length > 0 && (
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                    {rdList.slice(0, 8).map(rv => (
+                      <button key={rv.readiness_id} onClick={() => { setWzRdId(rv.readiness_id); setWzSuccess(`Selected readiness ${rv.readiness_id.slice(0, 8)}`); setWzError(null); }}
+                        className={`w-full text-left flex flex-wrap items-center gap-2 text-[10px] py-1.5 px-2 rounded-md border transition-colors ${
+                          wzRdId === rv.readiness_id ? "border-primary bg-primary/5" : "border-line/30 hover:bg-surface-2"
+                        }`}>
+                        <span className="font-mono text-ink-2">{rv.readiness_id?.slice(0, 8)}</span>
+                        <span className="text-ink font-medium truncate max-w-[120px]">{rv.name}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                          rv.readiness_state === "research_review_ready" ? "bg-pos/10 text-pos" :
+                          rv.readiness_state === "needs_more_evidence" ? "bg-caution/10 text-caution" :
+                          "bg-surface-3 text-ink-4"
+                        }`}>{rv.readiness_state?.replace(/_/g, " ")}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {wzCmpId && (
+                  <div className="border-t border-line/30 pt-2 space-y-2">
+                    <div className="text-[10px] text-ink-3 font-medium">Create readiness review for comparison {wzCmpId.slice(0, 8)}</div>
+                    <input type="text" value={wzRdName} onChange={e => setWzRdName(e.target.value)} placeholder="Review name"
+                      className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                    <label className="flex items-center gap-1.5 text-[10px] text-ink-2 cursor-pointer">
+                      <input type="checkbox" checked={wzRdAck} onChange={e => setWzRdAck(e.target.checked)} className="rounded" />
+                      Research-only readiness review — does not imply production suitability (required)
+                    </label>
+                    <button disabled={wzLoading || !wzRdAck || !wzRdName.trim()} onClick={async () => {
+                      setWzLoading(true); setWzError(null); setWzSuccess(null);
+                      try {
+                        const res = await createFinrlxResearchReadiness({
+                          name: wzRdName.trim(), linked_comparison_id: wzCmpId,
+                          research_acknowledgement: true,
+                        });
+                        if (res.data?.readiness_id) {
+                          setWzRdId(res.data.readiness_id);
+                          setWzSuccess(`Readiness review ${res.data.readiness_id.slice(0, 8)} created. Suggested state: ${res.data.suggested_readiness_state?.replace(/_/g, " ")}`);
+                          setWzRdAck(false);
+                          refreshReadiness();
+                        }
+                      } catch (e: unknown) { setWzError(e instanceof Error ? e.message : "Failed"); }
+                      finally { setWzLoading(false); }
+                    }} className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[10px] font-medium disabled:opacity-40">
+                      {wzLoading ? "Creating..." : "Create Readiness Review"}
+                    </button>
+                  </div>
+                )}
+                {!wzCmpId && (
+                  <p className="text-[9px] text-caution">Go back to Step 3 and select or create a comparison first.</p>
+                )}
+
+                <button onClick={() => { setWizardOpen(false); setAdminTab("readiness"); }}
+                  className="text-[10px] text-primary hover:underline">Open in Expert Tab →</button>
+
+                {wzRdId && (
+                  <div className="p-2 rounded-md bg-pos/5 border border-pos/20 text-[10px] text-pos">
+                    Selected: <span className="font-mono">{wzRdId.slice(0, 16)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-3 border-t border-line">
+              <button disabled={wizardStep === 0} onClick={() => { setWizardStep(s => s - 1); setWzError(null); setWzSuccess(null); }}
+                className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-surface-2 text-ink-3 hover:bg-surface-3 disabled:opacity-30 transition-colors">
+                ← Back
+              </button>
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2, 3].map(i => (
+                  <span key={i} className={`w-2 h-2 rounded-full ${wizardStep === i ? "bg-primary" : "bg-surface-3"}`} />
+                ))}
+              </div>
+              {wizardStep < 3 ? (
+                <button onClick={() => { setWizardStep(s => s + 1); setWzError(null); setWzSuccess(null); }}
+                  className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-primary text-primary-ink hover:opacity-90 transition-opacity">
+                  Next →
+                </button>
+              ) : (
+                <button onClick={() => setWizardOpen(false)}
+                  className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-pos text-white hover:opacity-90 transition-opacity">
+                  Done
+                </button>
+              )}
+            </div>
+
+            {/* Safety disclaimer */}
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-line/30">
+              {["research-only", "offline-only", "no production influence", "not eligible for promotion"].map(flag => (
+                <span key={flag} className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-pos/10 text-pos">{flag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Incident drawer */}
       {drawerIncident && (
