@@ -32,6 +32,13 @@ GET  /api/v1/rl/finrlx/experiment-comparisons/{comparison_id}
 POST /api/v1/rl/finrlx/experiment-comparisons/{comparison_id}/archive
 GET  /api/v1/rl/finrlx/experiment-comparisons/{comparison_id}/verify
 POST /api/v1/rl/finrlx/experiment-comparisons/rebuild-registry
+POST /api/v1/rl/finrlx/research-readiness
+GET  /api/v1/rl/finrlx/research-readiness
+GET  /api/v1/rl/finrlx/research-readiness/{readiness_id}
+POST /api/v1/rl/finrlx/research-readiness/{readiness_id}/state
+POST /api/v1/rl/finrlx/research-readiness/{readiness_id}/archive
+GET  /api/v1/rl/finrlx/research-readiness/{readiness_id}/verify
+POST /api/v1/rl/finrlx/research-readiness/rebuild-registry
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -649,4 +656,144 @@ async def rebuild_comparison_registry(
         raise HTTPException(status_code=422, detail="Acknowledgement required to rebuild comparison registry.")
     svc = FinRLXResearchService(db)
     result = svc.rebuild_comparison_registry_from_files()
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+# ── Research Readiness Review Gates (Phase 8L.1) ──────────────────
+
+class FinRLXCreateReadinessRequest(BaseModel):
+    name: str
+    linked_comparison_id: str
+    operator_notes: str = ""
+    checklist: dict = {}
+    research_acknowledgement: bool = False
+
+
+class FinRLXReadinessStateRequest(BaseModel):
+    readiness_state: str
+    acknowledgement: bool = False
+    reason: str | None = None
+
+
+class FinRLXArchiveReadinessRequest(BaseModel):
+    acknowledgement: bool = False
+    reason: str | None = None
+
+
+class FinRLXRebuildReadinessRegistryRequest(BaseModel):
+    acknowledgement: bool = False
+
+
+def _handle_corrupt_readiness_registry(exc: FinRLXResearchService.ReadinessRegistryCorruptError):
+    raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/rl/finrlx/research-readiness", response_model=ApiResponse[dict])
+async def create_research_readiness(
+    body: FinRLXCreateReadinessRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.research_acknowledgement:
+        raise HTTPException(status_code=422, detail="Research acknowledgement required.")
+    if not body.name or not body.name.strip():
+        raise HTTPException(status_code=422, detail="Readiness review name must not be empty.")
+    if not body.linked_comparison_id or not body.linked_comparison_id.strip():
+        raise HTTPException(status_code=422, detail="linked_comparison_id is required.")
+
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.create_research_readiness_review(
+            name=body.name.strip(),
+            linked_comparison_id=body.linked_comparison_id.strip(),
+            operator_notes=body.operator_notes,
+            checklist=body.checklist,
+        )
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    except FinRLXResearchService.ComparisonRegistryCorruptError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+    if result.get("error"):
+        raise HTTPException(status_code=422, detail=result["error"])
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.get("/rl/finrlx/research-readiness", response_model=ApiResponse[list[dict]])
+async def list_research_readiness(
+    readiness_state: str | None = None, limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
+    svc = FinRLXResearchService(db)
+    try:
+        data = svc.list_research_readiness_reviews(readiness_state=readiness_state, limit=limit)
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.get("/rl/finrlx/research-readiness/{readiness_id}", response_model=ApiResponse[dict])
+async def get_research_readiness(readiness_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.get_research_readiness_review(readiness_id)
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Readiness review not found.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.post("/rl/finrlx/research-readiness/{readiness_id}/state", response_model=ApiResponse[dict])
+async def update_research_readiness_state(
+    readiness_id: str, body: FinRLXReadinessStateRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required.")
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.update_research_readiness_review_state(readiness_id, body.readiness_state, reason=body.reason)
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Readiness review not found.")
+    if result.get("error"):
+        raise HTTPException(status_code=422, detail=result["error"])
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.post("/rl/finrlx/research-readiness/{readiness_id}/archive", response_model=ApiResponse[dict])
+async def archive_research_readiness(
+    readiness_id: str, body: FinRLXArchiveReadinessRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required.")
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.archive_research_readiness_review(readiness_id, reason=body.reason)
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Readiness review not found.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.get("/rl/finrlx/research-readiness/{readiness_id}/verify", response_model=ApiResponse[dict])
+async def verify_research_readiness(readiness_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.verify_research_readiness_review(readiness_id)
+    except FinRLXResearchService.ReadinessRegistryCorruptError as exc:
+        _handle_corrupt_readiness_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Readiness review not found.")
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.post("/rl/finrlx/research-readiness/rebuild-registry", response_model=ApiResponse[dict])
+async def rebuild_readiness_registry(
+    body: FinRLXRebuildReadinessRegistryRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required to rebuild readiness registry.")
+    svc = FinRLXResearchService(db)
+    result = svc.rebuild_readiness_registry_from_files()
     return ApiResponse(meta=make_meta(), data=result)

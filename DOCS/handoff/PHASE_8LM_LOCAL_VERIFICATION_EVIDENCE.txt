@@ -1,0 +1,53 @@
+=== Phase 8LM Local Verification Evidence ===
+
+Date: 2026-04-28
+
+=== git diff --name-only ===
+backend/app/api/v1/rl_finrlx.py
+backend/app/services/finrlx_research.py
+backend/tests/test_phase8l1_readiness_review.py (new)
+frontend/src/services/api.ts
+frontend/src/app/admin/page.tsx
+research/finrlx_cpu/readiness/.gitkeep (new)
+DOCS/handoff/PHASE_8LM_RESEARCH_READINESS_AND_ADMIN_UX_REPORT.md (new)
+DOCS/handoff/PHASE_8LM_LOCAL_VERIFICATION_EVIDENCE.txt (new)
+
+=== Backend targeted test result ===
+tests/test_phase8i_dataset_export.py: 25 passed
+tests/test_phase8i2_dataset_export_governance.py: 30 passed
+tests/test_phase8j1_experiment_tracking.py: 37 passed
+tests/test_phase8k1_experiment_comparison.py: 41 passed
+tests/test_phase8l1_readiness_review.py: 38 passed
+Total: 171 passed, 0 failed
+
+=== Phase 8 regression test result ===
+Total: 257 passed, 0 failed
+
+=== Frontend build result ===
+npm run build: SUCCESS (/admin: 23.5 kB)
+
+=== Frontend typecheck result ===
+npm run typecheck: SUCCESS (no errors)
+
+=== Frontend lint result ===
+npm run lint: SUCCESS (no warnings or errors)
+
+=== Unsafe language grep result ===
+No matches (PASS)
+
+=== Readiness directory ===
+research/finrlx_cpu/readiness/.gitkeep
+
+=== Admin UX consolidation ===
+5-tab workflow: Research Data | Experiments | Comparisons | Readiness | Safety/Ops
+Workflow guidance for next actions added
+
+=== Design handoff files inspected ===
+- design/handoff-package/HANDOFF.md
+- design/handoff-package/shell.jsx
+- design/handoff-package/icons.jsx
+- design/handoff-package/Decision Workspace.html
+No design files modified.
+
+=== Review package ===
+DOCS/handoff/FINRLX_PHASE_8LM_REVIEW_PACKAGE.zip (12 files)

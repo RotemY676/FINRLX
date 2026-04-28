@@ -1607,3 +1607,132 @@ export async function rebuildFinrlxExperimentComparisonRegistry(
     body: JSON.stringify(payload),
   });
 }
+
+// ── Research Readiness Review Gates (Phase 8L.1) ───────────────────
+
+export type ReadinessState = "draft" | "needs_more_evidence" | "research_review_ready" | "archived";
+
+export interface ReadinessFinding {
+  finding_id: string;
+  severity: "info" | "warning" | "blocking";
+  message: string;
+  operator_action: string;
+}
+
+export interface ReadinessChecklist {
+  comparison_exists: boolean;
+  experiments_exist: boolean;
+  exports_exist: boolean;
+  result_metadata_present: boolean;
+  metric_coverage_reviewed: boolean;
+  missing_metrics_reviewed: boolean;
+  warnings_reviewed: boolean;
+  limitations_reviewed: boolean;
+  safety_flags_confirmed: boolean;
+}
+
+export interface ReadinessReview {
+  readiness_id: string;
+  created_at: string;
+  updated_at: string;
+  readiness_state: ReadinessState;
+  name: string;
+  linked_comparison_id: string;
+  linked_experiment_ids: string[];
+  linked_export_ids: string[];
+  operator_notes: string;
+  checklist: ReadinessChecklist;
+  evidence_summary: Record<string, unknown>;
+  readiness_findings: ReadinessFinding[];
+  suggested_readiness_state: string;
+  warnings: string[];
+  limitations: string[];
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  no_production_influence: boolean;
+  not_eligible_for_promotion: boolean;
+  safety_flags?: Record<string, boolean>;
+  status?: string;
+}
+
+export interface CreateReadinessPayload {
+  name: string;
+  linked_comparison_id: string;
+  operator_notes?: string;
+  checklist?: Partial<ReadinessChecklist>;
+  research_acknowledgement: boolean;
+}
+
+export interface ReadinessStatePayload {
+  readiness_state: ReadinessState;
+  acknowledgement: boolean;
+  reason?: string;
+}
+
+export interface ReadinessArchivePayload {
+  acknowledgement: boolean;
+  reason?: string;
+}
+
+export interface ReadinessVerifyResult {
+  readiness_id: string;
+  linked_comparison_id: string;
+  linked_experiment_ids: string[];
+  readiness_state: string;
+  warnings: string[];
+  healthy: boolean;
+  safety_flags: Record<string, boolean>;
+}
+
+export async function createFinrlxResearchReadiness(
+  payload: CreateReadinessPayload
+): Promise<ApiResponse<ReadinessReview>> {
+  return apiFetch<ReadinessReview>("/api/v1/rl/finrlx/research-readiness", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listFinrlxResearchReadiness(params?: {
+  readiness_state?: string; limit?: number;
+}): Promise<ApiResponse<ReadinessReview[]>> {
+  const qs = new URLSearchParams();
+  if (params?.readiness_state) qs.set("readiness_state", params.readiness_state);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return apiFetch<ReadinessReview[]>(`/api/v1/rl/finrlx/research-readiness${query ? `?${query}` : ""}`);
+}
+
+export async function getFinrlxResearchReadiness(
+  readinessId: string
+): Promise<ApiResponse<ReadinessReview>> {
+  return apiFetch<ReadinessReview>(`/api/v1/rl/finrlx/research-readiness/${readinessId}`);
+}
+
+export async function updateFinrlxResearchReadinessState(
+  readinessId: string, payload: ReadinessStatePayload
+): Promise<ApiResponse<ReadinessReview>> {
+  return apiFetch<ReadinessReview>(`/api/v1/rl/finrlx/research-readiness/${readinessId}/state`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function archiveFinrlxResearchReadiness(
+  readinessId: string, payload: ReadinessArchivePayload
+): Promise<ApiResponse<ReadinessReview>> {
+  return apiFetch<ReadinessReview>(`/api/v1/rl/finrlx/research-readiness/${readinessId}/archive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyFinrlxResearchReadiness(
+  readinessId: string
+): Promise<ApiResponse<ReadinessVerifyResult>> {
+  return apiFetch<ReadinessVerifyResult>(`/api/v1/rl/finrlx/research-readiness/${readinessId}/verify`);
+}

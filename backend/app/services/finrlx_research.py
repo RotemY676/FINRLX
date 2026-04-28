@@ -2594,6 +2594,378 @@ class FinRLXResearchService:
         self.save_comparison_registry(registry)
         return {"rebuilt": True, "comparison_count": 0, "safety_flags": self.COMPARISON_SAFETY_FLAGS}
 
+    # ── Research Readiness Review Gates (Phase 8L.1) ─────────────────
+
+    READINESS_SAFETY_FLAGS = {
+        "research_only": True,
+        "offline_only": True,
+        "shadow_only": True,
+        "no_production_influence": True,
+        "not_eligible_for_promotion": True,
+    }
+
+    ALLOWED_READINESS_STATES = {"draft", "needs_more_evidence", "research_review_ready", "archived"}
+
+    class ReadinessRegistryCorruptError(Exception):
+        pass
+
+    @staticmethod
+    def _readiness_dir() -> str:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        return os.path.join(project_root, "research", "finrlx_cpu", "readiness")
+
+    @staticmethod
+    def _readiness_registry_path() -> str:
+        return os.path.join(FinRLXResearchService._readiness_dir(), "readiness_registry.json")
+
+    @staticmethod
+    def _empty_readiness_registry() -> dict:
+        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "readiness_reviews": []}
+
+    @staticmethod
+    def load_readiness_registry() -> dict:
+        path = FinRLXResearchService._readiness_registry_path()
+        if not os.path.exists(path):
+            reg = FinRLXResearchService._empty_readiness_registry()
+            FinRLXResearchService.save_readiness_registry(reg)
+            return reg
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict) or "readiness_reviews" not in data:
+                return {"version": 1, "updated_at": None, "readiness_reviews": [],
+                        "registry_corrupt": True,
+                        "warnings": ["Readiness registry has invalid structure. Use rebuild with acknowledgement."]}
+            return data
+        except json.JSONDecodeError:
+            return {"version": 1, "updated_at": None, "readiness_reviews": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Readiness registry is corrupt (invalid JSON). Use rebuild with acknowledgement."]}
+        except Exception:
+            return {"version": 1, "updated_at": None, "readiness_reviews": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Readiness registry could not be read. Use rebuild with acknowledgement."]}
+
+    @staticmethod
+    def save_readiness_registry(registry: dict) -> dict:
+        rd = FinRLXResearchService._readiness_dir()
+        os.makedirs(rd, exist_ok=True)
+        path = FinRLXResearchService._readiness_registry_path()
+        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, default=str)
+        os.replace(tmp_path, path)
+        return registry
+
+    def _require_healthy_readiness_registry(self) -> dict:
+        registry = self.load_readiness_registry()
+        if registry.get("registry_corrupt"):
+            raise self.ReadinessRegistryCorruptError(
+                "Readiness registry is corrupt. Use rebuild with acknowledgement to recreate.")
+        return registry
+
+    def _build_readiness_findings(self, comparison: dict, experiments: list[dict]) -> list[dict]:
+        """Build deterministic readiness findings. No ML, no inference."""
+        findings: list[dict] = []
+
+        # Check comparison summary
+        summary = comparison.get("comparison_summary") or {}
+        if not summary:
+            findings.append({"finding_id": "no_comparison_summary", "severity": "blocking",
+                "message": "Linked comparison has no comparison summary.",
+                "operator_action": "Ensure comparison was created with valid experiments."})
+        else:
+            mc = summary.get("metric_coverage") or {}
+            mm = summary.get("missing_metrics") or {}
+            if mm:
+                findings.append({"finding_id": "metric_coverage_incomplete", "severity": "warning",
+                    "message": "Some selected experiments are missing one or more comparison metrics.",
+                    "operator_action": "Review missing metrics before marking this package as research review ready."})
+            if not mc:
+                findings.append({"finding_id": "no_metric_coverage", "severity": "blocking",
+                    "message": "Comparison has no metric coverage data.",
+                    "operator_action": "Ensure experiments have imported result metrics."})
+
+        # Check experiments have results
+        for exp in experiments:
+            eid = (exp.get("experiment_id") or "")[:8]
+            if not exp.get("result_metrics"):
+                findings.append({"finding_id": f"no_results_{eid}", "severity": "warning",
+                    "message": f"Experiment {eid} has no result metrics.",
+                    "operator_action": "Import result metadata for this experiment."})
+            if exp.get("lifecycle_state") != "completed":
+                findings.append({"finding_id": f"not_completed_{eid}", "severity": "info",
+                    "message": f"Experiment {eid} lifecycle is '{exp.get('lifecycle_state')}', not 'completed'.",
+                    "operator_action": "Consider completing the experiment before final review."})
+
+        # Check warnings in comparison
+        cmp_warnings = comparison.get("warnings") or []
+        if cmp_warnings:
+            findings.append({"finding_id": "comparison_has_warnings", "severity": "info",
+                "message": f"Linked comparison has {len(cmp_warnings)} warning(s).",
+                "operator_action": "Review comparison warnings."})
+
+        return findings
+
+    def create_research_readiness_review(
+        self, name: str, linked_comparison_id: str,
+        operator_notes: str = "", checklist: dict | None = None,
+    ) -> dict:
+        """Create a research readiness review linked to a comparison."""
+        rd_registry = self._require_healthy_readiness_registry()
+
+        # Load comparison
+        try:
+            cmp_registry = self._require_healthy_comparison_registry()
+        except self.ComparisonRegistryCorruptError:
+            return {"error": "Comparison registry is corrupt.", "readiness_id": None, "status": "failed"}
+
+        comparison = None
+        for c in cmp_registry.get("comparisons", []):
+            if c.get("comparison_id") == linked_comparison_id:
+                comparison = c
+                break
+        if not comparison:
+            return {"error": f"Comparison '{linked_comparison_id}' not found.",
+                    "readiness_id": None, "status": "failed"}
+
+        # Resolve linked IDs
+        experiment_ids = comparison.get("experiment_ids") or []
+        export_ids = []
+        for snap in comparison.get("experiment_snapshots") or []:
+            eid = snap.get("linked_export_id")
+            if eid and eid not in export_ids:
+                export_ids.append(eid)
+
+        # Load experiments for findings
+        experiments = []
+        try:
+            exp_registry = self.load_experiment_registry()
+            if not exp_registry.get("registry_corrupt"):
+                for eid in experiment_ids:
+                    for e in exp_registry.get("experiments", []):
+                        if e.get("experiment_id") == eid:
+                            experiments.append(e)
+                            break
+        except Exception:
+            pass
+
+        # Sanitize user fields
+        warnings: list[str] = []
+        redacted = False
+        safe_name = self._sanitize_experiment_text(name, max_len=200)
+        if safe_name == "[redacted]":
+            redacted = True
+        safe_notes = self._sanitize_experiment_text(operator_notes, max_len=1000)
+        if safe_notes == "[redacted]":
+            redacted = True
+        if redacted:
+            warnings.append("Some readiness metadata was redacted because it looked like a path or secret.")
+
+        # Build checklist
+        default_checklist = {
+            "comparison_exists": True,
+            "experiments_exist": len(experiments) > 0,
+            "exports_exist": len(export_ids) > 0,
+            "result_metadata_present": any(e.get("result_metrics") for e in experiments),
+            "metric_coverage_reviewed": False,
+            "missing_metrics_reviewed": False,
+            "warnings_reviewed": False,
+            "limitations_reviewed": False,
+            "safety_flags_confirmed": False,
+        }
+        if checklist and isinstance(checklist, dict):
+            for k in default_checklist:
+                if k in checklist and isinstance(checklist[k], bool):
+                    default_checklist[k] = checklist[k]
+
+        # Build evidence summary (sanitized)
+        cmp_summary = comparison.get("comparison_summary") or {}
+        evidence = {
+            "comparison": {"comparison_id": linked_comparison_id, "name": comparison.get("name"),
+                           "experiment_count": len(experiment_ids), "lifecycle_state": comparison.get("lifecycle_state")},
+            "experiments": [{"experiment_id": e.get("experiment_id"), "name": self._sanitize_experiment_text(e.get("name") or "", 200),
+                             "lifecycle_state": e.get("lifecycle_state"),
+                             "has_results": bool(e.get("result_metrics"))} for e in experiments],
+            "exports": [{"export_id": eid} for eid in export_ids],
+            "metric_coverage": cmp_summary.get("metric_coverage") or {},
+            "missing_metrics": cmp_summary.get("missing_metrics") or {},
+            "warnings": self._sanitize_experiment_list(comparison.get("warnings") or []),
+            "limitations": self._sanitize_experiment_list(comparison.get("limitations") or []),
+        }
+
+        # Build findings
+        findings = self._build_readiness_findings(comparison, experiments)
+        has_blocking = any(f["severity"] == "blocking" for f in findings)
+
+        # Suggested state
+        all_reviewed = all(default_checklist.get(k) for k in [
+            "metric_coverage_reviewed", "missing_metrics_reviewed",
+            "warnings_reviewed", "limitations_reviewed", "safety_flags_confirmed"])
+        if has_blocking:
+            suggested = "needs_more_evidence"
+        elif all_reviewed:
+            suggested = "research_review_ready"
+        else:
+            suggested = "draft"
+
+        now = datetime.now(timezone.utc)
+        readiness_id = gen_uuid()
+
+        entry = {
+            "readiness_id": readiness_id,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "readiness_state": "draft",
+            "name": safe_name,
+            "linked_comparison_id": linked_comparison_id,
+            "linked_experiment_ids": experiment_ids,
+            "linked_export_ids": export_ids,
+            "operator_notes": safe_notes,
+            "checklist": default_checklist,
+            "evidence_summary": evidence,
+            "readiness_findings": findings,
+            "suggested_readiness_state": suggested,
+            "warnings": warnings,
+            "limitations": [
+                "Research-only readiness review.",
+                "Does not imply production suitability.",
+                "Not eligible for promotion.",
+                "No broker execution.",
+            ],
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+        }
+
+        rd_registry["readiness_reviews"].insert(0, entry)
+        self.save_readiness_registry(rd_registry)
+        return {**entry, "status": "created", "safety_flags": self.READINESS_SAFETY_FLAGS}
+
+    def list_research_readiness_reviews(self, readiness_state: str | None = None, limit: int = 50) -> list[dict]:
+        registry = self._require_healthy_readiness_registry()
+        reviews = registry.get("readiness_reviews", [])
+        reviews.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+        if readiness_state:
+            reviews = [r for r in reviews if r.get("readiness_state") == readiness_state]
+        return reviews[:limit]
+
+    def get_research_readiness_review(self, readiness_id: str) -> dict | None:
+        registry = self._require_healthy_readiness_registry()
+        for r in registry.get("readiness_reviews", []):
+            if r.get("readiness_id") == readiness_id:
+                result = dict(r)
+                result["safety_flags"] = self.READINESS_SAFETY_FLAGS
+                return result
+        return None
+
+    def update_research_readiness_review_state(
+        self, readiness_id: str, readiness_state: str, reason: str | None = None,
+    ) -> dict | None:
+        if readiness_state not in self.ALLOWED_READINESS_STATES:
+            return {"error": f"Invalid readiness state: {readiness_state}. Allowed: {', '.join(sorted(self.ALLOWED_READINESS_STATES))}"}
+
+        registry = self._require_healthy_readiness_registry()
+        for entry in registry.get("readiness_reviews", []):
+            if entry.get("readiness_id") == readiness_id:
+                # Gate: research_review_ready requires checklist and no blocking findings
+                if readiness_state == "research_review_ready":
+                    cl = entry.get("checklist") or {}
+                    required = ["warnings_reviewed", "limitations_reviewed", "safety_flags_confirmed"]
+                    missing = [k for k in required if not cl.get(k)]
+                    if missing:
+                        return {"error": f"Cannot mark research_review_ready: checklist items not confirmed: {', '.join(missing)}"}
+                    blocking = [f for f in (entry.get("readiness_findings") or []) if f.get("severity") == "blocking"]
+                    if blocking:
+                        return {"error": f"Cannot mark research_review_ready: {len(blocking)} blocking finding(s) remain."}
+
+                entry["readiness_state"] = readiness_state
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                if reason:
+                    safe_reason = self._sanitize_experiment_text(reason, max_len=500)
+                    entry.setdefault("warnings", []).append(f"State changed to {readiness_state}: {safe_reason}")
+                    if safe_reason == "[redacted]":
+                        entry["warnings"].append("Some state reason was redacted because it looked like a path or secret.")
+                self.save_readiness_registry(registry)
+                return {**entry, "safety_flags": self.READINESS_SAFETY_FLAGS}
+        return None
+
+    def archive_research_readiness_review(self, readiness_id: str, reason: str | None = None) -> dict | None:
+        registry = self._require_healthy_readiness_registry()
+        for entry in registry.get("readiness_reviews", []):
+            if entry.get("readiness_id") == readiness_id:
+                entry["readiness_state"] = "archived"
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                if reason:
+                    safe_reason = self._sanitize_experiment_text(reason, max_len=500)
+                    entry.setdefault("warnings", []).append(f"Archived: {safe_reason}")
+                    if safe_reason == "[redacted]":
+                        entry["warnings"].append("Some archive reason was redacted because it looked like a path or secret.")
+                self.save_readiness_registry(registry)
+                return {**entry, "safety_flags": self.READINESS_SAFETY_FLAGS}
+        return None
+
+    def verify_research_readiness_review(self, readiness_id: str) -> dict | None:
+        """Verify readiness review. Strictly read-only."""
+        registry = self._require_healthy_readiness_registry()
+        entry = None
+        for r in registry.get("readiness_reviews", []):
+            if r.get("readiness_id") == readiness_id:
+                entry = r
+                break
+        if not entry:
+            return None
+
+        warnings: list[str] = []
+        cmp_id = entry.get("linked_comparison_id")
+
+        try:
+            cmp_registry = self.load_comparison_registry()
+            if cmp_registry.get("registry_corrupt"):
+                warnings.append("Comparison registry is corrupt.")
+            else:
+                found = any(c.get("comparison_id") == cmp_id for c in cmp_registry.get("comparisons", []))
+                if not found:
+                    warnings.append("Linked comparison not found in registry.")
+        except Exception:
+            warnings.append("Could not load comparison registry.")
+
+        try:
+            exp_registry = self.load_experiment_registry()
+            if exp_registry.get("registry_corrupt"):
+                warnings.append("Experiment registry is corrupt.")
+            else:
+                for eid in entry.get("linked_experiment_ids") or []:
+                    found = any(e.get("experiment_id") == eid for e in exp_registry.get("experiments", []))
+                    if not found:
+                        warnings.append(f"Experiment {eid[:8]} not found.")
+                    else:
+                        exp = next(e for e in exp_registry["experiments"] if e["experiment_id"] == eid)
+                        if not exp.get("result_metrics"):
+                            warnings.append(f"Experiment {eid[:8]} has no result metrics.")
+        except Exception:
+            warnings.append("Could not load experiment registry.")
+
+        return {
+            "readiness_id": readiness_id,
+            "linked_comparison_id": cmp_id,
+            "linked_experiment_ids": entry.get("linked_experiment_ids") or [],
+            "readiness_state": entry.get("readiness_state"),
+            "warnings": warnings,
+            "healthy": len(warnings) == 0,
+            "safety_flags": self.READINESS_SAFETY_FLAGS,
+        }
+
+    def rebuild_readiness_registry_from_files(self) -> dict:
+        rd = self._readiness_dir()
+        os.makedirs(rd, exist_ok=True)
+        registry = self._empty_readiness_registry()
+        self.save_readiness_registry(registry)
+        return {"rebuilt": True, "review_count": 0, "safety_flags": self.READINESS_SAFETY_FLAGS}
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""
