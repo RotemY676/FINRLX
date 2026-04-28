@@ -19,6 +19,13 @@ GET  /api/v1/rl/finrlx/dataset-exports/{export_id}
 POST /api/v1/rl/finrlx/dataset-exports/{export_id}/mark-stale
 GET  /api/v1/rl/finrlx/dataset-exports/{export_id}/verify
 POST /api/v1/rl/finrlx/dataset-exports/rebuild-registry
+POST /api/v1/rl/finrlx/research-experiments
+GET  /api/v1/rl/finrlx/research-experiments
+GET  /api/v1/rl/finrlx/research-experiments/{experiment_id}
+POST /api/v1/rl/finrlx/research-experiments/{experiment_id}/state
+POST /api/v1/rl/finrlx/research-experiments/{experiment_id}/results
+GET  /api/v1/rl/finrlx/research-experiments/{experiment_id}/verify
+POST /api/v1/rl/finrlx/research-experiments/rebuild-registry
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -352,4 +359,165 @@ async def rebuild_dataset_export_registry(
         raise HTTPException(status_code=422, detail="Acknowledgement required to rebuild registry.")
     svc = FinRLXResearchService(db)
     result = svc.rebuild_dataset_export_registry_from_files()
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+# ── Local Research Experiment Tracking (Phase 8J.1) ────────────────
+
+class FinRLXCreateExperimentRequest(BaseModel):
+    name: str
+    linked_export_id: str
+    hypothesis: str = ""
+    method_notes: str = ""
+    parameters: dict = {}
+    expected_metrics: list = []
+    research_acknowledgement: bool = False
+
+
+class FinRLXExperimentStateRequest(BaseModel):
+    lifecycle_state: str
+    acknowledgement: bool = False
+    reason: str | None = None
+
+
+class FinRLXExperimentResultsRequest(BaseModel):
+    acknowledgement: bool = False
+    result_summary: str = ""
+    result_metrics: dict = {}
+    warnings: list = []
+    limitations: list = []
+
+
+def _handle_corrupt_experiment_registry(exc: FinRLXResearchService.ExperimentRegistryCorruptError):
+    raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/rl/finrlx/research-experiments", response_model=ApiResponse[dict])
+async def create_research_experiment(
+    body: FinRLXCreateExperimentRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.research_acknowledgement:
+        raise HTTPException(
+            status_code=422,
+            detail="Research acknowledgement required. Set research_acknowledgement=true "
+                   "to confirm this is a research-only offline experiment.",
+        )
+    if not body.name or not body.name.strip():
+        raise HTTPException(status_code=422, detail="Experiment name must not be empty.")
+    if not body.linked_export_id or not body.linked_export_id.strip():
+        raise HTTPException(status_code=422, detail="linked_export_id is required.")
+
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.create_research_experiment(
+            name=body.name.strip(),
+            linked_export_id=body.linked_export_id.strip(),
+            hypothesis=body.hypothesis,
+            method_notes=body.method_notes,
+            parameters=body.parameters,
+            expected_metrics=body.expected_metrics,
+        )
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+
+    if result.get("error"):
+        raise HTTPException(status_code=422, detail=result["error"])
+
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.get("/rl/finrlx/research-experiments", response_model=ApiResponse[list[dict]])
+async def list_research_experiments(
+    lifecycle_state: str | None = None,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
+    svc = FinRLXResearchService(db)
+    try:
+        data = svc.list_research_experiments(lifecycle_state=lifecycle_state, limit=limit)
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.get("/rl/finrlx/research-experiments/{experiment_id}", response_model=ApiResponse[dict])
+async def get_research_experiment(experiment_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.get_research_experiment(experiment_id)
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Research experiment not found.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.post("/rl/finrlx/research-experiments/{experiment_id}/state", response_model=ApiResponse[dict])
+async def update_research_experiment_state(
+    experiment_id: str, body: FinRLXExperimentStateRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required to change experiment state.")
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.update_research_experiment_state(experiment_id, body.lifecycle_state, reason=body.reason)
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Research experiment not found.")
+    if result.get("error"):
+        raise HTTPException(status_code=422, detail=result["error"])
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.post("/rl/finrlx/research-experiments/{experiment_id}/results", response_model=ApiResponse[dict])
+async def import_research_experiment_results(
+    experiment_id: str, body: FinRLXExperimentResultsRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(
+            status_code=422,
+            detail="Acknowledgement required. Set acknowledgement=true to confirm "
+                   "this is a metadata-only offline result import.",
+        )
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.import_research_experiment_results(
+            experiment_id=experiment_id,
+            result_summary=body.result_summary,
+            result_metrics=body.result_metrics,
+            warnings=body.warnings,
+            limitations=body.limitations,
+        )
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Research experiment not found.")
+    return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.get("/rl/finrlx/research-experiments/{experiment_id}/verify", response_model=ApiResponse[dict])
+async def verify_research_experiment(experiment_id: str, db: AsyncSession = Depends(get_db)):
+    svc = FinRLXResearchService(db)
+    try:
+        result = svc.verify_research_experiment(experiment_id)
+    except FinRLXResearchService.ExperimentRegistryCorruptError as exc:
+        _handle_corrupt_experiment_registry(exc)
+    if not result:
+        raise HTTPException(status_code=404, detail="Research experiment not found.")
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+class FinRLXRebuildExperimentRegistryRequest(BaseModel):
+    acknowledgement: bool = False
+
+
+@router.post("/rl/finrlx/research-experiments/rebuild-registry", response_model=ApiResponse[dict])
+async def rebuild_experiment_registry(
+    body: FinRLXRebuildExperimentRegistryRequest, db: AsyncSession = Depends(get_db),
+):
+    if not body.acknowledgement:
+        raise HTTPException(status_code=422, detail="Acknowledgement required to rebuild experiment registry.")
+    svc = FinRLXResearchService(db)
+    result = svc.rebuild_experiment_registry_from_files()
     return ApiResponse(meta=make_meta(), data=result)

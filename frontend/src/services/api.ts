@@ -1338,3 +1338,136 @@ export async function rebuildFinrlxDatasetExportRegistry(
     body: JSON.stringify(payload),
   });
 }
+
+// ── Local Research Experiment Tracking (Phase 8J.1) ────────────────
+
+export type ExperimentLifecycleState = "planned" | "running_offline" | "completed" | "failed" | "archived";
+
+export interface ResearchExperiment {
+  experiment_id: string;
+  created_at: string;
+  updated_at: string;
+  lifecycle_state: ExperimentLifecycleState;
+  name: string;
+  linked_export_id: string;
+  linked_export_fingerprint: string | null;
+  linked_export_checksum: string | null;
+  linked_export_row_count: number;
+  linked_export_date_range: { start_date?: string; end_date?: string; start?: string; end?: string } | null;
+  hypothesis: string;
+  method_notes: string;
+  parameters: Record<string, unknown>;
+  expected_metrics: string[];
+  result_summary: string | null;
+  result_metrics: Record<string, number | string>;
+  result_artifact_path: string | null;
+  warnings: string[];
+  limitations: string[];
+  research_only: boolean;
+  offline_only: boolean;
+  shadow_only: boolean;
+  no_production_influence: boolean;
+  not_eligible_for_promotion: boolean;
+  safety_flags?: Record<string, boolean>;
+  status?: string;
+}
+
+export interface CreateExperimentPayload {
+  name: string;
+  linked_export_id: string;
+  hypothesis?: string;
+  method_notes?: string;
+  parameters?: Record<string, unknown>;
+  expected_metrics?: string[];
+  research_acknowledgement: boolean;
+}
+
+export interface ExperimentStateUpdatePayload {
+  lifecycle_state: ExperimentLifecycleState;
+  acknowledgement: boolean;
+  reason?: string;
+}
+
+export interface ExperimentResultImportPayload {
+  acknowledgement: boolean;
+  result_summary: string;
+  result_metrics: Record<string, number | string>;
+  warnings?: string[];
+  limitations?: string[];
+}
+
+export interface ExperimentVerifyResult {
+  experiment_id: string;
+  linked_export_id: string;
+  linked_export_checksum: string | null;
+  linked_export_fingerprint: string | null;
+  lifecycle_state: string;
+  warnings: string[];
+  healthy: boolean;
+  safety_flags: Record<string, boolean>;
+}
+
+export async function createFinrlxResearchExperiment(
+  payload: CreateExperimentPayload
+): Promise<ApiResponse<ResearchExperiment>> {
+  return apiFetch<ResearchExperiment>("/api/v1/rl/finrlx/research-experiments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listFinrlxResearchExperiments(params?: {
+  lifecycle_state?: string;
+  limit?: number;
+}): Promise<ApiResponse<ResearchExperiment[]>> {
+  const qs = new URLSearchParams();
+  if (params?.lifecycle_state) qs.set("lifecycle_state", params.lifecycle_state);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return apiFetch<ResearchExperiment[]>(`/api/v1/rl/finrlx/research-experiments${query ? `?${query}` : ""}`);
+}
+
+export async function getFinrlxResearchExperiment(
+  experimentId: string
+): Promise<ApiResponse<ResearchExperiment>> {
+  return apiFetch<ResearchExperiment>(`/api/v1/rl/finrlx/research-experiments/${experimentId}`);
+}
+
+export async function updateFinrlxResearchExperimentState(
+  experimentId: string,
+  payload: ExperimentStateUpdatePayload
+): Promise<ApiResponse<ResearchExperiment>> {
+  return apiFetch<ResearchExperiment>(`/api/v1/rl/finrlx/research-experiments/${experimentId}/state`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function importFinrlxResearchExperimentResults(
+  experimentId: string,
+  payload: ExperimentResultImportPayload
+): Promise<ApiResponse<ResearchExperiment>> {
+  return apiFetch<ResearchExperiment>(`/api/v1/rl/finrlx/research-experiments/${experimentId}/results`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyFinrlxResearchExperiment(
+  experimentId: string
+): Promise<ApiResponse<ExperimentVerifyResult>> {
+  return apiFetch<ExperimentVerifyResult>(`/api/v1/rl/finrlx/research-experiments/${experimentId}/verify`);
+}
+
+export async function rebuildFinrlxResearchExperimentRegistry(
+  payload: { acknowledgement: boolean }
+): Promise<ApiResponse<{ rebuilt: boolean; experiment_count: number }>> {
+  return apiFetch<{ rebuilt: boolean; experiment_count: number }>("/api/v1/rl/finrlx/research-experiments/rebuild-registry", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}

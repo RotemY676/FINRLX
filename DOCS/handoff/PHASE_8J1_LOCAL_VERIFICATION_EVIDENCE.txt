@@ -1,0 +1,89 @@
+=== Phase 8J.1 Local Verification Evidence ===
+
+Date: 2026-04-28
+
+=== git status --short ===
+ M backend/app/api/v1/rl_finrlx.py
+ M backend/app/services/finrlx_research.py
+ M frontend/src/app/admin/page.tsx
+ M frontend/src/services/api.ts
+?? backend/tests/test_phase8j1_experiment_tracking.py
+?? frontend/tsconfig.tsbuildinfo
+?? research/finrlx_cpu/experiments/
+
+=== git diff --name-only (Phase 8J.1 files only) ===
+backend/app/api/v1/rl_finrlx.py
+backend/app/services/finrlx_research.py
+frontend/src/app/admin/page.tsx
+frontend/src/services/api.ts
+
+=== git diff --stat (Phase 8J.1 files only) ===
+ backend/app/api/v1/rl_finrlx.py         | 168 ++++++++++++++
+ backend/app/services/finrlx_research.py | 279 +++++++++++++++++++++++
+ frontend/src/app/admin/page.tsx         | 390 ++++++++++++++++++++++++++++++++
+ frontend/src/services/api.ts            | 133 +++++++++++
+ 4 files changed, 970 insertions(+)
+
+=== Backend targeted test result ===
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+89 passed, 1 warning in 63.26s (0:01:03)
+
+=== Phase 8 regression test result ===
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+175 passed, 1 warning in 102.44s (0:01:42)
+
+=== Frontend build result ===
+├ ○ /admin                               20.4 kB         111 kB
+├ ○ /backtests                           2.55 kB         198 kB
+├ ○ /comparison                          10.4 kB         198 kB
+├ ○ /decision                            13 kB           208 kB
+├ ○ /icon.svg                            0 B                0 B
+├ ○ /paper                               3.41 kB         194 kB
+└ ○ /replay                              3.62 kB          97 kB
++ First Load JS shared by all            87.5 kB
+  ├ chunks/117-d70f252e30bdb96b.js       31.9 kB
+  ├ chunks/fd9d1056-8fb6bfb5a9bc068a.js  53.6 kB
+  └ other shared chunks (total)          2 kB
+
+
+○  (Static)  prerendered as static content
+
+
+=== Frontend typecheck result ===
+
+> finrlx-frontend@0.2.0 typecheck
+> tsc --noEmit
+
+
+=== Frontend lint result ===
+
+> finrlx-frontend@0.2.0 lint
+> next lint
+
+✔ No ESLint warnings or errors
+
+=== Unsafe language grep result ===
+No matches (PASS)
+
+=== Experiment directory summary ===
+total 12
+drwxr-xr-x 1 Rotem 197121    0 Apr 28 18:13 .
+drwxr-xr-x 1 Rotem 197121    0 Apr 28 17:57 ..
+-rw-r--r-- 1 Rotem 197121    0 Apr 28 17:57 .gitkeep
+-rw-r--r-- 1 Rotem 197121 1516 Apr 28 18:13 experiment_registry.json
+
+=== Design handoff files inspected ===
+- design/handoff-package/HANDOFF.md
+- design/handoff-package/shell.jsx
+- design/handoff-package/icons.jsx
+- design/handoff-package/Decision Workspace.html
+No design files were modified.
+
+=== Review package contents ===
+See FINRLX_PHASE_8J1_REVIEW_PACKAGE.zip

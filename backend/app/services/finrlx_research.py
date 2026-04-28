@@ -1841,6 +1841,285 @@ class FinRLXResearchService:
 
         return {"rebuilt": True, "export_count": len(entries), "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS}
 
+    # ── Local Research Experiment Tracking (Phase 8J.1) ─────────────────
+
+    EXPERIMENT_SAFETY_FLAGS = {
+        "research_only": True,
+        "offline_only": True,
+        "shadow_only": True,
+        "no_production_influence": True,
+        "not_eligible_for_promotion": True,
+    }
+
+    ALLOWED_LIFECYCLE_STATES = {"planned", "running_offline", "completed", "failed", "archived"}
+
+    class ExperimentRegistryCorruptError(Exception):
+        """Raised when the experiment registry is corrupt and cannot be used."""
+        pass
+
+    @staticmethod
+    def _experiments_dir() -> str:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        return os.path.join(project_root, "research", "finrlx_cpu", "experiments")
+
+    @staticmethod
+    def _experiment_registry_path() -> str:
+        return os.path.join(FinRLXResearchService._experiments_dir(), "experiment_registry.json")
+
+    @staticmethod
+    def _empty_experiment_registry() -> dict:
+        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "experiments": []}
+
+    @staticmethod
+    def load_experiment_registry() -> dict:
+        """Load experiment registry from disk. Returns empty if missing. Marks corrupt if unreadable."""
+        path = FinRLXResearchService._experiment_registry_path()
+        if not os.path.exists(path):
+            reg = FinRLXResearchService._empty_experiment_registry()
+            FinRLXResearchService.save_experiment_registry(reg)
+            return reg
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict) or "experiments" not in data:
+                return {"version": 1, "updated_at": None, "experiments": [],
+                        "registry_corrupt": True,
+                        "warnings": ["Experiment registry file has invalid structure. Use rebuild with acknowledgement to recreate."]}
+            return data
+        except json.JSONDecodeError:
+            return {"version": 1, "updated_at": None, "experiments": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Experiment registry is corrupt (invalid JSON). Use rebuild with acknowledgement to recreate."]}
+        except Exception:
+            return {"version": 1, "updated_at": None, "experiments": [],
+                    "registry_corrupt": True,
+                    "warnings": ["Experiment registry could not be read. Use rebuild with acknowledgement to recreate."]}
+
+    @staticmethod
+    def save_experiment_registry(registry: dict) -> dict:
+        """Atomically save experiment registry to disk."""
+        exp_dir = FinRLXResearchService._experiments_dir()
+        os.makedirs(exp_dir, exist_ok=True)
+        path = FinRLXResearchService._experiment_registry_path()
+        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, default=str)
+        os.replace(tmp_path, path)
+        return registry
+
+    def _require_healthy_experiment_registry(self) -> dict:
+        """Load experiment registry and raise if corrupt."""
+        registry = self.load_experiment_registry()
+        if registry.get("registry_corrupt"):
+            raise self.ExperimentRegistryCorruptError(
+                "Experiment registry is corrupt. Use rebuild with acknowledgement to recreate.")
+        return registry
+
+    def create_research_experiment(
+        self,
+        name: str,
+        linked_export_id: str,
+        hypothesis: str = "",
+        method_notes: str = "",
+        parameters: dict | None = None,
+        expected_metrics: list | None = None,
+    ) -> dict:
+        """Create a new local research experiment linked to a governed dataset export."""
+        registry = self._require_healthy_experiment_registry()
+
+        # Validate linked export
+        export_registry = self.load_dataset_export_registry()
+        if export_registry.get("registry_corrupt"):
+            return {"error": "Dataset export registry is corrupt. Cannot validate linked export.",
+                    "experiment_id": None, "status": "failed"}
+
+        linked_export = None
+        for e in export_registry.get("exports", []):
+            if e.get("export_id") == linked_export_id:
+                linked_export = e
+                break
+
+        warnings: list[str] = []
+        if not linked_export:
+            return {"error": f"Linked export '{linked_export_id}' not found in dataset export registry.",
+                    "experiment_id": None, "status": "failed"}
+        if linked_export.get("lifecycle_state") == "stale":
+            warnings.append("Linked dataset export is marked as stale.")
+        if linked_export.get("artifact_exists") is False:
+            warnings.append("Linked dataset export artifact files are missing from disk.")
+
+        now = datetime.now(timezone.utc)
+        experiment_id = gen_uuid()
+
+        # Sanitize parameters
+        safe_params = _json_safe(parameters) if parameters else {}
+        safe_metrics = [str(m) for m in (expected_metrics or [])]
+
+        entry = {
+            "experiment_id": experiment_id,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "lifecycle_state": "planned",
+            "name": name,
+            "linked_export_id": linked_export_id,
+            "linked_export_fingerprint": linked_export.get("fingerprint"),
+            "linked_export_checksum": linked_export.get("checksum"),
+            "linked_export_row_count": linked_export.get("row_count", 0),
+            "linked_export_date_range": linked_export.get("date_range"),
+            "hypothesis": hypothesis,
+            "method_notes": method_notes,
+            "parameters": safe_params,
+            "expected_metrics": safe_metrics,
+            "result_summary": None,
+            "result_metrics": {},
+            "result_artifact_path": None,
+            "warnings": warnings,
+            "limitations": [
+                "Research-only, offline-only, shadow experiment.",
+                "Not used by production recommendations.",
+                "Not eligible for promotion.",
+                "No broker execution.",
+                "No automatic training or benchmark execution.",
+            ],
+            "research_only": True,
+            "offline_only": True,
+            "shadow_only": True,
+            "no_production_influence": True,
+            "not_eligible_for_promotion": True,
+        }
+
+        registry["experiments"].insert(0, entry)
+        self.save_experiment_registry(registry)
+
+        return {**entry, "status": "created", "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
+
+    def list_research_experiments(self, lifecycle_state: str | None = None, limit: int = 50) -> list[dict]:
+        """List experiments newest first. Raises on corrupt."""
+        registry = self._require_healthy_experiment_registry()
+        experiments = registry.get("experiments", [])
+        experiments.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+        if lifecycle_state:
+            experiments = [e for e in experiments if e.get("lifecycle_state") == lifecycle_state]
+        return experiments[:limit]
+
+    def get_research_experiment(self, experiment_id: str) -> dict | None:
+        """Get a specific experiment by ID. Raises on corrupt."""
+        registry = self._require_healthy_experiment_registry()
+        for e in registry.get("experiments", []):
+            if e.get("experiment_id") == experiment_id:
+                result = dict(e)
+                result["safety_flags"] = self.EXPERIMENT_SAFETY_FLAGS
+                return result
+        return None
+
+    def update_research_experiment_state(
+        self, experiment_id: str, lifecycle_state: str, reason: str | None = None,
+    ) -> dict | None:
+        """Update experiment lifecycle state. Does not trigger execution."""
+        if lifecycle_state not in self.ALLOWED_LIFECYCLE_STATES:
+            return {"error": f"Invalid lifecycle state: {lifecycle_state}. Allowed: {', '.join(sorted(self.ALLOWED_LIFECYCLE_STATES))}"}
+
+        registry = self._require_healthy_experiment_registry()
+        for entry in registry.get("experiments", []):
+            if entry.get("experiment_id") == experiment_id:
+                entry["lifecycle_state"] = lifecycle_state
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                if reason:
+                    entry.setdefault("warnings", []).append(f"State changed to {lifecycle_state}: {reason}")
+                self.save_experiment_registry(registry)
+                return {**entry, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
+        return None
+
+    def import_research_experiment_results(
+        self, experiment_id: str, result_summary: str = "",
+        result_metrics: dict | None = None,
+        warnings: list | None = None, limitations: list | None = None,
+    ) -> dict | None:
+        """Import metadata-only results into an experiment. Does not import code or files."""
+        registry = self._require_healthy_experiment_registry()
+        for entry in registry.get("experiments", []):
+            if entry.get("experiment_id") == experiment_id:
+                entry["result_summary"] = str(result_summary)[:2000] if result_summary else None
+                # Sanitize metrics — only allow JSON-safe numeric/string values
+                safe_metrics = {}
+                if result_metrics and isinstance(result_metrics, dict):
+                    for k, v in result_metrics.items():
+                        sk = str(k)[:100]
+                        if isinstance(v, (int, float)):
+                            safe_metrics[sk] = v
+                        elif isinstance(v, str):
+                            safe_metrics[sk] = v[:500]
+                        # Skip non-primitive values
+                entry["result_metrics"] = safe_metrics
+                if warnings and isinstance(warnings, list):
+                    entry["warnings"] = [str(w)[:500] for w in warnings[:20]]
+                if limitations and isinstance(limitations, list):
+                    entry["limitations"] = [str(l)[:500] for l in limitations[:20]]
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self.save_experiment_registry(registry)
+                return {**entry, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
+        return None
+
+    def verify_research_experiment(self, experiment_id: str) -> dict | None:
+        """Verify experiment's linked export. Strictly read-only — no registry writes."""
+        registry = self._require_healthy_experiment_registry()
+        entry = None
+        for e in registry.get("experiments", []):
+            if e.get("experiment_id") == experiment_id:
+                entry = e
+                break
+        if not entry:
+            return None
+
+        linked_export_id = entry.get("linked_export_id")
+        warnings: list[str] = []
+
+        # Check linked export in export registry
+        try:
+            export_registry = self.load_dataset_export_registry()
+            if export_registry.get("registry_corrupt"):
+                warnings.append("Dataset export registry is corrupt — cannot verify linked export.")
+            else:
+                linked = None
+                for ex in export_registry.get("exports", []):
+                    if ex.get("export_id") == linked_export_id:
+                        linked = ex
+                        break
+                if not linked:
+                    warnings.append("Linked dataset export not found in registry.")
+                else:
+                    if linked.get("lifecycle_state") == "stale":
+                        warnings.append("Linked dataset export is marked as stale.")
+                    if linked.get("artifact_exists") is False:
+                        warnings.append("Linked dataset export artifact files are missing from disk.")
+                    # Check checksum match
+                    if entry.get("linked_export_checksum") and linked.get("checksum"):
+                        if entry["linked_export_checksum"] != linked["checksum"]:
+                            warnings.append("Linked export checksum has changed since experiment creation.")
+        except Exception:
+            warnings.append("Could not load dataset export registry for verification.")
+
+        return {
+            "experiment_id": experiment_id,
+            "linked_export_id": linked_export_id,
+            "linked_export_checksum": entry.get("linked_export_checksum"),
+            "linked_export_fingerprint": entry.get("linked_export_fingerprint"),
+            "lifecycle_state": entry.get("lifecycle_state"),
+            "warnings": warnings,
+            "healthy": len(warnings) == 0,
+            "safety_flags": self.EXPERIMENT_SAFETY_FLAGS,
+        }
+
+    def rebuild_experiment_registry_from_files(self) -> dict:
+        """Rebuild experiment registry. Since experiments are metadata-only in registry,
+        this creates a fresh empty registry (no filesystem artifacts to scan)."""
+        exp_dir = self._experiments_dir()
+        os.makedirs(exp_dir, exist_ok=True)
+        registry = self._empty_experiment_registry()
+        self.save_experiment_registry(registry)
+        return {"rebuilt": True, "experiment_count": 0, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
+
     @staticmethod
     def safety_guard(action: str) -> dict:
         """Block any unsafe action."""
