@@ -1,14 +1,15 @@
 # Phase 8M.2 — Guided Research Workflow Wizard Report
 
-**Date:** 2026-04-28
-**Accepted checkpoint:** Phase 8LM-fix2 (commit b8ad9ea)
+**Date:** 2026-04-29
+**Accepted checkpoint:** Phase 8LM-fix3 (commit 4aee37e)
+**Fix applied:** Complete wizard UX — inline create, import, verify, state update
 **Classification:** PASS
 
 ---
 
 ## 1. Executive Summary
 
-Phase 8M.2 adds an optional guided research workflow wizard to the Admin page. The wizard helps operators move through the full research workflow (Export -> Experiment -> Comparison -> Readiness Review) without manually copying IDs between tabs. The existing 5-tab expert mode is fully preserved. The wizard is a UX/orchestration layer only — it calls existing APIs, preserves all acknowledgement gates, and does not bypass backend sanitizers.
+Phase 8M.2 adds a complete guided research workflow wizard to the Admin page. The wizard orchestrates the full research flow (Export -> Experiment -> Comparison -> Readiness Review) with inline creation, verification, metadata-only result import, and readiness state management. The existing 5-tab expert mode is fully preserved. No backend changes were made.
 
 ---
 
@@ -16,148 +17,123 @@ Phase 8M.2 adds an optional guided research workflow wizard to the Admin page. T
 
 | File | Action |
 |------|--------|
-| `frontend/src/app/admin/page.tsx` | Modified — wizard modal with 4 steps, CTA, state management |
-| No backend changes | Backend was not modified |
+| `frontend/src/app/admin/page.tsx` | Modified — complete wizard with all 4 steps |
+| No backend changes | Confirmed |
 | No api.ts changes | All needed types/functions already existed |
 
 ---
 
 ## 3. Design Handoff Review
 
-**Inspected:** HANDOFF.md, shell.jsx, icons.jsx, Decision Workspace.html.
-
-**Relevant conventions:**
-- Modal: `fixed inset-0 z-50 flex items-center justify-center` with backdrop blur
-- Card: `rounded-xl shadow-xl bg-surface border border-line`
-- Button styles: `bg-primary text-primary-ink`, `bg-surface-2 text-ink-3`
-- Badge styles: `inline-flex items-center px-1.5 py-0.5 rounded text-[9px]`
-- Form inputs: `rounded-md border border-line bg-surface text-[11px]`
-- Acknowledgement: checkbox + label pattern
-
-The wizard follows all existing Admin/Ops design language. **No design files were modified.**
+**Inspected:** HANDOFF.md, shell.jsx, icons.jsx, Decision Workspace.html. Modal uses existing surface/line/primary tokens. `<details>` panels for collapsible creation forms. **No design files modified.**
 
 ---
 
-## 4. Why Guided Mode, Not Replacement
+## 4. Why Guided Mode Coexists with Expert Tabs
 
-The existing 5-tab Admin workflow serves expert operators who need direct access to any section. The wizard adds a guided path for the common linear workflow without removing expert access. Both modes coexist — the wizard can be closed at any time, and "Open in Expert Tab" links provide seamless transition.
+The 5-tab Admin workflow serves expert operators. The wizard adds a guided linear flow. Both coexist — "Open in Expert Tab" links on every step.
 
 ---
 
 ## 5. Wizard Structure
 
-- **CTA:** "Start Research Workflow" button above the tab bar
-- **Modal:** centered overlay, max-width 700px, scrollable, backdrop blur
-- **Stepper:** 4 steps with visual indicators (active=primary, completed=green, pending=surface)
-- **Navigation:** Back/Next buttons, dot indicators, Close button
-- **Responsive:** full-width on mobile, stacked controls, touch-friendly
+- CTA: "Start Research Workflow"
+- 4-step modal with stepper, Back/Next/Done navigation
+- Each step: select existing, create new (collapsible), verify, expert tab link
+- State carries forward: exportId -> experimentIds -> comparisonId -> readinessId
 
 ---
 
 ## 6. Step 1 — Research Data
 
-- Select from existing dataset exports (list view, click to select)
-- Selected export highlighted with primary border
-- "Open in Expert Tab" link switches to Research Data tab
-- Carries `selectedExportId` forward to Step 2
+- Select existing dataset exports from list
+- **Create new export:** name, dates, format, features/targets/warnings checkboxes, research acknowledgement. Uses `createFinrlxDatasetExport` API. Shows row count/checksum on success.
+- **Verify selected export:** calls `verifyFinrlxDatasetExport`. Shows artifact_exists/warnings.
+- "Open in Expert Tab" link
 
 ---
 
 ## 7. Step 2 — Experiment
 
-- Multi-select from existing experiments (toggle selection)
-- Create new experiment linked to `selectedExportId`
-- Requires research acknowledgement
-- Calls `createFinrlxResearchExperiment` API
-- Carries `selectedExperimentIds` forward to Step 3
-- Warning shown if fewer than 2 experiments selected
+- Multi-select existing experiments
+- **Create experiment:** linked to selected export. Uses `createFinrlxResearchExperiment` API.
+- **Import metadata-only results:** select experiment, result summary, result metrics JSON, acknowledgement. Uses `importFinrlxResearchExperimentResults` API. JSON parse errors shown inline.
+- **Verify experiment:** calls `verifyFinrlxResearchExperiment`. Shows health/warnings.
+- Guidance: "Need at least 2 experiments for comparison"
 
 ---
 
 ## 8. Step 3 — Comparison
 
-- Select existing comparison or create new from selected experiments
-- Requires at least 2 experiment IDs
-- Requires research acknowledgement
-- Calls `createFinrlxExperimentComparison` API
-- Shows "numeric metric sorting only — does not imply production suitability"
-- Carries `selectedComparisonId` forward to Step 4
+- Select existing comparisons (shows experiment count, metric count, warnings)
+- **Create comparison:** from selected experiments. Uses `createFinrlxExperimentComparison` API.
+- **Verify comparison:** calls `verifyFinrlxExperimentComparison`. Shows health/warnings.
+- "Numeric metric sorting only — does not imply production suitability"
 
 ---
 
 ## 9. Step 4 — Readiness Review
 
-- Select existing readiness review or create new from selected comparison
-- Requires research acknowledgement
-- Calls `createFinrlxResearchReadiness` API
-- Shows suggested readiness state on creation
-- Clear text: "Research review ready does not mean production-ready"
-- "Open in Expert Tab" for detailed checklist/findings/state management
+- Select existing readiness reviews
+- **Create readiness review:** linked to comparison. Uses `createFinrlxResearchReadiness` API. Shows suggested state.
+- **Update readiness state:** state selector, reason, acknowledgement. Uses `updateFinrlxResearchReadinessState` API. Backend gates enforced — shows rejection if checklist incomplete.
+- **Verify readiness:** calls `verifyFinrlxResearchReadiness`. Shows findings/warnings.
+- "Research review ready does not mean production-ready."
 
 ---
 
 ## 10. State Management
 
-Local component state within admin/page.tsx:
-- `wizardOpen`, `wizardStep` — modal visibility and step
-- `wzExportId`, `wzExpIds`, `wzCmpId`, `wzRdId` — selected/created IDs
-- `wzLoading`, `wzError`, `wzSuccess` — action feedback
-- Step-local form state for creation forms
-- Not persisted across page reloads (intentional for this phase)
+Local React state: wizardOpen, wizardStep, wzExportId, wzExpIds, wzCmpId, wzRdId, wzLoading, wzError, wzSuccess, wzVerifyResult, plus step-local form state for each creation/import/state-update panel.
 
 ---
 
 ## 11. API Orchestration
 
-The wizard calls only existing accepted APIs:
-- `createFinrlxResearchExperiment`
-- `createFinrlxExperimentComparison`
-- `createFinrlxResearchReadiness`
-
-All backend acknowledgement gates, sanitizers, and safety flags remain enforced. The wizard passes `research_acknowledgement: true` only when the operator checks the required checkbox.
+All calls go to existing accepted APIs. No new endpoints. No backend changes. Acknowledgement checkboxes required before every API call.
 
 ---
 
 ## 12. Safety and Isolation
 
-| Property | Status |
-|----------|--------|
-| No new backend endpoints | Confirmed |
-| No backend modifications | Confirmed |
-| Acknowledgement gates preserved | Confirmed |
-| Backend sanitizers active | Confirmed |
-| No production influence | Confirmed |
-| No /rl/execute | Confirmed (404) |
-| No unsafe language | Confirmed (grep clean) |
+No new backend endpoints. No backend modifications. All acknowledgement gates preserved. Backend sanitizers remain active. No production influence. No /rl/execute.
 
 ---
 
-## 13-15. Acknowledgement / Sanitization / Read-Only Preservation
+## 13. Acknowledgement Preservation
 
-All preserved. The wizard is a pure UI orchestration layer that calls existing APIs. Backend is the source of truth for all safety checks.
-
----
-
-## 16. Responsive/Mobile Considerations
-
-- Modal uses `max-w-[700px]` but `w-full` with padding
-- Controls stack with `flex-wrap`
-- Scrollable content areas with `max-h` + `overflow-y-auto`
-- Long IDs use `font-mono` + `truncate` + `break-all` where needed
-- Touch-friendly button/checkbox sizes
+Every creation/import/state-update action requires an explicit acknowledgement checkbox. The wizard passes `research_acknowledgement: true` or `acknowledgement: true` only when checked.
 
 ---
 
-## 17. Existing Admin Tab Preservation
+## 14. Sanitization Preservation
 
-All 5 tabs remain: Research Data, Experiments, Comparisons, Readiness, Safety/Ops. The wizard opens as a modal overlay — tabs are visible when wizard is closed. "Open in Expert Tab" closes wizard and activates the relevant tab.
+Backend remains the source of truth. Wizard shows backend warnings if fields were redacted/dropped.
 
 ---
 
-## 18. Tests/Checks Run
+## 15. Read-Only Verification
 
-- Backend targeted: **177 passed** (no changes, regression only)
-- Full Phase 8 regression: **263 passed**
+All verify buttons call existing read-only endpoints. Displayed inline in wizard.
+
+---
+
+## 16. Responsive/Mobile
+
+Modal: `max-w-[700px] w-full`, scrollable `max-h-[90vh]`. Collapsible `<details>` panels. Flex-wrap controls. Touch-friendly checkboxes/buttons.
+
+---
+
+## 17. Expert Tab Preservation
+
+All 5 tabs remain. "Open in Expert Tab" on every wizard step closes wizard and activates relevant tab.
+
+---
+
+## 18. Tests/Checks
+
+- Backend targeted: **180 passed** (no changes)
+- Full Phase 8 regression: **266 passed**
 - Frontend build: **SUCCESS**
 - Frontend typecheck: **SUCCESS**
 - Frontend lint: **SUCCESS**
@@ -166,20 +142,20 @@ All 5 tabs remain: Research Data, Experiments, Comparisons, Readiness, Safety/Op
 
 ## 19. Unsafe Language Grep
 
-No matches for: buy, sell, trade now, execute trade, live signal, best investment, production alpha, deploy policy.
+No matches.
 
 ---
 
 ## 20. Known Limitations
 
-1. Wizard state not persisted across page reloads
-2. No inline result import in wizard (available in Expert Tab)
-3. No inline verify in wizard (available in Expert Tab)
-4. No inline state update in wizard readiness step (available in Expert Tab)
-5. Step navigation allows free movement (does not enforce strict linear flow)
+1. Wizard state not persisted across reloads
+2. Step navigation allows free movement
+3. No inline comparison detail view (metric tables) — use Expert Tab
+4. No inline readiness checklist editing — use Expert Tab
+5. JSON parse errors for metrics shown inline but not auto-corrected
 
 ---
 
 ## 21. Stop/Go
 
-**GO** — Phase 8M.2 is complete. Wizard adds guided UX without breaking expert mode or backend safety.
+**GO** — Phase 8M.2 wizard is complete with all requested features.
