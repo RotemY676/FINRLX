@@ -1,22 +1,20 @@
-=== Phase 8M.2-fix Local Verification Evidence ===
+=== Phase 8M.2-fix2 Local Verification Evidence ===
 
 Date: 2026-04-29
-Fix: Complete wizard — inline create, import, verify, state update
+Fix: Result warnings/limitations + readiness checklist in wizard
 
 === git diff --name-only ===
 frontend/src/app/admin/page.tsx
 DOCS/handoff/PHASE_8M2_GUIDED_RESEARCH_WORKFLOW_WIZARD_REPORT.md
 DOCS/handoff/PHASE_8M2_LOCAL_VERIFICATION_EVIDENCE.txt
 
-=== Wizard completion summary ===
-Step 1: Added create dataset export (name, dates, format, features/targets/warnings, ack)
-Step 1: Added verify selected export (artifact_exists, warnings)
-Step 2: Added metadata-only result import (summary, metrics JSON, ack)
-Step 2: Added verify experiment
-Step 3: Added verify comparison + metric/warning display
-Step 4: Added readiness state update (selector, reason, ack)
-Step 4: Added verify readiness
-All steps: "Open in Expert Tab" preserved
+=== Changes ===
+Step 2: Added warnings/limitations textareas (newline-separated) to result import.
+  Passed as string arrays in importFinrlxResearchExperimentResults call.
+Step 4: Added checklist checkboxes (metric_coverage_reviewed, missing_metrics_reviewed,
+  warnings_reviewed, limitations_reviewed, safety_flags_confirmed) to readiness creation.
+  Passed as checklist object in createFinrlxResearchReadiness call.
+Step 4: Added gate guidance text when research_review_ready selected in state update.
 
 === Backend targeted test result ===
 Total: 180 passed, 0 failed (no backend changes)
@@ -24,36 +22,11 @@ Total: 180 passed, 0 failed (no backend changes)
 === Phase 8 regression test result ===
 Total: 266 passed, 0 failed
 
-=== Frontend build result ===
-npm run build: SUCCESS
+=== Frontend build: SUCCESS
+=== Frontend typecheck: SUCCESS (no errors)
+=== Frontend lint: SUCCESS (no warnings)
+=== Unsafe language grep: No matches (PASS)
 
-=== Frontend typecheck result ===
-npm run typecheck: SUCCESS (no errors)
-
-=== Frontend lint result ===
-npm run lint: SUCCESS (no warnings or errors)
-
-=== Unsafe language grep result ===
-No matches (PASS)
-
-=== Manual/visual verification from code review ===
-- Wizard opens via CTA
-- Wizard closes via X, Done, Open in Expert Tab
-- Step 1: select/create export, verify export
-- Step 2: select experiments, create experiment, import results, verify
-- Step 3: select/create comparison, verify
-- Step 4: select/create readiness, update state, verify
-- Expert tabs visible and functional when wizard closed
-- Long IDs truncated with slice
-- Mobile: w-full modal, details panels, flex-wrap
-- No backend modifications
-
-=== Design handoff files inspected ===
-- design/handoff-package/HANDOFF.md
-- design/handoff-package/shell.jsx
-- design/handoff-package/icons.jsx
-- design/handoff-package/Decision Workspace.html
-No design files modified.
-
-=== Review package ===
-DOCS/handoff/FINRLX_PHASE_8M2_REVIEW_PACKAGE.zip
+=== Expert tabs preserved: Yes, all 5 tabs functional
+=== No backend modifications: Confirmed
+=== All safety gates preserved: Confirmed

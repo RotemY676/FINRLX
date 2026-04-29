@@ -262,6 +262,15 @@ export default function AdminPage() {
   const [wzRdState, setWzRdState] = useState("draft");
   const [wzRdStateReason, setWzRdStateReason] = useState("");
   const [wzRdStateAck, setWzRdStateAck] = useState(false);
+  // Wizard: Step 2 result warnings/limitations
+  const [wzResWarnings, setWzResWarnings] = useState("");
+  const [wzResLimitations, setWzResLimitations] = useState("");
+  // Wizard: Step 4 readiness checklist
+  const [wzRdMetricCoverageReviewed, setWzRdMetricCoverageReviewed] = useState(false);
+  const [wzRdMissingMetricsReviewed, setWzRdMissingMetricsReviewed] = useState(false);
+  const [wzRdWarningsReviewed, setWzRdWarningsReviewed] = useState(false);
+  const [wzRdLimitationsReviewed, setWzRdLimitationsReviewed] = useState(false);
+  const [wzRdSafetyFlagsConfirmed, setWzRdSafetyFlagsConfirmed] = useState(false);
 
   const selectBenchmark = useCallback(async (b: RLBenchmarkReport) => {
     setSelectedBenchmark(b);
@@ -3432,6 +3441,10 @@ export default function AdminPage() {
                         className="w-full px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink focus:border-primary focus:outline-none" />
                       <textarea value={wzResMetrics} onChange={e => setWzResMetrics(e.target.value)} rows={2} placeholder='{"sharpe_ratio": 1.2, "max_drawdown": -0.05}'
                         className="w-full px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink font-mono focus:border-primary focus:outline-none resize-y" />
+                      <textarea value={wzResWarnings} onChange={e => setWzResWarnings(e.target.value)} rows={1} placeholder="Warnings (one per line, optional)"
+                        className="w-full px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink focus:border-primary focus:outline-none resize-y" />
+                      <textarea value={wzResLimitations} onChange={e => setWzResLimitations(e.target.value)} rows={1} placeholder="Limitations (one per line, optional)"
+                        className="w-full px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink focus:border-primary focus:outline-none resize-y" />
                       <label className="flex items-center gap-1.5 text-[9px] text-ink-2 cursor-pointer">
                         <input type="checkbox" checked={wzResAck} onChange={e => setWzResAck(e.target.checked)} className="rounded" />
                         Metadata-only offline result import (required)
@@ -3440,8 +3453,14 @@ export default function AdminPage() {
                         setWzLoading(true); setWzError(null); setWzSuccess(null);
                         let metrics: Record<string, number | string> = {};
                         try { metrics = JSON.parse(wzResMetrics); } catch { setWzError("Invalid JSON in result metrics."); setWzLoading(false); return; }
+                        const warnLines = wzResWarnings.split("\n").map(s => s.trim()).filter(Boolean);
+                        const limLines = wzResLimitations.split("\n").map(s => s.trim()).filter(Boolean);
                         try {
-                          const res = await importFinrlxResearchExperimentResults(wzResExpId, { acknowledgement: true, result_summary: wzResSum, result_metrics: metrics });
+                          const res = await importFinrlxResearchExperimentResults(wzResExpId, {
+                            acknowledgement: true, result_summary: wzResSum, result_metrics: metrics,
+                            warnings: warnLines.length > 0 ? warnLines : undefined,
+                            limitations: limLines.length > 0 ? limLines : undefined,
+                          });
                           if (res.data) { setWzSuccess("Results imported (metadata-only)."); setWzResAck(false); refreshExperiments(); }
                         } catch (e: unknown) { setWzError(e instanceof Error ? e.message : "Import failed"); } finally { setWzLoading(false); }
                       }} className="px-3 py-1 rounded-md bg-primary text-primary-ink text-[10px] font-medium disabled:opacity-40">
@@ -3583,6 +3602,21 @@ export default function AdminPage() {
                     <div className="p-2 space-y-2">
                       <input type="text" value={wzRdName} onChange={e => setWzRdName(e.target.value)} placeholder="Review name"
                         className="w-full px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink focus:border-primary focus:outline-none" />
+                      <div className="pt-1 space-y-1">
+                        <div className="text-[9px] text-ink-3 font-medium">Evidence Checklist</div>
+                        {([
+                          { key: "mc", label: "Metric coverage reviewed", val: wzRdMetricCoverageReviewed, set: setWzRdMetricCoverageReviewed },
+                          { key: "mm", label: "Missing metrics reviewed", val: wzRdMissingMetricsReviewed, set: setWzRdMissingMetricsReviewed },
+                          { key: "wr", label: "Warnings reviewed", val: wzRdWarningsReviewed, set: setWzRdWarningsReviewed },
+                          { key: "lr", label: "Limitations reviewed", val: wzRdLimitationsReviewed, set: setWzRdLimitationsReviewed },
+                          { key: "sf", label: "Safety flags confirmed", val: wzRdSafetyFlagsConfirmed, set: setWzRdSafetyFlagsConfirmed },
+                        ] as const).map(item => (
+                          <label key={item.key} className="flex items-center gap-1.5 text-[9px] text-ink-2 cursor-pointer">
+                            <input type="checkbox" checked={item.val} onChange={e => item.set(e.target.checked)} className="rounded" />
+                            {item.label}
+                          </label>
+                        ))}
+                      </div>
                       <label className="flex items-center gap-1.5 text-[9px] text-ink-2 cursor-pointer">
                         <input type="checkbox" checked={wzRdAck} onChange={e => setWzRdAck(e.target.checked)} className="rounded" />
                         Research-only readiness review — does not imply production suitability (required)
@@ -3590,7 +3624,16 @@ export default function AdminPage() {
                       <button disabled={wzLoading || !wzRdAck || !wzRdName.trim()} onClick={async () => {
                         setWzLoading(true); setWzError(null); setWzSuccess(null);
                         try {
-                          const res = await createFinrlxResearchReadiness({ name: wzRdName.trim(), linked_comparison_id: wzCmpId, research_acknowledgement: true });
+                          const res = await createFinrlxResearchReadiness({
+                            name: wzRdName.trim(), linked_comparison_id: wzCmpId, research_acknowledgement: true,
+                            checklist: {
+                              metric_coverage_reviewed: wzRdMetricCoverageReviewed,
+                              missing_metrics_reviewed: wzRdMissingMetricsReviewed,
+                              warnings_reviewed: wzRdWarningsReviewed,
+                              limitations_reviewed: wzRdLimitationsReviewed,
+                              safety_flags_confirmed: wzRdSafetyFlagsConfirmed,
+                            },
+                          });
                           if (res.data?.readiness_id) { setWzRdId(res.data.readiness_id); setWzSuccess(`Readiness ${res.data.readiness_id.slice(0, 8)} created. Suggested: ${res.data.suggested_readiness_state?.replace(/_/g, " ")}`); setWzRdAck(false); refreshReadiness(); }
                         } catch (e: unknown) { setWzError(e instanceof Error ? e.message : "Failed"); } finally { setWzLoading(false); }
                       }} className="px-3 py-1 rounded-md bg-primary text-primary-ink text-[10px] font-medium disabled:opacity-40">
@@ -3606,6 +3649,9 @@ export default function AdminPage() {
                     <summary className="text-[10px] text-ink-3 font-medium cursor-pointer px-2 py-1.5 hover:bg-surface-2 rounded-md">Update readiness state</summary>
                     <div className="p-2 space-y-2">
                       <p className="text-[9px] text-ink-4">Research review ready does not mean production-ready.</p>
+                      {wzRdState === "research_review_ready" && (
+                        <p className="text-[9px] text-caution">Backend gates require: reviewed warnings, reviewed limitations, confirmed safety flags, and no blocking findings.</p>
+                      )}
                       <div className="flex flex-wrap gap-2">
                         <select value={wzRdState} onChange={e => setWzRdState(e.target.value)}
                           className="px-2 py-1 rounded-md border border-line bg-surface text-[10px] text-ink focus:border-primary focus:outline-none">
