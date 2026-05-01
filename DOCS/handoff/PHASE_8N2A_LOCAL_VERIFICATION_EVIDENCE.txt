@@ -1,0 +1,55 @@
+Phase 8N.2A — Local Verification Evidence
+==========================================
+Date: 2026-05-01
+Platform: Windows 11 Pro
+Python: 3.11
+Node: (project default)
+
+── 1. Phase 8N.2A Targeted Tests ──
+Command: python -m pytest tests/test_phase8n2a_registry_metadata_mirror.py -q
+Result: 12 passed in 1.35s
+
+── 2. Phase 8 Persistence/Research Regression ──
+Command: python -m pytest tests/test_phase8i_dataset_export.py tests/test_phase8i2_dataset_export_governance.py tests/test_phase8j1_experiment_tracking.py tests/test_phase8k1_experiment_comparison.py tests/test_phase8l1_readiness_review.py tests/test_phase8n1_persistence_deployment.py tests/test_phase8n2a_registry_metadata_mirror.py -q
+Note: When run in parallel with full regression, 1 pre-existing PermissionError
+on Windows file locking in test_phase8i2 (shared registry file race condition).
+When run sequentially as part of full regression, all pass.
+
+── 3. Full Phase 8 Regression ──
+Command: python -m pytest tests/test_phase8a_finrlx_research.py tests/test_phase8b_finrlx_safety_hardening.py tests/test_phase8e_artifact_import.py tests/test_phase8f_candidate_benchmark.py tests/test_phase8i_dataset_export.py tests/test_phase8i2_dataset_export_governance.py tests/test_phase8j1_experiment_tracking.py tests/test_phase8k1_experiment_comparison.py tests/test_phase8l1_readiness_review.py tests/test_phase8n1_persistence_deployment.py tests/test_phase8n2a_registry_metadata_mirror.py -q
+Result: 298 passed in 242.67s (0:04:02)
+
+── 4. Frontend Build ──
+Command: npm run build
+Result: PASS — compiled successfully, all routes generated
+
+── 5. Frontend TypeCheck ──
+Command: npx tsc --noEmit
+Result: PASS — no errors
+
+── 6. Frontend Lint ──
+Command: npm run lint
+Result: No ESLint warnings or errors
+
+── 7. Unsafe Wording Grep ──
+Command: Select-String -Path <all edited files + models + migrations> -Pattern "buy","sell","trade now","execute trade","live signal","best investment","production alpha","deploy policy" -SimpleMatch
+Result: One match in pre-existing unmodified file backend\app\models\validation.py:76
+  (code comment "# buy, sell" from Phase 5D). No matches in edited files.
+
+── 8. Self-Audit: Required Assertions Checklist ──
+[x] assert data["dry_run"] is True — line 91
+[x] assert inserted_count == 0 — line 94
+[x] assert updated_count == 0 — line 95
+[x] assert after_count == before_count — line 98
+[x] assert after_second_count == after_first_count — line 214
+[x] assert result["research_only"] is True — line 347
+[x] assert result["offline_only"] is True — line 348
+[x] assert result["no_production_influence"] is True — line 349
+[x] assert result["is_database_backed_artifact_storage"] is False — line 350
+[x] assert result["local_registries_still_operational_source"] is True — line 351
+[x] persistence status mirror.artifact_storage_database_backed is False — line 385
+[x] persistence status mirror.local_registries_still_operational_source is True — line 386
+[x] production flow isolation tested — test_production_flow_isolation
+
+── Classification ──
+PASS
