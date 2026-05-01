@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../../_context/AdminContext";
 import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
+import { ComboBox } from "../ComboBox";
 import {
   createFinrlxExperimentComparison,
   getFinrlxExperimentComparison,
@@ -172,16 +173,26 @@ export function ComparisonPanel() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Comparison name</label>
-              <input type="text" value={cmpName} onChange={(e) => setCmpName(e.target.value)}
-                title="A descriptive name for this comparison. Helps identify it in the registry."
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+              <ComboBox value={cmpName} onChange={setCmpName}
+                title="A descriptive name for this comparison."
+                options={[
+                  { value: "Offline experiment comparison", label: "Offline experiment comparison" },
+                  { value: "Strategy performance comparison", label: "Strategy performance comparison" },
+                  { value: "Model evaluation comparison", label: "Model evaluation comparison" },
+                  { value: "Risk-adjusted metrics comparison", label: "Risk-adjusted metrics comparison" },
+                  { value: "Feature engineering comparison", label: "Feature engineering comparison" },
+                ]} />
             </div>
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Metric priority (comma-separated)</label>
-              <input type="text" value={cmpPriority} onChange={(e) => setCmpPriority(e.target.value)}
-                placeholder="sharpe_ratio, max_drawdown"
-                title="Comma-separated list of metrics to prioritize in ranking. The first metric is most important."
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+              <ComboBox value={cmpPriority} onChange={setCmpPriority}
+                title="Comma-separated list of metrics to prioritize in ranking."
+                options={[
+                  { value: "sharpe_ratio, max_drawdown, total_return", label: "Standard (Sharpe, Drawdown, Return)" },
+                  { value: "sortino_ratio, calmar_ratio, sharpe_ratio", label: "Risk-Adjusted (Sortino, Calmar, Sharpe)" },
+                  { value: "total_return, annualized_return, volatility", label: "Performance (Return, Annual, Vol)" },
+                  { value: "max_drawdown, sharpe_ratio, total_turnover", label: "Risk-First (Drawdown, Sharpe, Turnover)" },
+                ]} />
             </div>
           </div>
 
@@ -225,10 +236,15 @@ export function ComparisonPanel() {
 
           <div>
             <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Notes</label>
-            <input type="text" value={cmpNotes} onChange={(e) => setCmpNotes(e.target.value)}
-              placeholder="Research comparison notes"
-              title="Optional notes about the purpose or context of this comparison."
-              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            <ComboBox value={cmpNotes} onChange={setCmpNotes}
+              title="Optional notes about this comparison."
+              placeholder="Select or type notes..."
+              options={[
+                { value: "Performance comparison across strategies", label: "Performance comparison across strategies" },
+                { value: "Risk assessment of model variants", label: "Risk assessment of model variants" },
+                { value: "Feature engineering impact analysis", label: "Feature engineering impact analysis" },
+                { value: "Baseline vs. experimental comparison", label: "Baseline vs. experimental comparison" },
+              ]} />
           </div>
 
           <div className="rounded-lg border border-line bg-surface-2 p-3">
@@ -368,9 +384,15 @@ export function ComparisonPanel() {
               {cmpSelected.lifecycle_state === "active" && (
                 <div className="pt-2 border-t border-line/30 space-y-2">
                   <div className="text-[10px] text-ink-3 font-medium">Archive Comparison</div>
-                  <input type="text" value={cmpArchiveReason} onChange={(e) => setCmpArchiveReason(e.target.value)}
-                    placeholder="Reason (optional)"
-                    className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <ComboBox value={cmpArchiveReason} onChange={setCmpArchiveReason}
+                    title="Reason for archiving this comparison."
+                    placeholder="Select reason..."
+                    options={[
+                      { value: "Superseded by newer comparison", label: "Superseded by newer comparison" },
+                      { value: "Results inconclusive", label: "Results inconclusive" },
+                      { value: "No longer relevant to current research", label: "No longer relevant to current research" },
+                      { value: "Consolidated into another comparison", label: "Consolidated into another comparison" },
+                    ]} />
                   <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
                     <input type="checkbox" checked={cmpArchiveAck} onChange={(e) => setCmpArchiveAck(e.target.checked)} className="rounded" />
                     <span className="text-ink-3">I acknowledge this archives the comparison (does not delete data or affect experiments)</span>

@@ -6,6 +6,7 @@ import { useAdmin } from "../../_context/AdminContext";
 import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
+import { ComboBox } from "../ComboBox";
 import {
   KPI_TONE,
   STANCE_STYLE,
@@ -534,13 +535,29 @@ export function PublicationQueuePanel() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
             <div title="Where this artifact came from (e.g., admin_ui, jupyter, colab).">
               <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Source</label>
-              <input type="text" value={importSource} onChange={e => { setImportSource(e.target.value); setImportAck(false); setImportAckHash(null); }}
-                className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+              <ComboBox value={importSource} onChange={(v) => { setImportSource(v); setImportAck(false); setImportAckHash(null); }}
+                title="Where this artifact came from."
+                options={[
+                  { value: "admin_ui", label: "Admin UI" },
+                  { value: "jupyter_notebook", label: "Jupyter Notebook" },
+                  { value: "google_colab", label: "Google Colab" },
+                  { value: "python_script", label: "Python Script" },
+                  { value: "api_upload", label: "API Upload" },
+                  { value: "manual_export", label: "Manual Export" },
+                ]} />
             </div>
             <div className="sm:col-span-3" title="Optional notes about this import.">
               <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Notes (optional)</label>
-              <input type="text" value={importNotes} onChange={e => { setImportNotes(e.target.value); setImportAck(false); setImportAckHash(null); }}
-                className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+              <ComboBox value={importNotes} onChange={(v) => { setImportNotes(v); setImportAck(false); setImportAckHash(null); }}
+                title="Optional notes about this import."
+                placeholder="Select or type notes..."
+                options={[
+                  { value: "CPU-only training results", label: "CPU-only training results" },
+                  { value: "GPU-accelerated training results", label: "GPU-accelerated training results" },
+                  { value: "Validation test artifact", label: "Validation test artifact" },
+                  { value: "Feature exploration results", label: "Feature exploration results" },
+                  { value: "Baseline comparison artifact", label: "Baseline comparison artifact" },
+                ]} />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -686,8 +703,14 @@ export function PublicationQueuePanel() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
                     <div>
                       <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Name</label>
-                      <input type="text" value={candBenchName} onChange={e => setCandBenchName(e.target.value)}
-                        className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
+                      <ComboBox value={candBenchName} onChange={setCandBenchName}
+                        title="A descriptive name for this benchmark run."
+                        options={[
+                          { value: "Imported Candidate Offline Benchmark", label: "Imported Candidate Offline Benchmark" },
+                          { value: "Baseline performance validation", label: "Baseline performance validation" },
+                          { value: "Strategy comparison benchmark", label: "Strategy comparison benchmark" },
+                          { value: "Risk-adjusted performance test", label: "Risk-adjusted performance test" },
+                        ]} />
                     </div>
                     <div>
                       <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Start date</label>
@@ -812,8 +835,14 @@ export function PublicationQueuePanel() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div title="A descriptive name for this benchmark run.">
               <label className="text-[11px] text-ink-3 font-medium block mb-1">Benchmark name</label>
-              <input type="text" value={benchRunName} onChange={(e) => setBenchRunName(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+              <ComboBox value={benchRunName} onChange={setBenchRunName}
+                title="A descriptive name for this benchmark run."
+                options={[
+                  { value: "Offline Agent Comparison", label: "Offline Agent Comparison" },
+                  { value: "Baseline Agent Benchmark", label: "Baseline Agent Benchmark" },
+                  { value: "Full Agent Suite Comparison", label: "Full Agent Suite Comparison" },
+                  { value: "Risk-Reward Agent Analysis", label: "Risk-Reward Agent Analysis" },
+                ]} />
             </div>
             <div title="Start of the historical data window for the benchmark.">
               <label className="text-[11px] text-ink-3 font-medium block mb-1">Start date</label>

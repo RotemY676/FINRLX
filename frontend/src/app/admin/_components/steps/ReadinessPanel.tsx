@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../../_context/AdminContext";
 import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
+import { ComboBox } from "../ComboBox";
 import {
   createFinrlxResearchReadiness,
   getFinrlxResearchReadiness,
@@ -184,9 +185,15 @@ export function ReadinessPanel() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Review name</label>
-              <input type="text" value={rdName} onChange={(e) => setRdName(e.target.value)}
+              <ComboBox value={rdName} onChange={setRdName}
                 title="A descriptive name for this readiness review."
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                options={[
+                  { value: "Research readiness review", label: "Research readiness review" },
+                  { value: "Pre-publication readiness assessment", label: "Pre-publication readiness assessment" },
+                  { value: "Evidence completeness review", label: "Evidence completeness review" },
+                  { value: "Final validation review", label: "Final validation review" },
+                  { value: "Risk assessment review", label: "Risk assessment review" },
+                ]} />
             </div>
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Linked comparison ID</label>
@@ -207,10 +214,16 @@ export function ReadinessPanel() {
           </div>
           <div>
             <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Operator notes</label>
-            <input type="text" value={rdNotes} onChange={(e) => setRdNotes(e.target.value)}
-              placeholder="Any concerns, observations, or context for this readiness assessment"
-              title="Your observations, concerns, or context for this review."
-              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            <ComboBox value={rdNotes} onChange={setRdNotes}
+              title="Your observations or concerns for this review."
+              placeholder="Select or type notes..."
+              options={[
+                { value: "All evidence gathered — ready for assessment", label: "All evidence gathered — ready for assessment" },
+                { value: "Some metrics missing — needs more experiments", label: "Some metrics missing — needs more experiments" },
+                { value: "Data quality concerns flagged", label: "Data quality concerns flagged" },
+                { value: "Performance meets expectations", label: "Performance meets expectations" },
+                { value: "Risk profile acceptable for research phase", label: "Risk profile acceptable for research phase" },
+              ]} />
           </div>
           <div className="rounded-lg border border-line bg-surface-2 p-3">
             <label className="flex items-start gap-2 text-[11px] text-ink-2 cursor-pointer">
@@ -341,9 +354,16 @@ export function ReadinessPanel() {
                     <option value="research_review_ready">research review ready</option>
                     <option value="archived">archived</option>
                   </select>
-                  <input type="text" value={rdStateReason} onChange={(e) => setRdStateReason(e.target.value)} placeholder="Reason (optional)"
-                    title="Optional explanation for the state change."
-                    className="flex-1 min-w-[120px] px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <ComboBox value={rdStateReason} onChange={setRdStateReason}
+                    title="Reason for this state change."
+                    placeholder="Select reason..."
+                    options={[
+                      { value: "All evidence reviewed and sufficient", label: "All evidence reviewed and sufficient" },
+                      { value: "Blocking findings resolved", label: "Blocking findings resolved" },
+                      { value: "Additional experiments needed", label: "Additional experiments needed" },
+                      { value: "Metrics below acceptable threshold", label: "Metrics below acceptable threshold" },
+                      { value: "Review complete — archiving", label: "Review complete — archiving" },
+                    ]} />
                 </div>
                 <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
                   <input type="checkbox" checked={rdStateAck} onChange={(e) => setRdStateAck(e.target.checked)} className="rounded" />
