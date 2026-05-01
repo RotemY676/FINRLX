@@ -26,7 +26,7 @@ export function ComparisonPanel() {
   // ── Create comparison form ──
   const [cmpName, setCmpName] = useState("Offline experiment comparison");
   const [cmpSelectedExpIds, setCmpSelectedExpIds] = useState<string[]>(pipelineIds.experimentIds.length > 0 ? [...pipelineIds.experimentIds] : []);
-  const [cmpPriority, setCmpPriority] = useState("");
+  const [cmpPriority, setCmpPriority] = useState("sharpe_ratio, max_drawdown, total_return");
   const [cmpNotes, setCmpNotes] = useState("");
   const [cmpAck, setCmpAck] = useState(false);
   const [cmpCreateLoading, setCmpCreateLoading] = useState(false);
@@ -41,6 +41,9 @@ export function ComparisonPanel() {
   const [cmpLoading, setCmpLoading] = useState<string | null>(null);
   const [cmpError, setCmpError] = useState<string | null>(null);
   const [cmpSuccess, setCmpSuccess] = useState<string | null>(null);
+
+  // ── Help popup ──
+  const [showHelp, setShowHelp] = useState(false);
 
   // Toggle experiment selection for multi-select
   const toggleExpId = (expId: string) => {
@@ -139,32 +142,51 @@ export function ComparisonPanel() {
           <h3 className="text-[13px] font-semibold text-ink">Offline Experiment Comparison Workbench</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">research-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">metadata-only comparison</span>
+          <button onClick={() => setShowHelp(true)} className="ml-auto p-1.5 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors" title="Help">
+            <Icon name="info" size={16} />
+          </button>
         </div>
         <p className="text-[10px] text-ink-4 mb-3">
           Compare offline research experiments using imported result metadata. Numeric metric sorting only -- does not imply production suitability. Not eligible for promotion.
         </p>
 
+        {/* Numbered sub-steps guide */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          {[
+            { num: 1, text: "Select at least 2 experiments with imported results to compare." },
+            { num: 2, text: "Set metric priority to control which metrics matter most in the ranking." },
+            { num: 3, text: "Create the comparison and review the ranked metrics and experiment snapshots." },
+          ].map(s => (
+            <div key={s.num} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface-2/60 border border-line/30">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">{s.num}</span>
+              <span className="text-[11px] text-ink-2 leading-relaxed">{s.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Create comparison form */}
         <div className="space-y-2 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Comparison name</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Comparison name</label>
               <input type="text" value={cmpName} onChange={(e) => setCmpName(e.target.value)}
+                title="A descriptive name for this comparison. Helps identify it in the registry."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Metric priority (comma-separated)</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Metric priority (comma-separated)</label>
               <input type="text" value={cmpPriority} onChange={(e) => setCmpPriority(e.target.value)}
                 placeholder="sharpe_ratio, max_drawdown"
+                title="Comma-separated list of metrics to prioritize in ranking. The first metric is most important."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
             </div>
           </div>
 
           {/* Multi-select experiment list */}
           <div>
-            <label className="text-[10px] text-ink-4 block mb-0.5">Experiment IDs (select at least 2)</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Experiment IDs (select at least 2)</label>
             {expList.length > 0 ? (
-              <div className="max-h-[140px] overflow-y-auto border border-line rounded-md bg-surface">
+              <div className="max-h-[140px] overflow-y-auto border border-line rounded-md bg-surface" title="Select experiments to include in this comparison. Need at least 2 with imported results.">
                 {expList.map((exp) => (
                   <label key={exp.experiment_id}
                     className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] cursor-pointer border-b border-line/30 last:border-b-0 transition-colors ${
@@ -199,9 +221,10 @@ export function ComparisonPanel() {
           </div>
 
           <div>
-            <label className="text-[10px] text-ink-4 block mb-0.5">Notes</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Notes</label>
             <input type="text" value={cmpNotes} onChange={(e) => setCmpNotes(e.target.value)}
               placeholder="Research comparison notes"
+              title="Optional notes about the purpose or context of this comparison."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
           </div>
 
@@ -358,6 +381,52 @@ export function ComparisonPanel() {
             </motion.div>
           </div>
         )}
+
+        {/* Help modal */}
+        <AnimatePresence>
+          {showHelp && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowHelp(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-surface border border-line rounded-xl shadow-xl max-w-lg w-full mx-4 p-5 max-h-[80vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[14px] font-semibold text-ink">Comparison Help</h3>
+                  <button onClick={() => setShowHelp(false)} className="p-1 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors">
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+                <div className="space-y-3 text-[12px] text-ink-2 leading-relaxed">
+                  <p><strong className="text-ink">What is this screen?</strong></p>
+                  <p>The Comparison panel lets you compare multiple research experiments side-by-side using their imported result metrics. The system ranks experiments by each metric to help identify the strongest candidates.</p>
+                  <p><strong className="text-ink">Steps:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1.5">
+                    <li><strong>Select Experiments</strong> — Choose at least 2 experiments with imported results. Experiments without results cannot be compared.</li>
+                    <li><strong>Set Metric Priority</strong> — List the metrics that matter most, comma-separated. The first metric is the primary sort key.</li>
+                    <li><strong>Create Comparison</strong> — The system creates snapshot copies of each experiment's metrics for fair comparison.</li>
+                    <li><strong>Review Rankings</strong> — Metrics are sorted in descending order (highest is best, except drawdown where lowest is best).</li>
+                    <li><strong>Verify</strong> — Use the verify button to check that all linked experiments and their data sources are intact.</li>
+                  </ol>
+                  <p><strong className="text-ink">Field Reference:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>Ranked metrics</strong> — Numeric values sorted descending. The top-ranked experiment ID appears first.</li>
+                    <li><strong>Experiment snapshots</strong> — Frozen copies of each experiment's state at comparison time.</li>
+                    <li><strong>Lifecycle state</strong> — "active" means in use; "archived" means no longer relevant.</li>
+                  </ul>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </GlassCard>
     </AnimatePresence>
   );

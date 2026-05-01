@@ -46,6 +46,9 @@ export function ReadinessPanel() {
   const [rdError, setRdError] = useState<string | null>(null);
   const [rdSuccess, setRdSuccess] = useState<string | null>(null);
 
+  // ── Help popup ──
+  const [showHelp, setShowHelp] = useState(false);
+
   // Effective comparison ID: use local or fall back to pipeline context
   const effectiveCmpId = rdCmpId || pipelineIds.comparisonId;
 
@@ -154,24 +157,43 @@ export function ReadinessPanel() {
           <h3 className="text-[13px] font-semibold text-ink">Research Readiness Review</h3>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">research-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">does not imply production suitability</span>
+          <button onClick={() => setShowHelp(true)} className="ml-auto p-1.5 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors" title="Help">
+            <Icon name="info" size={16} />
+          </button>
         </div>
         <p className="text-[10px] text-ink-4 mb-3">
           Assess whether a research package has enough evidence for deeper research review. Not used by production decisions.
         </p>
 
+        {/* Numbered sub-steps guide */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          {[
+            { num: 1, text: "Select a comparison to evaluate for research readiness." },
+            { num: 2, text: "Create a readiness review — the system will auto-generate an evidence checklist." },
+            { num: 3, text: "Review findings, update the readiness state, and verify the linked data chain." },
+          ].map(s => (
+            <div key={s.num} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface-2/60 border border-line/30">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">{s.num}</span>
+              <span className="text-[11px] text-ink-2 leading-relaxed">{s.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Create readiness form */}
         <div className="space-y-2 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Review name</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Review name</label>
               <input type="text" value={rdName} onChange={(e) => setRdName(e.target.value)}
+                title="A descriptive name for this readiness review."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Linked comparison ID</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Linked comparison ID</label>
               <select
                 value={effectiveCmpId}
                 onChange={(e) => setRdCmpId(e.target.value)}
+                title="The comparison this review evaluates. Auto-populated from the pipeline."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink font-mono focus:border-primary focus:outline-none"
               >
                 <option value="">Select a comparison...</option>
@@ -184,8 +206,10 @@ export function ReadinessPanel() {
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-0.5">Operator notes</label>
-            <input type="text" value={rdNotes} onChange={(e) => setRdNotes(e.target.value)} placeholder="Research review notes"
+            <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Operator notes</label>
+            <input type="text" value={rdNotes} onChange={(e) => setRdNotes(e.target.value)}
+              placeholder="Any concerns, observations, or context for this readiness assessment"
+              title="Your observations, concerns, or context for this review."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div className="rounded-lg border border-line bg-surface-2 p-3">
@@ -310,6 +334,7 @@ export function ReadinessPanel() {
                 <div className="text-[10px] text-ink-3 font-medium">Update Readiness State</div>
                 <div className="flex flex-wrap gap-2 items-end">
                   <select value={rdStateValue} onChange={(e) => setRdStateValue(e.target.value as ReadinessState)}
+                    title="The current readiness state. 'research_review_ready' means sufficient evidence for deeper review."
                     className="px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none">
                     <option value="draft">draft</option>
                     <option value="needs_more_evidence">needs more evidence</option>
@@ -317,6 +342,7 @@ export function ReadinessPanel() {
                     <option value="archived">archived</option>
                   </select>
                   <input type="text" value={rdStateReason} onChange={(e) => setRdStateReason(e.target.value)} placeholder="Reason (optional)"
+                    title="Optional explanation for the state change."
                     className="flex-1 min-w-[120px] px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
                 </div>
                 <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
@@ -346,6 +372,54 @@ export function ReadinessPanel() {
             </motion.div>
           </div>
         )}
+
+        {/* Help modal */}
+        <AnimatePresence>
+          {showHelp && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowHelp(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-surface border border-line rounded-xl shadow-xl max-w-lg w-full mx-4 p-5 max-h-[80vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[14px] font-semibold text-ink">Readiness Review Help</h3>
+                  <button onClick={() => setShowHelp(false)} className="p-1 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors">
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+                <div className="space-y-3 text-[12px] text-ink-2 leading-relaxed">
+                  <p><strong className="text-ink">What is this screen?</strong></p>
+                  <p>The Readiness Review panel assesses whether your research package has sufficient evidence for deeper review. It evaluates metric coverage, safety flags, warnings, and limitations.</p>
+                  <p><strong className="text-ink">Steps:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1.5">
+                    <li><strong>Link Comparison</strong> — Select the comparison to evaluate. The system pulls all linked experiments and their metrics.</li>
+                    <li><strong>Create Review</strong> — Generates an evidence checklist and readiness findings automatically.</li>
+                    <li><strong>Review Checklist</strong> — Green dots indicate covered items. Missing coverage is flagged.</li>
+                    <li><strong>Read Findings</strong> — Blocking findings must be resolved. Warnings are advisory. Info is contextual.</li>
+                    <li><strong>Update State</strong> — Move from draft → needs_more_evidence → research_review_ready based on your assessment.</li>
+                    <li><strong>Verify</strong> — Confirms the entire data chain (comparison → experiments → exports) is intact.</li>
+                  </ol>
+                  <p><strong className="text-ink">State Reference:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>draft</strong> — Initial state. Review is in progress.</li>
+                    <li><strong>needs_more_evidence</strong> — Some checks are incomplete or findings are blocking.</li>
+                    <li><strong>research_review_ready</strong> — Sufficient evidence for deeper research review. NOT production-ready.</li>
+                    <li><strong>archived</strong> — Review is no longer relevant.</li>
+                  </ul>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </GlassCard>
     </AnimatePresence>
   );
