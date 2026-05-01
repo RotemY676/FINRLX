@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../../_context/AdminContext";
 import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
+import { ComboBox } from "../ComboBox";
 import {
   createFinrlxResearchExperiment,
   getFinrlxResearchExperiment,
@@ -222,9 +223,15 @@ export function ExperimentPanel() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Experiment name</label>
-              <input type="text" value={expName} onChange={(e) => setExpName(e.target.value)}
+              <ComboBox value={expName} onChange={setExpName}
                 title="A descriptive name for this research experiment."
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                options={[
+                  { value: "Offline research experiment", label: "Offline research experiment" },
+                  { value: "Feature validation experiment", label: "Feature validation experiment" },
+                  { value: "Baseline comparison test", label: "Baseline comparison test" },
+                  { value: "Ablation study", label: "Ablation study" },
+                  { value: "Strategy backtest analysis", label: "Strategy backtest analysis" },
+                ]} />
             </div>
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Linked export ID</label>
@@ -245,17 +252,29 @@ export function ExperimentPanel() {
           </div>
           <div>
             <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Hypothesis</label>
-            <input type="text" value={expHypothesis} onChange={(e) => setExpHypothesis(e.target.value)}
-              placeholder="E.g., 'Momentum signals improve Sharpe ratio by 20%'"
-              title="What you expect to find or test. E.g., 'Momentum signals improve Sharpe ratio by 20%'."
-              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            <ComboBox value={expHypothesis} onChange={setExpHypothesis}
+              title="What you expect to find or test."
+              placeholder="Select or type hypothesis..."
+              options={[
+                { value: "Momentum signals improve risk-adjusted returns", label: "Momentum signals improve risk-adjusted returns" },
+                { value: "Mean reversion captures short-term mispricings", label: "Mean reversion captures short-term mispricings" },
+                { value: "Multi-factor model outperforms single-factor", label: "Multi-factor model outperforms single-factor" },
+                { value: "Feature engineering reduces max drawdown", label: "Feature engineering reduces max drawdown" },
+                { value: "Ensemble methods improve prediction stability", label: "Ensemble methods improve prediction stability" },
+              ]} />
           </div>
           <div>
             <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Method notes</label>
-            <input type="text" value={expMethodNotes} onChange={(e) => setExpMethodNotes(e.target.value)}
-              placeholder="Describe your approach: tools used, model architecture, training setup"
-              title="Describe your approach: tools used, model architecture, training setup."
-              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+            <ComboBox value={expMethodNotes} onChange={setExpMethodNotes}
+              title="Describe your approach: tools, model, configuration."
+              placeholder="Select or describe method..."
+              options={[
+                { value: "Scikit-learn pipeline with cross-validation", label: "Scikit-learn pipeline with cross-validation" },
+                { value: "PyTorch neural network with Adam optimizer", label: "PyTorch neural network with Adam optimizer" },
+                { value: "XGBoost ensemble with hyperparameter tuning", label: "XGBoost ensemble with hyperparameter tuning" },
+                { value: "Statistical analysis (OLS regression)", label: "Statistical analysis (OLS regression)" },
+                { value: "Rule-based strategy with backtesting", label: "Rule-based strategy with backtesting" },
+              ]} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
@@ -266,10 +285,14 @@ export function ExperimentPanel() {
             </div>
             <div>
               <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Expected metrics (comma-separated)</label>
-              <input type="text" value={expMetrics} onChange={(e) => setExpMetrics(e.target.value)}
-                placeholder="sharpe_ratio, max_drawdown, total_return"
-                title="Comma-separated list of metrics you plan to track. E.g., sharpe_ratio, max_drawdown"
-                className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+              <ComboBox value={expMetrics} onChange={setExpMetrics}
+                title="Comma-separated list of metrics to track."
+                options={[
+                  { value: "sharpe_ratio, max_drawdown, total_return", label: "Standard (Sharpe, Drawdown, Return)" },
+                  { value: "sharpe_ratio, sortino_ratio, calmar_ratio", label: "Risk-Adjusted (Sharpe, Sortino, Calmar)" },
+                  { value: "sharpe_ratio, max_drawdown, total_return, total_turnover", label: "Full Suite (Sharpe, DD, Return, Turnover)" },
+                  { value: "total_return, annualized_return, volatility", label: "Performance (Return, Annual, Vol)" },
+                ]} />
             </div>
           </div>
 
@@ -398,9 +421,18 @@ export function ExperimentPanel() {
                     <option value="failed">failed</option>
                     <option value="archived">archived</option>
                   </select>
-                  <input type="text" value={expStateReason} onChange={(e) => setExpStateReason(e.target.value)}
-                    placeholder="Reason (optional)"
-                    className="flex-1 min-w-[120px] px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <div className="flex-1 min-w-[120px]">
+                    <ComboBox value={expStateReason} onChange={setExpStateReason}
+                      title="Reason for changing the experiment state."
+                      placeholder="Select reason..."
+                      options={[
+                        { value: "Analysis complete", label: "Analysis complete" },
+                        { value: "Data quality issues", label: "Data quality issues" },
+                        { value: "Moving to comparison phase", label: "Moving to comparison phase" },
+                        { value: "Needs parameter refinement", label: "Needs parameter refinement" },
+                        { value: "Superseded by newer experiment", label: "Superseded by newer experiment" },
+                      ]} />
+                  </div>
                 </div>
                 <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
                   <input type="checkbox" checked={expStateAck} onChange={(e) => setExpStateAck(e.target.checked)} className="rounded" />
@@ -416,9 +448,16 @@ export function ExperimentPanel() {
               <div className="pt-2 border-t border-line/30 space-y-2">
                 <div className="text-[10px] text-ink-3 font-medium">Import Result Metadata</div>
                 <p className="text-[9px] text-ink-4">Metadata-only import -- no executable code, no file uploads. Offline research results only.</p>
-                <input type="text" value={expResultSummary} onChange={(e) => setExpResultSummary(e.target.value)}
-                  placeholder="Result summary (text)"
-                  className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                <ComboBox value={expResultSummary} onChange={setExpResultSummary}
+                  title="Summary of the experiment outcome."
+                  placeholder="Select or type summary..."
+                  options={[
+                    { value: "Hypothesis confirmed — metrics above baseline", label: "Hypothesis confirmed — metrics above baseline" },
+                    { value: "Hypothesis partially confirmed — mixed results", label: "Hypothesis partially confirmed — mixed results" },
+                    { value: "Hypothesis rejected — no improvement over baseline", label: "Hypothesis rejected — no improvement over baseline" },
+                    { value: "Inconclusive — insufficient data or signal", label: "Inconclusive — insufficient data or signal" },
+                    { value: "Promising results — requires further validation", label: "Promising results — requires further validation" },
+                  ]} />
                 <textarea value={expResultMetrics} onChange={(e) => setExpResultMetrics(e.target.value)} rows={2}
                   placeholder='{"sharpe_ratio": 1.23, "max_drawdown": -0.05}'
                   className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink font-mono focus:border-primary focus:outline-none resize-y" />

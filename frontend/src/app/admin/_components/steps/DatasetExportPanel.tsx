@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../../_context/AdminContext";
 import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
+import { ComboBox } from "../ComboBox";
 import {
   createFinrlxDatasetExport,
   listFinrlxDatasetExports,
@@ -185,9 +186,15 @@ export function DatasetExportPanel() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <div className="sm:col-span-3">
             <label className="text-[11px] text-ink-3 font-medium block mb-1">Export name</label>
-            <input type="text" value={dsExportName} onChange={(e) => setDsExportName(e.target.value)}
-              title="A descriptive name for this dataset export. This helps identify it in the registry later."
-              className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
+            <ComboBox value={dsExportName} onChange={setDsExportName}
+              title="A descriptive name for this dataset export."
+              options={[
+                { value: "Local Research Dataset Export", label: "Local Research Dataset Export" },
+                { value: "Benchmark Dataset Export", label: "Benchmark Dataset Export" },
+                { value: "Feature Validation Export", label: "Feature Validation Export" },
+                { value: "Full Universe Snapshot", label: "Full Universe Snapshot" },
+                { value: "Targeted Candidate Export", label: "Targeted Candidate Export" },
+              ]} />
           </div>
           <div>
             <label className="text-[11px] text-ink-3 font-medium block mb-1">Start date</label>
@@ -384,9 +391,16 @@ export function DatasetExportPanel() {
               {dsSelectedExport.lifecycle_state === "active" && (
                 <div className="pt-2 border-t border-line/30 space-y-2">
                   <div className="text-[10px] text-ink-3 font-medium">Mark as Stale</div>
-                  <input type="text" value={dsStaleReason} onChange={(e) => setDsStaleReason(e.target.value)}
-                    placeholder="Reason (optional)"
-                    className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
+                  <ComboBox value={dsStaleReason} onChange={setDsStaleReason}
+                    title="Reason for marking this export as stale."
+                    placeholder="Select reason..."
+                    options={[
+                      { value: "Superseded by newer export", label: "Superseded by newer export" },
+                      { value: "Data quality issues found", label: "Data quality issues found" },
+                      { value: "Feature set changed", label: "Feature set changed" },
+                      { value: "Date range no longer relevant", label: "Date range no longer relevant" },
+                      { value: "Test complete — no longer needed", label: "Test complete — no longer needed" },
+                    ]} />
                   <label className="flex items-center gap-1.5 cursor-pointer text-[10px]">
                     <input type="checkbox" checked={dsStaleAck} onChange={(e) => setDsStaleAck(e.target.checked)} className="rounded" />
                     <span className="text-ink-3">I acknowledge this marks the export as stale (does not delete files)</span>
