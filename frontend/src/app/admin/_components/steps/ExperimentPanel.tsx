@@ -32,7 +32,7 @@ export function ExperimentPanel() {
   const [expHypothesis, setExpHypothesis] = useState("");
   const [expMethodNotes, setExpMethodNotes] = useState("");
   const [expParams, setExpParams] = useState("{}");
-  const [expMetrics, setExpMetrics] = useState("");
+  const [expMetrics, setExpMetrics] = useState("sharpe_ratio, max_drawdown, total_return");
   const [expAck, setExpAck] = useState(false);
   const [expCreateLoading, setExpCreateLoading] = useState(false);
   const [expCreateError, setExpCreateError] = useState<string | null>(null);
@@ -51,6 +51,9 @@ export function ExperimentPanel() {
   const [expError, setExpError] = useState<string | null>(null);
   const [expSuccess, setExpSuccess] = useState<string | null>(null);
   const [expRebuildAck, setExpRebuildAck] = useState(false);
+
+  // ── Help modal state ──
+  const [showHelp, setShowHelp] = useState(false);
 
   // Sync linked export id from context when it changes
   // (auto-populate)
@@ -192,24 +195,43 @@ export function ExperimentPanel() {
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">research-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">offline-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">not eligible for promotion</span>
+          <button onClick={() => setShowHelp(true)} className="ml-auto p-1.5 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors" title="Help">
+            <Icon name="info" size={16} />
+          </button>
         </div>
         <p className="text-[10px] text-ink-4 mb-3">
           Track offline/local research experiments linked to governed dataset exports. Shadow experiment metadata only — not used by production decisions, no broker execution, no automatic training.
         </p>
 
+        {/* Numbered sub-steps guide */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          {[
+            { num: 1, text: "Select a linked dataset export and name your experiment." },
+            { num: 2, text: "Define your hypothesis, method notes, and expected metrics." },
+            { num: 3, text: "Create the experiment, then import result metadata when your offline analysis is complete." },
+          ].map(s => (
+            <div key={s.num} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface-2/60 border border-line/30">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">{s.num}</span>
+              <span className="text-[11px] text-ink-2 leading-relaxed">{s.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Create experiment form */}
         <div className="space-y-2 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Experiment name</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Experiment name</label>
               <input type="text" value={expName} onChange={(e) => setExpName(e.target.value)}
+                title="A descriptive name for this research experiment."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Linked export ID</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Linked export ID</label>
               <select
                 value={effectiveLinkedExportId}
                 onChange={(e) => setExpLinkedExportId(e.target.value)}
+                title="The dataset export this experiment uses as its data source."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink font-mono focus:border-primary focus:outline-none"
               >
                 <option value="">Select a dataset export...</option>
@@ -222,27 +244,31 @@ export function ExperimentPanel() {
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-0.5">Hypothesis</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Hypothesis</label>
             <input type="text" value={expHypothesis} onChange={(e) => setExpHypothesis(e.target.value)}
-              placeholder="What are you testing?"
+              placeholder="E.g., 'Momentum signals improve Sharpe ratio by 20%'"
+              title="What you expect to find or test. E.g., 'Momentum signals improve Sharpe ratio by 20%'."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-0.5">Method notes</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Method notes</label>
             <input type="text" value={expMethodNotes} onChange={(e) => setExpMethodNotes(e.target.value)}
-              placeholder="Approach, tools, configuration notes"
+              placeholder="Describe your approach: tools used, model architecture, training setup"
+              title="Describe your approach: tools used, model architecture, training setup."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Parameters (JSON)</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Parameters (JSON)</label>
               <textarea value={expParams} onChange={(e) => setExpParams(e.target.value)} rows={2}
+                title="Key parameters of your experiment as JSON. E.g., learning rate, window size."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink font-mono focus:border-primary focus:outline-none resize-y" />
             </div>
             <div>
-              <label className="text-[10px] text-ink-4 block mb-0.5">Expected metrics (comma-separated)</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-0.5">Expected metrics (comma-separated)</label>
               <input type="text" value={expMetrics} onChange={(e) => setExpMetrics(e.target.value)}
                 placeholder="sharpe_ratio, max_drawdown, total_return"
+                title="Comma-separated list of metrics you plan to track. E.g., sharpe_ratio, max_drawdown"
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[11px] text-ink focus:border-primary focus:outline-none" />
             </div>
           </div>
@@ -421,6 +447,40 @@ export function ExperimentPanel() {
             {expLoading === "rebuild" ? "Rebuilding..." : "Rebuild Registry"}
           </button>
         </div>
+
+        {/* Help modal */}
+        {showHelp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-sm" onClick={() => setShowHelp(false)}>
+            <div className="glass rounded-xl shadow-xl w-full max-w-[550px] max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-semibold text-ink">Local Research Experiments — Help</h3>
+                <button onClick={() => setShowHelp(false)} className="text-ink-3 hover:text-ink text-[18px] px-2">×</button>
+              </div>
+              <div className="space-y-3 text-[12px] text-ink-2 leading-relaxed">
+                <p><strong className="text-ink">What is this screen?</strong></p>
+                <p>The Experiment panel lets you create and manage offline research experiments. Each experiment is linked to a governed dataset export and tracks your hypothesis, parameters, and results.</p>
+                <p><strong className="text-ink">Steps:</strong></p>
+                <ol className="list-decimal list-inside space-y-1.5">
+                  <li><strong>Link to Export</strong> — Select the dataset export your experiment will use as its data source.</li>
+                  <li><strong>Define Hypothesis</strong> — Describe what you're testing and what you expect to find.</li>
+                  <li><strong>Set Parameters</strong> — Record your experiment configuration as JSON (learning rate, window size, etc.).</li>
+                  <li><strong>Create Experiment</strong> — Creates a metadata record. This does NOT run any training or computation.</li>
+                  <li><strong>Run Locally</strong> — Perform your analysis outside the platform using the exported dataset.</li>
+                  <li><strong>Import Results</strong> — When done, import your metrics (Sharpe ratio, drawdown, etc.) as metadata.</li>
+                  <li><strong>Update State</strong> — Mark as completed, failed, or archived as your research progresses.</li>
+                </ol>
+                <p><strong className="text-ink">Field Reference:</strong></p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Linked export ID</strong> — The dataset this experiment analyzes. Auto-populated from the pipeline.</li>
+                  <li><strong>Hypothesis</strong> — Your research question. E.g., "Adding momentum features improves risk-adjusted returns."</li>
+                  <li><strong>Parameters (JSON)</strong> — Configuration as JSON: {"{"}&#34;learning_rate&#34;: 0.001, &#34;window&#34;: 60{"}"}</li>
+                  <li><strong>Expected metrics</strong> — Metrics you plan to measure, comma-separated.</li>
+                  <li><strong>Lifecycle state</strong> — planned → running_offline → completed/failed → archived.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </GlassCard>
     </AnimatePresence>
   );

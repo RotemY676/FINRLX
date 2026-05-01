@@ -50,6 +50,9 @@ export function DatasetExportPanel() {
   const [dsGovError, setDsGovError] = useState<string | null>(null);
   const [dsGovSuccess, setDsGovSuccess] = useState<string | null>(null);
 
+  // ── Help modal state ──
+  const [showHelp, setShowHelp] = useState(false);
+
   // ── Callbacks ──
   const runDatasetExport = useCallback(async () => {
     if (!dsExportAck) return;
@@ -156,31 +159,52 @@ export function DatasetExportPanel() {
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Research-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">Offline-only</span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">No production influence</span>
+          <button onClick={() => setShowHelp(true)} className="ml-auto p-1.5 rounded-lg hover:bg-surface-2 text-ink-4 hover:text-ink transition-colors" title="Help">
+            <Icon name="info" size={16} />
+          </button>
         </div>
         <p className="text-[10px] text-ink-4 mb-3">
           Export shadow dataset for local offline research. Not used by production decisions. Not eligible for promotion. No broker execution.
         </p>
 
+        {/* Numbered sub-steps guide */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          {[
+            { num: 1, text: "Fill in the export name, date range, and format. Choose which data to include." },
+            { num: 2, text: "Acknowledge the research-only constraint and click Run Dataset Export." },
+            { num: 3, text: "Review the export result, then use the governance section to verify or manage exports." },
+          ].map(s => (
+            <div key={s.num} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface-2/60 border border-line/30">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">{s.num}</span>
+              <span className="text-[11px] text-ink-2 leading-relaxed">{s.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Export form */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <div className="sm:col-span-3">
-            <label className="text-[10px] text-ink-4 block mb-1">Export name</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-1">Export name</label>
             <input type="text" value={dsExportName} onChange={(e) => setDsExportName(e.target.value)}
+              title="A descriptive name for this dataset export. This helps identify it in the registry later."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-1">Start date</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-1">Start date</label>
             <input type="date" value={dsExportStart} onChange={(e) => setDsExportStart(e.target.value)}
+              title="The start of the date range for market data to include in the export."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-1">End date</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-1">End date</label>
             <input type="date" value={dsExportEnd} onChange={(e) => setDsExportEnd(e.target.value)}
+              title="The end of the date range. Must be after start date."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
           </div>
           <div>
-            <label className="text-[10px] text-ink-4 block mb-1">Format</label>
+            <label className="text-[11px] text-ink-3 font-medium block mb-1">Format</label>
             <select value={dsExportFormat} onChange={(e) => setDsExportFormat(e.target.value as "jsonl" | "json")}
+              title="JSONL is recommended for large datasets. JSON is better for small, human-readable exports."
               className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none">
               <option value="jsonl">JSONL</option>
               <option value="json">JSON</option>
@@ -188,15 +212,17 @@ export function DatasetExportPanel() {
           </div>
           <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-ink-4 block mb-1">Candidate ID (optional)</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-1">Candidate ID (optional)</label>
               <input type="text" value={dsExportCandidateId} onChange={(e) => setDsExportCandidateId(e.target.value)}
                 placeholder="Leave empty for general export"
+                title="Optional. Link this export to a specific research candidate for targeted analysis."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label className="text-[10px] text-ink-4 block mb-1">Benchmark report ID (optional)</label>
+              <label className="text-[11px] text-ink-3 font-medium block mb-1">Benchmark report ID (optional)</label>
               <input type="text" value={dsExportBenchmarkId} onChange={(e) => setDsExportBenchmarkId(e.target.value)}
                 placeholder="Leave empty"
+                title="Optional. Link this export to a benchmark report for comparative analysis."
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
             </div>
           </div>
@@ -205,15 +231,18 @@ export function DatasetExportPanel() {
         {/* Checkboxes */}
         <div className="flex flex-wrap gap-4 mb-3 text-[11px]">
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" checked={dsExportFeatures} onChange={(e) => setDsExportFeatures(e.target.checked)} className="rounded" />
+            <input type="checkbox" checked={dsExportFeatures} onChange={(e) => setDsExportFeatures(e.target.checked)} className="rounded"
+              title="Include computed features (momentum, volatility, etc.) in the export." />
             <span className="text-ink-2">Include features</span>
           </label>
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" checked={dsExportTargets} onChange={(e) => setDsExportTargets(e.target.checked)} className="rounded" />
+            <input type="checkbox" checked={dsExportTargets} onChange={(e) => setDsExportTargets(e.target.checked)} className="rounded"
+              title="Include target variables (forward returns) in the export." />
             <span className="text-ink-2">Include targets</span>
           </label>
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" checked={dsExportWarnings} onChange={(e) => setDsExportWarnings(e.target.checked)} className="rounded" />
+            <input type="checkbox" checked={dsExportWarnings} onChange={(e) => setDsExportWarnings(e.target.checked)} className="rounded"
+              title="Include data quality warnings and flags in the export." />
             <span className="text-ink-2">Include warnings</span>
           </label>
         </div>
@@ -384,6 +413,39 @@ export function DatasetExportPanel() {
             </button>
           </div>
         </div>
+
+        {/* Help modal */}
+        {showHelp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-sm" onClick={() => setShowHelp(false)}>
+            <div className="glass rounded-xl shadow-xl w-full max-w-[550px] max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-semibold text-ink">Dataset Export for Local Research — Help</h3>
+                <button onClick={() => setShowHelp(false)} className="text-ink-3 hover:text-ink text-[18px] px-2">×</button>
+              </div>
+              <div className="space-y-3 text-[12px] text-ink-2 leading-relaxed">
+                <p><strong className="text-ink">What is this screen?</strong></p>
+                <p>The Dataset Export panel lets you create governed, offline-only dataset exports for local research. These exports package market data, features, and targets into a downloadable format for analysis.</p>
+                <p><strong className="text-ink">Steps:</strong></p>
+                <ol className="list-decimal list-inside space-y-1.5">
+                  <li><strong>Name & Date Range</strong> — Give your export a descriptive name and select the time window for market data.</li>
+                  <li><strong>Format</strong> — JSONL (one JSON object per line) is best for large datasets. JSON is for smaller, human-readable exports.</li>
+                  <li><strong>Data Selection</strong> — Choose whether to include computed features (e.g., momentum, volatility), target variables (forward returns), and data quality warnings.</li>
+                  <li><strong>Optional Links</strong> — Optionally link to a specific candidate or benchmark for targeted exports.</li>
+                  <li><strong>Acknowledge & Run</strong> — Confirm the research-only constraint and create the export.</li>
+                  <li><strong>Governance</strong> — After creation, use the registry to verify artifact integrity, mark exports as stale, or rebuild the registry.</li>
+                </ol>
+                <p><strong className="text-ink">Field Reference:</strong></p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Export name</strong> — Identifies this export in the registry. Use descriptive names.</li>
+                  <li><strong>Row count</strong> — Number of data rows (one per asset per date) in the export.</li>
+                  <li><strong>Checksum</strong> — SHA-256 hash for data integrity verification.</li>
+                  <li><strong>Fingerprint</strong> — Unique identifier derived from export parameters.</li>
+                  <li><strong>Lifecycle state</strong> — "active" means usable; "stale" means superseded or outdated.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </GlassCard>
     </AnimatePresence>
   );
