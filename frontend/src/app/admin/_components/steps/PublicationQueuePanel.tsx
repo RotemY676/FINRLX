@@ -7,6 +7,7 @@ import { GlassCard } from "../GlassCard";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { ComboBox } from "../ComboBox";
+import { ResearchPersistencePanel } from "../ResearchPersistencePanel";
 import {
   KPI_TONE,
   STANCE_STYLE,
@@ -1729,6 +1730,9 @@ export function PublicationQueuePanel() {
               ))}
             </div>
           </GlassCard>
+
+          {/* Research Storage & Deployment Status */}
+          <ResearchPersistencePanel />
         </div>
       </div>
     </AnimatePresence>

@@ -1736,3 +1736,120 @@ export async function verifyFinrlxResearchReadiness(
 ): Promise<ApiResponse<ReadinessVerifyResult>> {
   return apiFetch<ReadinessVerifyResult>(`/api/v1/rl/finrlx/research-readiness/${readinessId}/verify`);
 }
+
+// ── Phase 8N.1 — Persistence Status ──
+
+export interface FinrlxRegistryPersistenceStatus {
+  registry_name: string;
+  registry_kind: string;
+  directory_path: string;
+  registry_file_path: string;
+  directory_exists: boolean;
+  registry_file_exists: boolean;
+  directory_readable: boolean;
+  directory_writable: boolean;
+  registry_file_readable: boolean;
+  registry_file_writable: boolean;
+  item_count: number;
+  status: "ok" | "missing" | "degraded" | "unavailable";
+  warnings: string[];
+}
+
+export interface FinrlxPersistenceStatus {
+  storage_mode: string;
+  storage_root: string;
+  is_local_file_backed: boolean;
+  is_database_backed: boolean;
+  is_persistent_volume_configured: boolean;
+  deployment_environment: string;
+  appears_containerized: boolean;
+  registry_statuses: FinrlxRegistryPersistenceStatus[];
+  warnings: string[];
+  limitations: string[];
+  recommended_next_action: string;
+  research_only: boolean;
+  offline_only: boolean;
+  no_production_influence: boolean;
+}
+
+export async function getFinrlxPersistenceStatus(): Promise<ApiResponse<FinrlxPersistenceStatus>> {
+  return apiFetch<FinrlxPersistenceStatus>("/api/v1/rl/finrlx/persistence/status");
+}
+
+// ── Phase 8N.1 — Persistence Status ──
+
+export interface FinrlxRegistryPersistenceStatus {
+  registry_name: string;
+  registry_kind: string;
+  directory_path: string;
+  registry_file_path: string;
+  directory_exists: boolean;
+  registry_file_exists: boolean;
+  directory_readable: boolean;
+  directory_writable: boolean;
+  registry_file_readable: boolean;
+  registry_file_writable: boolean;
+  item_count: number;
+  status: "ok" | "missing" | "degraded" | "unavailable";
+  warnings: string[];
+}
+
+export interface FinrlxPersistenceStatus {
+  storage_mode: string;
+  storage_root: string;
+  is_local_file_backed: boolean;
+  is_database_backed: boolean;
+  is_persistent_volume_configured: boolean;
+  deployment_environment: string;
+  appears_containerized: boolean;
+  registry_statuses: FinrlxRegistryPersistenceStatus[];
+  warnings: string[];
+  limitations: string[];
+  recommended_next_action: string;
+  research_only: boolean;
+  offline_only: boolean;
+  no_production_influence: boolean;
+}
+
+export async function getFinrlxPersistenceStatus(): Promise<ApiResponse<FinrlxPersistenceStatus>> {
+  return apiFetch<FinrlxPersistenceStatus>("/api/v1/rl/finrlx/persistence/status");
+}
+
+// ── Phase 8N.1 — Persistence Status ──
+
+export interface FinrlxRegistryPersistenceStatus {
+  registry_name: string;
+  registry_kind: string;
+  directory_path: string;
+  registry_file_path: string;
+  directory_exists: boolean;
+  registry_file_exists: boolean;
+  directory_readable: boolean;
+  directory_writable: boolean;
+  registry_file_readable: boolean;
+  registry_file_writable: boolean;
+  item_count: number;
+  status: "ok" | "missing" | "degraded" | "unavailable";
+  warnings: string[];
+}
+
+export interface FinrlxPersistenceStatus {
+  storage_mode: string;
+  storage_root: string;
+  is_local_file_backed: boolean;
+  is_database_backed: boolean;
+  is_persistent_volume_configured: boolean;
+  deployment_environment: string;
+  appears_containerized: boolean;
+  registry_statuses: FinrlxRegistryPersistenceStatus[];
+  warnings: string[];
+  limitations: string[];
+  recommended_next_action: string;
+  research_only: boolean;
+  offline_only: boolean;
+  no_production_influence: boolean;
+}
+
+export async function getFinrlxPersistenceStatus(): Promise<ApiResponse<FinrlxPersistenceStatus>> {
+  return apiFetch<FinrlxPersistenceStatus>("/api/v1/rl/finrlx/persistence/status");
+}
