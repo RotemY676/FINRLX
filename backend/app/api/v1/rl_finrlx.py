@@ -797,3 +797,10 @@ async def rebuild_readiness_registry(
     svc = FinRLXResearchService(db)
     result = svc.rebuild_readiness_registry_from_files()
     return ApiResponse(meta=make_meta(), data=result)
+
+
+@router.get("/rl/finrlx/persistence/status", response_model=ApiResponse)
+async def get_persistence_status(db: AsyncSession = Depends(get_db)):
+    """Research storage persistence and deployment status (read-only)."""
+    result = FinRLXResearchService.get_persistence_status()
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)

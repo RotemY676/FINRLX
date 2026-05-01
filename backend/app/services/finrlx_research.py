@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import uuid
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
 
@@ -3063,6 +3064,245 @@ class FinRLXResearchService:
         registry = self._empty_readiness_registry()
         self.save_readiness_registry(registry)
         return {"rebuilt": True, "review_count": 0, "safety_flags": self.READINESS_SAFETY_FLAGS}
+
+    @staticmethod
+    def get_persistence_status() -> dict:
+        """Inspect all registry directories and files, report persistence and deployment status.
+
+        Read-only probe. Does NOT modify any registry files.
+        Research-only, offline-only, no production influence.
+        """
+        # ── project root (used to sanitize paths) ──
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
+
+        def _rel(abs_path: str) -> str:
+            """Return path relative to project root, forward-slash normalised."""
+            try:
+                return os.path.relpath(abs_path, project_root).replace("\\", "/")
+            except ValueError:
+                return "<outside-project>"
+
+        def _probe_dir_writable(dir_path: str) -> bool:
+            """Write+delete a tiny temp file to confirm dir is writable."""
+            try:
+                probe = os.path.join(dir_path, f".persistence_probe_{uuid.uuid4().hex}.tmp")
+                with open(probe, "w", encoding="utf-8") as f:
+                    f.write("probe")
+                os.remove(probe)
+                return True
+            except Exception:
+                return False
+
+        # ── registry descriptors ──
+        registry_specs = [
+            {
+                "registry_name": "dataset_exports",
+                "registry_kind": "exports",
+                "dir_fn": FinRLXResearchService._exports_dir,
+                "file_fn": FinRLXResearchService._registry_path,
+                "load_fn": FinRLXResearchService.load_dataset_export_registry,
+                "items_key": "exports",
+            },
+            {
+                "registry_name": "experiments",
+                "registry_kind": "experiments",
+                "dir_fn": FinRLXResearchService._experiments_dir,
+                "file_fn": FinRLXResearchService._experiment_registry_path,
+                "load_fn": FinRLXResearchService.load_experiment_registry,
+                "items_key": "experiments",
+            },
+            {
+                "registry_name": "comparisons",
+                "registry_kind": "comparisons",
+                "dir_fn": FinRLXResearchService._comparisons_dir,
+                "file_fn": FinRLXResearchService._comparison_registry_path,
+                "load_fn": FinRLXResearchService.load_comparison_registry,
+                "items_key": "comparisons",
+            },
+            {
+                "registry_name": "readiness_reviews",
+                "registry_kind": "readiness",
+                "dir_fn": FinRLXResearchService._readiness_dir,
+                "file_fn": FinRLXResearchService._readiness_registry_path,
+                "load_fn": FinRLXResearchService.load_readiness_registry,
+                "items_key": "readiness_reviews",
+            },
+        ]
+
+        registry_statuses = []
+        global_warnings: list[str] = []
+
+        for spec in registry_specs:
+            dir_path = spec["dir_fn"]()
+            file_path = spec["file_fn"]()
+            warnings: list[str] = []
+
+            dir_exists = os.path.isdir(dir_path)
+            file_exists = os.path.isfile(file_path)
+
+            # directory readable
+            dir_readable = False
+            if dir_exists:
+                try:
+                    os.listdir(dir_path)
+                    dir_readable = True
+                except Exception:
+                    warnings.append("Directory exists but is not readable.")
+
+            # directory writable
+            dir_writable = False
+            if dir_exists and dir_readable:
+                dir_writable = _probe_dir_writable(dir_path)
+                if not dir_writable:
+                    warnings.append("Directory exists but is not writable.")
+
+            # file readable
+            file_readable = False
+            if file_exists:
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        f.read(1)
+                    file_readable = True
+                except Exception:
+                    warnings.append("Registry file exists but is not readable.")
+
+            # file writable
+            file_writable = False
+            if file_exists:
+                try:
+                    file_writable = os.access(file_path, os.W_OK)
+                except Exception:
+                    pass
+                if not file_writable:
+                    warnings.append("Registry file exists but is not writable.")
+
+            # item count
+            item_count = 0
+            registry_corrupt = False
+            if file_exists and file_readable:
+                try:
+                    reg = spec["load_fn"]()
+                    if reg.get("registry_corrupt"):
+                        registry_corrupt = True
+                        warnings.append("Registry file is corrupt or has invalid structure.")
+                    else:
+                        items = reg.get(spec["items_key"], [])
+                        item_count = len(items) if isinstance(items, list) else 0
+                except Exception:
+                    registry_corrupt = True
+                    warnings.append("Failed to load registry.")
+
+            # status
+            if not dir_exists:
+                status = "missing"
+                warnings.append("Directory does not exist.")
+            elif registry_corrupt:
+                status = "degraded"
+            elif not dir_writable or (file_exists and not file_writable):
+                status = "degraded"
+            elif not file_exists:
+                status = "missing"
+                warnings.append("Registry file does not exist.")
+            else:
+                status = "ok"
+
+            registry_statuses.append({
+                "registry_name": spec["registry_name"],
+                "registry_kind": spec["registry_kind"],
+                "directory_path": _rel(dir_path),
+                "registry_file_path": _rel(file_path),
+                "directory_exists": dir_exists,
+                "registry_file_exists": file_exists,
+                "directory_readable": dir_readable,
+                "directory_writable": dir_writable,
+                "registry_file_readable": file_readable,
+                "registry_file_writable": file_writable,
+                "item_count": item_count,
+                "status": status,
+                "warnings": warnings,
+            })
+
+        # ── environment detection ──
+        railway_env = os.environ.get("RAILWAY_ENVIRONMENT")
+        railway_project = os.environ.get("RAILWAY_PROJECT_ID")
+        railway_service = os.environ.get("RAILWAY_SERVICE_ID")
+        railway_service_name = os.environ.get("RAILWAY_SERVICE_NAME")
+        railway_volume = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
+
+        is_railway = bool(railway_env or railway_project or railway_service or railway_service_name)
+
+        appears_containerized = False
+        try:
+            if os.path.exists("/.dockerenv"):
+                appears_containerized = True
+        except Exception:
+            pass
+        if is_railway:
+            appears_containerized = True
+
+        if is_railway:
+            deployment_environment = "railway"
+        elif appears_containerized:
+            deployment_environment = "container"
+        else:
+            deployment_environment = "local"
+
+        is_persistent_volume = bool(railway_volume)
+
+        if appears_containerized and not is_persistent_volume:
+            global_warnings.append(
+                "Container deployment detected without persistent volume — "
+                "registry data may be lost on redeploy."
+            )
+
+        # aggregate any per-registry warnings into global
+        any_degraded = any(r["status"] == "degraded" for r in registry_statuses)
+        any_missing = any(r["status"] == "missing" for r in registry_statuses)
+        all_ok = all(r["status"] == "ok" for r in registry_statuses)
+
+        if any_degraded:
+            global_warnings.append("One or more registries are in a degraded state.")
+        if any_missing:
+            global_warnings.append("One or more registry directories or files are missing.")
+
+        # recommended next action
+        if all_ok and not appears_containerized:
+            recommended = None
+        elif all_ok and appears_containerized and is_persistent_volume:
+            recommended = None
+        elif all_ok and appears_containerized and not is_persistent_volume:
+            recommended = "Configure a persistent volume to prevent data loss on redeploy."
+        elif any_degraded:
+            recommended = "Investigate degraded registries; check file permissions and disk space."
+        elif any_missing:
+            recommended = "Run the relevant rebuild-registry endpoint to initialise missing registries."
+        else:
+            recommended = None
+
+        storage_root = _rel(os.path.join(project_root, "research", "finrlx_cpu"))
+
+        return {
+            "storage_mode": "local_file_backed",
+            "storage_root": storage_root,
+            "is_local_file_backed": True,
+            "is_database_backed": False,
+            "is_persistent_volume_configured": is_persistent_volume,
+            "deployment_environment": deployment_environment,
+            "appears_containerized": appears_containerized,
+            "registry_statuses": registry_statuses,
+            "warnings": global_warnings,
+            "limitations": [
+                "Registries use local JSON files, not database tables",
+                "State is not replicated across instances",
+                "No automatic backup mechanism",
+            ],
+            "recommended_next_action": recommended,
+            "research_only": True,
+            "offline_only": True,
+            "no_production_influence": True,
+        }
 
     @staticmethod
     def safety_guard(action: str) -> dict:
