@@ -462,7 +462,7 @@ export function ExperimentPanel() {
                 <p><strong className="text-ink">Steps:</strong></p>
                 <ol className="list-decimal list-inside space-y-1.5">
                   <li><strong>Link to Export</strong> — Select the dataset export your experiment will use as its data source.</li>
-                  <li><strong>Define Hypothesis</strong> — Describe what you're testing and what you expect to find.</li>
+                  <li><strong>Define Hypothesis</strong> — Describe what you&apos;re testing and what you expect to find.</li>
                   <li><strong>Set Parameters</strong> — Record your experiment configuration as JSON (learning rate, window size, etc.).</li>
                   <li><strong>Create Experiment</strong> — Creates a metadata record. This does NOT run any training or computation.</li>
                   <li><strong>Run Locally</strong> — Perform your analysis outside the platform using the exported dataset.</li>
@@ -472,7 +472,7 @@ export function ExperimentPanel() {
                 <p><strong className="text-ink">Field Reference:</strong></p>
                 <ul className="list-disc list-inside space-y-1">
                   <li><strong>Linked export ID</strong> — The dataset this experiment analyzes. Auto-populated from the pipeline.</li>
-                  <li><strong>Hypothesis</strong> — Your research question. E.g., "Adding momentum features improves risk-adjusted returns."</li>
+                  <li><strong>Hypothesis</strong> — Your research question. E.g., &quot;Adding momentum features improves risk-adjusted returns.&quot;</li>
                   <li><strong>Parameters (JSON)</strong> — Configuration as JSON: {"{"}&#34;learning_rate&#34;: 0.001, &#34;window&#34;: 60{"}"}</li>
                   <li><strong>Expected metrics</strong> — Metrics you plan to measure, comma-separated.</li>
                   <li><strong>Lifecycle state</strong> — planned → running_offline → completed/failed → archived.</li>

@@ -148,12 +148,9 @@ const RADAR_COLORS = [
 ];
 
 export function ExperimentMetricsChart({ experiments }: ExperimentMetricsChartProps) {
-  if (!experiments || experiments.length === 0) {
-    return <NoData message="No experiments to compare" />;
-  }
-
   /* Collect all metric keys across experiments */
   const metricKeys = useMemo(() => {
+    if (!experiments || experiments.length === 0) return [];
     const keys = new Set<string>();
     experiments.forEach((exp) => {
       Object.keys(exp.metrics).forEach((k) => keys.add(k));
@@ -163,6 +160,9 @@ export function ExperimentMetricsChart({ experiments }: ExperimentMetricsChartPr
 
   /* Normalize metrics to 0-1 range for radar */
   const { data, ranges } = useMemo(() => {
+    if (!experiments || experiments.length === 0 || metricKeys.length === 0) {
+      return { data: [], ranges: { mins: {}, maxs: {} } };
+    }
     const mins: Record<string, number> = {};
     const maxs: Record<string, number> = {};
 
@@ -185,6 +185,10 @@ export function ExperimentMetricsChart({ experiments }: ExperimentMetricsChartPr
 
     return { data: rows, ranges: { mins, maxs } };
   }, [experiments, metricKeys]);
+
+  if (!experiments || experiments.length === 0) {
+    return <NoData message="No experiments to compare" />;
+  }
 
   if (metricKeys.length === 0) {
     return <NoData message="No metrics available" />;

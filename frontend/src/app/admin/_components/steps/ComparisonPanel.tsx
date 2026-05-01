@@ -412,15 +412,15 @@ export function ComparisonPanel() {
                   <ol className="list-decimal list-inside space-y-1.5">
                     <li><strong>Select Experiments</strong> — Choose at least 2 experiments with imported results. Experiments without results cannot be compared.</li>
                     <li><strong>Set Metric Priority</strong> — List the metrics that matter most, comma-separated. The first metric is the primary sort key.</li>
-                    <li><strong>Create Comparison</strong> — The system creates snapshot copies of each experiment's metrics for fair comparison.</li>
+                    <li><strong>Create Comparison</strong> — The system creates snapshot copies of each experiment&apos;s metrics for fair comparison.</li>
                     <li><strong>Review Rankings</strong> — Metrics are sorted in descending order (highest is best, except drawdown where lowest is best).</li>
                     <li><strong>Verify</strong> — Use the verify button to check that all linked experiments and their data sources are intact.</li>
                   </ol>
                   <p><strong className="text-ink">Field Reference:</strong></p>
                   <ul className="list-disc list-inside space-y-1">
                     <li><strong>Ranked metrics</strong> — Numeric values sorted descending. The top-ranked experiment ID appears first.</li>
-                    <li><strong>Experiment snapshots</strong> — Frozen copies of each experiment's state at comparison time.</li>
-                    <li><strong>Lifecycle state</strong> — "active" means in use; "archived" means no longer relevant.</li>
+                    <li><strong>Experiment snapshots</strong> — Frozen copies of each experiment&apos;s state at comparison time.</li>
+                    <li><strong>Lifecycle state</strong> — &quot;active&quot; means in use; &quot;archived&quot; means no longer relevant.</li>
                   </ul>
                 </div>
               </motion.div>

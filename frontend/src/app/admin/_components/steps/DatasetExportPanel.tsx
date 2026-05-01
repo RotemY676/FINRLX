@@ -440,7 +440,7 @@ export function DatasetExportPanel() {
                   <li><strong>Row count</strong> — Number of data rows (one per asset per date) in the export.</li>
                   <li><strong>Checksum</strong> — SHA-256 hash for data integrity verification.</li>
                   <li><strong>Fingerprint</strong> — Unique identifier derived from export parameters.</li>
-                  <li><strong>Lifecycle state</strong> — "active" means usable; "stale" means superseded or outdated.</li>
+                  <li><strong>Lifecycle state</strong> — &quot;active&quot; means usable; &quot;stale&quot; means superseded or outdated.</li>
                 </ul>
               </div>
             </div>
