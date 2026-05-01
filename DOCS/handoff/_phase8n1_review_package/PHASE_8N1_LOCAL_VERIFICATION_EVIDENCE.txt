@@ -1,0 +1,35 @@
+Phase 8N.1A — Local Verification Evidence
+==========================================
+Date: 2026-05-01
+Platform: Windows 11 Pro
+Python: 3.11
+Node: (project default)
+
+── 1. Phase 8N.1 Targeted Tests ──
+Command: python -m pytest tests/test_phase8n1_persistence_deployment.py -q
+Result: 14 passed in 1.00s
+
+── 2. Full Phase 8 Regression ──
+Command: python -m pytest tests/test_phase8a_finrlx_research.py tests/test_phase8b_finrlx_safety_hardening.py tests/test_phase8e_artifact_import.py tests/test_phase8f_candidate_benchmark.py tests/test_phase8i_dataset_export.py tests/test_phase8i2_dataset_export_governance.py tests/test_phase8j1_experiment_tracking.py tests/test_phase8k1_experiment_comparison.py tests/test_phase8l1_readiness_review.py tests/test_phase8n1_persistence_deployment.py -q
+Result: 280 passed in 284.50s (0:04:44)
+
+── 3. Frontend Build ──
+Command: npm run build
+Result: PASS — compiled successfully, all routes generated
+
+── 4. Frontend TypeCheck ──
+Command: npx tsc --noEmit
+Result: PASS — no errors
+
+── 5. Unsafe Wording Grep ──
+Command: Select-String -Path frontend\src\app\admin\page.tsx,frontend\src\app\admin\_components\*.tsx,frontend\src\app\admin\_components\steps\*.tsx,frontend\src\app\admin\_components\wizard\*.tsx,frontend\src\app\admin\_context\*.tsx,frontend\src\services\api.ts,backend\app\api\v1\rl_finrlx.py,backend\app\services\finrlx_research.py -Pattern "buy","sell","trade now","execute trade","live signal","best investment","production alpha","deploy policy" -SimpleMatch
+Result: No matches found.
+
+── 6. Safety Invariant Fields ──
+Endpoint response confirmed:
+  research_only: true
+  offline_only: true
+  no_production_influence: true
+
+── Classification ──
+PASS
