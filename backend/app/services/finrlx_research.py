@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
@@ -3343,6 +3344,368 @@ class FinRLXResearchService:
                 "No automatic backup mechanism",
             ],
             "recommended_next_action": recommended,
+            "database_metadata_mirror": {
+                "available": True,
+                "artifact_storage_database_backed": False,
+                "local_registries_still_operational_source": True,
+            },
+            "research_only": True,
+            "offline_only": True,
+            "no_production_influence": True,
+        }
+
+    # ── Phase 8N.2A: Registry Metadata Mirror helpers ─────────────────
+
+    _SECRET_PATTERNS = re.compile(
+        r"(password|token|bearer|api_key|secret|DATABASE_URL|credentials)"
+        r"\s*[=:]\s*\S+",
+        re.IGNORECASE,
+    )
+
+    @staticmethod
+    def _sanitize_mirror_value(val):
+        """Redact potential secrets from a string value."""
+        if val is None:
+            return None
+        s = str(val)
+        return FinRLXResearchService._SECRET_PATTERNS.sub("[REDACTED]", s)
+
+    @staticmethod
+    def build_registry_metadata_mirror_candidates() -> list[dict]:
+        """Build sanitized candidate dicts from all 4 local registries.
+
+        Read-only — does NOT mutate any local registry files.
+        Research-only, offline-only, no production influence.
+        """
+        sanitize = FinRLXResearchService._sanitize_mirror_value
+        candidates: list[dict] = []
+
+        # ── Registry specs: (kind, load_fn, items_key, id_key, path_fn) ──
+        registry_specs = [
+            {
+                "registry_kind": "dataset_export",
+                "load_fn": FinRLXResearchService.load_dataset_export_registry,
+                "items_key": "exports",
+                "id_key": "export_id",
+                "path_fn": FinRLXResearchService._registry_path,
+            },
+            {
+                "registry_kind": "experiment",
+                "load_fn": FinRLXResearchService.load_experiment_registry,
+                "items_key": "experiments",
+                "id_key": "experiment_id",
+                "path_fn": FinRLXResearchService._experiment_registry_path,
+            },
+            {
+                "registry_kind": "comparison",
+                "load_fn": FinRLXResearchService.load_comparison_registry,
+                "items_key": "comparisons",
+                "id_key": "comparison_id",
+                "path_fn": FinRLXResearchService._comparison_registry_path,
+            },
+            {
+                "registry_kind": "readiness_review",
+                "load_fn": FinRLXResearchService.load_readiness_registry,
+                "items_key": "readiness_reviews",
+                "id_key": "readiness_id",
+                "path_fn": FinRLXResearchService._readiness_registry_path,
+            },
+        ]
+
+        for spec in registry_specs:
+            kind = spec["registry_kind"]
+            try:
+                reg = spec["load_fn"]()
+            except Exception:
+                candidates.append({
+                    "registry_kind": kind,
+                    "record_id": "__registry_error__",
+                    "record_hash": None,
+                    "record_state": None,
+                    "display_name": f"[{kind} registry load error]",
+                    "source_registry_path": None,
+                    "artifact_path": None,
+                    "metadata_summary_json": {},
+                    "warnings_json": [f"Failed to load {kind} registry"],
+                    "limitations_json": [],
+                    "mirror_status": "error",
+                })
+                continue
+
+            if reg.get("registry_corrupt"):
+                candidates.append({
+                    "registry_kind": kind,
+                    "record_id": "__registry_corrupt__",
+                    "record_hash": None,
+                    "record_state": None,
+                    "display_name": f"[{kind} registry corrupt]",
+                    "source_registry_path": sanitize(spec["path_fn"]()),
+                    "artifact_path": None,
+                    "metadata_summary_json": {},
+                    "warnings_json": reg.get("warnings", [f"{kind} registry is corrupt"]),
+                    "limitations_json": [],
+                    "mirror_status": "error",
+                })
+                continue
+
+            items = reg.get(spec["items_key"], [])
+            if not isinstance(items, list):
+                continue
+
+            # Sanitized relative source path
+            try:
+                raw_path = spec["path_fn"]()
+                project_root = os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                )
+                source_path = sanitize(os.path.relpath(raw_path, project_root).replace("\\", "/"))
+            except Exception:
+                source_path = None
+
+            for item in items:
+                record_id = str(item.get(spec["id_key"], ""))[:100]
+                if not record_id:
+                    continue
+
+                # Build sanitized metadata summary — only safe fields
+                summary: dict = {}
+                if kind == "dataset_export":
+                    for k in ("row_count", "date_range", "export_format",
+                              "feature_schema", "target_schema"):
+                        if k in item:
+                            summary[k] = item[k]
+                elif kind == "experiment":
+                    for k in ("linked_export_id", "linked_export_row_count",
+                              "linked_export_date_range", "result_metrics"):
+                        if k in item:
+                            summary[k] = item[k]
+                elif kind == "comparison":
+                    for k in ("experiment_count", "metric_priority",
+                              "created_at"):
+                        if k in item:
+                            summary[k] = item[k]
+                    summary["experiment_count"] = len(item.get("experiment_ids", []))
+                elif kind == "readiness_review":
+                    for k in ("linked_comparison_id", "readiness_state",
+                              "checklist_passed", "checklist_total",
+                              "created_at"):
+                        if k in item:
+                            summary[k] = item[k]
+
+                # record_hash: fingerprint or checksum
+                record_hash = item.get("fingerprint") or item.get("checksum") or None
+                if record_hash:
+                    record_hash = sanitize(str(record_hash)[:200])
+
+                # record_state
+                record_state = item.get("lifecycle_state") or item.get("readiness_state") or item.get("status")
+                if record_state:
+                    record_state = sanitize(str(record_state)[:50])
+
+                # display_name
+                display_name = item.get("name") or item.get("display_name") or None
+                if display_name:
+                    display_name = sanitize(str(display_name)[:300])
+
+                # artifact_path
+                artifact_path = item.get("export_path") or item.get("data_path") or None
+                if artifact_path:
+                    artifact_path = sanitize(str(artifact_path)[:500])
+
+                candidates.append({
+                    "registry_kind": kind,
+                    "record_id": record_id,
+                    "record_hash": record_hash,
+                    "record_state": record_state,
+                    "display_name": display_name,
+                    "source_registry_path": source_path,
+                    "artifact_path": artifact_path,
+                    "metadata_summary_json": summary,
+                    "warnings_json": item.get("warnings", []),
+                    "limitations_json": item.get("limitations", []),
+                    "mirror_status": "active",
+                })
+
+        return candidates
+
+    async def sync_registry_metadata_mirror(self, dry_run: bool = True) -> dict:
+        """Sync sanitized research registry metadata to Postgres mirror.
+
+        If dry_run=True, returns counts without writing to DB.
+        Research-only, offline-only, no production influence.
+        """
+        from app.models.research_registry_metadata import ResearchRegistryMetadata
+
+        candidates = self.build_registry_metadata_mirror_candidates()
+
+        counts_by_kind: dict[str, int] = {}
+        for c in candidates:
+            k = c["registry_kind"]
+            counts_by_kind[k] = counts_by_kind.get(k, 0) + 1
+
+        result = {
+            "dry_run": dry_run,
+            "candidates_seen": len(candidates),
+            "inserted_count": 0,
+            "updated_count": 0,
+            "skipped_count": 0,
+            "error_count": 0,
+            "counts_by_registry_kind": counts_by_kind,
+            "warnings": [],
+            "limitations": [
+                "This is a metadata mirror only — artifacts remain local/file-backed",
+                "Local JSON registries remain the operational source",
+            ],
+            "research_only": True,
+            "offline_only": True,
+            "no_production_influence": True,
+        }
+
+        if dry_run:
+            return result
+
+        inserted = 0
+        updated = 0
+        skipped = 0
+        error_count = 0
+
+        for candidate in candidates:
+            try:
+                stmt = select(ResearchRegistryMetadata).where(
+                    ResearchRegistryMetadata.registry_kind == candidate["registry_kind"],
+                    ResearchRegistryMetadata.record_id == candidate["record_id"],
+                )
+                db_result = await self.db.execute(stmt)
+                existing = db_result.scalar_one_or_none()
+
+                now = func.now()
+
+                if existing:
+                    existing.record_hash = candidate["record_hash"]
+                    existing.record_state = candidate["record_state"]
+                    existing.display_name = candidate["display_name"]
+                    existing.source_registry_path = candidate["source_registry_path"]
+                    existing.artifact_path = candidate["artifact_path"]
+                    existing.metadata_summary_json = candidate["metadata_summary_json"]
+                    existing.warnings_json = candidate["warnings_json"]
+                    existing.limitations_json = candidate["limitations_json"]
+                    existing.mirror_status = candidate["mirror_status"]
+                    existing.last_seen_at = datetime.now(timezone.utc)
+                    existing.research_only = True
+                    existing.offline_only = True
+                    existing.no_production_influence = True
+                    updated += 1
+                else:
+                    row = ResearchRegistryMetadata(
+                        registry_kind=candidate["registry_kind"],
+                        record_id=candidate["record_id"],
+                        record_hash=candidate["record_hash"],
+                        record_state=candidate["record_state"],
+                        display_name=candidate["display_name"],
+                        source_registry_path=candidate["source_registry_path"],
+                        artifact_path=candidate["artifact_path"],
+                        metadata_summary_json=candidate["metadata_summary_json"],
+                        warnings_json=candidate["warnings_json"],
+                        limitations_json=candidate["limitations_json"],
+                        mirror_status=candidate["mirror_status"],
+                        research_only=True,
+                        offline_only=True,
+                        no_production_influence=True,
+                    )
+                    self.db.add(row)
+                    inserted += 1
+            except Exception as exc:
+                error_count += 1
+                logger.warning(
+                    "Failed to upsert mirror row for %s/%s: %s",
+                    candidate["registry_kind"], candidate["record_id"], exc,
+                )
+
+        try:
+            await self.db.commit()
+        except Exception as exc:
+            error_count += len(candidates)
+            inserted = 0
+            updated = 0
+            result["warnings"].append(f"Commit failed: {str(exc)[:200]}")
+            logger.error("Registry metadata mirror commit failed: %s", exc)
+
+        result["inserted_count"] = inserted
+        result["updated_count"] = updated
+        result["skipped_count"] = skipped
+        result["error_count"] = error_count
+
+        return result
+
+    async def get_registry_metadata_mirror_status(self) -> dict:
+        """Query the research_registry_metadata table and return summary status.
+
+        Read-only. Research-only, offline-only, no production influence.
+        """
+        from app.models.research_registry_metadata import ResearchRegistryMetadata
+
+        try:
+            # Total count
+            total_stmt = select(func.count(ResearchRegistryMetadata.id))
+            total_result = await self.db.execute(total_stmt)
+            total_count = total_result.scalar() or 0
+
+            # Counts by registry_kind
+            kind_stmt = select(
+                ResearchRegistryMetadata.registry_kind,
+                func.count(ResearchRegistryMetadata.id),
+            ).group_by(ResearchRegistryMetadata.registry_kind)
+            kind_result = await self.db.execute(kind_stmt)
+            counts_by_kind = {row[0]: row[1] for row in kind_result.all()}
+
+            # Counts by mirror_status
+            status_stmt = select(
+                ResearchRegistryMetadata.mirror_status,
+                func.count(ResearchRegistryMetadata.id),
+            ).group_by(ResearchRegistryMetadata.mirror_status)
+            status_result = await self.db.execute(status_stmt)
+            counts_by_status = {row[0]: row[1] for row in status_result.all()}
+
+            # Latest sync
+            latest_stmt = select(func.max(ResearchRegistryMetadata.last_seen_at))
+            latest_result = await self.db.execute(latest_stmt)
+            latest_val = latest_result.scalar()
+            latest_sync_at = latest_val.isoformat() if latest_val else None
+
+            warnings: list[str] = []
+        except Exception as exc:
+            logger.warning("Failed to query registry metadata mirror: %s", exc)
+            return {
+                "is_database_metadata_mirror_enabled": True,
+                "is_database_backed_artifact_storage": False,
+                "local_registries_still_operational_source": True,
+                "total_mirrored_records": 0,
+                "counts_by_registry_kind": {},
+                "counts_by_mirror_status": {},
+                "latest_sync_at": None,
+                "warnings": [f"Failed to query mirror table: {str(exc)[:200]}"],
+                "limitations": [
+                    "This is a metadata mirror only — artifacts remain local/file-backed",
+                    "Local JSON registries remain the operational source",
+                ],
+                "research_only": True,
+                "offline_only": True,
+                "no_production_influence": True,
+            }
+
+        return {
+            "is_database_metadata_mirror_enabled": True,
+            "is_database_backed_artifact_storage": False,
+            "local_registries_still_operational_source": True,
+            "total_mirrored_records": total_count,
+            "counts_by_registry_kind": counts_by_kind,
+            "counts_by_mirror_status": counts_by_status,
+            "latest_sync_at": latest_sync_at,
+            "warnings": warnings,
+            "limitations": [
+                "This is a metadata mirror only — artifacts remain local/file-backed",
+                "Local JSON registries remain the operational source",
+            ],
             "research_only": True,
             "offline_only": True,
             "no_production_influence": True,

@@ -21,6 +21,7 @@ from app.models.rl import (
     RLEnvironmentDefinition, RLEnvironmentRun, RLEpisode, RLStep,
     RLAgentDefinition, RLTrainingRun, RLPolicySnapshot, RLBenchmarkReport,
 )
+from app.models.research_registry_metadata import ResearchRegistryMetadata
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -39,4 +40,5 @@ __all__ = [
     "PolicyRule", "PolicyRuleHistory",
     "RLEnvironmentDefinition", "RLEnvironmentRun", "RLEpisode", "RLStep",
     "RLAgentDefinition", "RLTrainingRun", "RLPolicySnapshot", "RLBenchmarkReport",
+    "ResearchRegistryMetadata",
 ]

@@ -39,6 +39,8 @@ POST /api/v1/rl/finrlx/research-readiness/{readiness_id}/state
 POST /api/v1/rl/finrlx/research-readiness/{readiness_id}/archive
 GET  /api/v1/rl/finrlx/research-readiness/{readiness_id}/verify
 POST /api/v1/rl/finrlx/research-readiness/rebuild-registry
+GET  /api/v1/rl/finrlx/registry-metadata/status
+POST /api/v1/rl/finrlx/registry-metadata/sync
 
 All endpoints are research-only, offline-only, shadow-only.
 """
@@ -803,4 +805,29 @@ async def rebuild_readiness_registry(
 async def get_persistence_status(db: AsyncSession = Depends(get_db)):
     """Research storage persistence and deployment status (read-only)."""
     result = FinRLXResearchService.get_persistence_status()
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+# ── Phase 8N.2A: Registry Metadata Mirror ──────────────────────────
+
+class RegistryMetadataSyncRequest(BaseModel):
+    dry_run: bool = True
+
+
+@router.get("/rl/finrlx/registry-metadata/status", response_model=ApiResponse)
+async def get_registry_metadata_mirror_status(db: AsyncSession = Depends(get_db)):
+    """Research registry metadata mirror status (read-only)."""
+    svc = FinRLXResearchService(db)
+    result = await svc.get_registry_metadata_mirror_status()
+    return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
+
+
+@router.post("/rl/finrlx/registry-metadata/sync", response_model=ApiResponse)
+async def sync_registry_metadata_mirror(
+    body: RegistryMetadataSyncRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Sync sanitized research registry metadata to Postgres mirror."""
+    svc = FinRLXResearchService(db)
+    result = await svc.sync_registry_metadata_mirror(dry_run=body.dry_run)
     return ApiResponse(meta=make_meta(warnings=result.get("warnings")), data=result)
