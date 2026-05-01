@@ -25,7 +25,9 @@ export function ComparisonPanel() {
 
   // ── Create comparison form ──
   const [cmpName, setCmpName] = useState("Offline experiment comparison");
-  const [cmpSelectedExpIds, setCmpSelectedExpIds] = useState<string[]>(pipelineIds.experimentIds.length > 0 ? [...pipelineIds.experimentIds] : []);
+  // Only pre-select experiment IDs that actually exist in the registry
+  const validPipelineExpIds = pipelineIds.experimentIds.filter(id => expList.some(e => e.experiment_id === id));
+  const [cmpSelectedExpIds, setCmpSelectedExpIds] = useState<string[]>(validPipelineExpIds);
   const [cmpPriority, setCmpPriority] = useState("sharpe_ratio, max_drawdown, total_return");
   const [cmpNotes, setCmpNotes] = useState("");
   const [cmpAck, setCmpAck] = useState(false);
@@ -54,8 +56,9 @@ export function ComparisonPanel() {
     );
   };
 
-  // Effective experiment IDs: use selected or fall back to pipeline context
-  const effectiveExpIds = cmpSelectedExpIds.length > 0 ? cmpSelectedExpIds : pipelineIds.experimentIds;
+  // Effective experiment IDs: use selected, only include IDs that exist in registry
+  const registeredIds = new Set(expList.map(e => e.experiment_id));
+  const effectiveExpIds = (cmpSelectedExpIds.length > 0 ? cmpSelectedExpIds : pipelineIds.experimentIds).filter(id => registeredIds.has(id));
 
   // ── Callbacks ──
   const handleCreateComparison = useCallback(async () => {
