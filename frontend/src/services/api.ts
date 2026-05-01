@@ -1769,6 +1769,11 @@ export interface FinrlxPersistenceStatus {
   recommended_next_action: string | null;
   storage_root_uses_persistent_volume: boolean;
   persistent_volume_mount_path: string | null;
+  database_metadata_mirror?: {
+    available: boolean;
+    artifact_storage_database_backed: boolean;
+    local_registries_still_operational_source: boolean;
+  };
   research_only: boolean;
   offline_only: boolean;
   no_production_influence: boolean;
@@ -1776,4 +1781,48 @@ export interface FinrlxPersistenceStatus {
 
 export async function getFinrlxPersistenceStatus(): Promise<ApiResponse<FinrlxPersistenceStatus>> {
   return apiFetch<FinrlxPersistenceStatus>("/api/v1/rl/finrlx/persistence/status");
+}
+
+// ── Phase 8N.2A — Registry Metadata Mirror ──
+
+export interface FinrlxRegistryMetadataMirrorStatus {
+  is_database_metadata_mirror_enabled: boolean;
+  is_database_backed_artifact_storage: boolean;
+  local_registries_still_operational_source: boolean;
+  total_mirrored_records: number;
+  counts_by_registry_kind: Record<string, number>;
+  counts_by_mirror_status: Record<string, number>;
+  latest_sync_at: string | null;
+  warnings: string[];
+  limitations: string[];
+  research_only: boolean;
+  offline_only: boolean;
+  no_production_influence: boolean;
+}
+
+export interface FinrlxRegistryMetadataSyncResult {
+  dry_run: boolean;
+  candidates_seen: number;
+  inserted_count: number;
+  updated_count: number;
+  skipped_count: number;
+  error_count: number;
+  counts_by_registry_kind: Record<string, number>;
+  warnings: string[];
+  limitations: string[];
+  research_only: boolean;
+  offline_only: boolean;
+  no_production_influence: boolean;
+}
+
+export async function getFinrlxRegistryMetadataMirrorStatus(): Promise<ApiResponse<FinrlxRegistryMetadataMirrorStatus>> {
+  return apiFetch<FinrlxRegistryMetadataMirrorStatus>("/api/v1/rl/finrlx/registry-metadata/status");
+}
+
+export async function syncFinrlxRegistryMetadataMirror(params: { dry_run: boolean }): Promise<ApiResponse<FinrlxRegistryMetadataSyncResult>> {
+  return apiFetch<FinrlxRegistryMetadataSyncResult>("/api/v1/rl/finrlx/registry-metadata/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
 }

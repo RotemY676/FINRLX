@@ -6,8 +6,11 @@ import { GlassCard } from "./GlassCard";
 import { Icon } from "@/components/icons/Icon";
 import {
   getFinrlxPersistenceStatus,
+  getFinrlxRegistryMetadataMirrorStatus,
+  syncFinrlxRegistryMetadataMirror,
   type FinrlxPersistenceStatus,
   type FinrlxRegistryPersistenceStatus,
+  type FinrlxRegistryMetadataMirrorStatus,
 } from "@/services/api";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -50,6 +53,10 @@ export function ResearchPersistencePanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [mirrorStatus, setMirrorStatus] = useState<FinrlxRegistryMetadataMirrorStatus | null>(null);
+  const [mirrorLoading, setMirrorLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const fetchStatus = async () => {
     setLoading(true);
@@ -57,6 +64,7 @@ export function ResearchPersistencePanel() {
     try {
       const res = await getFinrlxPersistenceStatus();
       setStatus(res.data);
+      getFinrlxRegistryMetadataMirrorStatus().then(r => setMirrorStatus(r.data)).catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load persistence status");
     } finally {
@@ -182,6 +190,85 @@ export function ResearchPersistencePanel() {
                   </ul>
                 </div>
               )}
+
+              {/* Database Metadata Mirror */}
+              <div className="border-t border-line pt-3 mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-[12px] font-semibold text-ink">Database Metadata Mirror</h4>
+                  <span className="text-[9px] text-ink-4 px-1.5 py-0.5 rounded bg-surface-3">metadata only</span>
+                </div>
+                <p className="text-[10px] text-ink-4 mb-2">
+                  Sanitized metadata summaries mirrored to Postgres for durability.
+                  Local JSON registries remain the operational source. Artifacts are not stored in the database.
+                </p>
+
+                {mirrorStatus && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center mb-2">
+                    <div>
+                      <p className="text-[11px] text-ink font-medium">{mirrorStatus.total_mirrored_records}</p>
+                      <p className="text-[10px] text-ink-4">mirrored records</p>
+                    </div>
+                    <div>
+                      <p className={`text-[11px] font-medium ${mirrorStatus.is_database_backed_artifact_storage ? "text-breach" : "text-ink-3"}`}>No</p>
+                      <p className="text-[10px] text-ink-4">artifact DB storage</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-pos">Yes</p>
+                      <p className="text-[10px] text-ink-4">local registries operational</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-ink-4 font-mono">{mirrorStatus.latest_sync_at?.slice(0, 19) || "never"}</p>
+                      <p className="text-[10px] text-ink-4">last sync</p>
+                    </div>
+                  </div>
+                )}
+
+                {mirrorStatus && Object.keys(mirrorStatus.counts_by_registry_kind).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {Object.entries(mirrorStatus.counts_by_registry_kind).map(([kind, count]) => (
+                      <span key={kind} className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-medium bg-surface-3 text-ink-3">
+                        {kind.replace(/_/g, " ")}: {count}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Operator actions */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => {
+                      setSyncLoading(true); setSyncResult(null);
+                      try {
+                        const res = await syncFinrlxRegistryMetadataMirror({ dry_run: true });
+                        setSyncResult(`Dry run: ${res.data.candidates_seen} candidates, ${res.data.inserted_count} would insert, ${res.data.updated_count} would update`);
+                      } catch (e: unknown) { setSyncResult(`Error: ${e instanceof Error ? e.message : "failed"}`); }
+                      finally { setSyncLoading(false); }
+                    }}
+                    disabled={syncLoading}
+                    className="px-3 py-1 rounded-md text-[10px] font-medium bg-surface-3 text-ink-2 hover:bg-surface-3/80 disabled:opacity-40 transition-colors"
+                  >
+                    {syncLoading ? "Running..." : "Dry-run sync"}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setSyncLoading(true); setSyncResult(null);
+                      try {
+                        const res = await syncFinrlxRegistryMetadataMirror({ dry_run: false });
+                        setSyncResult(`Synced: ${res.data.inserted_count} inserted, ${res.data.updated_count} updated`);
+                        getFinrlxRegistryMetadataMirrorStatus().then(r => setMirrorStatus(r.data)).catch(() => {});
+                      } catch (e: unknown) { setSyncResult(`Error: ${e instanceof Error ? e.message : "failed"}`); }
+                      finally { setSyncLoading(false); }
+                    }}
+                    disabled={syncLoading}
+                    className="px-3 py-1 rounded-md text-[10px] font-medium bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-40 transition-colors"
+                  >
+                    {syncLoading ? "Syncing..." : "Sync metadata"}
+                  </button>
+                </div>
+                {syncResult && (
+                  <p className={`text-[10px] mt-1.5 ${syncResult.startsWith("Error") ? "text-breach" : "text-pos"}`}>{syncResult}</p>
+                )}
+              </div>
 
               {/* Safety invariant */}
               <div className="border-t border-line pt-3">
