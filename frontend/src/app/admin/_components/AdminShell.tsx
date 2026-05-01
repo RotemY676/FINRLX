@@ -5,11 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../_context/AdminContext";
 import { PipelineCanvas } from "./PipelineCanvas";
 import { StepExplainer } from "./StepExplainer";
+import { SankeyDiagram } from "./SankeyDiagram";
+import { ParticleBackground } from "./ParticleBackground";
+import { useKeyboardNav } from "./useKeyboardNav";
+import { ActivityFeed } from "./ActivityFeed";
 import { PIPELINE_STEPS } from "./constants";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 
-// Lazy import step panels
+// Step panels
 import { DatasetExportPanel } from "./steps/DatasetExportPanel";
 import { ExperimentPanel } from "./steps/ExperimentPanel";
 import { ComparisonPanel } from "./steps/ComparisonPanel";
@@ -56,6 +60,9 @@ export function AdminShell() {
 
   const counts = [dsExportHistory.length, expList.length, cmpList.length, rdList.length, 0];
 
+  /* ── Keyboard navigation ── */
+  useKeyboardNav(activeStep, setActiveStep, PIPELINE_STEPS.length);
+
   if (loading) return <PageLoading label="Loading Ops Command Center..." />;
   if (error) return <PageError title="Ops Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!ops) return null;
@@ -85,12 +92,26 @@ export function AdminShell() {
         </button>
       </div>
 
-      {/* Pipeline Canvas */}
-      <PipelineCanvas
-        activeStep={activeStep}
-        onStepClick={setActiveStep}
-        completedSteps={completedSteps}
-        counts={counts}
+      {/* Pipeline Canvas with particle background */}
+      <div className="relative">
+        <ParticleBackground className="absolute inset-0 rounded-xl" particleCount={45} />
+        <PipelineCanvas
+          activeStep={activeStep}
+          onStepClick={setActiveStep}
+          completedSteps={completedSteps}
+          counts={counts}
+        />
+      </div>
+
+      {/* Sankey Pipeline Flow */}
+      <SankeyDiagram
+        counts={{
+          universe: ops.universe?.total_assets,
+          exports: dsExportHistory.length,
+          experiments: expList.length,
+          comparisons: cmpList.length,
+          readiness: rdList.length,
+        }}
       />
 
       {/* Step Explainer */}
@@ -105,6 +126,7 @@ export function AdminShell() {
       {/* Active Step Panel */}
       <AnimatePresence mode="wait">
         <motion.div
+          id="active-panel"
           key={activeStepMeta.key}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -125,6 +147,9 @@ export function AdminShell() {
       {drawerIncident && (
         <IncidentDrawer incident={drawerIncident} onClose={() => setDrawerIncident(null)} />
       )}
+
+      {/* Activity Feed Sidebar */}
+      <ActivityFeed />
     </div>
   );
 }
