@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../_context/AdminContext";
 import { PipelineCanvas } from "./PipelineCanvas";
@@ -19,6 +19,7 @@ import { PublicationQueuePanel } from "./steps/PublicationQueuePanel";
 // Import wizard
 import { ResearchWizardModal } from "./wizard/ResearchWizardModal";
 
+import { CommandPalette } from "./CommandPalette";
 import { IncidentDrawer } from "@/components/ops/IncidentDrawer";
 
 const STEP_PANELS = [
@@ -35,6 +36,12 @@ export function AdminShell() {
     pipelineIds, dsExportHistory, expList, cmpList, rdList,
     drawerIncident, setDrawerIncident,
   } = useAdmin();
+
+  /* ── Wizard open callback for CommandPalette ── */
+  const [wizardOpenFn, setWizardOpenFn] = useState<(() => void) | null>(null);
+  const handleRegisterWizardOpen = useCallback((fn: () => void) => {
+    setWizardOpenFn(() => fn);
+  }, []);
 
   // Determine which steps are "completed" (have at least one item)
   const completedSteps = useMemo(() => {
@@ -59,11 +66,23 @@ export function AdminShell() {
   return (
     <div className="space-y-4 max-w-[1400px] px-4 md:px-0">
       {/* Header */}
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Ops Command Center</h1>
-        <p className="text-[12px] text-ink-3 mt-0.5">
-          Research workflow pipeline with governed data exports, experiments, comparisons, and readiness reviews.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-[20px] font-semibold text-ink">Ops Command Center</h1>
+          <p className="text-[12px] text-ink-3 mt-0.5">
+            Research workflow pipeline with governed data exports, experiments, comparisons, and readiness reviews.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true });
+            document.dispatchEvent(evt);
+          }}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-surface-3 text-ink-3 hover:text-ink hover:border-ink-3 transition-colors shrink-0 mt-1"
+          title="Open command palette"
+        >
+          <span className="text-[11px] font-mono font-medium">&#8984;K</span>
+        </button>
       </div>
 
       {/* Pipeline Canvas */}
@@ -97,7 +116,10 @@ export function AdminShell() {
       </AnimatePresence>
 
       {/* Wizard Modal - renders when open */}
-      <ResearchWizardModal />
+      <ResearchWizardModal onRegisterOpen={handleRegisterWizardOpen} />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette onOpenWizard={wizardOpenFn ?? (() => {})} />
 
       {/* Incident Drawer */}
       {drawerIncident && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../../_context/AdminContext";
 import {
@@ -23,7 +23,11 @@ import {
 /*  All wizard state is local; shared data comes from useAdmin().      */
 /* ------------------------------------------------------------------ */
 
-export function ResearchWizardModal() {
+interface ResearchWizardModalProps {
+  onRegisterOpen?: (openFn: () => void) => void;
+}
+
+export function ResearchWizardModal({ onRegisterOpen }: ResearchWizardModalProps = {}) {
   const {
     dsExportHistory,
     expList,
@@ -40,6 +44,13 @@ export function ResearchWizardModal() {
   /* ── wizard open / step ── */
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
+
+  /* ── Register open function for external callers (e.g. CommandPalette) ── */
+  useEffect(() => {
+    if (onRegisterOpen) {
+      onRegisterOpen(() => setWizardOpen(true));
+    }
+  }, [onRegisterOpen]);
 
   /* ── selected IDs ── */
   const [wzExportId, setWzExportId] = useState("");
