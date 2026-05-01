@@ -248,39 +248,6 @@ const STEP_VISUALS: Record<string, () => JSX.Element> = {
   safety: HeartbeatVisual,
 };
 
-/* ---------- Stagger text animation ---------- */
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.03 },
-  },
-  exit: { opacity: 0, transition: { duration: 0.15 } },
-};
-
-const charVariants = {
-  hidden: { opacity: 0, y: 4 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.05 } },
-};
-
-function TypewriterText({ text }: { text: string }) {
-  return (
-    <motion.span
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="inline"
-    >
-      {text.split("").map((char, i) => (
-        <motion.span key={i} variants={charVariants}>
-          {char}
-        </motion.span>
-      ))}
-    </motion.span>
-  );
-}
-
 /* ---------- Main component ---------- */
 
 export function StepExplainer({ step, stepIndex }: StepExplainerProps) {
@@ -311,9 +278,7 @@ export function StepExplainer({ step, stepIndex }: StepExplainerProps) {
                 </div>
               </div>
             </div>
-            <p className="text-sm text-ink-3 leading-relaxed mt-1">
-              <TypewriterText text={step.description} />
-            </p>
+            <p className="text-[12px] text-ink-2 leading-relaxed">{step.description}</p>
           </div>
 
           {/* Right: animated visual */}

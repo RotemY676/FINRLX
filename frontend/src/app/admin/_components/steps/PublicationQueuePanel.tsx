@@ -110,6 +110,9 @@ export function PublicationQueuePanel() {
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
 
+  // ── Help popup ──
+  const [showHelp, setShowHelp] = useState(false);
+
   // ── Candidate selection ──
   const selectCandidate = useCallback(async (c: FinRLXCandidate) => {
     setSelectedCandidate(c);
@@ -231,6 +234,66 @@ export function PublicationQueuePanel() {
   return (
     <AnimatePresence mode="wait">
       <div className="space-y-gap">
+        {/* ── Panel Header with Help ── */}
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-[15px] font-semibold text-ink">Safety &amp; Ops</h2>
+          <div className="relative">
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-surface-3 text-ink-2 hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+            >
+              <Icon name="info" size={12} />
+              Help
+            </button>
+            {showHelp && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-[380px] max-h-[70vh] overflow-y-auto rounded-xl border border-line bg-surface shadow-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[13px] font-semibold text-ink">Panel Guide</h3>
+                  <button onClick={() => setShowHelp(false)} className="text-ink-4 hover:text-ink text-[16px] leading-none">&times;</button>
+                </div>
+                <div className="space-y-3 text-[12px] text-ink-2 leading-relaxed">
+                  <p><strong className="text-ink">What is this screen?</strong></p>
+                  <p>The Safety &amp; Ops panel is your operational command center. It monitors system health, manages the publication queue, runs benchmarks, and tracks incidents.</p>
+                  <p><strong className="text-ink">Key Sections:</strong></p>
+                  <ul className="list-disc list-inside space-y-1.5">
+                    <li><strong>KPI Strip</strong> — Six key metrics showing queue depth, feed coverage, engine health, breach count, incidents, and high-priority items.</li>
+                    <li><strong>ML Observability</strong> — Shadow model performance: predictions, accuracy, readiness, and baseline comparison.</li>
+                    <li><strong>RL Environment</strong> — Offline reinforcement learning: environments, agents, simulations, policy snapshots.</li>
+                    <li><strong>Benchmarks</strong> — Run offline agent comparisons on historical data. View forensic analysis with per-step detail.</li>
+                    <li><strong>Publication Queue</strong> — Pending recommendations awaiting approval. Approve, defer, or challenge each item.</li>
+                    <li><strong>Data Feeds</strong> — Status of data sources: lag, coverage, SLO satisfaction.</li>
+                    <li><strong>Engine Health</strong> — Latency, drift, and status of computation engines.</li>
+                    <li><strong>Breach Watch</strong> — Active policy constraint violations with utilization bars.</li>
+                    <li><strong>Incidents</strong> — Open operational incidents with severity, owner, and affected recommendations.</li>
+                    <li><strong>Audit Trail</strong> — Filterable log of all system actions by scope.</li>
+                  </ul>
+                  <p><strong className="text-ink">Queue Actions:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>Approve</strong> — Accept the recommendation for publication.</li>
+                    <li><strong>Defer</strong> — Delay review for later. The recommendation stays pending.</li>
+                    <li><strong>Challenge</strong> — Flag the recommendation for further investigation.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Numbered Sub-Steps Guide ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+          {[
+            { num: 1, text: "Monitor system health via KPIs, data feeds, and engine status." },
+            { num: 2, text: "Run offline benchmarks to compare agent strategies on historical data." },
+            { num: 3, text: "Review and approve, defer, or challenge pending recommendations in the queue." },
+            { num: 4, text: "Track incidents, policy breaches, and audit trail for compliance." },
+          ].map(s => (
+            <div key={s.num} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface-2/60 border border-line/30">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">{s.num}</span>
+              <span className="text-[11px] text-ink-2 leading-relaxed">{s.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* ── KPI Strip ── */}
         {ops.system_kpis.length > 0 && (
           <GlassCard>
@@ -466,15 +529,16 @@ export function PublicationQueuePanel() {
           <p className="text-[10px] text-ink-4 mb-2">This imports a local research artifact as a shadow-only candidate. It cannot affect recommendations, overview, publication, or broker systems.</p>
           <textarea value={importJson} onChange={e => { setImportJson(e.target.value); setImportValidation(null); setImportValidateError(null); setImportError(null); setImportSuccess(null); setImportAck(false); setImportAckHash(null); }}
             placeholder="Paste research artifact JSON here..."
+            title="Paste the complete research artifact JSON here."
             className="w-full border border-line rounded-md px-3 py-2 text-[11px] font-mono bg-canvas focus:border-primary focus:outline-none min-h-[80px] max-h-[200px] resize-y mb-2" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
-            <div>
-              <label className="block text-ink-4 text-[10px] mb-0.5">Source</label>
+            <div title="Where this artifact came from (e.g., admin_ui, jupyter, colab).">
+              <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Source</label>
               <input type="text" value={importSource} onChange={e => { setImportSource(e.target.value); setImportAck(false); setImportAckHash(null); }}
                 className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
             </div>
-            <div className="sm:col-span-3">
-              <label className="block text-ink-4 text-[10px] mb-0.5">Notes (optional)</label>
+            <div className="sm:col-span-3" title="Optional notes about this import.">
+              <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Notes (optional)</label>
               <input type="text" value={importNotes} onChange={e => { setImportNotes(e.target.value); setImportAck(false); setImportAckHash(null); }}
                 className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
             </div>
@@ -621,17 +685,17 @@ export function PublicationQueuePanel() {
                   <p className="text-[10px] text-ink-4 mb-2">This is a research-only offline benchmark. It does not run neural inference in production and cannot affect recommendations, overview, publication, or broker systems.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] mb-2">
                     <div>
-                      <label className="block text-ink-4 text-[10px] mb-0.5">Name</label>
+                      <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Name</label>
                       <input type="text" value={candBenchName} onChange={e => setCandBenchName(e.target.value)}
                         className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
                     </div>
                     <div>
-                      <label className="block text-ink-4 text-[10px] mb-0.5">Start date</label>
+                      <label className="block text-[11px] text-ink-3 font-medium mb-0.5">Start date</label>
                       <input type="date" value={candBenchStart} onChange={e => setCandBenchStart(e.target.value)}
                         className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
                     </div>
                     <div>
-                      <label className="block text-ink-4 text-[10px] mb-0.5">End date</label>
+                      <label className="block text-[11px] text-ink-3 font-medium mb-0.5">End date</label>
                       <input type="date" value={candBenchEnd} onChange={e => setCandBenchEnd(e.target.value)}
                         className="w-full border border-line rounded px-2 py-1 text-[11px] bg-canvas focus:border-primary focus:outline-none" />
                     </div>
@@ -746,25 +810,25 @@ export function PublicationQueuePanel() {
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-3 text-ink-3">No broker execution</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <div>
-              <label className="text-[10px] text-ink-4 block mb-1">Benchmark name</label>
+            <div title="A descriptive name for this benchmark run.">
+              <label className="text-[11px] text-ink-3 font-medium block mb-1">Benchmark name</label>
               <input type="text" value={benchRunName} onChange={(e) => setBenchRunName(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
             </div>
-            <div>
-              <label className="text-[10px] text-ink-4 block mb-1">Start date</label>
+            <div title="Start of the historical data window for the benchmark.">
+              <label className="text-[11px] text-ink-3 font-medium block mb-1">Start date</label>
               <input type="date" value={benchRunStart} onChange={(e) => setBenchRunStart(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
             </div>
-            <div>
-              <label className="text-[10px] text-ink-4 block mb-1">End date</label>
+            <div title="End of the historical data window.">
+              <label className="text-[11px] text-ink-3 font-medium block mb-1">End date</label>
               <input type="date" value={benchRunEnd} onChange={(e) => setBenchRunEnd(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-md border border-line bg-surface text-[12px] text-ink focus:border-primary focus:outline-none" />
             </div>
           </div>
           <div className="mb-3">
-            <label className="text-[10px] text-ink-4 block mb-1">Agents to compare</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-[11px] text-ink-3 font-medium block mb-1">Agents to compare</label>
+            <div className="flex flex-wrap gap-2" title="Select which baseline agents to include in the comparison.">
               {["heuristic_baseline", "random_valid", "score_weighted_baseline"].map((ak) => (
                 <label key={ak} className="flex items-center gap-1.5 text-[11px] text-ink-2 cursor-pointer">
                   <input type="checkbox" checked={benchRunAgents[ak] ?? false}
