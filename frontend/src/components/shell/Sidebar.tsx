@@ -40,6 +40,8 @@ const OPS: ReadonlyArray<{
   { key: "ops", href: "/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
   // Policy Editor (Phase A3) — guardrail rules + history + active breaches.
   { key: "policies", href: "/policies", label: "Policies", icon: "check", flagKey: "policy_ui" },
+  // Integrations (Phase A4) — data source health + coverage + warnings.
+  { key: "integrations", href: "/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
   // Research lab (desktop-only per UX-2.6) stays accessible from the nav for
   // operators who want the wizard / kanban / pipeline canvas.
   { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },

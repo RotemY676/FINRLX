@@ -859,3 +859,42 @@ The `/policies/*` endpoints were already complete on the backend (list, get, PAT
 - The current page lets any signed-in user edit policy thresholds. The backend's `PolicyRuleUpdateRequest` accepts an `actor` string but doesn't enforce that only an `admin` role can submit. UX-track work won't add role gating; that's a backend follow-up captured for C-track if it becomes a security concern.
 - The "Reason" field is optional. For a fintech audit trail you'd typically force it. Leaving it optional matches the current backend contract; tightening to required is a one-line backend change + a frontend `required` attribute.
 - The history drawer fetches on first open and doesn't refresh on subsequent re-opens of the same rule. Acceptable for now (history doesn't change behind the user's back unless someone else updates the rule).
+
+---
+
+## A4 — Integrations page (post-MVP product track)
+**Date:** 2026-05-21
+**Status:** Closed; closes Phase A
+
+### What shipped
+- `frontend/src/app/integrations/page.tsx` (new) — `/integrations` route. Consumes `GET /api/v1/integrations` + `GET /api/v1/integrations/health`. Layout: 5 KPI cards (total / healthy / degraded / placeholder / real providers), then grouped sections by category (Market data / News & sentiment / Fundamentals / Alternative & sentiment). Each integration renders as a card with status badge, placeholder badge if applicable, coverage + freshness + last-success-at, and any warnings as a bulleted list with a caution icon.
+- `backend/app/core/config.py` + `flags.py` — `feature_integrations_ui` flag, default ON.
+- `backend/tests/test_mvp4_feature_flags.py` — assertion updated to include `integrations_ui`.
+- `frontend/src/contexts/FeatureFlagsContext.tsx` — `integrations_ui: boolean`.
+- `frontend/src/services/api.ts` — `Integration` + `IntegrationHealth` types + 2 fetchers.
+- `frontend/src/components/shell/Sidebar.tsx` — new "Integrations" entry gated by `integrations_ui`.
+- `frontend/tests/e2e/integrations-mobile.spec.ts` (new) — render + axe at 375×667.
+
+### Why
+The integrations endpoint (and the underlying `IntegrationsService`) was complete since MVP and is consumed by `/ops` for the health-block summary, but had no dedicated surface. A4 gives operators a single page to see "what data sources do we have, which are real, which are placeholders, what's degraded right now" — the honest view of the data-supply chain.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest (flags test) | 3 passed |
+| backend ruff `app/` + mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | **20 routes** (+`/integrations`) |
+| playwright chromium | **26 passed** (+1 new integrations-mobile spec) |
+| axe-core on `/integrations` @ 375px | 0 serious violations |
+
+### Phase A — all four sub-phases closed
+- A1 Universe page         `dacaa79`
+- A2 Ops command page      `947b16e`
+- A3 Policy Editor page    `da407f6`
+- A4 Integrations page     **this commit**
+
+All four wire existing-but-unexposed backend endpoints to new frontend surfaces. Sidebar is now fully populated under both WORKSPACES (Overview, Decisions, Engine comparison, Replay, Backtests, Paper portfolio, Universe) and OPS (Ops command, Policies, Integrations, Research lab). Three of the four phantom `href="#"` entries the audit flagged are now real surfaces (Universe in A1, Policies as a new entry in A3, Integrations in A4). The fourth — Risk workspace — is Phase B1 (requires net-new backend service + endpoints), still pending.
+
+Next: **Phase B1 — Risk workspace.** Per the locked scope (VaR + concentration + drawdown + exposure), this is the first phase that requires net-new backend code, not just a frontend that wires existing endpoints.

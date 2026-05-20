@@ -30,6 +30,7 @@ export interface FeatureFlags {
   universe_ui: boolean;
   ops_ui: boolean;
   policy_ui: boolean;
+  integrations_ui: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -45,6 +46,7 @@ const FAIL_CLOSED: FeatureFlags = {
   universe_ui: false,
   ops_ui: false,
   policy_ui: false,
+  integrations_ui: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -73,6 +75,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             universe_ui: Boolean(data.universe_ui),
             ops_ui: Boolean(data.ops_ui),
             policy_ui: Boolean(data.policy_ui),
+            integrations_ui: Boolean(data.integrations_ui),
           });
         }
       })

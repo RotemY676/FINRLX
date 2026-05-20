@@ -1957,3 +1957,37 @@ export async function updatePolicyRule(
     body: JSON.stringify({ threshold_value, actor, reason }),
   });
 }
+
+// ── Phase A4 — Integrations ──
+
+export interface Integration {
+  source_key: string;
+  name: string;
+  category: "market_data" | "news" | "fundamentals" | "sentiment" | string;
+  status: "healthy" | "degraded" | "stale" | "placeholder" | string;
+  is_real_provider: boolean;
+  is_placeholder: boolean;
+  last_manifest_id: string | null;
+  last_success_at: string | null;
+  freshness: string;
+  coverage: string;
+  warnings: string[];
+  next_action: string | null;
+}
+
+export interface IntegrationHealth {
+  total_integrations: number;
+  healthy: number;
+  degraded: number;
+  placeholder: number;
+  real_providers: number;
+  all_real_healthy?: boolean;
+}
+
+export async function fetchIntegrations(): Promise<ApiResponse<Integration[]>> {
+  return apiFetch<Integration[]>("/api/v1/integrations");
+}
+
+export async function fetchIntegrationHealth(): Promise<ApiResponse<IntegrationHealth>> {
+  return apiFetch<IntegrationHealth>("/api/v1/integrations/health");
+}

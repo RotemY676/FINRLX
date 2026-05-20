@@ -20,9 +20,10 @@ async def test_flags_endpoint_returns_default_payload_shape(client):
     # MVP-4 flags + product-track surface flags must be present
     assert set(data.keys()) == {
         "research_lane", "paper_trading", "backtests", "replay",
-        "universe_ui",  # A1
-        "ops_ui",       # A2
-        "policy_ui",    # A3
+        "universe_ui",       # A1
+        "ops_ui",            # A2
+        "policy_ui",         # A3
+        "integrations_ui",   # A4
     }
     # Defaults are ON for the test environment
     for k in data:
