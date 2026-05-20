@@ -68,6 +68,12 @@ class Recommendation(Base, TimestampMixin):
     # Context isolation (Phase 5A+B.1): "live" or "backtest"
     context: Mapped[str] = mapped_column(String(20), default="live")
 
+    # Provenance (Phase MVP-3): tamper-evident replay metadata
+    input_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    policy_hash: Mapped[str | None] = mapped_column(String(64))
+    pipeline_version: Mapped[str | None] = mapped_column(String(50))
+    replay_seed: Mapped[str | None] = mapped_column(String(36))
+
 
 class RecommendationWeight(Base):
     """Per-asset target weight within a recommendation."""

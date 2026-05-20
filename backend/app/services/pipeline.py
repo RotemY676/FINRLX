@@ -23,6 +23,12 @@ from app.models.feature import FeatureSet
 from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
 from app.services.engines import EngineService
+from app.services.provenance import (
+    PIPELINE_VERSION,
+    compute_input_hash,
+    compute_policy_hash,
+    new_replay_seed,
+)
 
 
 # ── Policy constants ──────────────────────────────────────────────────
@@ -34,6 +40,19 @@ CASH_RESERVE = 0.05         # 5% cash floor
 SELECTION_THRESHOLD = -0.50 # include assets with aggregate score above this (generous)
 CONFIDENCE_FLOOR = 0.20     # trim assets below this confidence
 HIGH_RISK_TRIM = 0.70       # reduce weight by 30% for high-risk assets
+
+
+def _policy_snapshot() -> dict[str, float]:
+    """Snapshot the policy constants that affect recommendation outputs."""
+    return {
+        "MAX_POSITION_WEIGHT": MAX_POSITION_WEIGHT,
+        "MIN_POSITION_WEIGHT": MIN_POSITION_WEIGHT,
+        "MAX_INVESTED": MAX_INVESTED,
+        "CASH_RESERVE": CASH_RESERVE,
+        "SELECTION_THRESHOLD": SELECTION_THRESHOLD,
+        "CONFIDENCE_FLOOR": CONFIDENCE_FLOOR,
+        "HIGH_RISK_TRIM": HIGH_RISK_TRIM,
+    }
 
 
 class DecisionPipelineService:
@@ -401,6 +420,7 @@ class DecisionPipelineService:
         overlay: RiskOverlayResult, asset_signals: dict[str, dict],
         feature_set_id: str | None, signal_run_ids: list[str] | None,
         warnings: list[str],
+        signal_outputs: list[SignalOutput] | None = None,
     ) -> Recommendation:
         """Create the final recommendation with weights and confidence triplet."""
         now = datetime.now(timezone.utc)
@@ -450,6 +470,12 @@ class DecisionPipelineService:
             rec.data_as_of = now
             rec.source_feature_set_id = feature_set_id
             rec.source_signal_run_ids = signal_run_ids
+            # Provenance (Phase MVP-3): bind the recommendation to its exact inputs.
+            # input_hash is computed in run_pipeline eagerly (before stages mutate state)
+            # and only filled here if a caller passed signal_outputs directly.
+            if signal_outputs is not None and rec.input_hash is None:
+                rec.input_hash = compute_input_hash(signal_outputs)
+            rec.policy_hash = compute_policy_hash(_policy_snapshot())
 
         # Create weight rows
         for aid, w in final_weights.items():
@@ -510,12 +536,18 @@ class DecisionPipelineService:
         # 3. Aggregate signals
         asset_signals = self._aggregate_asset_signals(outputs)
 
-        # Create recommendation record first (stages reference it)
+        # Create recommendation record first (stages reference it).
+        # Provenance is set eagerly here — before any stage runs — so the input
+        # hash binds to the immutable signal set we're about to process, not
+        # whatever the ORM identity-map shows at write time.
         rec_id = gen_uuid()
         now = datetime.now(timezone.utc)
         rec = Recommendation(
             id=rec_id, universe_id=universe_id, status="draft",
             source_feature_set_id=fs_id, source_signal_run_ids=run_ids,
+            pipeline_version=PIPELINE_VERSION,
+            replay_seed=new_replay_seed(),
+            input_hash=compute_input_hash(outputs),
         )
         self.db.add(rec)
 
@@ -545,6 +577,7 @@ class DecisionPipelineService:
         # 8. Generate recommendation
         rec = await self.generate_recommendation(
             rec_id, universe_id, overlay, asset_signals, fs_id, run_ids, warnings,
+            signal_outputs=outputs,
         )
         stages.append({"stage": "recommendation", "status": "completed", "record_id": rec_id,
                        "message": f"Draft recommendation created"})
