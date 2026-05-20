@@ -10,10 +10,7 @@ import { type Page, expect } from "@playwright/test";
  *
  * When a rule is fixed, REMOVE it from this list so a regression re-fails CI.
  */
-const KNOWN_PREEXISTING_RULES = new Set([
-  "color-contrast",
-  "scrollable-region-focusable",
-]);
+const KNOWN_PREEXISTING_RULES = new Set<string>([]);
 
 export async function expectNoSeriousAxeViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -28,9 +25,14 @@ export async function expectNoSeriousAxeViolations(page: Page) {
   // critical = always fail. newSerious = fail (something fresh slipped in).
   const fatal = [...critical, ...newSerious];
   if (fatal.length > 0) {
-    const summary = fatal.map(
-      (v) => `${v.id} (${v.impact}): ${v.help} — ${v.nodes.length} nodes`
-    );
+    const summary = fatal.map((v) => {
+      const lines = [`${v.id} (${v.impact}): ${v.help} — ${v.nodes.length} nodes`];
+      // Surface the first 3 nodes per rule so a failing CI run gives an actionable trail.
+      for (const node of v.nodes.slice(0, 3)) {
+        lines.push(`  - ${node.target.join(" ")} :: ${node.failureSummary?.split("\n")[1]?.trim() ?? ""}`);
+      }
+      return lines.join("\n");
+    });
     throw new Error(`axe found ${fatal.length} disallowed violations:\n${summary.join("\n")}`);
   }
   expect(fatal).toEqual([]);

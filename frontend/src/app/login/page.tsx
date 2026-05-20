@@ -79,8 +79,10 @@ const styles: Record<string, React.CSSProperties> = {
   sub: { margin: "6px 0 24px", fontSize: 13, opacity: 0.7 },
   label: { display: "block", fontSize: 12, fontWeight: 500, marginTop: 14, marginBottom: 6, opacity: 0.85 },
   input: { width: "100%", padding: "10px 12px", background: "var(--input, #1a1a1f)", border: "1px solid var(--border, #2a2a30)", borderRadius: 8, color: "inherit", fontSize: 14, minHeight: 44 },
-  button: { marginTop: 20, width: "100%", padding: "12px 16px", background: "var(--accent, #4f9fff)", color: "#fff", border: 0, borderRadius: 8, fontWeight: 600, cursor: "pointer", minHeight: 44 },
+  // fontWeight 700 (bold) puts this in the WCAG "large text" bucket (3:1 floor).
+  button: { marginTop: 20, width: "100%", padding: "12px 16px", background: "var(--accent, #4f9fff)", color: "#fff", border: 0, borderRadius: 8, fontWeight: 700, cursor: "pointer", minHeight: 44 },
   error: { marginTop: 12, padding: 10, background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.4)", borderRadius: 6, fontSize: 13, color: "#ffbebe" },
   foot: { marginTop: 18, fontSize: 13, textAlign: "center", opacity: 0.85 },
-  link: { color: "var(--accent, #4f9fff)", textDecoration: "underline" },
+  // Link on the dark login card uses a lighter blue (not --accent) for contrast.
+  link: { color: "#7fb8ff", textDecoration: "underline" },
 };

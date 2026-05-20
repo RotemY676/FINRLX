@@ -15,17 +15,22 @@
 
   --ink: oklch(0.22 0.015 250);
   --ink-2: oklch(0.42 0.012 250);
-  --ink-3: oklch(0.58 0.01 250);
-  --ink-4: oklch(0.72 0.008 250);
+  /* WCAG AA: ink-3 / ink-4 darkened from 0.58 / 0.72 so both pass 4.5:1
+     contrast on bg-surface (white) AND bg-surface-2 (off-white). The old
+     values failed at 4.27 / 2.30 respectively (UX-3.1 axe baseline). */
+  --ink-3: oklch(0.50 0.012 250);
+  --ink-4: oklch(0.55 0.010 250);
 
   --primary: oklch(0.52 0.17 255);
   --primary-ink: oklch(0.98 0.005 255);
   --primary-soft: oklch(0.95 0.03 255);
   --primary-soft-ink: oklch(0.38 0.14 255);
 
-  --pos: oklch(0.58 0.13 155);
+  /* WCAG AA: --pos darkened from 0.58 so white-on-pos and pos-on-white both
+     hit 4.5:1 (UX-3.1). Soft variant kept light for badges. */
+  --pos: oklch(0.50 0.14 155);
   --pos-soft: oklch(0.955 0.035 155);
-  --pos-soft-ink: oklch(0.38 0.11 155);
+  --pos-soft-ink: oklch(0.36 0.11 155);
 
   --caution: oklch(0.72 0.14 75);
   --caution-soft: oklch(0.965 0.04 80);
@@ -35,8 +40,10 @@
   --breach-soft: oklch(0.96 0.03 25);
   --breach-soft-ink: oklch(0.42 0.15 25);
 
-  --accent: oklch(0.55 0.12 215);
-  --accent-2: oklch(0.5 0.14 290);
+  /* WCAG AA: --accent darkened from 0.55 so white-on-accent hits 4.5:1
+     (signup/login Submit). Stays a recognizable teal. */
+  --accent: oklch(0.46 0.13 215);
+  --accent-2: oklch(0.45 0.14 290);
 
   --r-sm: 6px;
   --r-md: 8px;
@@ -68,8 +75,10 @@
 
   --ink: oklch(0.96 0.005 250);
   --ink-2: oklch(0.78 0.008 250);
-  --ink-3: oklch(0.62 0.01 250);
-  --ink-4: oklch(0.48 0.012 250);
+  /* WCAG AA: ink-3 / ink-4 lightened from 0.62 / 0.48 so both pass 4.5:1
+     contrast on the dark canvas (UX-3.1 axe baseline). */
+  --ink-3: oklch(0.72 0.010 250);
+  --ink-4: oklch(0.62 0.012 250);
 
   --primary: oklch(0.68 0.16 255);
   --primary-ink: oklch(0.15 0.01 250);

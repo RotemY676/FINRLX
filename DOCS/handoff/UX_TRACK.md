@@ -420,3 +420,39 @@ Next: **Phase UX-3 — accessibility baseline + screen-reader pass**:
 - 3.4 Form inputMode / autoComplete improvements (the audit flagged zero `inputMode` usages in the entire codebase)
 - 3.5 Chart table-fallback for VoiceOver
 - 3.6 Manual VoiceOver pass — **requires you to run on an iPhone**, I cannot automate this
+
+---
+
+## UX-3.1 — Clear the axe pre-existing-rules allow-list
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/tests/e2e/_helpers/axe.ts` — `KNOWN_PREEXISTING_RULES` set emptied; the allow-list is now `new Set<string>([])`. CI fails on any `serious` or `critical` axe violation across all routes × viewports. Helper also now dumps the first 3 offending nodes per rule (CSS selector + failure summary) so future regressions don't require a separate run to diagnose.
+- `frontend/src/app/globals.css`:
+  - Light theme: `--ink-3` darkened from `oklch(0.58 0.01 250)` → `oklch(0.50 0.012 250)` (was 4.27 on white, now passes 4.5:1). `--ink-4` darkened from `0.72 0.008` → `0.55 0.010` (was 2.30 on bg-surface-2, now passes). `--pos` darkened from `0.58 0.13` → `0.50 0.14` (was 4.03 white-on-pos, now passes). `--accent` darkened from `0.55 0.12` → `0.46 0.13` (was 4.48 white-on-accent, now passes). `--pos-soft-ink` and `--accent-2` minor adjustments to keep the family consistent.
+  - Dark theme: `--ink-3` lightened from `0.62 0.01` → `0.72 0.010`, `--ink-4` lightened from `0.48 0.012` → `0.62 0.012` so both pass on the dark canvas.
+- `frontend/src/components/feedback/PageError.tsx` — hint paragraph swapped from `text-ink-4` to `text-breach-soft-ink/80`. The ink-4 token wasn't designed to read against the breach-soft background; the soft-ink token is.
+- `frontend/src/components/shell/TopBar.tsx` — `⌘K` keyboard-shortcut chip now `text-ink-3` (was inheriting `text-ink-4` from its parent search container, which failed contrast at 10px).
+- `frontend/src/app/signup/page.tsx` + `frontend/src/app/login/page.tsx` — auth pages use a hardcoded dark card. Submit button `fontWeight: 600` → `700` (puts it in the WCAG "large bold text" bucket with a 3:1 floor instead of 4.5:1). Hint opacity `0.5` → `0.75`. Link color from `var(--accent)` → `#7fb8ff` — a brighter blue that has contrast on the dark card (`--accent` is now tuned for white backgrounds).
+- `frontend/src/components/shell/AppShell.tsx` — `<main>` gets `id="main-content" tabIndex={0}` so the scrollable region passes WCAG 2.1.1 even when the rendered page has no interactive children (empty state, error state, behind-the-disclaimer-modal). `focus-visible:outline-none` so users with interactive content don't see the focus ring on the wrapper.
+
+### Why
+The audit and MVP-6 left `color-contrast` and `scrollable-region-focusable` on a CI allow-list — they were known WCAG violations that "would be fixed in a dedicated design pass." This is that pass. Letting them sit was a slow leak: any new code shipping `text-ink-4` for small text was technically a regression we couldn't catch because the rule was muted.
+
+The fixes are mostly token-level (one CSS variable change ripples to every consumer), so the visual hierarchy is preserved. The token edits compress the ink/pos/accent palettes slightly toward darker on light backgrounds — readable, but the design now reads "tighter" than before. UX-4 (polish) will revisit whether this is the right resting place or whether the design wants different solutions (e.g. larger font sizes for secondary text).
+
+The `<main>` `tabIndex={0}` is the canonical WCAG fix for scrollable regions without interactive children — it's the same pattern Material UI, Radix, and Reach use.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | **21 passed** — all routes axe-clean at 375px + desktop, allow-list empty |
+
+### Honest limitations
+- I only verified contrast in **light theme** at the test viewports. Dark theme contrast got darker-too-light fixes alongside, but axe wasn't run in dark mode this pass. A dark-theme axe run is tracked for UX-3.6 (the manual VoiceOver / device pass) since iPhones default to dark in many users' settings.
+- The `<main>` `tabIndex={0}` introduces one extra Tab stop at the top of every page. For users with rich keyboard nav this is a tiny noise; for users who depend on it (screen-reader and switch-control), it's a clear benefit. Net positive.
+- Token edits affect every visual that uses ink-3/4, pos, accent. I didn't re-screenshot every surface. Visual regressions are caught in UX-4 when the screenshot baseline lands.

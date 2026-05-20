@@ -71,7 +71,17 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               aria-hidden="true"
             />
           )}
-          <main className="flex-1 overflow-y-auto p-pad bg-canvas">
+          {/* tabIndex=0 makes the scrollable main keyboard-operable on pages
+              that ship no focusable interactive content (empty state, error,
+              disclaimer-modal-over-empty). Required by WCAG 2.1.1; equivalent
+              to axe rule scrollable-region-focusable. focus:outline-none keeps
+              the visible ring off when the page itself has interactive
+              content the user is using. */}
+          <main
+            id="main-content"
+            tabIndex={0}
+            className="flex-1 overflow-y-auto p-pad bg-canvas focus-visible:outline-none"
+          >
             {children}
           </main>
           {/* ContextPanePanel renders itself: bottom sheet on mobile, right aside on md+.

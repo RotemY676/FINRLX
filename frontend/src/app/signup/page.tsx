@@ -85,10 +85,14 @@ const styles: Record<string, React.CSSProperties> = {
   h1: { margin: 0, fontSize: 24, fontWeight: 600 },
   sub: { margin: "6px 0 24px", fontSize: 13, opacity: 0.7, lineHeight: 1.5 },
   label: { display: "block", fontSize: 12, fontWeight: 500, marginTop: 14, marginBottom: 6, opacity: 0.85 },
-  hint: { opacity: 0.5, fontWeight: 400 },
+  hint: { opacity: 0.75, fontWeight: 400 },
   input: { width: "100%", padding: "10px 12px", background: "var(--input, #1a1a1f)", border: "1px solid var(--border, #2a2a30)", borderRadius: 8, color: "inherit", fontSize: 14, minHeight: 44 },
-  button: { marginTop: 20, width: "100%", padding: "12px 16px", background: "var(--accent, #4f9fff)", color: "#fff", border: 0, borderRadius: 8, fontWeight: 600, cursor: "pointer", minHeight: 44 },
+  // fontWeight 700 (bold) puts this in the WCAG "large text" bucket
+  // (3:1 floor) and avoids the borderline 4.48 contrast at fontWeight 600.
+  button: { marginTop: 20, width: "100%", padding: "12px 16px", background: "var(--accent, #4f9fff)", color: "#fff", border: 0, borderRadius: 8, fontWeight: 700, cursor: "pointer", minHeight: 44 },
   error: { marginTop: 12, padding: 10, background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.4)", borderRadius: 6, fontSize: 13, color: "#ffbebe" },
   foot: { marginTop: 18, fontSize: 13, textAlign: "center", opacity: 0.85 },
-  link: { color: "var(--accent, #4f9fff)", textDecoration: "underline" },
+  // Link on the dark signup card uses a lighter blue (not --accent which is
+  // tuned for white backgrounds) so it passes 4.5:1 on #131316.
+  link: { color: "#7fb8ff", textDecoration: "underline" },
 };

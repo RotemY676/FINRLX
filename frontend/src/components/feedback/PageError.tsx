@@ -16,7 +16,10 @@ export function PageError({ title, message, hint }: Props) {
             {title || "Error"}
           </h2>
           <p className="text-[13px] text-breach-soft-ink/80">{message}</p>
-          {hint && <p className="text-[11px] text-ink-4 mt-2">{hint}</p>}
+          {/* Hint sits on bg-breach-soft (pink-tinted). text-ink-4 was 4.23 on
+              that background — switch to the soft-ink token which is designed
+              to contrast with its soft background. */}
+          {hint && <p className="text-[11px] text-breach-soft-ink/80 mt-2">{hint}</p>}
         </div>
       </div>
     </div>

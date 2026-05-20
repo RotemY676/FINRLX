@@ -112,7 +112,7 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-surface-2 text-ink-4 text-[12px] w-56">
         <Icon name="search" size={13} />
         <span>Search…</span>
-        <span className="ml-auto px-1 py-0.5 rounded bg-surface-3 text-[10px] font-mono">⌘K</span>
+        <span className="ml-auto px-1 py-0.5 rounded bg-surface-3 text-[10px] text-ink-3 font-mono">⌘K</span>
       </div>
 
       {/* Density selector */}
