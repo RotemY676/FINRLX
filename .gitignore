@@ -41,6 +41,10 @@ data/exports/*
 archive/*
 !archive/.gitkeep
 
+# Railway one-click backup/report artifacts (move to archive/ if you want to keep them)
+_railway_oneclick_backup_*/
+_railway_oneclick_report_*.txt
+
 # Source package ZIPs (keep extracted contents, not ZIPs)
 *.zip
 
