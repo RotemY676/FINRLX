@@ -9,6 +9,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.router import api_router
 from app.core.auth import guard_jwt_secret
 from app.core.config import settings
+from app.core.healthz import router as healthz_router
 from app.core.rate_limit import limiter
 from app.core.security_headers import SecurityHeadersMiddleware
 
@@ -107,3 +108,5 @@ async def api_health():
 
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+# Phase MVP-7: /healthz deep probe (LB-friendly).
+app.include_router(healthz_router)
