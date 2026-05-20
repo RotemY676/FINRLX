@@ -372,3 +372,51 @@ The Config and Provenance tables fail for the same reason as the replay forensic
 | next build | 17 routes |
 | playwright chromium | **19 passed** (+1 new backtests-mobile spec) |
 | axe-core on `/backtests` @ 375px | 0 serious violations |
+
+---
+
+## UX-2.6 — `/admin` desktop-only notice; closes Phase UX-2
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/admin/page.tsx`:
+  - `useEffect` reads `window.matchMedia("(max-width: 767px)")` and keeps `isMobile` in sync with viewport changes.
+  - When `isMobile && !override`, the page renders a compact notice instead of the full AdminShell: "Ops Command — desktop only" heading, two paragraphs explaining why (multi-panel pipeline canvas, kanban queue, 7-col publication panel built for a desktop input model), and a "Continue anyway" button that opts the user into the heavy shell.
+  - Continue-anyway button: `min-h-11` (HIG 44pt), explicit `type="button"`, default surface-3 styling.
+
+- `frontend/tests/e2e/admin-mobile.spec.ts` — new spec with two viewports:
+  - 375×667: asserts the notice heading is visible, that "Continue anyway" exists, and that clicking it removes the notice.
+  - 1280×720: asserts the notice never appears — desktop loads the full shell straight away.
+
+### Why
+The audit ranked `/admin` "fundamentally desktop-only": `PipelineCanvas`, `KanbanQueue` (`grid-cols-4`), `PublicationQueuePanel` (`grid-cols-7` at lg), wizard modal, command palette. A full mobile redesign is multi-week work that's not in scope; silently shipping the broken desktop layout on phones is worse than telling the user it's desktop-only. The "Continue anyway" escape hatch preserves access for power users who know what they're getting into.
+
+The matchMedia subscription (not a one-time read) means a user who rotates a tablet from portrait → landscape sees the notice disappear without a refresh.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes (no size delta — the notice is lightweight) |
+| playwright chromium | **21 passed** (+2 new admin-mobile specs at 375 and 1280) |
+
+### Phase UX-2 closes here
+Six dense surfaces now have an honest mobile story:
+- `/comparison` — pinned-primary, hide-secondary tables (UX-2.1)
+- `/decision` — full-width action stack, label-above-bar risk gauges (UX-2.2)
+- `/paper` — pinned-primary holdings table (UX-2.3)
+- `/replay` — semantic `<dl>` stage cards, buttonified selector (UX-2.4)
+- `/backtests` — stacked experiment list, semantic `<dl>` config tables (UX-2.5)
+- `/admin` — desktop-only notice with opt-in escape (UX-2.6)
+
+All six surfaces are axe-clean at 375px. Playwright now runs 21 tests across `chromium` at 375 / 1280.
+
+Next: **Phase UX-3 — accessibility baseline + screen-reader pass**:
+- 3.1 Clean `KNOWN_PREEXISTING_RULES` in `frontend/tests/e2e/_helpers/axe.ts` (color-contrast + scrollable-region-focusable — outstanding from MVP-6)
+- 3.2 Landmark hierarchy + skip-link
+- 3.3 aria-live regions for action results
+- 3.4 Form inputMode / autoComplete improvements (the audit flagged zero `inputMode` usages in the entire codebase)
+- 3.5 Chart table-fallback for VoiceOver
+- 3.6 Manual VoiceOver pass — **requires you to run on an iPhone**, I cannot automate this
