@@ -898,3 +898,60 @@ The integrations endpoint (and the underlying `IntegrationsService`) was complet
 All four wire existing-but-unexposed backend endpoints to new frontend surfaces. Sidebar is now fully populated under both WORKSPACES (Overview, Decisions, Engine comparison, Replay, Backtests, Paper portfolio, Universe) and OPS (Ops command, Policies, Integrations, Research lab). Three of the four phantom `href="#"` entries the audit flagged are now real surfaces (Universe in A1, Policies as a new entry in A3, Integrations in A4). The fourth — Risk workspace — is Phase B1 (requires net-new backend service + endpoints), still pending.
 
 Next: **Phase B1 — Risk workspace.** Per the locked scope (VaR + concentration + drawdown + exposure), this is the first phase that requires net-new backend code, not just a frontend that wires existing endpoints.
+
+---
+
+## B1 — Risk workspace (first net-new backend phase)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+**Backend:**
+- `backend/app/services/risk_metrics.py` (new) — `RiskMetricsService.get_risk_bundle(portfolio_id)` aggregates concentration, drawdown, parametric VaR, and exposure from the existing `PaperPortfolio` + `PaperValuationSnapshot` + `Asset.sector` data. No new tables, no new ingest.
+- `backend/app/schemas/risk.py` (new) — `RiskBundle` with sub-models per block (ConcentrationBlock / DrawdownBlock / VaRBlock / ExposureBlock + SectorWeight).
+- `backend/app/api/v1/risk.py` (new):
+  - `GET /api/v1/risk/portfolios/{portfolio_id}` → full bundle, 404 on unknown
+  - `GET /api/v1/risk/current` → bundle for the most recent active paper portfolio, `null` when no portfolio exists
+- `backend/app/api/router.py` — registered the new router with tag `["risk"]`.
+- `backend/app/core/config.py` + `backend/app/api/v1/flags.py` — `feature_risk_ui: bool = True`, exposed in `/api/v1/flags`.
+- `backend/tests/test_phase_b1_risk_metrics.py` (new) — **10 tests**: stddev, concentration top-N + sector grouping, drawdown both with and without the pre-computed `max_drawdown_to_date` field, parametric VaR math against analytic z-scores, exposure long-only and long-short, and the two API endpoints' shape (current returns `null` without a portfolio, portfolio detail returns 404 for unknown IDs).
+- `backend/tests/test_mvp4_feature_flags.py` — updated to assert the `risk_ui` key.
+
+**Frontend:**
+- `frontend/src/services/api.ts` — `RiskBundle`, `RiskConcentration`, `RiskDrawdown`, `RiskVaR`, `RiskExposure`, `RiskSectorWeight` types + `fetchCurrentRisk()` returning `RiskBundle | null`.
+- `frontend/src/contexts/FeatureFlagsContext.tsx` — `risk_ui` flag added.
+- `frontend/src/app/risk/page.tsx` (new) — `/risk` route. Empty state when no paper portfolio (CTA to `/paper`). When data is present: 4-card KPI strip (VaR 95% / VaR 99% / current drawdown / max drawdown), Exposure section (long/short/gross/net/cash), Concentration section (top-1/3/5 weights + sector bar chart), and a footnote explaining the parametric VaR assumption.
+- `frontend/src/components/shell/Sidebar.tsx` — "Risk workspace" entry href changed from `"#"` to `"/risk"` and gated by `risk_ui`. **All four phantom `href="#"` entries the audit flagged are now real surfaces.**
+- `frontend/tests/e2e/risk-mobile.spec.ts` (new) — render + axe at 375×667.
+
+### Why
+Risk workspace is the first phantom-nav entry the audit identified that needed net-new backend code (the other three — Universe, Policies, Integrations — already had endpoints). Building it minimally from existing paper-portfolio data avoids opening a second multi-week track of risk infrastructure work; the metrics shipped are honest about their assumptions (parametric VaR with a normal-distribution caveat surfaced in the page footer) rather than overclaiming.
+
+Beta-vs-benchmark exposure is deliberately not shipped: it would require a benchmark return series and a beta-estimation pipeline. It's a clean follow-up if needed; the current `long_weight - short_weight = net_exposure` gives the same signal direction for a long-only book.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest | **757 passed, 2 skipped** (+10 risk tests; no regression) |
+| backend ruff `app/` | clean (one import-order auto-fix applied) |
+| backend mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | **21 routes** (+`/risk`) |
+| playwright chromium | **27 passed** (+1 new risk-mobile spec) |
+| axe-core on `/risk` @ 375px | 0 serious violations |
+
+### Sidebar audit closure
+| Sidebar entry | Audit said `href="#"` | Status |
+|---|---|---|
+| Universe | yes | ✅ wired in A1 |
+| Risk workspace | yes | ✅ wired in B1 (this commit) |
+| News intelligence | yes | pending B2 |
+| Ops command | mislabelled `/admin` | ✅ wired in A2 |
+
+3 of 4 closed. News intelligence is B2.
+
+### Honest limitations
+- Parametric VaR assumes normal-distributed returns. For long-tailed P&L this understates tail risk. Historical-simulation VaR over the same series would be a one-method swap and a richer plot; tracked as a polish follow-up.
+- Beta is not computed (no benchmark series).
+- Concentration uses `current_weight` from holdings; if a portfolio's `current_weight` is stale (no recent valuation snapshot), the displayed concentration can drift from target. A "as-of date" footnote would resolve the ambiguity; deferred.

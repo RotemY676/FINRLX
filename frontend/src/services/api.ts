@@ -1991,3 +1991,54 @@ export async function fetchIntegrations(): Promise<ApiResponse<Integration[]>> {
 export async function fetchIntegrationHealth(): Promise<ApiResponse<IntegrationHealth>> {
   return apiFetch<IntegrationHealth>("/api/v1/integrations/health");
 }
+
+// ── Phase B1 — Risk workspace ──
+
+export interface RiskSectorWeight {
+  sector: string;
+  weight: number;
+}
+
+export interface RiskConcentration {
+  total_positions: number;
+  top1_weight: number;
+  top3_weight: number;
+  top5_weight: number;
+  sectors: RiskSectorWeight[];
+}
+
+export interface RiskDrawdown {
+  current_drawdown: number;
+  max_drawdown: number;
+  peak_value: number | null;
+  current_value: number | null;
+}
+
+export interface RiskVaR {
+  sample_size: number;
+  var_95: number;
+  var_99: number;
+  volatility_daily: number;
+}
+
+export interface RiskExposure {
+  long_weight: number;
+  short_weight: number;
+  gross_exposure: number;
+  net_exposure: number;
+  cash_weight: number;
+}
+
+export interface RiskBundle {
+  portfolio_id: string;
+  portfolio_name: string;
+  concentration: RiskConcentration;
+  drawdown: RiskDrawdown;
+  var: RiskVaR;
+  exposure: RiskExposure;
+  snapshot_count: number;
+}
+
+export async function fetchCurrentRisk(): Promise<ApiResponse<RiskBundle | null>> {
+  return apiFetch<RiskBundle | null>("/api/v1/risk/current");
+}

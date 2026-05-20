@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     feature_ops_ui: bool = True           # Ops command center surface (Phase A2)
     feature_policy_ui: bool = True        # Policy Editor surface (Phase A3)
     feature_integrations_ui: bool = True  # Integrations surface (Phase A4)
+    feature_risk_ui: bool = True          # Risk workspace surface (Phase B1)
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific

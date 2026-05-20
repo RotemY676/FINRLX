@@ -20,7 +20,7 @@ const WORKSPACES: ReadonlyArray<{
   { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" },
   { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" },
   { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
-  { key: "risk", href: "#", label: "Risk workspace", icon: "risk", countKey: "risk" },
+  { key: "risk", href: "/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
   { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
   { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
   { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
