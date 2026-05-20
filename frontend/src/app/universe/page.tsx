@@ -12,7 +12,7 @@ import {
   UniverseReadiness,
 } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
-import { PageLoading } from "@/components/feedback/PageLoading";
+import { PageLoading, InlineLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { UniverseList } from "@/components/universe/UniverseList";
 import { CoveragePanel } from "@/components/universe/CoveragePanel";
@@ -94,7 +94,7 @@ export default function UniversePage() {
         </div>
 
         <div className="lg:col-span-2 space-y-gap">
-          {detailLoading && <PageLoading label="Loading detail..." />}
+          {detailLoading && <InlineLoading label="Loading detail..." />}
           {detail && (
             <div className="rounded-lg border border-line bg-surface p-pad shadow-sm">
               <div className="flex items-baseline justify-between mb-1">

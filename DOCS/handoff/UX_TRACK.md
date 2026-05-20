@@ -591,3 +591,34 @@ The five automated sub-phases (3.1 axe cleanup, 3.2 skip link + landmarks, 3.3 l
 Next once you've run the VoiceOver pass:
 - **Phase UX-4** — visual polish (loading skeletons, empty states, motion, design-token consolidation export for UX-5)
 - **Phase UX-5** — iOS prep (tokens.json export, OpenAPI Swift codegen scaffold, i18n strings, navigation contract doc, PWA manifest)
+
+---
+
+## UX-4.1 + 4.2 — Skeleton loading + richer empty states
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+
+**Skeleton system (UX-4.1):**
+- `frontend/src/components/feedback/Skeleton.tsx` (new) — primitives `SkeletonBox`, `SkeletonText`, `SkeletonHeading`, and a composite `PageSkeleton` that renders a content-shaped placeholder for a typical FINRLX page (heading + KPI strip + hero card + two-up cards). Carries one polite live region so screen readers get a single "Loading X" announcement rather than dozens of per-skeleton announcements.
+- `frontend/src/components/feedback/PageLoading.tsx` — preserves the existing `PageLoading` API (8 call sites unchanged) but now delegates to `PageSkeleton` internally. A new `InlineLoading` export keeps the dot-pulse pattern available for in-page detail loads.
+- `frontend/src/app/universe/page.tsx` — switched the in-page detail-load spinner to `InlineLoading` (full-page skeleton was the wrong shape for "loading inside a panel").
+
+**Empty state enrichment (UX-4.2):**
+- `frontend/src/components/feedback/PageEmpty.tsx` — added optional `icon` and `action` props. Action can be either an `onClick` handler (renders a `<button>`) or an `href` (renders a `next/link`). Icon renders in a 12×12 surface-3 circle above the title. The action button uses the canonical primary CTA styles + `min-h-11` (HIG 44pt). Title color bumped from `text-ink-2` to `text-ink` (more legible against `bg-surface`).
+- Existing callers (`/decision`, `/paper`, `/comparison`, `/replay`, `/backtests`) didn't need updates — the new props are all optional, callers pass the same `title` + `message` and just gain the option to surface a CTA later.
+
+### Why
+The audit identified "Loading…" dots as a perceived-performance miss: on a slow connection the user stares at three pulsing dots wondering if the page is broken. Skeletons that approximate the content shape give immediate "yes the page is here, fetching" feedback — the gold-standard pattern from Facebook, LinkedIn, Robinhood. PageSkeleton is intentionally a single shape (not per-route bespoke skeletons) because the cost/benefit of more specific skeletons doesn't pay off for an internal-PM-tool of this size.
+
+`PageEmpty` was a flat card with no action. For pages like `/paper` ("No paper portfolio yet"), the natural follow-up is "Create one from a recommendation" — surfacing that as a CTA in the empty state is a one-line improvement once the helper is in place.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | 22 passed |
+| axe-core | clean across all routes (skeleton announces once; per-skeleton are aria-hidden) |
