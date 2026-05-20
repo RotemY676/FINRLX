@@ -5,21 +5,38 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icons/Icon";
 import { fetchWorkspaceCounts, WorkspaceCountsData } from "@/services/api";
+import { useFeatureFlags, FeatureFlags } from "@/contexts/FeatureFlagsContext";
 
-const WORKSPACES = [
-  { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" as const },
-  { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" as const },
+type FlagKey = keyof FeatureFlags;
+
+const WORKSPACES: ReadonlyArray<{
+  key: string;
+  href: string;
+  label: string;
+  icon: string;
+  countKey?: "overview" | "decisions" | "risk" | "ops";
+  flagKey?: FlagKey;
+}> = [
+  { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" },
+  { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" },
   { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
-  { key: "risk", href: "#", label: "Risk workspace", icon: "risk", countKey: "risk" as const },
-  { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay" },
-  { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest" },
-  { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper" },
+  { key: "risk", href: "#", label: "Risk workspace", icon: "risk", countKey: "risk" },
+  { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
+  { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
+  { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
   { key: "universe", href: "#", label: "Universe", icon: "universe" },
   { key: "news", href: "#", label: "News intelligence", icon: "news" },
 ];
 
-const OPS = [
-  { key: "admin", href: "/admin", label: "Ops command", icon: "ops", countKey: "ops" as const },
+const OPS: ReadonlyArray<{
+  key: string;
+  href: string;
+  label: string;
+  icon: string;
+  countKey?: "overview" | "decisions" | "risk" | "ops";
+  flagKey?: FlagKey;
+}> = [
+  { key: "admin", href: "/admin", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "research_lane" },
 ];
 
 const SAVED = [
@@ -36,6 +53,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname() ?? "/";
   const [counts, setCounts] = useState<WorkspaceCountsData | null>(null);
+  const { flags, isLoading: flagsLoading } = useFeatureFlags();
 
   useEffect(() => {
     fetchWorkspaceCounts()
@@ -60,9 +78,17 @@ export function Sidebar({ collapsed }: SidebarProps) {
     return val > 0 ? String(val) : undefined;
   };
 
-  const renderNavItem = (item: typeof WORKSPACES[number] | typeof OPS[number]) => {
+  // Fail-closed while flags load — hide gated entries to avoid flash of restricted content.
+  const isGatedVisible = (flagKey?: FlagKey) => {
+    if (!flagKey) return true;
+    if (flagsLoading) return false;
+    return flags[flagKey];
+  };
+
+  const renderNavItem = (item: (typeof WORKSPACES)[number] | (typeof OPS)[number]) => {
+    if (!isGatedVisible(item.flagKey)) return null;
     const active = isActive(item.href);
-    const badge = getBadge((item as any).countKey);
+    const badge = getBadge(item.countKey);
     return (
       <Link
         key={item.key}

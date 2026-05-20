@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     # Signup gating: when True, only emails present in email_allowlist may sign up
     require_email_allowlist: bool = True
 
+    # Feature flags (Phase MVP-4) — frontend reads via /api/v1/features.
+    # Defaults: ON for backward compat in tests; production overrides to OFF via env.
+    feature_research_lane: bool = True   # Show admin/research/RL UI
+    feature_paper_trading: bool = True    # Paper portfolio surface
+    feature_backtests: bool = True        # Backtest surface
+    feature_replay: bool = True           # Replay surface
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

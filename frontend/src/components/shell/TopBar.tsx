@@ -5,6 +5,8 @@ import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScope } from "@/contexts/ScopeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
@@ -143,10 +145,41 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
         <Icon name="panel-right" size={15} className="text-ink-3" />
       </button>
 
-      {/* Avatar */}
-      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[11px] font-semibold">
-        RM
-      </div>
+      {/* User chip + sign-out */}
+      <UserChip />
     </header>
+  );
+}
+
+function UserChip() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  if (!user) return null;
+  const initials = user.email
+    .split("@")[0]
+    .split(".")
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2) || "?";
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[11px] font-semibold"
+        title={user.email}
+        aria-label={`Signed in as ${user.email}`}
+      >
+        {initials}
+      </div>
+      <button
+        onClick={async () => {
+          await logout();
+          router.push("/login");
+        }}
+        className="text-[11px] text-ink-3 hover:text-ink hover:bg-surface-3 px-2 py-1 rounded-md transition-colors"
+        title="Sign out"
+      >
+        Sign out
+      </button>
+    </div>
   );
 }
