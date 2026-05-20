@@ -139,15 +139,17 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
         <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-breach" />
       </button>
 
-      {/* Context pane toggle — hidden on mobile (the pane returns in UX-1.3 as a bottom sheet) */}
+      {/* Context pane toggle. On mobile (<md) the pane opens as a bottom sheet;
+          on desktop it docks as a right aside. */}
       <button
         onClick={onToggleCtx}
-        className="hidden md:inline-flex p-1.5 rounded-md hover:bg-surface-3 transition-colors"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 transition-colors"
         title="Toggle context pane"
         aria-label={ctxVisible ? "Hide context pane" : "Show context pane"}
+        aria-expanded={ctxVisible}
         style={{ opacity: ctxVisible ? 1 : 0.45 }}
       >
-        <Icon name="panel-right" size={15} className="text-ink-3" />
+        <Icon name="panel-right" size={18} className="text-ink-3" />
       </button>
 
       {/* User chip + sign-out */}

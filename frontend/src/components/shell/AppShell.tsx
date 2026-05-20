@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
-import { PaneProvider, ContextPanePanel } from "./ContextPane";
+import { PaneProvider, ContextPanePanel, usePaneContext } from "./ContextPane";
 import { DisclaimerBanner } from "../legal/DisclaimerBanner";
 import { DisclaimerModal } from "../legal/DisclaimerModal";
 
@@ -12,17 +12,24 @@ const MOBILE_BREAKPOINT = "(max-width: 767px)";
 /**
  * App shell.
  *
- * - md+ (≥ 768px): three columns — Sidebar | main | ContextPane.
+ * - md+ (≥ 768px): three columns — Sidebar | main | ContextPane (right aside).
  *   The nav toggle collapses the sidebar width (w-52 ↔ w-14).
  * - <md: single column — main only. Sidebar becomes a left-edge drawer
- *   overlaid on top with a click-to-dismiss backdrop. The same nav toggle
- *   opens/closes the drawer. ContextPane is hidden on mobile (it returns
- *   in UX-1.3 as a bottom sheet).
+ *   overlaid on top with a click-to-dismiss backdrop. ContextPane becomes a
+ *   bottom sheet overlaying main content. Both share the same toggles.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <PaneProvider>
+      <ShellInner>{children}</ShellInner>
+    </PaneProvider>
+  );
+}
+
+function ShellInner({ children }: { children: React.ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [ctxVisible, setCtxVisible] = useState(false);
+  const { pane, openTab, closePane } = usePaneContext();
 
   const onToggleNav = useCallback(() => {
     // matchMedia is the cheapest viewport probe; it stays correct after a
@@ -36,14 +43,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const closeMobileNav = useCallback(() => setMobileOpen(false), []);
 
+  const onToggleCtx = useCallback(() => {
+    if (pane.isOpen) closePane();
+    else openTab("risk"); // open to the first tab; pages can call openPane(...) for detail mode
+  }, [pane.isOpen, openTab, closePane]);
+
   return (
-    <PaneProvider>
+    <>
       <DisclaimerModal />
       <div className="flex flex-col h-screen overflow-hidden">
         <TopBar
           onToggleNav={onToggleNav}
-          onToggleCtx={() => setCtxVisible((p) => !p)}
-          ctxVisible={ctxVisible}
+          onToggleCtx={onToggleCtx}
+          ctxVisible={pane.isOpen}
           mobileNavOpen={mobileOpen}
         />
         <div className="relative flex flex-1 overflow-hidden">
@@ -62,14 +74,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-y-auto p-pad bg-canvas">
             {children}
           </main>
-          {ctxVisible && (
-            <div className="hidden md:block">
-              <ContextPanePanel />
-            </div>
-          )}
+          {/* ContextPanePanel renders itself: bottom sheet on mobile, right aside on md+.
+              It self-gates via pane.isOpen — nothing renders when closed. */}
+          <ContextPanePanel />
         </div>
         <DisclaimerBanner />
       </div>
-    </PaneProvider>
+    </>
   );
 }

@@ -126,74 +126,91 @@ export function ContextPanePanel() {
   if (!pane.isOpen) return null;
 
   return (
-    <aside
-      className="w-[360px] shrink-0 border-l border-line bg-surface flex flex-col overflow-hidden"
-      role="complementary"
-      aria-label="Context pane"
-    >
-      {/* Tabs */}
-      <div className="flex items-center border-b border-line px-1 shrink-0">
-        {pane.activeTab === "detail" ? (
-          <div className="flex-1 flex items-center gap-2 px-3 py-2.5 min-w-0">
-            <h2 className="text-[13px] font-semibold text-ink truncate">{pane.detailTitle}</h2>
-          </div>
-        ) : (
-          TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => openTab(tab.key)}
-              className={`relative px-3 py-2.5 text-[12.5px] transition-colors ${
-                pane.activeTab === tab.key
-                  ? "text-ink font-medium border-b-2 border-primary"
-                  : "text-ink-3 hover:text-ink-2"
-              }`}
-            >
-              {tab.label}
-              {tab.flag && (
-                <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-caution" />
-              )}
-            </button>
-          ))
-        )}
-        <div className="flex-1" />
-        {pane.activeTab !== "detail" && (
-          <div className="flex items-center gap-1 pr-2">
-            {TABS.slice(0, 0).map(() => null) /* tab buttons already shown */}
-          </div>
-        )}
-        <button
-          onClick={closePane}
-          className="p-1.5 rounded-md hover:bg-surface-3 text-ink-3 mr-1 transition-colors"
-          aria-label="Close"
-          title="Close (Esc)"
-        >
-          <Icon name="close" size={14} />
-        </button>
-      </div>
+    <>
+      {/* Mobile-only backdrop. Click to dismiss, mirrors the nav drawer pattern. */}
+      <div
+        className="md:hidden fixed inset-0 z-30 bg-ink/40 backdrop-blur-sm"
+        onClick={closePane}
+        aria-hidden="true"
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {pane.activeTab === "detail" && pane.detailContent}
-        {pane.activeTab === "risk" && <RiskTab />}
-        {pane.activeTab === "provenance" && <PendingTab label="Provenance" />}
-        {pane.activeTab === "compare" && <PendingTab label="Compare" />}
-        {pane.activeTab === "notes" && <PendingTab label="Notes" />}
-      </div>
-
-      {/* Tab switcher from detail mode */}
-      {pane.activeTab === "detail" && (
-        <div className="flex items-center gap-1 px-2 py-2 border-t border-line shrink-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => openTab(tab.key)}
-              className="px-2.5 py-1 text-[11px] rounded-md text-ink-3 hover:bg-surface-3 transition-colors"
-            >
-              {tab.label}
-            </button>
-          ))}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Context pane"
+        className={[
+          // Mobile-first: bottom sheet
+          "fixed inset-x-0 bottom-0 z-40 max-h-[85vh] rounded-t-2xl shadow-lg",
+          // Desktop (≥md): right-side aside in flow
+          "md:static md:inset-auto md:max-h-none md:rounded-none md:shadow-none md:z-auto md:w-[360px] md:shrink-0 md:border-l md:border-line",
+          // Shared
+          "bg-surface flex flex-col overflow-hidden safe-area-pb",
+        ].join(" ")}
+      >
+        {/* Mobile drag-handle indicator. Not actually draggable yet, but reads as a sheet. */}
+        <div className="md:hidden flex justify-center pt-2 pb-1 shrink-0">
+          <span aria-hidden="true" className="block h-1 w-10 rounded-full bg-line-strong" />
         </div>
-      )}
-    </aside>
+
+        {/* Tabs / title bar */}
+        <div className="flex items-center border-b border-line px-1 shrink-0">
+          {pane.activeTab === "detail" ? (
+            <div className="flex-1 flex items-center gap-2 px-3 py-2.5 min-w-0">
+              <h2 className="text-[13px] font-semibold text-ink truncate">{pane.detailTitle}</h2>
+            </div>
+          ) : (
+            TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => openTab(tab.key)}
+                className={`relative px-3 min-h-11 md:min-h-0 md:py-2.5 text-[12.5px] transition-colors ${
+                  pane.activeTab === tab.key
+                    ? "text-ink font-medium border-b-2 border-primary"
+                    : "text-ink-3 hover:text-ink-2"
+                }`}
+              >
+                {tab.label}
+                {tab.flag && (
+                  <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-caution" />
+                )}
+              </button>
+            ))
+          )}
+          <div className="flex-1" />
+          <button
+            onClick={closePane}
+            className="inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md hover:bg-surface-3 text-ink-3 mr-1 transition-colors"
+            aria-label="Close context pane"
+            title="Close (Esc)"
+          >
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {pane.activeTab === "detail" && pane.detailContent}
+          {pane.activeTab === "risk" && <RiskTab />}
+          {pane.activeTab === "provenance" && <PendingTab label="Provenance" />}
+          {pane.activeTab === "compare" && <PendingTab label="Compare" />}
+          {pane.activeTab === "notes" && <PendingTab label="Notes" />}
+        </div>
+
+        {/* Tab switcher from detail mode */}
+        {pane.activeTab === "detail" && (
+          <div className="flex items-center gap-1 px-2 py-2 border-t border-line shrink-0">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => openTab(tab.key)}
+                className="px-3 min-h-11 md:min-h-0 md:py-1 text-[12px] md:text-[11px] rounded-md text-ink-3 hover:bg-surface-3 transition-colors"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
