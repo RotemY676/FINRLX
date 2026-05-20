@@ -4,7 +4,10 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "sh -c 'alembic upgrade head && python -m seed && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
-healthcheckPath = "/api/health"
+# Phase MVP-7: /healthz is the deep probe (DB SELECT 1 + data freshness).
+# Returns 503 when the database is unreachable, so Railway will not route
+# traffic until the service is actually answerable.
+healthcheckPath = "/healthz"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
