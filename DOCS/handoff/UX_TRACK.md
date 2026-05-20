@@ -716,3 +716,28 @@ The strings are only **referenced** from this file by net-new components going f
 | vitest | **21 passed** (+4 new i18n tests) |
 | next build | unchanged |
 | playwright chromium | unchanged |
+
+---
+
+## UX-5.4 — iOS navigation contract doc
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `DOCS/handoff/UX_5_4_IOS_NAVIGATION_CONTRACT.md` — every web route mapped to its SwiftUI navigation primitive. Tab structure (Overview / Decision / Replay / Paper + More) encoded per the locked product decision. Per-surface mapping table covers all 13 surfaces with the chosen primitive (`NavigationStack` / `NavigationSplitView` / `.fullScreenCover` / `.sheet`). Deepest mapping for `/decision` written out as Swift code skeleton including the bottom-sheet `ContextPane` equivalent (`.presentationDetents([.medium, .large])` + `.presentationBackgroundInteraction(.enabled)`).
+- Explicitly documents the locked decisions: no swipe-to-accept (confirmation dialog), full-screen disclaimer modal not sheet, no skip-link needed (iOS Rotor handles landmarks natively).
+
+### Why
+When Phase D opens, the iOS dev should not need to re-decide how the bottom-tab layout maps from the web's 9-item sidebar, or which surfaces deserve `NavigationSplitView` vs a plain `NavigationStack`. The web design + the locked decisions + the HIG research from UX research phase all converge on a single answer per surface; capturing it once means the iOS implementation is execution, not design.
+
+### Gates
+None — doc-only. CI gates unchanged from UX-5.3.
+
+### Handoff packet for Phase D
+The iOS dev needs only four files to start:
+- `DOCS/handoff/UX_5_2_IOS_API_CODEGEN.md` (this directory)
+- `DOCS/handoff/UX_5_4_IOS_NAVIGATION_CONTRACT.md` (this directory)
+- `frontend/src/design/tokens.json` (color + typography source)
+- `frontend/src/i18n/en.json` (string source)
+
+Plus `UX_TRACK.md` (this file) for context.
