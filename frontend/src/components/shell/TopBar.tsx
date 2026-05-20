@@ -25,9 +25,11 @@ interface TopBarProps {
   onToggleNav: () => void;
   onToggleCtx: () => void;
   ctxVisible: boolean;
+  /** When true on a mobile viewport, the nav drawer is open. */
+  mobileNavOpen?: boolean;
 }
 
-export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
+export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = false }: TopBarProps) {
   const pathname = usePathname() ?? "/";
   const crumb = CRUMB_MAP[pathname] || "Workspace";
   const { theme, toggleTheme } = useTheme();
@@ -69,13 +71,15 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
         </span>
       </div>
 
-      {/* Nav toggle */}
+      {/* Nav toggle — opens the mobile drawer below md, collapses the column above md */}
       <button
         onClick={onToggleNav}
-        className="p-1 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
-        title="Toggle sidebar"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+        aria-expanded={mobileNavOpen}
+        aria-controls="primary-nav"
       >
-        <Icon name="panel-left" size={15} />
+        <Icon name="panel-left" size={18} />
       </button>
 
       {/* Breadcrumbs */}
@@ -135,11 +139,12 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible }: TopBarProps) {
         <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-breach" />
       </button>
 
-      {/* Context pane toggle */}
+      {/* Context pane toggle — hidden on mobile (the pane returns in UX-1.3 as a bottom sheet) */}
       <button
         onClick={onToggleCtx}
-        className="p-1.5 rounded-md hover:bg-surface-3 transition-colors"
+        className="hidden md:inline-flex p-1.5 rounded-md hover:bg-surface-3 transition-colors"
         title="Toggle context pane"
+        aria-label={ctxVisible ? "Hide context pane" : "Show context pane"}
         style={{ opacity: ctxVisible ? 1 : 0.45 }}
       >
         <Icon name="panel-right" size={15} className="text-ink-3" />
