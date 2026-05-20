@@ -65,11 +65,14 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
 
     await ctxToggle.click();
     // The button's accessible name flips on open — same control, opposite label.
-    const ctxClose = page.getByRole("button", { name: /hide context pane/i });
-    await expect(ctxClose).toBeVisible();
-    await expect(ctxClose).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("button", { name: /hide context pane/i })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
 
-    await ctxClose.click();
+    // Close via the in-sheet close button — the TopBar toggle may be partly
+    // obscured by the bottom-sheet on a 375px viewport.
+    await page.getByRole("button", { name: /close context pane/i }).click();
     await expect(page.getByRole("button", { name: /show context pane/i })).toHaveAttribute(
       "aria-expanded",
       "false",

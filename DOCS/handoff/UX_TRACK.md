@@ -112,3 +112,33 @@ The wiring test verifies state propagation (aria-expanded flips, accessible-name
 ### Out of scope (deferred)
 - Token fixes (`bg-canvas-elevated` etc. referenced by `DisclaimerModal`) — UX-1.4
 - Touch-target audit across the rest of the app (admin, decision actions, action strips) — UX-1.5
+
+---
+
+## UX-1.4 — Token cleanup; DisclaimerModal mobile-aware
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/components/legal/DisclaimerModal.tsx` — replaced the four undefined Tailwind tokens with the design system's actual tokens: `bg-canvas-elevated` → `bg-surface`; `text-text-default` → `text-ink` / `text-ink-2`; `bg-accent-default` → `bg-primary` + `text-primary-ink`; `bg-accent-hover` → `hover:opacity-90`. Backdrop changed from `bg-black/50` to `bg-ink/60` (theme-aware via CSS var). Added `max-h-[90vh] overflow-y-auto` so the modal scrolls instead of clipping at iPhone SE landscape (667×375). Button raised to `min-h-11 inline-flex items-center justify-center` for the HIG 44pt floor.
+- `frontend/src/components/legal/DisclaimerBanner.tsx` — replaced 4 broken token refs (`border-divider`, `bg-canvas-elevated`, `text-text-muted`, `hover:text-text-default`) with `border-line`, `bg-surface`, `text-ink-3`, `hover:text-ink`. Added `safe-area-pb` so the home-indicator on notched iPhones doesn't crash into the disclaimer copy.
+- `frontend/src/app/{terms,privacy,disclaimer}/page.tsx` — same `text-text-default` / `text-text-muted` cleanup; mapped to `text-ink-2` / `text-ink-3`.
+
+Total: 7 files, 0 tokens remain undefined (grep confirms).
+
+### Why
+The audit flagged the disclaimer modal as visually broken: four CSS class names referenced tokens that don't exist in `tailwind.config.ts`, so they rendered as no-ops. The modal still appeared, but with default browser styling (no card background, default text color, no accent button color) — inconsistent with the rest of the app and visually unprofessional for the first thing a tester sees on first visit. Same defect quietly cascaded into the persistent banner and three legal pages.
+
+The max-height + scroll fix is a real iPhone landscape issue: at 667×375 the modal's content (3 paragraphs + CTA + 24px padding × 2 ≈ 430px) overflowed the 375px viewport height with no scrollbar.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 13 passed |
+| next build | 17 routes (no size delta) |
+| playwright chromium | 13 passed (mobile-shell context-pane test now closes via the in-sheet close button — more robust on a 375px viewport where the TopBar toggle can be partly obscured by the sheet) |
+| Grep audit | 0 references to `canvas-elevated`, `text-default`, `text-muted`, `accent-default`, `accent-hover`, `bg-canvas-base`, `border-divider` remain |
+
+### Out of scope (deferred)
+- Touch-target audit + lint script across TopBar, decision actions, admin — UX-1.5
