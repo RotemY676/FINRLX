@@ -49,7 +49,11 @@ export function PriceChartCard({ ticker = "NVDA" }: { ticker?: string }) {
       </div>
 
       {/* Chart */}
-      <div className="h-56">
+      <div
+        role="img"
+        aria-label={`${data.ticker} price chart over ${data.points.length} bars. ${data.ticker} return ${data.price_return_pct}%${data.benchmark_return_pct != null ? `, ${data.benchmark_name} return ${data.benchmark_return_pct}%` : ""}. ${data.events.length} annotated events.`}
+        className="h-56"
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
             <CartesianGrid stroke="oklch(0.94 0.005 240)" strokeDasharray="3 3" vertical={false} />

@@ -36,8 +36,16 @@ export function AlignmentChart({ engines, synthesisStance, synthesisConfidence }
     stance: "synthesis",
   }] : [];
 
+  const stanceBreakdown = engines.reduce<Record<string, number>>((acc, e) => {
+    acc[e.stance] = (acc[e.stance] ?? 0) + 1;
+    return acc;
+  }, {});
+  const stanceList = Object.entries(stanceBreakdown).map(([k, v]) => `${v} ${k}`).join(", ");
+  const synthText = synthesisStance ? ` Synthesis stance ${synthesisStance} at ${Math.round((synthesisConfidence ?? 0) * 100)}% confidence.` : "";
+  const ariaSummary = `Engine alignment bubble chart, ${engines.length} engines (${stanceList}).${synthText}`;
+
   return (
-    <div className="h-72 relative">
+    <div role="img" aria-label={ariaSummary} className="h-72 relative">
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 16, right: 24, bottom: 32, left: 16 }}>
           {/* Grid reference lines */}

@@ -537,3 +537,57 @@ Admin Research Wizard text inputs (UUIDs, ticker symbols, JSON config) were inte
 | vitest | 14 passed |
 | next build | 17 routes |
 | playwright chromium | 22 passed |
+
+---
+
+## UX-3.5 — Chart accessibility (aria-label summaries)
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+Each chart component now wraps its `<ResponsiveContainer>` in a `role="img" aria-label="…"` div whose label is a concrete data-driven summary, so VoiceOver no longer just announces "graphic":
+
+- `EquityCurveChart.tsx` — "Equity curve from base X on D1 to Y on D2. Range min–max across N data points."
+- `WeightsBarChart.tsx` — "Portfolio weights bar chart, N positions. Top three: TICKER X%, …"
+- `DriftBarChart.tsx` — "Drift-from-target bar chart, N positions sorted by absolute drift. Largest deviations: …"
+- `ComparisonBarChart.tsx` — "Recommendation vs benchmark weights, N positions. Top three: …"
+- `AlignmentChart.tsx` — "Engine alignment bubble chart, N engines (X buy, Y hold, …). Synthesis stance Z at C% confidence."
+- `PriceChartCard.tsx` — "TICKER price chart over N bars. TICKER return X%, BENCH return Y%. N annotated events."
+
+### Why
+Pure visual charts are unreadable to screen readers. A `<title>` + `<desc>` SVG pair would help but Recharts doesn't expose them cleanly; the simpler and more portable fix is a `role="img"` wrapper with a computed `aria-label` summarizing the chart's shape and salient endpoints.
+
+This is the minimum that's useful for a sighted-and-screen-reader-both user toggling VoiceOver on. A full table-fallback (rendering the underlying data as an accessible `<table>`) is a polish task best done with real data on a real device — deferred to UX-4 with the visual-regression baseline.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | 22 passed |
+| axe-core | clean across all routes |
+
+### What's left in UX-3
+**UX-3.6 — Manual VoiceOver pass — requires you on an iPhone.** I cannot automate this. When you have 15-20 minutes:
+1. Deploy the latest build to staging (or run locally on a Mac and connect an iPhone via Web Inspector).
+2. Open Safari on the iPhone, navigate to the staging URL.
+3. Enable VoiceOver (Settings → Accessibility → VoiceOver, or triple-click the side button if you wired the shortcut).
+4. Walk through these flows and report anything that reads awkwardly:
+   - Skip to main content link (should be first item, then announces "main, landmark")
+   - Nav drawer (burger should announce "Open navigation, button, collapsed")
+   - Context pane sheet (should announce "Context pane, dialog")
+   - Engine Matrix row tap → ContextPane should announce the engine name
+   - Position Detail row tap → ContextPane should announce the ticker
+   - Equity curve, weights bar — should announce the aria-label summaries I added in UX-3.5
+   - Signup form — email field should bring up the email keyboard (no period key in main row)
+5. Reply with any rough edges + I'll fix them in a follow-up commit.
+
+The technical gates (axe, lint, type-check) all pass — but axe doesn't catch every screen-reader edge, which is why the manual pass exists. Document what you see and we iterate.
+
+### Phase UX-3 — auto-runnable portion closes here
+The five automated sub-phases (3.1 axe cleanup, 3.2 skip link + landmarks, 3.3 live regions, 3.4 form attributes, 3.5 chart aria-labels) are landed. Manual VoiceOver pass (3.6) is the human-in-the-loop step before Phase UX-3 is fully closed.
+
+Next once you've run the VoiceOver pass:
+- **Phase UX-4** — visual polish (loading skeletons, empty states, motion, design-token consolidation export for UX-5)
+- **Phase UX-5** — iOS prep (tokens.json export, OpenAPI Swift codegen scaffold, i18n strings, navigation contract doc, PWA manifest)

@@ -9,8 +9,10 @@ export function DriftBarChart({ holdings }: { holdings: PaperHolding[] }) {
   }
   const data = [...holdings].sort((a, b) => Math.abs(b.drift) - Math.abs(a.drift))
     .map((h) => ({ ticker: h.ticker, drift: Math.round(h.drift * 1000) / 10 }));
+  const worst = data.slice(0, 3).map((d) => `${d.ticker} ${d.drift > 0 ? "+" : ""}${d.drift}%`).join(", ");
+  const ariaSummary = `Drift-from-target bar chart, ${data.length} positions sorted by absolute drift. Largest deviations: ${worst}.`;
   return (
-    <div className="h-52">
+    <div role="img" aria-label={ariaSummary} className="h-52">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
           <XAxis dataKey="ticker" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.42 0.012 250)" }} tickLine={false} axisLine={{ stroke: "oklch(0.92 0.008 240)" }} />

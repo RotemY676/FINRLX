@@ -26,9 +26,12 @@ export function WeightsBarChart({ weights }: { weights: WeightEntry[] }) {
       stance: w.stance,
     }));
 
+  const top = data.slice(0, 3).map((d) => `${d.ticker} ${d.weight}%`).join(", ");
+  const ariaSummary = `Portfolio weights bar chart, ${data.length} positions. Top three: ${top}.`;
+
   return (
     <div>
-      <div className="h-56">
+      <div role="img" aria-label={ariaSummary} className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
             <XAxis dataKey="ticker" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.42 0.012 250)" }} tickLine={false} axisLine={{ stroke: "oklch(0.92 0.008 240)" }} />

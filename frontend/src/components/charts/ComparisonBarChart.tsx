@@ -9,9 +9,11 @@ export function ComparisonBarChart({ rows }: { rows: ComparisonWeightRow[] }) {
   }
   const data = [...rows].sort((a, b) => b.recommendation_weight - a.recommendation_weight)
     .map((r) => ({ ticker: r.ticker, recommendation: Math.round(r.recommendation_weight * 1000) / 10, benchmark: Math.round(r.benchmark_weight * 1000) / 10 }));
+  const top = data.slice(0, 3).map((d) => `${d.ticker} rec ${d.recommendation}% / bench ${d.benchmark}%`).join("; ");
+  const ariaSummary = `Recommendation vs benchmark weights, ${data.length} positions. Top three: ${top}.`;
 
   return (
-    <div className="h-64">
+    <div role="img" aria-label={ariaSummary} className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
           <XAxis dataKey="ticker" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.42 0.012 250)" }} tickLine={false} axisLine={{ stroke: "oklch(0.92 0.008 240)" }} />
