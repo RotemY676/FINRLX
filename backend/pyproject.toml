@@ -32,11 +32,10 @@ ignore = [
 "seed.py" = ["E402", "F401"]
 # __init__.py files re-export symbols intentionally; F401 for them is noise.
 "**/__init__.py" = ["F401"]
-# engines.py:run_engines has a latent bug where the ML branch references `run`
-# before it's constructed. Out of scope for MVP-6a (lint baseline). Tracked as
-# a follow-up in DOCS/handoff/MVP_6_TESTING_FOUNDATION.md. Re-enable F821 here
-# when the bug is fixed.
-"app/services/engines.py" = ["F821"]
+# engines.py:run_engines had a latent bug where the ML branch referenced `run`
+# before it was constructed. Fixed in Phase C1 (2026-05-21) by hoisting the
+# SignalRun construction above the category branch. The per-file F821 ignore
+# is removed; if it regresses, ruff catches it on the next CI run.
 # OHLCV variable shorthand (`o`, `h`, `l`, `c`) is unambiguous in a market-data
 # context. The lint rule flags `l` as visually similar to `1`.
 "app/services/data_providers/validation.py" = ["E741"]
@@ -46,11 +45,11 @@ ignore = [
 "app/services/finrlx_research.py" = ["E402", "E741"]
 
 [tool.mypy]
-# Graduated typing strategy: mypy is the gate for `app/core/` (new code lives
-# here, including MVP-5 security additions). Legacy modules under `app/api/`,
-# `app/services/`, etc. are not yet type-clean — they'll be brought under the
-# gate file-by-file in subsequent phases. For now they're explicitly excluded
-# so the CI gate stays green without papering over real issues in new code.
+# Graduated typing strategy: mypy is the gate for `app/core/` + `app/schemas/`
+# (Phase C3 added schemas/ — 32 source files, clean). `app/api/` transitively
+# pulls in `app/services/finrlx_research.py` which currently produces ~60 type
+# errors; bringing it under the gate is its own multi-day cleanup tracked as
+# a follow-up.
 python_version = "3.11"
 ignore_missing_imports = true
 disallow_untyped_defs = false
@@ -60,4 +59,4 @@ warn_unused_ignores = false
 warn_return_any = false
 warn_redundant_casts = true
 warn_unreachable = true
-files = ["app/core/"]
+files = ["app/core/", "app/schemas/"]

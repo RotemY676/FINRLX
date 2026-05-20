@@ -1062,3 +1062,70 @@ Next: **Phase C — MVP debt closure** (C1..C7 per the roadmap):
 ### Honest limitations
 - The Sidebar only **reads** saved views; there's no "Save current filter" affordance on the workspace pages yet. The CRUD endpoints exist for it, but every page would need to know which subset of its state to serialize. That's a per-surface design decision; for B3 the minimum is "the surface exists and reads from DB."
 - Migration is created but not yet applied to prod (Railway). The schema diff between SQLite test DB and a Postgres prod DB will only land on the next deploy. Operator follow-up: run `alembic upgrade head` after deploy.
+
+---
+
+## C1 + C2 + C3 (partial) + C4 + C5 — MVP debt closure
+**Date:** 2026-05-21
+**Status:** Closed (C3 partially; C6 + C7 deferred)
+
+### What shipped
+
+**C1 — Latent F821 fix in engines.py:**
+- `backend/app/services/engines.py` — `EngineService.run_engines()`: the `SignalRun` construction is hoisted above the category branch so the ML branch can reference `run` without a NameError. Previously the ML branch on line 315 read `run` before line 329 constructed it; the per-file `F821` ignore in pyproject masked the issue. The "no implementation found" branch now also gets a proper SignalRun marked as `skipped` (was orphaned in the old layout).
+- `backend/pyproject.toml` — removed the per-file `F821` ignore for `app/services/engines.py`. Comment updated to note the fix landed in Phase C1.
+
+**C2 — Backtest hygiene gate wired into BacktestService.run_backtest:**
+- `backend/app/services/backtesting.py` — after `results_summary` is written, `backtest_hygiene.evaluate(config, results_summary, decision_data_as_of)` is called. The report's blocks/warns/details are persisted onto `results_summary["hygiene"]`. If any rule blocks, each blocked rule appends a `"hygiene: <rule>"` entry to `results_summary["warnings"]`. Status stays `"completed"` so the operator gets a full record to review rather than a half-written row — the gate flags issues without erasing data.
+- The `decision_data_as_of` map is built from the run's decision_points so the look-ahead rule has the provenance it needs.
+- 35 backtest-related tests still pass after the wiring; the gate runs on every backtest output now.
+
+**C3 — Mypy expanded to app/schemas/:**
+- `backend/pyproject.toml` — mypy `files = ["app/core/", "app/schemas/"]` (was just `app/core/`). 32 source files now under the gate, all clean.
+- Tried adding `app/api/`; it transitively pulls `app/services/finrlx_research.py` which surfaces ~60 type errors (mostly `"object" not callable` in dynamic-import branches). That's its own multi-day cleanup, tracked but not closed in this commit.
+
+**C4 — Axe `KNOWN_PREEXISTING_RULES` already cleared in UX-3.1:**
+- Captured for the audit trail: this work landed in commit `9b10f8f`. The allow-list is empty; every route is axe-clean across all viewports.
+
+**C5 — Both empty-content skills already populated:**
+- `feature-flag-kill-switch` and `recommendation-object-provenance` SKILL.md files both have full content. They were filled in during MVP-4 and MVP-3 work respectively (sources say `source: project`); the roadmap memo was stale on this.
+
+### What's deferred (with reasoning)
+
+**C3 (partial) — app/api/ mypy:**
+- Out of scope here because it ladders into `app/services/finrlx_research.py`'s ~60 errors. That file has dynamic-import branches that need explicit `cast()` / `assert isinstance()` annotations. Tackling it requires a focused multi-hour pass that doesn't belong inside an autonomous run; it's a clean-room follow-up.
+
+**C6 — FastAPI 0.115 → 0.118+ and Next.js 14 → 16:**
+- Both are major-version upgrades. FastAPI 0.116+ changes `lifespan` semantics and some response-model defaults; Next 15 → 16 is the App Router cache/lifecycle rewrite plus Turbopack production. Either could break end-to-end behavior in subtle ways. Doing them inside an autonomous run risks shipping a regression nobody catches until staging. Deferred to a dedicated dependency-upgrade phase with a separate verification plan.
+
+**C7 — slowapi → Redis storage:**
+- Only matters when the app runs on multiple instances. We're on 1 Railway instance today. When that changes — or when the in-memory rate limit becomes a real source of bug reports — this is the moment to swap. Not work for now.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest | **768 passed, 2 skipped** (no regression after C1 + C2) |
+| backend ruff `app/` | clean (the F821 per-file ignore was removed; ruff still happy) |
+| backend mypy | 32 source files clean (app/core/ + app/schemas/) |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | unchanged |
+| playwright chromium | 28 passed |
+
+### Phase C status
+- C1 Fix F821 ✅
+- C2 Wire backtest_hygiene.evaluate ✅
+- C3 Expand mypy to app/api + app/schemas: **app/schemas/ ✅; app/api/ deferred (transitive errors in services/)**
+- C4 Clean KNOWN_PREEXISTING_RULES ✅ (landed in UX-3.1, captured here)
+- C5 Fill empty skill content ✅ (was already done; corrected the roadmap)
+- C6 Dependency upgrades — **deferred** with reasoning
+- C7 slowapi → Redis — **deferred** with reasoning
+
+### What this closes overall
+| Track | Status |
+|---|---|
+| UX-1..UX-5 | Closed (UX-3.6 manual VoiceOver still awaits user iPhone) |
+| Phase A (A1-A4) | Closed |
+| Phase B (B1-B3) | Closed |
+| Phase C | Closed for C1, C2, C3-schemas, C4, C5. C3-api, C6, C7 explicitly deferred. |
+| Phase D iOS | Skipped per locked decision (PWA-first) |

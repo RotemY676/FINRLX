@@ -302,6 +302,37 @@ class BacktestService:
         if include_shadow_engines:
             bt.results_summary["experimental_context"] = "ml_shadow"
             bt.results_summary["model_key"] = "ml_return_forecaster"
+
+        # Phase C2 — backtest hygiene gate. Reads the just-written config +
+        # results_summary, scores against the 5+ pathologies the skill
+        # encodes (look-ahead, walk-forward declaration, rebalance count,
+        # Sharpe inflation, per-period outliers). Output goes onto
+        # results_summary["hygiene"] so the frontend + ops can inspect.
+        # Blocks append warnings; status stays "completed" so the operator
+        # gets a full record to review rather than a half-written row.
+        from app.services import backtest_hygiene
+        # Build decision_data_as_of map from the recommendation rows we tagged
+        # during the run — gives the look-ahead rule something to check.
+        decision_data_as_of: dict[str, date | str] = {}
+        for dp in decision_points:
+            rec_id = dp.get("recommendation_id")
+            if rec_id and dp.get("date"):
+                decision_data_as_of[rec_id] = dp["date"]
+        hygiene_report = backtest_hygiene.evaluate(
+            config=bt.config,
+            results_summary=bt.results_summary,
+            decision_data_as_of=decision_data_as_of or None,
+        )
+        bt.results_summary["hygiene"] = {
+            "passed": hygiene_report.passed,
+            "blocks": list(hygiene_report.block_violations),
+            "warns": list(hygiene_report.warn_violations),
+            "details": dict(hygiene_report.details),
+        }
+        if hygiene_report.block_violations:
+            for blocked in hygiene_report.block_violations:
+                bt.results_summary["warnings"].append(f"hygiene: {blocked}")
+
         await self.db.commit()
         return bt
 

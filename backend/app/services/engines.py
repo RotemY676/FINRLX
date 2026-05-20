@@ -310,6 +310,17 @@ class EngineService:
 
         results = []
         for eng in engines:
+            # Construct + persist the SignalRun for every engine BEFORE we
+            # branch on category. The ML branch referenced `run` before
+            # construction (latent F821) — hoisting fixes the bug and keeps
+            # both branches semantically identical at the SignalRun layer.
+            run = SignalRun(
+                id=gen_uuid(), engine_name=eng.key, engine_version=eng.version,
+                feature_set_id=fs.id, run_started_at=now, status="running",
+                data_as_of=datetime(fs.as_of.year, fs.as_of.month, fs.as_of.day, tzinfo=UTC),
+            )
+            self.db.add(run)
+
             # ML engines read from model_predictions instead of feature_values
             if eng.category == "ml":
                 signal_count = await self._run_ml_engine(eng, run, fs)
@@ -322,16 +333,14 @@ class EngineService:
 
             engine_fn = ENGINE_FUNCTIONS.get(eng.key)
             if not engine_fn:
-                results.append({"run_id": "", "engine_key": eng.key, "status": "skipped",
+                # No implementation found — the run we constructed becomes a
+                # "skipped" record. Mark it accordingly so the SignalRun row
+                # carries truthful status rather than a stuck "running".
+                run.status = "skipped"
+                run.run_completed_at = datetime.now(UTC)
+                results.append({"run_id": run.id, "engine_key": eng.key, "status": "skipped",
                                 "signal_count": 0, "message": f"No implementation for {eng.key}"})
                 continue
-
-            run = SignalRun(
-                id=gen_uuid(), engine_name=eng.key, engine_version=eng.version,
-                feature_set_id=fs.id, run_started_at=now, status="running",
-                data_as_of=datetime(fs.as_of.year, fs.as_of.month, fs.as_of.day, tzinfo=UTC),
-            )
-            self.db.add(run)
 
             signal_count = 0
             for ticker, feat_dict in fv_map.items():
