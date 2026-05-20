@@ -689,3 +689,30 @@ No tests, no code shipped — this is a hand-off brief. The contract test in UX-
 
 ### Gates
 None — doc-only. tsc / vitest / build / playwright unchanged from UX-5.1.
+
+---
+
+## UX-5.3 — i18n strings extraction (scaffold)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `frontend/src/i18n/en.json` (new) — initial extraction of ~40 strings used in multiple places: common verbs (Save / Cancel / Close / I understand), auth labels, the full disclaimer modal + banner copy (the single biggest pile of content that must stay consistent between web and iOS), action results (Saved / Failed / Deferred), and nav labels for all workspace surfaces. Includes a `swift_codegen_notes` section documenting the dotted-path → Localizable.strings mapping for the future iOS Phase D.
+- `frontend/src/i18n/index.ts` (new) — typed `t()` helper with full IntelliSense via a recursive `Path<T>` type. Unknown keys return the key string so missing translations show up as `auth.sign_in_typo` in the rendered UI instead of vanishing — dev-loud, prod-safe.
+- `frontend/src/__tests__/i18n.test.ts` (new) — 4 contract tests: dot-path resolution, unknown-key fallback, top-level shape, and no-control-chars sanity check.
+
+### Why
+Strings are the second-biggest source of "this looks slightly wrong on iOS" defects after colors. Extracting them now to a JSON keeps web and iOS in lockstep — `Localizable.strings` will be generated from the same source the web uses. The migration is intentionally incremental: components that already inline strings keep working; new components reach for `t(...)`.
+
+The disclaimer copy in particular is regulatory — having it in one JSON file makes legal review a single-file diff rather than chasing 4 React components.
+
+### Migration status
+The strings are only **referenced** from this file by net-new components going forward. The existing inline strings in `DisclaimerModal`, `DisclaimerBanner`, `signup/page.tsx`, `login/page.tsx`, etc. are unchanged — refactoring them to `t(...)` is incremental and not part of UX-5.3's scope.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | **21 passed** (+4 new i18n tests) |
+| next build | unchanged |
+| playwright chromium | unchanged |
