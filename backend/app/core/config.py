@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     feature_backtests: bool = True        # Backtest surface
     feature_replay: bool = True           # Replay surface
 
+    # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
+    # The global default is generous (covers normal browsing); endpoint-specific
+    # decorators tighten the cost on auth + write-heavy paths. Tests disable
+    # the limiter by setting rate_limit_enabled=False to keep the suite hermetic.
+    rate_limit_enabled: bool = True
+    rate_limit_default: str = "120/minute"
+    rate_limit_auth: str = "10/minute"
+    rate_limit_ingest: str = "20/minute"
+    rate_limit_recommendation_write: str = "30/minute"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

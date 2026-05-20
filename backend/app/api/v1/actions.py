@@ -6,11 +6,13 @@ POST /api/v1/actions/save-thesis  — stages the latest recommendation (draft ->
 POST /api/v1/actions/promote-paper — defers with reason "promoted to paper"
 POST /api/v1/actions/defer         — defers the latest recommendation
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.action import ActionResult, DeferRequest
@@ -28,7 +30,8 @@ async def _get_latest_rec(db: AsyncSession) -> Recommendation | None:
 
 
 @router.post("/actions/save-thesis", response_model=ApiResponse[ActionResult])
-async def save_thesis(db: AsyncSession = Depends(get_db)):
+@limiter.limit(settings.rate_limit_recommendation_write)
+async def save_thesis(request: Request, db: AsyncSession = Depends(get_db)):
     rec = await _get_latest_rec(db)
     if not rec:
         return ApiResponse(
@@ -50,7 +53,8 @@ async def save_thesis(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/actions/promote-paper", response_model=ApiResponse[ActionResult])
-async def promote_paper(db: AsyncSession = Depends(get_db)):
+@limiter.limit(settings.rate_limit_recommendation_write)
+async def promote_paper(request: Request, db: AsyncSession = Depends(get_db)):
     rec = await _get_latest_rec(db)
     if not rec:
         return ApiResponse(
@@ -72,7 +76,8 @@ async def promote_paper(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/actions/defer", response_model=ApiResponse[ActionResult])
-async def defer_decision(body: DeferRequest | None = None, db: AsyncSession = Depends(get_db)):
+@limiter.limit(settings.rate_limit_recommendation_write)
+async def defer_decision(request: Request, body: DeferRequest | None = None, db: AsyncSession = Depends(get_db)):
     rec = await _get_latest_rec(db)
     if not rec:
         return ApiResponse(

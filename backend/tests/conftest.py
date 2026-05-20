@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db
+from app.core.rate_limit import limiter
 from app.main import app
 from app.models import (
     Asset, Universe, UniverseMembership,
@@ -19,6 +20,11 @@ from app.models import (
     FeatureDefinition, FeatureSet, FeatureValue,
     EngineDefinition,
 )
+
+# Disable rate-limiting in tests so the suite is hermetic. Endpoint decorators
+# still parse; the limiter just doesn't enforce. Individual tests that need the
+# limiter active flip it to True inside a try/finally.
+limiter.enabled = False
 
 TEST_DB_URL = "sqlite+aiosqlite://"  # in-memory
 

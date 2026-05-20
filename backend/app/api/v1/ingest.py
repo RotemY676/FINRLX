@@ -5,10 +5,12 @@ POST /api/v1/ingest/news       — trigger news ingestion
 GET  /api/v1/ingest/status     — ingestion freshness per source
 GET  /api/v1/ingest/manifests  — list ingestion manifests
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.ingestion import (
@@ -22,7 +24,9 @@ router = APIRouter()
 
 
 @router.post("/ingest/bars", response_model=ApiResponse[IngestTriggerResult])
+@limiter.limit(settings.rate_limit_ingest)
 async def trigger_bar_ingestion(
+    request: Request,
     body: IngestBarsRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -45,7 +49,9 @@ async def trigger_bar_ingestion(
 
 
 @router.post("/ingest/news", response_model=ApiResponse[IngestTriggerResult])
+@limiter.limit(settings.rate_limit_ingest)
 async def trigger_news_ingestion(
+    request: Request,
     body: IngestNewsRequest,
     db: AsyncSession = Depends(get_db),
 ):

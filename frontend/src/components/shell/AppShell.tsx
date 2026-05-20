@@ -4,6 +4,8 @@ import { useState } from "react";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { PaneProvider, ContextPanePanel } from "./ContextPane";
+import { DisclaimerBanner } from "../legal/DisclaimerBanner";
+import { DisclaimerModal } from "../legal/DisclaimerModal";
 
 /**
  * Three-zone app shell per design handoff:
@@ -18,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <PaneProvider>
+      <DisclaimerModal />
       <div className="flex flex-col h-screen overflow-hidden">
         <TopBar
           onToggleNav={() => setNavCollapsed((p) => !p)}
@@ -31,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
           {ctxVisible && <ContextPanePanel />}
         </div>
+        <DisclaimerBanner />
       </div>
     </PaneProvider>
   );

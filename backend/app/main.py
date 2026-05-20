@@ -2,10 +2,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
 
 from app.api.router import api_router
 from app.core.auth import guard_jwt_secret
 from app.core.config import settings
+from app.core.rate_limit import limiter
+from app.core.security_headers import SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -20,6 +25,12 @@ app = FastAPI(
     version=settings.app_version,
     lifespan=lifespan,
 )
+
+# Phase MVP-5: per-IP rate limiting. The Limiter instance must be attached
+# to app.state before SlowAPIMiddleware is added so decorated endpoints can
+# resolve `request.app.state.limiter` at call time.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 def build_cors_origins() -> list[str]:
@@ -61,6 +72,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Phase MVP-5: defense-in-depth headers on every response.
+app.add_middleware(SecurityHeadersMiddleware)
+# Phase MVP-5: rate-limit middleware (enforces the per-endpoint @limiter.limit decorators).
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.get("/")

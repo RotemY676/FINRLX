@@ -13,11 +13,10 @@ Security notes:
 - Generic error messages on auth failures (no username enumeration)
 - Email allowlist enforced when settings.require_email_allowlist=True
 """
-from __future__ import annotations
-
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +32,7 @@ from app.core.auth import (
 )
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.models.auth import EmailAllowlist, RefreshToken, User
 from app.schemas.auth import (
     AuthResponse,
@@ -108,9 +108,10 @@ async def _issue_token_pair(
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(settings.rate_limit_auth)
 async def signup(
-    payload: SignupRequest,
     request: Request,
+    payload: Annotated[SignupRequest, Body()],
     db: AsyncSession = Depends(get_db),
 ) -> AuthResponse:
     email = _normalize_email(payload.email)
@@ -147,9 +148,10 @@ async def signup(
 
 
 @router.post("/login", response_model=AuthResponse)
+@limiter.limit(settings.rate_limit_auth)
 async def login(
-    payload: LoginRequest,
     request: Request,
+    payload: Annotated[LoginRequest, Body()],
     db: AsyncSession = Depends(get_db),
 ) -> AuthResponse:
     email = _normalize_email(payload.email)
@@ -175,9 +177,10 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenPair)
+@limiter.limit(settings.rate_limit_auth)
 async def refresh(
-    payload: RefreshRequest,
     request: Request,
+    payload: Annotated[RefreshRequest, Body()],
     db: AsyncSession = Depends(get_db),
 ) -> TokenPair:
     token_hash = hash_refresh_token(payload.refresh_token)
