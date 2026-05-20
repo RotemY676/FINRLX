@@ -37,6 +37,7 @@ from app.models.rl import (
     RLStep,
     RLTrainingRun,
 )
+from app.models.saved_view import SavedView
 from app.models.signal import SignalOutput, SignalRun
 from app.models.validation import (
     BacktestExperiment,
@@ -65,4 +66,5 @@ __all__ = [
     "RLAgentDefinition", "RLTrainingRun", "RLPolicySnapshot", "RLBenchmarkReport",
     "ResearchRegistryMetadata",
     "User", "RefreshToken", "EmailAllowlist",
+    "SavedView",
 ]

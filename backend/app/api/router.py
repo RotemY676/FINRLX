@@ -32,6 +32,7 @@ from app.api.v1.rl import router as rl_router
 from app.api.v1.rl_benchmark import router as rl_benchmark_router
 from app.api.v1.rl_finrlx import router as rl_finrlx_router
 from app.api.v1.rl_training import router as rl_training_router
+from app.api.v1.saved_views import router as saved_views_router
 from app.api.v1.scenario import router as scenario_router
 from app.api.v1.universe import router as universe_router
 
@@ -63,6 +64,7 @@ api_router.include_router(integrations_router, tags=["integrations"])
 api_router.include_router(universe_router, tags=["universes"])
 api_router.include_router(risk_router, tags=["risk"])
 api_router.include_router(news_router, tags=["news"])
+api_router.include_router(saved_views_router, tags=["saved-views"])
 api_router.include_router(rl_router, tags=["rl"])
 api_router.include_router(rl_training_router, tags=["rl-training"])
 api_router.include_router(rl_benchmark_router, tags=["rl-benchmark"])

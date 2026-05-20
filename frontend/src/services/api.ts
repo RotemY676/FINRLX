@@ -2071,3 +2071,51 @@ export interface NewsBundle {
 export async function fetchNews(refresh = false): Promise<ApiResponse<NewsBundle>> {
   return apiFetch<NewsBundle>(`/api/v1/news${refresh ? "?refresh=true" : ""}`);
 }
+
+// ── Phase B3 — Saved views ──
+// These endpoints require an authenticated session. Bearer is injected
+// explicitly via the auth helper. The shared apiFetch is anonymous by
+// design — changing it project-wide is out of B3's scope, so we wrap here.
+
+import { getAccessToken } from "./auth";
+
+export interface SavedView {
+  id: string;
+  name: string;
+  scope: string;
+  filters: Record<string, unknown>;
+  tone: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function _savedViewsAuthHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const t = getAccessToken();
+  const headers: Record<string, string> = { ...extra };
+  if (t) headers.Authorization = `Bearer ${t}`;
+  return headers;
+}
+
+export async function fetchSavedViews(): Promise<ApiResponse<SavedView[]>> {
+  return apiFetch<SavedView[]>("/api/v1/saved-views", { headers: _savedViewsAuthHeaders() });
+}
+
+export async function createSavedView(payload: {
+  name: string;
+  scope: string;
+  filters?: Record<string, unknown>;
+  tone?: string | null;
+}): Promise<ApiResponse<SavedView>> {
+  return apiFetch<SavedView>("/api/v1/saved-views", {
+    method: "POST",
+    headers: _savedViewsAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteSavedView(id: string): Promise<ApiResponse<{ id: string; deleted: boolean }>> {
+  return apiFetch<{ id: string; deleted: boolean }>(`/api/v1/saved-views/${id}`, {
+    method: "DELETE",
+    headers: _savedViewsAuthHeaders(),
+  });
+}

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icons/Icon";
-import { fetchWorkspaceCounts, WorkspaceCountsData } from "@/services/api";
+import { fetchWorkspaceCounts, WorkspaceCountsData, fetchSavedViews, SavedView } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureFlags, FeatureFlags } from "@/contexts/FeatureFlagsContext";
 
 type FlagKey = keyof FeatureFlags;
@@ -47,12 +48,9 @@ const OPS: ReadonlyArray<{
   { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
 ];
 
-const SAVED = [
-  { label: "Momentum leaders · 3M", tone: "" },
-  { label: "Breach watch · concentration", tone: "text-accent" },
-  { label: "Fresh changes · today", tone: "text-pos" },
-  { label: "Post-mortem cases", tone: "text-breach" },
-];
+// Saved views are now DB-backed per user (Phase B3). Sidebar fetches the
+// current user's list on mount + refreshes on workspace-count refresh tick.
+// When the user is signed-out or has no saved views, the section hides.
 
 interface SidebarProps {
   /** Desktop (≥md) only: toggle the in-flow column between w-52 and w-14. */
@@ -66,7 +64,10 @@ interface SidebarProps {
 export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname() ?? "/";
   const [counts, setCounts] = useState<WorkspaceCountsData | null>(null);
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user } = useAuth();
+  const isSignedIn = Boolean(user);
 
   useEffect(() => {
     fetchWorkspaceCounts()
@@ -81,6 +82,18 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
     }, 60_000);
     return () => clearInterval(interval);
   }, []);
+
+  // Saved views (Phase B3) — DB-backed, fetched once when the user is
+  // signed in. If the auth context refreshes (e.g. after login), we re-fetch.
+  useEffect(() => {
+    if (!isSignedIn) {
+      setSavedViews([]);
+      return;
+    }
+    fetchSavedViews()
+      .then((res) => setSavedViews(res.data))
+      .catch(() => setSavedViews([]));
+  }, [isSignedIn]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -167,21 +180,26 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
         {OPS.map(renderNavItem)}
       </div>
 
-      {/* Saved views — full-content section, hides entirely on md+ when collapsed */}
-      <div className={`py-2 border-t border-line mt-auto ${collapsed ? "md:hidden" : ""}`}>
-        <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-4">
-          Saved views
-        </div>
-        {SAVED.map((s, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 px-3 min-h-11 md:min-h-0 md:py-1 mx-1.5 rounded-md text-[12px] text-ink-3 hover:bg-surface-3 cursor-pointer transition-colors"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${s.tone ? "bg-current " + s.tone : "bg-ink-4"}`} />
-            <span className="truncate">{s.label}</span>
+      {/* Saved views — DB-backed per-user (Phase B3). Section hides when the
+          user has no saved views OR is signed-out, so we don't ship an
+          "empty" pile that misleads. Hides entirely on md+ when collapsed. */}
+      {savedViews.length > 0 && (
+        <div className={`py-2 border-t border-line mt-auto ${collapsed ? "md:hidden" : ""}`}>
+          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-4">
+            Saved views
           </div>
-        ))}
-      </div>
+          {savedViews.map((v) => (
+            <div
+              key={v.id}
+              className="flex items-center gap-2 px-3 min-h-11 md:min-h-0 md:py-1 mx-1.5 rounded-md text-[12px] text-ink-3 hover:bg-surface-3 cursor-pointer transition-colors"
+              title={`${v.scope} · ${v.created_at?.slice(0, 10) ?? ""}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${v.tone ? "bg-current " + v.tone : "bg-ink-4"}`} />
+              <span className="truncate">{v.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Version */}
       <div className={`px-3 py-2 border-t border-line ${collapsed ? "md:hidden" : ""}`}>

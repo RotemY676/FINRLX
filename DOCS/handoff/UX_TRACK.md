@@ -1006,3 +1006,59 @@ News was the last phantom-nav entry (`href="#"`) from the audit. Per the user-lo
 - VADER is a general-purpose sentiment lexicon. Some finance-specific phrasing ("downgrade", "miss") it scores correctly; subtler trader-speak ("dovish", "hawkish", "topside") it doesn't. For a fund-grade signal, a finance-tuned model (FinBERT or similar) would be the next step. Out of scope per the no-paid-API constraint.
 - The cache is in-process. On a multi-instance deploy each instance fetches independently. Acceptable today; if we ever scale horizontally beyond 2-3 instances, a shared Redis cache becomes the obvious move (and would be paired with the slowapi → Redis migration tracked in C7).
 - No deployment of the new Python deps yet — `feedparser` and `vaderSentiment` are installed locally and listed in `requirements.txt`. Railway will pick them up on next deploy. Documented as an operator follow-up.
+
+---
+
+## B3 — Saved views (DB-backed); closes Phase B
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+**Backend:**
+- `backend/migrations/versions/020_saved_views.py` (new) — Alembic migration creates the `saved_views` table (`id, user_id, name, scope, filters_json text, tone, created_at, updated_at`) with two indexes (`user_id` and `(user_id, scope)` composite). Down-migration drops cleanly.
+- `backend/app/models/saved_view.py` (new) — `SavedView` SQLAlchemy model.
+- `backend/app/models/__init__.py` — exports SavedView so `Base.metadata.create_all` registers the table for tests.
+- `backend/app/api/v1/saved_views.py` (new) — CRUD endpoints (`GET / POST / PATCH / DELETE`) all gated by `get_current_user` and scoped to the caller's `user_id`. Cross-tenant access returns 404 (not 403) to avoid leaking "exists but you can't see it" — a standard tenant-boundary hygiene pattern matching MVP-1's IDOR tests.
+- `backend/app/api/router.py` — registers the new router with tag `["saved-views"]`.
+- `backend/tests/test_phase_b3_saved_views.py` (new) — **6 contract tests**: create→list round-trip, tenant scoping (user A and B both create views, each only sees their own), PATCH updates fields, DELETE removes and a subsequent PATCH 404s, cross-tenant PATCH returns 404 (not 403), and unauthenticated requests 401/403.
+
+**Frontend:**
+- `frontend/src/services/api.ts` — `SavedView` type + 3 fetchers (`fetchSavedViews`, `createSavedView`, `deleteSavedView`). These wrap `apiFetch` with an explicit Bearer header injection via the existing `getAccessToken()` helper. Changing `apiFetch` project-wide to auto-inject is out of B3 scope; the wrapper pattern keeps the change surgical.
+- `frontend/src/components/shell/Sidebar.tsx` — removed the hardcoded `SAVED` array. Now fetches the current user's views on mount via `useAuth().user`. Section auto-hides when the user has zero saved views OR is signed out — no more "empty pile" misleading the UI.
+
+### Why
+The audit called out the sidebar's "Saved views" pile as hardcoded fake data. Replacing it with a real per-user DB-backed list closes the audit's last "phantom UI" complaint and gives users a real place to bookmark Filter X on Surface Y. Migration uses `Text` for `filters_json` (not Postgres JSONB) so the same schema works on SQLite (tests) and Postgres (prod) without DDL branching.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest | **768 passed, 2 skipped** (+6 saved-views tests; no regression) |
+| backend ruff `app/` | clean (one import auto-fix) |
+| backend mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | 22 routes (no new routes — sidebar swap is internal) |
+| playwright chromium | 28 passed |
+
+### Phase B closes here
+- B1 Risk workspace        `2a79b6f`
+- B2 News intelligence     `4a817af`
+- B3 Saved views           **this commit**
+
+Phase B was the second net-new-backend block:
+- B1 added `risk` (+10 tests, no migration)
+- B2 added `news` (+5 tests, +2 deps, no migration)
+- B3 added `saved_views` (+6 tests, +1 migration, +1 model)
+
+Next: **Phase C — MVP debt closure** (C1..C7 per the roadmap):
+- C1 fix F821 in `app/services/engines.py`
+- C2 wire `backtest_hygiene.evaluate` into `BacktestService.run_backtest`
+- C3 expand mypy to `app/api/` + `app/schemas/`
+- C4 clean `KNOWN_PREEXISTING_RULES` in axe (already done in UX-3.1!)
+- C5 fill skill content for `feature-flag-kill-switch`
+- C6 FastAPI 0.115 → 0.118+, Next.js 14 → 16
+- C7 slowapi → Redis (only if horizontally scaling)
+
+### Honest limitations
+- The Sidebar only **reads** saved views; there's no "Save current filter" affordance on the workspace pages yet. The CRUD endpoints exist for it, but every page would need to know which subset of its state to serialize. That's a per-surface design decision; for B3 the minimum is "the surface exists and reads from DB."
+- Migration is created but not yet applied to prod (Railway). The schema diff between SQLite test DB and a Postgres prod DB will only land on the next deploy. Operator follow-up: run `alembic upgrade head` after deploy.
