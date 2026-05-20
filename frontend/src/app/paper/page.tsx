@@ -148,69 +148,87 @@ export default function PaperPage() {
 
       {/* Holdings table */}
       <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
-        <h3 className="text-[13px] font-semibold text-ink mb-3">
-          Holdings
-          <span className="text-[11px] text-ink-4 font-normal ml-2">
-            Click a row to inspect
-          </span>
-        </h3>
+        <div className="flex items-baseline justify-between mb-3 gap-2">
+          <h3 className="text-[13px] font-semibold text-ink">Holdings</h3>
+          <span className="text-[11px] text-ink-4">Tap a row to inspect</span>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-line text-[11px] text-ink-3">
                 <th className="text-left py-2 pr-3">Ticker</th>
-                <th className="text-left py-2 pr-3">Name</th>
-                <th className="text-right py-2 pr-3">Target</th>
-                <th className="text-right py-2 pr-3">Current</th>
+                <th className="hidden md:table-cell text-left py-2 pr-3">Name</th>
+                <th className="hidden md:table-cell text-right py-2 pr-3">Target</th>
+                <th className="hidden md:table-cell text-right py-2 pr-3">Current</th>
                 <th className="text-right py-2">Drift</th>
               </tr>
             </thead>
             <tbody>
-              {data.holdings.map((h) => (
-                <tr
-                  key={h.asset_id}
-                  className="border-b border-line/50 hover:bg-surface-3 cursor-pointer transition-colors"
-                  onClick={() =>
-                    openPane(`${h.ticker} Paper Detail`, (
-                      <div className="space-y-4">
+              {data.holdings.map((h) => {
+                const openDetail = () =>
+                  openPane(`${h.ticker} Paper Detail`, (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[11px] text-ink-3">Asset</p>
+                        <p className="text-[13px] font-medium">{h.name} ({h.ticker})</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-[11px] text-ink-3">Asset</p>
-                          <p className="text-[13px] font-medium">{h.name} ({h.ticker})</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-[11px] text-ink-3">Target Weight</p>
-                            <p className="text-[15px] font-semibold text-ink font-mono">{(h.target_weight * 100).toFixed(1)}%</p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] text-ink-3">Current Weight</p>
-                            <p className="text-[15px] font-semibold text-ink font-mono">{(h.current_weight * 100).toFixed(1)}%</p>
-                          </div>
+                          <p className="text-[11px] text-ink-3">Target Weight</p>
+                          <p className="text-[15px] font-semibold text-ink font-mono">{(h.target_weight * 100).toFixed(1)}%</p>
                         </div>
                         <div>
-                          <p className="text-[11px] text-ink-3">Drift</p>
-                          <p className={`text-[15px] font-semibold font-mono ${driftColor(h.drift)}`}>
-                            {h.drift > 0 ? "+" : ""}{(h.drift * 100).toFixed(1)}%
-                          </p>
-                          {Math.abs(h.drift) > 0.01 && (
-                            <p className="text-[11px] text-caution mt-1">
-                              Exceeds 1% drift threshold
-                            </p>
-                          )}
+                          <p className="text-[11px] text-ink-3">Current Weight</p>
+                          <p className="text-[15px] font-semibold text-ink font-mono">{(h.current_weight * 100).toFixed(1)}%</p>
                         </div>
                       </div>
-                    ))
-                  }
-                >
-                  <td className="py-2 pr-3 font-mono font-medium">{h.ticker}</td>
-                  <td className="py-2 pr-3 text-ink-2">{h.name}</td>
-                  <td className="py-2 pr-3 text-right font-mono">{(h.target_weight * 100).toFixed(1)}%</td>
-                  <td className="py-2 pr-3 text-right font-mono">{(h.current_weight * 100).toFixed(1)}%</td>
-                  <td className={`py-2 text-right font-mono ${driftColor(h.drift)}`}>
-                    {h.drift > 0 ? "+" : ""}{(h.drift * 100).toFixed(1)}%
-                  </td>
-                </tr>
-              ))}
+                      <div>
+                        <p className="text-[11px] text-ink-3">Drift</p>
+                        <p className={`text-[15px] font-semibold font-mono ${driftColor(h.drift)}`}>
+                          {h.drift > 0 ? "+" : ""}{(h.drift * 100).toFixed(1)}%
+                        </p>
+                        {Math.abs(h.drift) > 0.01 && (
+                          <p className="text-[11px] text-caution mt-1">
+                            Exceeds 1% drift threshold
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ));
+                return (
+                  <tr
+                    key={h.asset_id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${h.ticker} — open paper detail`}
+                    className="border-b border-line/50 hover:bg-surface-3 focus-visible:bg-surface-3 cursor-pointer transition-colors"
+                    onClick={openDetail}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openDetail();
+                      }
+                    }}
+                  >
+                    <td className="py-3 md:py-2 pr-3 font-mono font-medium text-ink">
+                      {h.ticker}
+                      {/* Mobile: inline name + target/current since their columns hide below md. */}
+                      <div className="md:hidden text-[11px] text-ink-3 mt-0.5 font-sans font-normal">
+                        {h.name}
+                      </div>
+                      <div className="md:hidden text-[11px] text-ink-4 mt-0.5 font-sans font-normal">
+                        Target {(h.target_weight * 100).toFixed(1)}% · Current {(h.current_weight * 100).toFixed(1)}%
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-ink-2">{h.name}</td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-right font-mono">{(h.target_weight * 100).toFixed(1)}%</td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-right font-mono">{(h.current_weight * 100).toFixed(1)}%</td>
+                    <td className={`py-3 md:py-2 text-right font-mono ${driftColor(h.drift)}`}>
+                      {h.drift > 0 ? "+" : ""}{(h.drift * 100).toFixed(1)}%
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

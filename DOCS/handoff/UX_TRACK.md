@@ -277,3 +277,31 @@ The risk gauges' `w-40 shrink-0` label was a desktop-only assumption — labels 
 - `/replay` stage cards — UX-2.4
 - `/backtests` equity curve + experiment list — UX-2.5
 - `/admin` shell — UX-2.6 (will likely just route mobile users to a "use desktop" notice given the audit's "fundamentally desktop-only" classification)
+
+---
+
+## UX-2.3 — `/paper` Holdings table mobile refactor
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/paper/page.tsx`:
+  - Holdings table: same pinned-primary / hide-secondary pattern as `/comparison` (UX-2.1).
+    - Mobile: visible columns = Ticker, Drift (2 cols — Ticker carries inline name + target/current secondary line).
+    - md+: adds Name, Target, Current (5 cols — original desktop layout preserved).
+  - Each row gets `role="button" tabIndex={0}` + `onKeyDown` (Enter/Space) + `aria-label={ticker} — open paper detail` for keyboard a11y. Existing click flow (`openPane(...)`) preserved verbatim — the bottom-sheet now carries the column data hidden on mobile.
+  - Row padding `py-2` → `py-3 md:py-2` raises mobile rows to 44pt floor.
+  - Header layout uses `flex items-baseline justify-between` so the "Tap a row to inspect" hint sits cleanly opposite the heading on mobile.
+- `frontend/tests/e2e/paper-mobile.spec.ts` — new spec at 375×667, axe-clean check.
+
+### Why
+Audit flagged the Holdings table as 5-col `overflow-x-auto`-only — same defect class as the Engine Matrix. Cure is identical: pin the columns a PM scans for (ticker + drift), hide the rest, surface them in the sheet.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | **17 passed** (+1 new paper-mobile spec) |
+| axe-core on `/paper` @ 375px | 0 serious violations |
