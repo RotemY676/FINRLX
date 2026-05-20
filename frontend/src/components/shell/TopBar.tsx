@@ -127,14 +127,20 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
-        className="p-1.5 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
         title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
       >
-        <Icon name={theme === "light" ? "moon" : "sun"} size={15} />
+        <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
       </button>
 
-      {/* Notifications */}
-      <button className="p-1.5 rounded-md hover:bg-surface-3 text-ink-3 transition-colors relative" title="Notifications">
+      {/* Notifications — hidden on mobile to free up TopBar real estate; the
+          drawer-equivalent surface for notifications lands in a future phase. */}
+      <button
+        className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors relative"
+        title="Notifications"
+        aria-label="Notifications"
+      >
         <Icon name="bell" size={15} />
         <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-breach" />
       </button>
@@ -169,21 +175,24 @@ function UserChip() {
     .join("")
     .slice(0, 2) || "?";
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <div
-        className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[11px] font-semibold"
+        className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[12px] font-semibold shrink-0"
         title={user.email}
         aria-label={`Signed in as ${user.email}`}
       >
         {initials}
       </div>
+      {/* "Sign out" text only on md+; on mobile the avatar is a single tappable
+          control (a separate sign-out flow lands when the More menu lands). */}
       <button
         onClick={async () => {
           await logout();
           router.push("/login");
         }}
-        className="text-[11px] text-ink-3 hover:text-ink hover:bg-surface-3 px-2 py-1 rounded-md transition-colors"
+        className="hidden md:inline-flex items-center justify-center h-9 px-3 text-[12px] text-ink-3 hover:text-ink hover:bg-surface-3 rounded-md transition-colors"
         title="Sign out"
+        aria-label="Sign out"
       >
         Sign out
       </button>

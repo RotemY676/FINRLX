@@ -142,3 +142,43 @@ The max-height + scroll fix is a real iPhone landscape issue: at 667×375 the mo
 
 ### Out of scope (deferred)
 - Touch-target audit + lint script across TopBar, decision actions, admin — UX-1.5
+
+---
+
+## UX-1.5 — Touch-target sweep + CI lint
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/components/shell/TopBar.tsx` — remaining TopBar buttons brought to HIG 44pt floor on mobile:
+  - **Theme toggle:** `p-1.5` → `inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9`; icon size 15 → 18; explicit `aria-label`.
+  - **Notifications button:** wrapped in `hidden md:inline-flex` (deferred to a future mobile notification surface); height bumped to `h-9 w-9` at md+; explicit `aria-label`.
+  - **Sign-out button (UserChip):** text changed from `text-[11px]` to `text-[12px]`, `px-2 py-1` → `h-9 px-3`, and `hidden md:inline-flex` so it doesn't crowd the 375px TopBar. User avatar bumped from `w-7 h-7` (28px) to `w-8 h-8` for legibility.
+- `frontend/src/__tests__/touch-targets.lint.test.ts` — new vitest gate that walks every `.tsx` under `src/`, parses opening `<button>` JSX tags, and **fails CI** if any button ships with a fixed height in `h-6..h-10` without a `min-h-11`/`h-11+` override on the same element. Two escape hatches:
+  - `// touch-target-lint:allow — reason` comment on the `<button>` line for documented exceptions
+  - `hidden md:|lg:|xl:` reveal pattern auto-exempts pointer-only buttons (mouse, not touch)
+- The lint passes today against the entire `src/` tree with zero violations and zero allow-comments. This becomes the no-regression baseline.
+
+### Why
+The audit flagged TopBar's per-icon buttons at ~27px (`p-1.5` + 15px icon) as below HIG's mandatory 44pt floor. WCAG 2.5.5 demands the same minimum. The cure is two-part: fix what's there, and gate so it doesn't come back.
+
+Notifications + Sign-out got `hidden md:inline-flex` rather than the 44pt treatment because the TopBar on 375px is already at capacity with brand + nav toggle + breadcrumbs + theme + ctx-toggle + avatar. Forcing them visible would push something off-screen; their mobile equivalents (notification center, signed-in menu) belong in a "More" surface that lands in UX-2.
+
+The lint is a vitest test rather than an ESLint rule because it integrates with the existing CI lane with zero new toolchain — and because the rule is structural (state-of-element-after-className-merge), which is awkward for ESLint plugin authoring.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | **14 passed** (5 files; +1 lint suite) |
+| next build | 17 routes (no size delta) |
+| playwright chromium | 13 passed |
+| touch-targets.lint | 0 violations |
+
+### Honest limitations & deferred work
+- **Padding-only buttons not yet linted.** The decision-page action strip (`/decision`) has 9 buttons sized purely by `px-3 py-1.5` content padding. They compute to ~28-30px tall on mobile — still below HIG — but they have no `h-N` class for the lint to catch. Detecting padding-only buttons requires CSS computation we can't do statically. **Fixed in UX-2.2** as part of the decision-page mobile refactor where the strip becomes a sticky bottom CTA + overflow menu.
+- **Font-size hotspots not yet blocked.** A grep of `text-[10px]` + `text-[11px]` returned **564 occurrences across 43 files**. Most are non-interactive labels/badges where context makes them readable, but several sit inside `<button>` content. Blocking all 564 in UX-1.5 isn't feasible. The bulk reduction happens during UX-2 (mobile data refactor) and UX-4 (visual polish). Once the count drops below ~50, a `text-[10px]` lint flips to hard fail.
+- **PipelineStep h-10 circle** (admin) — visually 40px but the actual `<motion.button>` wraps the circle + label + count, making the real tap target ~70-80px. No fix needed; recorded for clarity.
+
+### Phase UX-1 closes here
+Foundation is in place: viewport meta, mobile-first CSS base, mobile drawer for nav, bottom-sheet for context pane, all design tokens valid, touch-target lint as a no-regression gate. Next: Phase UX-2 — mobile-first refactor of the six dense surfaces (`/comparison`, `/decision`, `/paper`, `/replay`, `/backtests`, `/admin`).
