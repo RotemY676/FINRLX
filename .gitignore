@@ -95,3 +95,6 @@ research/finrlx_cpu/outputs/*
 !research/finrlx_cpu/outputs/.gitkeep
 research/finrlx_cpu/.venv/
 
+tsconfig.tsbuildinfo
+frontend/test-results/
+frontend/playwright-report/

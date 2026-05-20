@@ -22,8 +22,10 @@
   "exclude": [
     "node_modules",
     "vitest.config.ts",
+    "playwright.config.ts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/test/**"
+    "src/test/**",
+    "tests/**"
   ]
 }
