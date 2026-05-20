@@ -53,6 +53,23 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
     await expectNoSeriousAxeViolations(page);
   });
 
+  test("skip-to-content link is the first focusable element and lands on main", async ({ page }) => {
+    await page.goto("/");
+    const accept = page.getByRole("button", { name: /i understand/i });
+    if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
+    await page.waitForLoadState("networkidle");
+
+    // Tab focuses the skip link (sr-only until focused).
+    await page.keyboard.press("Tab");
+    const skipLink = page.getByRole("link", { name: /skip to main content/i });
+    await expect(skipLink).toBeFocused();
+
+    // Following it focuses the main landmark.
+    await skipLink.click();
+    const main = page.locator("#main-content");
+    await expect(main).toBeFocused();
+  });
+
   test("context pane toggle wires aria-expanded state both ways", async ({ page }) => {
     await page.goto("/");
     const accept = page.getByRole("button", { name: /i understand/i });

@@ -62,10 +62,14 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
   }, [density]);
 
   return (
-    <header className="h-11 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface text-[13px]">
+    <header
+      role="banner"
+      aria-label="FINRLX top navigation"
+      className="h-11 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface text-[13px]"
+    >
       {/* Brand */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="w-5 h-5 rounded-md bg-primary" />
+        <div className="w-5 h-5 rounded-md bg-primary" aria-hidden="true" />
         <span className="font-semibold text-ink">
           QuantPipeline<em className="font-normal text-ink-3 not-italic"> · decision</em>
         </span>

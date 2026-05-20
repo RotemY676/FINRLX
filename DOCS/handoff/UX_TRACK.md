@@ -456,3 +456,35 @@ The `<main>` `tabIndex={0}` is the canonical WCAG fix for scrollable regions wit
 - I only verified contrast in **light theme** at the test viewports. Dark theme contrast got darker-too-light fixes alongside, but axe wasn't run in dark mode this pass. A dark-theme axe run is tracked for UX-3.6 (the manual VoiceOver / device pass) since iPhones default to dark in many users' settings.
 - The `<main>` `tabIndex={0}` introduces one extra Tab stop at the top of every page. For users with rich keyboard nav this is a tiny noise; for users who depend on it (screen-reader and switch-control), it's a clear benefit. Net positive.
 - Token edits affect every visual that uses ink-3/4, pos, accent. I didn't re-screenshot every surface. Visual regressions are caught in UX-4 when the screenshot baseline lands.
+
+---
+
+## UX-3.2 — Skip-to-content link + banner landmark
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/components/shell/AppShell.tsx` — first focusable element on every page is now a "Skip to main content" link. Uses Tailwind's `sr-only` to stay visually hidden, then `focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 ...` styles to surface as a floating pill above the TopBar on focus. `min-h-11`, primary background, `shadow-lg`. Click jumps to `#main-content`.
+- `frontend/src/components/shell/TopBar.tsx` — `<header>` gets `role="banner" aria-label="FINRLX top navigation"` so screen-reader landmark navigation works without ambiguity (the `<header>` HTML semantic alone is implicit on some browsers). Brand swatch gets `aria-hidden="true"` since it's decorative.
+- `frontend/tests/e2e/mobile-shell.spec.ts` — new test: Tab focuses the skip link (proves it's first in tab order), clicking it focuses `#main-content`.
+
+### Why
+Per WAI-ARIA best practices and Apple's HIG iOS keyboard navigation rules, a skip link is the standard way to let keyboard and screen-reader users avoid re-traversing the same nav on every page. Combined with `<main tabIndex={0}>` from UX-3.1, the skip link gives one Tab to jump from the URL bar straight to page content.
+
+Landmark map after this change:
+- `role="banner"` — TopBar (UX-3.2)
+- `role="navigation" aria-label="Primary navigation"` — Sidebar (UX-1.2)
+- `role="main"` — `<main id="main-content">` (UX-3.1)
+- `role="complementary"` / `role="dialog"` — ContextPane (UX-1.3)
+- `role="contentinfo"` — DisclaimerBanner (MVP-5)
+
+VoiceOver rotor can now jump cleanly across all five landmarks.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | **22 passed** (+1 new skip-link test) |
+| axe-core | clean across all routes |

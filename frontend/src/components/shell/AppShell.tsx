@@ -52,6 +52,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     <>
       <DisclaimerModal />
       <div className="flex flex-col h-screen overflow-hidden">
+        {/* Skip-to-content: visually hidden until focused, then floats above the
+            TopBar. First focusable element on the page so keyboard users can
+            jump past the brand/nav and land directly on page content. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:inline-flex focus:items-center focus:justify-center focus:min-h-11 focus:px-4 focus:rounded-md focus:bg-primary focus:text-primary-ink focus:text-[13px] focus:font-medium focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <TopBar
           onToggleNav={onToggleNav}
           onToggleCtx={onToggleCtx}
