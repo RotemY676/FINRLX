@@ -34,6 +34,8 @@ class PaperPortfolio(Base, TimestampMixin):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # MVP-1: tenant column (nullable; enforced in MVP-4)
+    user_id: Mapped[str | None] = mapped_column(String(36), index=True)
 
     current_holdings: Mapped[dict | None] = mapped_column(JSON)
     cash_weight: Mapped[float] = mapped_column(Float, default=1.0)

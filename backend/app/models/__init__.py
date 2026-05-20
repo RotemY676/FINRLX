@@ -22,6 +22,7 @@ from app.models.rl import (
     RLAgentDefinition, RLTrainingRun, RLPolicySnapshot, RLBenchmarkReport,
 )
 from app.models.research_registry_metadata import ResearchRegistryMetadata
+from app.models.auth import User, RefreshToken, EmailAllowlist
 
 __all__ = [
     "Asset", "Universe", "UniverseMembership", "Benchmark",
@@ -41,4 +42,5 @@ __all__ = [
     "RLEnvironmentDefinition", "RLEnvironmentRun", "RLEpisode", "RLStep",
     "RLAgentDefinition", "RLTrainingRun", "RLPolicySnapshot", "RLBenchmarkReport",
     "ResearchRegistryMetadata",
+    "User", "RefreshToken", "EmailAllowlist",
 ]

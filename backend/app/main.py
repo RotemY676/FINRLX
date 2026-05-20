@@ -4,11 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.core.auth import guard_jwt_secret
 from app.core.config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Phase MVP-1: refuse to start with the dev JWT secret in prod-shape envs.
+    guard_jwt_secret()
     yield
 
 

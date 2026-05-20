@@ -33,6 +33,9 @@ class Recommendation(Base, TimestampMixin):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     universe_id: Mapped[str] = mapped_column(String(36), nullable=False)
 
+    # MVP-1: tenant column (nullable; enforced in MVP-4)
+    user_id: Mapped[str | None] = mapped_column(String(36), index=True)
+
     # Publication state (doc 14 governance)
     status: Mapped[str] = mapped_column(
         String(30), default=PublicationStatus.DRAFT.value, nullable=False
