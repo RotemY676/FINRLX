@@ -1895,3 +1895,65 @@ export async function fetchUniverseReadiness(universeId: string): Promise<ApiRes
 // Phase A2 ops types + fetchers are already declared above (OpsData,
 // fetchOps, approveQueueItem, deferQueueItem, challengeQueueItem,
 // QueueActionResult). The /ops page consumes those directly.
+
+// ── Phase A3 — Policy Editor ──
+
+export interface PolicyRule {
+  id: string;
+  key: string;
+  name: string;
+  category: string;
+  description: string | null;
+  severity: "low" | "mid" | "high" | string;
+  threshold_value: number;
+  threshold_unit: string;
+  applies_to: string;
+  is_active: boolean;
+  is_enforced: boolean;
+  version: number;
+}
+
+export interface PolicyHistoryEntry {
+  id: string;
+  policy_rule_key: string;
+  previous_value: number;
+  new_value: number;
+  actor: string;
+  reason: string | null;
+  created_at: string | null;
+}
+
+export interface PolicyBreach {
+  kind: string;
+  label: string;
+  utilization: number;
+  trend: string;
+  severity: string;
+  related: string;
+  is_active: boolean;
+}
+
+export async function fetchPolicyRules(): Promise<ApiResponse<PolicyRule[]>> {
+  return apiFetch<PolicyRule[]>("/api/v1/policies/rules");
+}
+
+export async function fetchPolicyHistory(key: string): Promise<ApiResponse<PolicyHistoryEntry[]>> {
+  return apiFetch<PolicyHistoryEntry[]>(`/api/v1/policies/rules/${encodeURIComponent(key)}/history`);
+}
+
+export async function fetchPolicyBreaches(): Promise<ApiResponse<PolicyBreach[]>> {
+  return apiFetch<PolicyBreach[]>("/api/v1/policies/breaches");
+}
+
+export async function updatePolicyRule(
+  key: string,
+  threshold_value: number,
+  actor: string,
+  reason?: string,
+): Promise<ApiResponse<PolicyRule>> {
+  return apiFetch<PolicyRule>(`/api/v1/policies/rules/${encodeURIComponent(key)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ threshold_value, actor, reason }),
+  });
+}

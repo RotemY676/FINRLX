@@ -822,3 +822,40 @@ Approve/Defer/Challenge actions were already implemented in the backend (UX-2.6 
 ### Honest limitations
 - Live action mutations call the real POST endpoints but Playwright tests run with the API mocked to 503, so the test verifies "render + axe clean" only. End-to-end action flow needs a backend + seed to verify, which is documented for the operator's deploy smoke (Phase MVP-7e).
 - The `OpsData` response also carries `ml_ops`, `policy`, `integrations_summary`, `universe`, `rl` blocks. A2 surfaces queue/feeds/engines/breaches/incidents/audit but doesn't render those secondary blocks yet — they will become standalone surfaces in A3 (Policy Editor) and A4 (Integrations), and the `ml_ops` + `rl` blocks belong to the research lab on `/admin`.
+
+---
+
+## A3 — Policy Editor page (post-MVP product track)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/policies/page.tsx` (new) — `/policies` route. Groups policy rules by category (concentration / liquidity / volatility / etc.), shows active breaches in a caution-tinted banner at the top, and provides per-rule inline edit + history drawer. Reads `signed-in user.email` from `useAuth()` and passes it as the audit actor on every update.
+- `frontend/src/components/policies/PolicyRuleCard.tsx` (new) — card per rule. Default view: name + severity badge + advisory/enforced badge + description + threshold value with unit. Edit mode (toggle): numeric input (`inputMode="decimal"` for the iOS soft keyboard), reason text input, Save / Cancel. PATCHes `/policies/rules/{key}` with `{threshold_value, actor, reason}`. Save success updates the card in place via a callback; failure surfaces inline with `role="alert"`.
+- History drawer in `policies/page.tsx` — clicking "History" on any rule opens a bottom-sheet on mobile / right-aside on desktop showing prior values with actor + timestamp + reason. Same `role="dialog" aria-modal="true"` pattern as ContextPane (UX-1.3).
+- `backend/app/core/config.py` + `flags.py` — `feature_policy_ui: bool = True`, exposed in `/api/v1/flags`.
+- `backend/tests/test_mvp4_feature_flags.py` — assertion updated to include `policy_ui`.
+- `frontend/src/contexts/FeatureFlagsContext.tsx` — `policy_ui: boolean` added.
+- `frontend/src/services/api.ts` — `PolicyRule`, `PolicyHistoryEntry`, `PolicyBreach` types + 4 fetchers (`fetchPolicyRules`, `fetchPolicyHistory`, `fetchPolicyBreaches`, `updatePolicyRule`).
+- `frontend/src/components/shell/Sidebar.tsx` — new "Policies" OPS entry, gated by `policy_ui`.
+- `frontend/tests/e2e/policies-mobile.spec.ts` (new) — render + axe-clean at 375×667.
+
+### Why
+The `/policies/*` endpoints were already complete on the backend (list, get, PATCH, history, breaches, evaluate). What was missing was a usable surface to drive them — operators were either reading rules straight from the DB or via the desktop-only research lab. A3 gives a daily-driver Policy Editor that mobile and desktop both render cleanly. The history drawer is the audit-friendly companion: every threshold change has a row, the row records who and when and why, and the drawer surfaces that row without leaving the page.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest (flags test) | 3 passed |
+| backend ruff `app/` | clean |
+| backend mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | **19 routes** (+`/policies` at 5.42 kB) |
+| playwright chromium | **25 passed** (+1 new policies-mobile spec) |
+| axe-core on `/policies` @ 375px | 0 serious violations |
+
+### Honest limitations
+- The current page lets any signed-in user edit policy thresholds. The backend's `PolicyRuleUpdateRequest` accepts an `actor` string but doesn't enforce that only an `admin` role can submit. UX-track work won't add role gating; that's a backend follow-up captured for C-track if it becomes a security concern.
+- The "Reason" field is optional. For a fintech audit trail you'd typically force it. Leaving it optional matches the current backend contract; tightening to required is a one-line backend change + a frontend `required` attribute.
+- The history drawer fetches on first open and doesn't refresh on subsequent re-opens of the same rule. Acceptable for now (history doesn't change behind the user's back unless someone else updates the rule).
