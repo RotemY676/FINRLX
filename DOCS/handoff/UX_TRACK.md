@@ -622,3 +622,29 @@ The audit identified "Loading…" dots as a perceived-performance miss: on a slo
 | next build | 17 routes |
 | playwright chromium | 22 passed |
 | axe-core | clean across all routes (skeleton announces once; per-skeleton are aria-hidden) |
+
+---
+
+## UX-4.3 + 4.4 + 4.5 — Motion / errors / micro-interactions audit (no-code closing)
+**Date:** 2026-05-21
+**Status:** Closed — verified by audit, no new code
+
+### What was checked
+- **Motion (UX-4.3 / 4.5):** the global `@media (prefers-reduced-motion: reduce)` rule in `globals.css` (added in UX-1.1) clamps every animation-duration and transition-duration to 0.01ms. The sidebar drawer, the context-pane bottom sheet, the skeleton pulse, and every Tailwind `transition-*` class respect it. Tested in DevTools Rendering > "prefers-reduced-motion: reduce" — animations effectively disabled.
+- **Errors (UX-4.4):** `PageError` has `role="alert"` (UX-3.3) and uses semantic tokens for contrast (UX-3.1). Inline errors on signup/login use `role="alert"` directly. The decision-page action message uses `role="status" aria-live="polite"` (UX-2.2). All paths from action → screen-reader announcement are wired.
+- **Focus visibility:** `:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px }` global rule applies to every interactive element. Hit-tested with keyboard Tab navigation across `/`, `/decision`, `/paper`, `/comparison` — focus ring is visible everywhere.
+
+### Why no new code
+Each of these landed naturally as a side-effect of earlier sub-phases. Re-implementing for the sake of a UX-4 line item would be churn. The audit above is the documented closure.
+
+### Phase UX-4 closes here
+Visual polish work that needed code (skeletons, empty states) shipped in UX-4.1+4.2 (`e298ac7`). Motion, errors, focus visibility verified as already handled.
+
+Next: **Phase UX-5 — iOS prep**:
+- 5.1 Design tokens export (`tokens.json` consumable by Tailwind today + Swift codegen later)
+- 5.2 OpenAPI Swift codegen scaffold
+- 5.3 i18n strings extraction
+- 5.4 Navigation contract doc (web routes → SwiftUI structure)
+- 5.5 PWA manifest + service worker so the site is installable as iOS Home Screen app
+
+Then the **post-MVP product track** (re-confirmed 2026-05-21): A2 Ops command → A3 Policy Editor → A4 Integrations → B1 Risk workspace → B2 News intelligence → B3 Saved views → C1..C7 MVP debt closure. Phase D iOS stays skipped (PWA-first).
