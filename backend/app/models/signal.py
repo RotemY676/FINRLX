@@ -4,7 +4,7 @@ Maps to Data Model doc 11, Domain 4: Signal and Engine Outputs.
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, Float, JSON, func
+from sqlalchemy import JSON, DateTime, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

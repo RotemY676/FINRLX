@@ -10,18 +10,18 @@ Doc 10 Section 8 steps 5-9:
   8. Execute risk overlay
   9. Publish (deferred to Phase 4E — recommendation created as 'draft')
 """
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.signal import SignalRun, SignalOutput
-from app.models.decision_pipeline import SelectionRun, AllocationResult, TimingResult, RiskOverlayResult
-from app.models.recommendation import Recommendation, RecommendationWeight
-from app.models.reference import Asset, Universe, UniverseMembership
+from app.models.base import gen_uuid
+from app.models.decision_pipeline import AllocationResult, RiskOverlayResult, SelectionRun, TimingResult
 from app.models.feature import FeatureSet
 from app.models.ops import AuditEvent
-from app.models.base import gen_uuid
+from app.models.recommendation import Recommendation, RecommendationWeight
+from app.models.reference import Asset, Universe, UniverseMembership
+from app.models.signal import SignalOutput, SignalRun
 from app.services.engines import EngineService
 from app.services.provenance import (
     PIPELINE_VERSION,
@@ -29,7 +29,6 @@ from app.services.provenance import (
     compute_policy_hash,
     new_replay_seed,
 )
-
 
 # ── Policy constants ──────────────────────────────────────────────────
 
@@ -90,7 +89,6 @@ class DecisionPipelineService:
 
         By default excludes shadow/ML engines. Set include_shadow=True to include them.
         """
-        from app.models.engine import EngineDefinition
         eng_svc = EngineService(self.db)
         if include_shadow:
             registered_keys = await eng_svc._get_registered_keys()
@@ -232,7 +230,7 @@ class DecisionPipelineService:
         """Select candidate assets above threshold from engine signals."""
         included = []
         excluded = []
-        all_asset_ids = {aid for aid, _ in universe_assets}
+        {aid for aid, _ in universe_assets}
 
         for asset_id, ticker in universe_assets:
             sig = asset_signals.get(asset_id)
@@ -318,7 +316,7 @@ class DecisionPipelineService:
         exit_signals = {}
         urgency_votes = []
 
-        for aid, w in weights.items():
+        for aid, _w in weights.items():
             sig = asset_signals.get(aid, {})
             conf = sig.get("confidence", 0.5)
             risk = sig.get("risk_level", "Moderate")
@@ -423,7 +421,7 @@ class DecisionPipelineService:
         signal_outputs: list[SignalOutput] | None = None,
     ) -> Recommendation:
         """Create the final recommendation with weights and confidence triplet."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         final_weights = overlay.post_risk_weights or {}
 
         # Confidence triplet
@@ -541,7 +539,7 @@ class DecisionPipelineService:
         # hash binds to the immutable signal set we're about to process, not
         # whatever the ORM identity-map shows at write time.
         rec_id = gen_uuid()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         rec = Recommendation(
             id=rec_id, universe_id=universe_id, status="draft",
             source_feature_set_id=fs_id, source_signal_run_ids=run_ids,
@@ -580,7 +578,7 @@ class DecisionPipelineService:
             signal_outputs=outputs,
         )
         stages.append({"stage": "recommendation", "status": "completed", "record_id": rec_id,
-                       "message": f"Draft recommendation created"})
+                       "message": "Draft recommendation created"})
 
         # Audit event
         self.db.add(AuditEvent(

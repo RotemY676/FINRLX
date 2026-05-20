@@ -4,7 +4,7 @@ Maps to Data Model doc 11, Domain 1: Reference Data.
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, Boolean, Float, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

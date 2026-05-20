@@ -4,7 +4,7 @@ Maps to Data Model doc 11, Domain 8: Admin, Ops, Governance.
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, String, Text, JSON, Integer, Boolean, func
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

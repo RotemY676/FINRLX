@@ -7,20 +7,22 @@ GET  /api/v1/pipeline/runs             — list pipeline runs
 GET  /api/v1/pipeline/runs/{rec_id}    — pipeline run detail with stages
 """
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.pipeline import (
-    PipelineRunRequest, PipelineRunResult, PipelineStageResult, PipelineStatusResponse,
-)
-from app.schemas.recommendation import RecommendationDetail, ConfidenceTriplet, WeightEntry
+from app.core.database import get_db
 from app.models.recommendation import RecommendationWeight
 from app.models.reference import Asset
+from app.schemas.common import ApiResponse
+from app.schemas.pipeline import (
+    PipelineRunRequest,
+    PipelineRunResult,
+    PipelineStageResult,
+    PipelineStatusResponse,
+)
+from app.schemas.recommendation import ConfidenceTriplet, RecommendationDetail, WeightEntry
 from app.services.pipeline import DecisionPipelineService
-
-from sqlalchemy import select
 
 router = APIRouter()
 

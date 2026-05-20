@@ -2,9 +2,9 @@
 
 Phase 6A: model definitions, runs, and predictions.
 """
-from datetime import datetime, date
+from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, Integer, String, Text, JSON, Boolean, Index, func
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

@@ -11,16 +11,15 @@ Feature families:
   - News sentiment: news_sentiment_7d, news_count_7d
 """
 import math
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
-from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
-from app.models.reference import Asset, UniverseMembership
 from app.models.base import gen_uuid
-
+from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
+from app.models.ingestion import IngestionManifest, MarketBar, NewsEvent
+from app.models.reference import Asset, UniverseMembership
 
 # ── Default feature definitions ──────────────────────────────────────
 
@@ -172,8 +171,8 @@ class FeatureService:
           (regardless of ticker), meaning the news source is available
         """
         cutoff = before - timedelta(days=lookback_days)
-        dt_from = datetime(cutoff.year, cutoff.month, cutoff.day, tzinfo=timezone.utc)
-        dt_to = datetime(before.year, before.month, before.day, tzinfo=timezone.utc) + timedelta(days=1)
+        dt_from = datetime(cutoff.year, cutoff.month, cutoff.day, tzinfo=UTC)
+        dt_to = datetime(before.year, before.month, before.day, tzinfo=UTC) + timedelta(days=1)
 
         # SQLite JSON contains doesn't work reliably — load all recent news, filter in Python
         stmt = (
@@ -231,7 +230,7 @@ class FeatureService:
         as_of: date | None = None,
     ) -> FeatureSet:
         """Compute all active features for all assets, reading from DB market_bars and news_events."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if as_of is None:
             as_of = date.today()
 
@@ -251,7 +250,7 @@ class FeatureService:
         if not assets:
             fs.status = "failed"
             fs.warnings = ["No assets found"]
-            fs.completed_at = datetime.now(timezone.utc)
+            fs.completed_at = datetime.now(UTC)
             await self.db.commit()
             return fs
 
@@ -313,7 +312,7 @@ class FeatureService:
         fs.warnings = warnings if warnings else None
         fs.freshness_status = "healthy" if completeness > 0.8 else "degraded" if completeness > 0.5 else "stale"
         fs.status = "completed" if completeness > 0 else "failed"
-        fs.completed_at = datetime.now(timezone.utc)
+        fs.completed_at = datetime.now(UTC)
 
         await self.db.commit()
         return fs

@@ -3,8 +3,8 @@
 Maps to Doc 11 Domain 2 and Doc 12 Section 7.
 """
 from datetime import date, datetime
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel
 
 # ── Market Bar ───────────────────────────────────────────────────────
 

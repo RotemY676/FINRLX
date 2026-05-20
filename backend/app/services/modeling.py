@@ -10,17 +10,14 @@ Baseline model: ml_return_forecaster
 
 No scikit-learn, no numpy, no network calls.
 """
-import math
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.modeling import ModelDefinition, ModelRun, ModelPrediction
-from app.models.feature import FeatureSet, FeatureValue
-from app.models.reference import Asset
 from app.models.base import gen_uuid
-
+from app.models.feature import FeatureSet, FeatureValue
+from app.models.modeling import ModelDefinition, ModelPrediction, ModelRun
 
 FEATURE_KEYS = [
     "return_5d", "return_20d", "return_60d",
@@ -164,7 +161,7 @@ class ModelingService:
         This records the training context for lineage.
         """
         await self.ensure_default_definitions()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if train_end is None:
             train_end = date.today()
         if train_start is None:
@@ -193,7 +190,7 @@ class ModelingService:
             train_start_date=train_start, train_end_date=train_end,
             source_feature_set_ids=[fs.id] if fs else [],
             metrics=metrics, warnings=warnings if warnings else None,
-            started_at=now, completed_at=datetime.now(timezone.utc),
+            started_at=now, completed_at=datetime.now(UTC),
         )
         self.db.add(run)
         await self.db.commit()
@@ -203,7 +200,7 @@ class ModelingService:
                       feature_set_id: str | None = None) -> ModelRun:
         """Generate predictions from the baseline model using feature_values."""
         await self.ensure_default_definitions()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if feature_set_id:
             fs = (await self.db.execute(
@@ -256,7 +253,7 @@ class ModelingService:
                 warnings.append(f"{ticker}: {result['quality']} ({result['ok_feature_count']}/{result['total_feature_count']} features)")
 
         run.status = "completed"
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = datetime.now(UTC)
         run.metrics = {
             "prediction_count": pred_count,
             "feature_set_id": fs.id,

@@ -14,19 +14,18 @@ market_bars available up to that date. This is a safe approximation — no futur
 is used in feature computation since features query bars with bar_date <= as_of.
 """
 import math
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.validation import BacktestExperiment
+from app.models.base import gen_uuid
 from app.models.ingestion import MarketBar
 from app.models.reference import Asset, Universe, UniverseMembership
-from app.models.base import gen_uuid
-from app.services.features import FeatureService
+from app.models.validation import BacktestExperiment
 from app.services.engines import EngineService
+from app.services.features import FeatureService
 from app.services.pipeline import DecisionPipelineService
-
 
 DEFAULT_COST_BPS = 10  # 10 bps per trade
 REBALANCE_WEEKLY = "weekly"
@@ -96,7 +95,7 @@ class BacktestService:
         include_shadow_engines: bool = False,
     ) -> BacktestExperiment:
         """Run a walk-forward backtest using real market_bars and pipeline logic."""
-        now = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         if end_date is None:
             end_date = date.today()
@@ -107,8 +106,8 @@ class BacktestService:
         bt = BacktestExperiment(
             id=gen_uuid(), name=name, status="running",
             universe_id=universe_id,
-            start_date=datetime(start_date.year, start_date.month, start_date.day, tzinfo=timezone.utc),
-            end_date=datetime(end_date.year, end_date.month, end_date.day, tzinfo=timezone.utc),
+            start_date=datetime(start_date.year, start_date.month, start_date.day, tzinfo=UTC),
+            end_date=datetime(end_date.year, end_date.month, end_date.day, tzinfo=UTC),
             config={
                 "rebalance_frequency": rebalance_frequency,
                 "cost_bps": cost_bps,
@@ -193,7 +192,8 @@ class BacktestService:
 
                 if pipe_result["status"] == "completed" and pipe_result.get("recommendation_id"):
                     # Tag backtest recommendation so it doesn't pollute live current
-                    from app.models.recommendation import Recommendation as RecModel, RecommendationWeight
+                    from app.models.recommendation import Recommendation as RecModel
+                    from app.models.recommendation import RecommendationWeight
                     bt_rec = (await self.db.execute(
                         select(RecModel).where(RecModel.id == pipe_result["recommendation_id"])
                     )).scalar_one_or_none()

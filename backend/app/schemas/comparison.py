@@ -2,9 +2,9 @@
 
 Supports side-by-side comparison of recommendation vs benchmark.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.schemas.recommendation import ConfidenceTriplet, WeightEntry
+from app.schemas.recommendation import ConfidenceTriplet
 
 
 class ComparisonWeightRow(BaseModel):

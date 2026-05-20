@@ -12,12 +12,16 @@ from datetime import date
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
 from app.schemas.common import ApiResponse
 from app.schemas.modeling import (
-    ModelDefinitionResponse, ModelRunResponse, ModelPredictionResponse,
-    ModelTrainRequest, ModelPredictRequest, ModelStatusResponse,
+    ModelDefinitionResponse,
+    ModelPredictionResponse,
+    ModelPredictRequest,
+    ModelRunResponse,
+    ModelStatusResponse,
+    ModelTrainRequest,
 )
 from app.services.modeling import ModelingService
 

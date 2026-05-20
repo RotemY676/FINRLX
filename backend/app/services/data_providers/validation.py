@@ -63,7 +63,7 @@ def detect_stale_ticks(bars: list[dict[str, Any]]) -> list[str]:
         return []
     sorted_bars = sorted(bars, key=lambda b: b["bar_date"])
     stale: list[str] = []
-    for prev, cur in zip(sorted_bars, sorted_bars[1:]):
+    for prev, cur in zip(sorted_bars, sorted_bars[1:], strict=False):
         if (
             prev["open"] == cur["open"]
             and prev["high"] == cur["high"]

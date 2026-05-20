@@ -2,14 +2,14 @@
 
 Phase 6F: read-only universe inspection with coverage/readiness data.
 """
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.reference import Asset, Universe, UniverseMembership
-from app.models.ingestion import MarketBar
 from app.models.feature import FeatureSet, FeatureValue
-from app.models.signal import SignalRun, SignalOutput
+from app.models.ingestion import MarketBar
 from app.models.modeling import ModelPrediction
+from app.models.reference import Asset, Universe, UniverseMembership
+from app.models.signal import SignalOutput
 
 
 class UniverseService:

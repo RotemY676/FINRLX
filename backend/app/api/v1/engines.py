@@ -12,18 +12,24 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
+from app.models.recommendation import Recommendation
+from app.models.signal import SignalOutput
 from app.schemas.common import ApiResponse
 from app.schemas.engine import (
-    EngineSignal, EngineComparisonResponse, DisagreementSummary,
-    EngineDefinitionResponse, EngineSignalDetail,
-    EngineRunRequest, EngineRunResult, EngineRunResponse, EngineRunDetailResponse,
+    DisagreementSummary,
+    EngineComparisonResponse,
+    EngineDefinitionResponse,
+    EngineRunDetailResponse,
+    EngineRunRequest,
+    EngineRunResponse,
+    EngineRunResult,
+    EngineSignal,
+    EngineSignalDetail,
     EngineStatusResponse,
 )
 from app.schemas.evidence import EvidenceItem, EvidenceNarrativeResponse
-from app.models.recommendation import Recommendation
-from app.models.signal import SignalRun, SignalOutput
 from app.services.engines import EngineService
 
 router = APIRouter()
@@ -128,7 +134,7 @@ def _build_engine_signal_from_outputs(engine_key: str, outputs: list[SignalOutpu
         return None
     # Average across assets for the comparison view
     avg_confidence = sum(o.confidence or 0 for o in outputs) / len(outputs)
-    avg_score = sum(o.score or 0 for o in outputs) / len(outputs)
+    sum(o.score or 0 for o in outputs) / len(outputs)
     arts = outputs[0].artifacts or {}
 
     # Determine dominant stance
@@ -268,7 +274,7 @@ async def get_disagreement(db: AsyncSession = Depends(get_db)):
     summary_parts = [f"{agreeing} of {total} engines agree on {dominant_stance} stance."]
     if dissenting_names:
         summary_parts.append(f"{dissenting} dissent: " + ", ".join(
-            f"{n} ({engine_stances.get(ek, '?')})" for ek, n in zip(dissenting_engines_keys, dissenting_names)
+            f"{n} ({engine_stances.get(ek, '?')})" for ek, n in zip(dissenting_engines_keys, dissenting_names, strict=False)
         ) + ".")
 
     return ApiResponse(
@@ -322,7 +328,7 @@ async def get_evidence(db: AsyncSession = Depends(get_db)):
         drivers = arts.get("drivers", [])
         caveats = arts.get("caveats", [])
         avg_score = sum(o.score or 0 for o in outputs) / max(len(outputs), 1)
-        avg_conf = sum(o.confidence or 0 for o in outputs) / max(len(outputs), 1)
+        sum(o.confidence or 0 for o in outputs) / max(len(outputs), 1)
 
         body_parts = drivers[:3] if drivers else ["No specific drivers identified"]
         if caveats:

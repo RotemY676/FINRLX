@@ -8,17 +8,15 @@ Implemented engines:
   - risk_quality: volatility + drawdown + volume profile
   - news_sentiment: news sentiment + news count
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.engine import EngineDefinition
-from app.models.signal import SignalRun, SignalOutput
-from app.models.feature import FeatureSet, FeatureValue
-from app.models.reference import Asset
 from app.models.base import gen_uuid
-
+from app.models.engine import EngineDefinition
+from app.models.feature import FeatureSet, FeatureValue
+from app.models.signal import SignalOutput, SignalRun
 
 # ── Default engine definitions ────────────────────────────────────────
 
@@ -288,7 +286,7 @@ class EngineService:
         engine_keys: list[str] | None = None,
     ) -> list[dict]:
         """Run active engines against a feature set. Returns list of run results."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await self.ensure_default_engines()
 
         # Resolve feature set
@@ -316,7 +314,7 @@ class EngineService:
             if eng.category == "ml":
                 signal_count = await self._run_ml_engine(eng, run, fs)
                 run.status = "completed"
-                run.run_completed_at = datetime.now(timezone.utc)
+                run.run_completed_at = datetime.now(UTC)
                 results.append({"run_id": run.id, "engine_key": eng.key, "status": "completed",
                                 "signal_count": signal_count, "message": f"{signal_count} ML signals",
                                 "feature_set_id": fs.id})
@@ -331,7 +329,7 @@ class EngineService:
             run = SignalRun(
                 id=gen_uuid(), engine_name=eng.key, engine_version=eng.version,
                 feature_set_id=fs.id, run_started_at=now, status="running",
-                data_as_of=datetime(fs.as_of.year, fs.as_of.month, fs.as_of.day, tzinfo=timezone.utc),
+                data_as_of=datetime(fs.as_of.year, fs.as_of.month, fs.as_of.day, tzinfo=UTC),
             )
             self.db.add(run)
 
@@ -373,7 +371,7 @@ class EngineService:
                     signal_count += 1
 
             run.status = "completed"
-            run.run_completed_at = datetime.now(timezone.utc)
+            run.run_completed_at = datetime.now(UTC)
 
             results.append({"run_id": run.id, "engine_key": eng.key, "status": "completed",
                             "signal_count": signal_count, "message": f"{signal_count} signals",
@@ -389,7 +387,8 @@ class EngineService:
 
     async def _run_ml_engine(self, eng: EngineDefinition, run: SignalRun, fs: FeatureSet) -> int:
         """Run ML engine by reading latest model_predictions."""
-        from app.models.modeling import ModelPrediction, ModelRun as MRun
+        from app.models.modeling import ModelPrediction
+        from app.models.modeling import ModelRun as MRun
 
         # Find latest completed predict run for this model key
         latest_run = (await self.db.execute(

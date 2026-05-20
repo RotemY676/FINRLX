@@ -2,14 +2,13 @@
 
 GET /api/v1/pricechart?ticker=NVDA — returns time-series + events + confidence band.
 """
-import math
 import random
 
 from fastapi import APIRouter, Query
 
 from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
-from app.schemas.pricechart import PriceChartData, PricePoint, ChartEvent
+from app.schemas.pricechart import ChartEvent, PriceChartData, PricePoint
 
 router = APIRouter()
 

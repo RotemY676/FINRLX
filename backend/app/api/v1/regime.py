@@ -3,20 +3,23 @@
 GET /api/v1/regime — current regime snapshot
 GET /api/v1/activity — recent activity feed
 """
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
+from app.models.ops import AuditEvent
 from app.schemas.common import ApiResponse
 from app.schemas.regime import (
-    RegimeSnapshot, SignalPosture, SectorTilt,
-    ActivityFeedResponse, ActivityEvent,
+    ActivityEvent,
+    ActivityFeedResponse,
+    RegimeSnapshot,
+    SectorTilt,
+    SignalPosture,
 )
-from app.models.ops import AuditEvent
 
 router = APIRouter()
 
@@ -24,7 +27,7 @@ router = APIRouter()
 @router.get("/regime", response_model=ApiResponse[RegimeSnapshot])
 async def get_regime():
     """Return current regime classification. Seeded deterministic data."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return ApiResponse(
         meta=make_meta(),
         data=RegimeSnapshot(
@@ -62,13 +65,13 @@ async def get_activity(db: AsyncSession = Depends(get_db)):
     )
     audit_events = events_result.scalars().all()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     items = []
     for ev in audit_events:
         details = ev.details or {}
         ev_time = ev.occurred_at
         if ev_time.tzinfo is None:
-            ev_time = ev_time.replace(tzinfo=timezone.utc)
+            ev_time = ev_time.replace(tzinfo=UTC)
         secs = max((now - ev_time).total_seconds(), 0)
         when_ago = f"{int(secs / 60)}m" if secs < 3600 else f"{int(secs / 3600)}h"
 

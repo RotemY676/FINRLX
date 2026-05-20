@@ -3,7 +3,7 @@
 Maps to API Contract doc 12, Common Response Envelope.
 """
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 

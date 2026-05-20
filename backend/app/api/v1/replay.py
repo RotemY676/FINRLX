@@ -4,19 +4,22 @@ GET /api/v1/replay                         — list replay snapshots
 GET /api/v1/replay/{recommendation_id}     — full replay for a recommendation
 """
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.replay import (
-    ReplayDetail, ReplayListItem, ReplayListResponse, ReplayStageSnapshot,
-)
-from app.schemas.recommendation import ConfidenceTriplet, WeightEntry
-from app.models.validation import ReplaySnapshot
+from app.core.database import get_db
 from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.reference import Asset
+from app.models.validation import ReplaySnapshot
+from app.schemas.common import ApiResponse
+from app.schemas.recommendation import ConfidenceTriplet, WeightEntry
+from app.schemas.replay import (
+    ReplayDetail,
+    ReplayListItem,
+    ReplayListResponse,
+    ReplayStageSnapshot,
+)
 from app.services.replay import ReplayService
 
 router = APIRouter()
@@ -50,7 +53,7 @@ async def list_replays(db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(stmt)).all()
 
     items = []
-    for rec_id, latest, stage_count in rows:
+    for rec_id, latest, _stage_count in rows:
         rec = (await db.execute(
             select(Recommendation).where(Recommendation.id == rec_id)
         )).scalar_one_or_none()

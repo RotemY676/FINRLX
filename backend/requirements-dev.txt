@@ -1,0 +1,6 @@
+# Phase MVP-6a — dev/CI tooling. Not shipped in the runtime image.
+-r requirements.txt
+
+ruff==0.8.6
+mypy==1.14.1
+pip-audit==2.7.3

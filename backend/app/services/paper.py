@@ -3,20 +3,18 @@
 Phase 5C: simulated portfolio tracking from published recommendations.
 All fills are paper — no broker/execution.
 """
-from datetime import datetime, timezone
+import math
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import math
-from datetime import date, timedelta
-
-from app.models.validation import PaperPortfolio, PaperValuationSnapshot, PaperTrade
-from app.models.recommendation import Recommendation, RecommendationWeight
-from app.models.ingestion import MarketBar
-from app.models.reference import Asset
-from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
+from app.models.ingestion import MarketBar
+from app.models.ops import AuditEvent
+from app.models.recommendation import Recommendation, RecommendationWeight
+from app.models.reference import Asset
+from app.models.validation import PaperPortfolio, PaperTrade, PaperValuationSnapshot
 
 
 class PaperPortfolioService:
@@ -89,7 +87,7 @@ class PaperPortfolioService:
             total_allocated += w.target_weight
 
         cash_weight = round(max(0, 1.0 - total_allocated), 4)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         source_type = "recommendation_paper"
         if allow_unpublished and rec.status not in ("published", "published_with_warning"):
@@ -164,7 +162,7 @@ class PaperPortfolioService:
 
         # Recompute weights
         drifts = []
-        for aid, info in holdings.items():
+        for _aid, info in holdings.items():
             if total_value > 0:
                 info["current_weight"] = round(info["current_value"] / total_value, 4)
             drift = round(info["current_weight"] - info["target_weight"], 4)
@@ -237,7 +235,7 @@ class PaperPortfolioService:
             }
             total_allocated += w.target_weight
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         pp.current_holdings = new_holdings
         pp.cash_weight = round(max(0, 1.0 - total_allocated), 4)
         pp.source_recommendation_id = recommendation_id
@@ -290,7 +288,7 @@ class PaperPortfolioService:
             return 0  # already has trades
 
         holdings = pp.current_holdings or {}
-        trade_date = pp.created_at or datetime.now(timezone.utc)
+        trade_date = pp.created_at or datetime.now(UTC)
 
         # For backfill, try to get actual prices from market_bars
         asset_ids = list(holdings.keys())
@@ -405,7 +403,7 @@ class PaperPortfolioService:
 
             snap = PaperValuationSnapshot(
                 id=gen_uuid(), portfolio_id=portfolio_id,
-                valuation_date=datetime(d.year, d.month, d.day, tzinfo=timezone.utc),
+                valuation_date=datetime(d.year, d.month, d.day, tzinfo=UTC),
                 portfolio_value=round(total, 2),
                 cash_value=round(cash_value, 2),
                 invested_value=round(invested, 2),

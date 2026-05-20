@@ -4,8 +4,8 @@ Maps to Doc 11 Domain 4 and Doc 12 engine endpoints.
 Preserves backward-compatible response shapes for existing frontend consumers.
 """
 from datetime import datetime
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 
 # ── Engine definition ─────────────────────────────────────────────────
 

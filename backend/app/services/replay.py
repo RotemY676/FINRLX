@@ -3,15 +3,15 @@
 Phase 5B: creates and queries replay snapshots for pipeline/backtest decisions.
 Captures stage-by-stage decision state for forensic reconstruction.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.validation import ReplaySnapshot
-from app.models.recommendation import Recommendation, RecommendationWeight
-from app.models.decision_pipeline import SelectionRun, AllocationResult, TimingResult, RiskOverlayResult
 from app.models.base import gen_uuid
+from app.models.decision_pipeline import AllocationResult, RiskOverlayResult, SelectionRun, TimingResult
+from app.models.recommendation import Recommendation
+from app.models.validation import ReplaySnapshot
 
 
 class ReplayService:
@@ -27,7 +27,7 @@ class ReplayService:
         if not rec:
             return []
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         snapshots = []
 
         # Selection

@@ -8,15 +8,19 @@ GET  /api/v1/ingest/manifests  — list ingestion manifests
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import make_meta
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import limiter
-from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.ingestion import (
-    IngestBarsRequest, IngestNewsRequest, IngestTriggerResult,
-    IngestionStatusResponse, SourceFreshness,
-    ManifestResponse, ManifestListResponse,
+    IngestBarsRequest,
+    IngestionStatusResponse,
+    IngestNewsRequest,
+    IngestTriggerResult,
+    ManifestListResponse,
+    ManifestResponse,
+    SourceFreshness,
 )
 from app.services.ingest import IngestService
 

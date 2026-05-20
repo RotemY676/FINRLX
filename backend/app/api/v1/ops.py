@@ -12,25 +12,40 @@ POST /api/v1/ops/queue/{id}/defer   — defer queue item
 POST /api/v1/ops/queue/{id}/challenge — challenge queue item
 GET  /api/v1/workspace-counts       — badge counts for sidebar
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, func, case
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.ops import (
-    OpsCommandCenterResponse, OpsQueueItem, OpsFeed, OpsEngine,
-    OpsBreach, OpsIncident, OpsAuditEntry, OpsSystemKpi,
-    QueueActionResponse, WorkspaceCounts, OpsMLBlock,
-    OpsPolicyBlock, OpsIntegrationsBlock, OpsUniverseBlock, OpsRLBlock,
-)
+from app.core.database import get_db
 from app.models.ops import (
-    AuditEvent, Incident, DataFeed, PolicyBreach, PublicationQueueEntry,
+    AuditEvent,
+    DataFeed,
+    Incident,
+    PolicyBreach,
+    PublicationQueueEntry,
 )
 from app.models.signal import SignalRun
+from app.schemas.common import ApiResponse
+from app.schemas.ops import (
+    OpsAuditEntry,
+    OpsBreach,
+    OpsCommandCenterResponse,
+    OpsEngine,
+    OpsFeed,
+    OpsIncident,
+    OpsIntegrationsBlock,
+    OpsMLBlock,
+    OpsPolicyBlock,
+    OpsQueueItem,
+    OpsRLBlock,
+    OpsSystemKpi,
+    OpsUniverseBlock,
+    QueueActionResponse,
+    WorkspaceCounts,
+)
 
 router = APIRouter()
 
@@ -66,7 +81,7 @@ async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
     """Compute engine health from the latest SignalRun per engine, including drift."""
     from app.models.signal import SignalOutput
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     # Get the latest run per engine
     subq = (
         select(
@@ -115,7 +130,7 @@ async def _query_engines(db: AsyncSession) -> list[OpsEngine]:
         latency_ms = 0
         if r.run_started_at and r.run_completed_at:
             latency_ms = int((r.run_completed_at - r.run_started_at).total_seconds() * 1000)
-        mins_ago = int((now - r.run_completed_at.replace(tzinfo=timezone.utc)).total_seconds() / 60) if r.run_completed_at else 999
+        mins_ago = int((now - r.run_completed_at.replace(tzinfo=UTC)).total_seconds() / 60) if r.run_completed_at else 999
 
         # Status based on staleness
         if mins_ago > 10:
@@ -251,9 +266,9 @@ async def get_ops(db: AsyncSession = Depends(get_db)):
     uni_block = OpsUniverseBlock(**uni_data)
 
     # RL block (merged from env + training + benchmark)
+    from app.services.rl_benchmark import RLBenchmarkService
     from app.services.rl_environment import RLEnvironmentService
     from app.services.rl_training import RLTrainingService
-    from app.services.rl_benchmark import RLBenchmarkService
     rl_svc = RLEnvironmentService(db)
     await rl_svc.ensure_default_rl_environment()
     rl_env_data = await rl_svc.get_status()
@@ -362,7 +377,7 @@ async def resolve_incident(incident_id: str, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
 
     inc.status = "resolved"
-    inc.resolved_at = datetime.now(timezone.utc)
+    inc.resolved_at = datetime.now(UTC)
     db.add(AuditEvent(
         actor="current_user", action="resolve_incident",
         object_type="incident", object_id=incident_id,

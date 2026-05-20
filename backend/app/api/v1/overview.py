@@ -4,15 +4,15 @@ GET /api/v1/overview — current recommendation summary + system health.
 Maps to API Contract doc 12.
 """
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.overview import OverviewResponse, HealthSummary
-from app.schemas.recommendation import RecommendationSummary, ConfidenceTriplet
+from app.core.database import get_db
 from app.models.recommendation import Recommendation, RecommendationWeight
+from app.schemas.common import ApiResponse
+from app.schemas.overview import HealthSummary, OverviewResponse
+from app.schemas.recommendation import ConfidenceTriplet, RecommendationSummary
 
 router = APIRouter()
 

@@ -16,19 +16,19 @@ import logging
 import os
 import re
 import uuid
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
-from app.models.rl import RLPolicySnapshot, RLTrainingRun
-from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
-from app.services.rl_training import RLTrainingService
+from app.models.ops import AuditEvent
+from app.models.rl import RLPolicySnapshot, RLTrainingRun
 from app.services.rl_environment import RLEnvironmentService
+from app.services.rl_training import RLTrainingService
 
 FINRLX_SAFETY_FLAGS = {
     "research_only": True,
@@ -53,15 +53,15 @@ OPTIONAL_ASSET_FIELDS = [
 
 def _json_safe(obj):
     """Recursively convert non-JSON-serializable types to safe primitives."""
-    if obj is None or isinstance(obj, (bool, int, float, str)):
+    if obj is None or isinstance(obj, bool | int | float | str):
         return obj
     if isinstance(obj, Decimal):
         return float(obj)
-    if isinstance(obj, (date, datetime)):
+    if isinstance(obj, date | datetime):
         return obj.isoformat()
     if isinstance(obj, dict):
         return {k: _json_safe(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
+    if isinstance(obj, list | tuple):
         return [_json_safe(v) for v in obj]
     return str(obj)
 
@@ -161,7 +161,7 @@ class FinRLXResearchService:
         end_date: date | None = None,
     ) -> dict:
         """Run a stubbed research training that validates the interface without real neural training."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if end_date is None:
             end_date = date.today()
@@ -376,8 +376,9 @@ class FinRLXResearchService:
 
     async def _capture_production_fingerprints(self) -> dict:
         """Capture lightweight per-component fingerprints proving no production mutation."""
-        from app.models.recommendation import Recommendation
         from sqlalchemy import func as sqfunc
+
+        from app.models.recommendation import Recommendation
 
         components: dict[str, dict] = {}
 
@@ -437,7 +438,7 @@ class FinRLXResearchService:
                 id=gen_uuid(), actor="system", action=event_type,
                 object_type="finrlx_research",
                 object_id=str(details.get("candidate_id")) if details.get("candidate_id") else None,
-                details=safe_details, occurred_at=datetime.now(timezone.utc),
+                details=safe_details, occurred_at=datetime.now(UTC),
             ))
         except Exception as e:
             logger.error("Failed to create audit event %s: %s", event_type, e)
@@ -487,7 +488,7 @@ class FinRLXResearchService:
         seed: int = 42,
     ) -> dict:
         """Run a CPU-only PPO/A2C research prototype, or fall back if dependencies missing."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dep_status = self.get_neural_dependency_status()
 
         if end_date is None:
@@ -564,10 +565,11 @@ class FinRLXResearchService:
         # Dependencies available — run real CPU-only training
         # This branch only executes if numpy, gymnasium, stable_baselines3, torch are all importable
         try:
-            import numpy as np
             import gymnasium as gym
+            import numpy as np
             from gymnasium import spaces
-            from stable_baselines3 import PPO as SB3PPO, A2C as SB3A2C
+            from stable_baselines3 import A2C as SB3A2C
+            from stable_baselines3 import PPO as SB3PPO
 
             # Build tiny synthetic environment from dataset
             validation = await self.validate_dataset_contract(start_date, end_date, limit=30)
@@ -610,7 +612,7 @@ class FinRLXResearchService:
                 train_start_date=start_date, train_end_date=end_date,
                 config={"algorithm": algorithm, "timesteps": timesteps, "seed": seed,
                         "training_mode": f"cpu_{algorithm.lower()}", "real_neural_training": True},
-                completed_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(UTC),
             )
             self.db.add(run)
 
@@ -658,7 +660,7 @@ class FinRLXResearchService:
                                             "unchanged": overall_unch, "component_checks": cc},
                 "warnings": ["CPU-only offline research prototype.", "Not eligible for promotion.",
                              "Not used by production decisions."],
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
             })
 
         except Exception as e:
@@ -822,7 +824,7 @@ class FinRLXResearchService:
         notes: str | None = None,
     ) -> dict:
         """Import a validated research artifact as a shadow-only candidate."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Validate first
         validation = self.validate_research_artifact(artifact)
@@ -1051,11 +1053,11 @@ class FinRLXResearchService:
         include_baselines: bool = True,
     ) -> dict:
         """Run an offline benchmark comparing an imported candidate against baseline agents."""
-        from app.services.rl_benchmark import RLBenchmarkService
         from app.services.rl_agents import AGENTS
+        from app.services.rl_benchmark import RLBenchmarkService
         from app.services.rl_training import _score_weighted_agent_fn
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Check eligibility
         eligibility = await self.check_benchmark_eligibility(candidate_id)
@@ -1244,7 +1246,7 @@ class FinRLXResearchService:
         export_format: str = "jsonl",
     ) -> dict:
         """Export a dataset for local research use only. No production influence."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         export_id = gen_uuid()
 
         if end_date is None:
@@ -1492,7 +1494,7 @@ class FinRLXResearchService:
 
     @staticmethod
     def _empty_registry() -> dict:
-        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "exports": []}
+        return {"version": 1, "updated_at": datetime.now(UTC).isoformat(), "exports": []}
 
     @staticmethod
     def load_dataset_export_registry() -> dict:
@@ -1503,7 +1505,7 @@ class FinRLXResearchService:
             FinRLXResearchService.save_dataset_export_registry(reg)
             return reg
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or "exports" not in data:
                 return {"version": 1, "updated_at": None, "exports": [],
@@ -1525,7 +1527,7 @@ class FinRLXResearchService:
         export_dir = FinRLXResearchService._exports_dir()
         os.makedirs(export_dir, exist_ok=True)
         path = FinRLXResearchService._registry_path()
-        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        registry["updated_at"] = datetime.now(UTC).isoformat()
         tmp_path = path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2, default=str)
@@ -1572,7 +1574,7 @@ class FinRLXResearchService:
         entry = {
             "export_id": export_id,
             "created_at": export_response.get("created_at"),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "status": "completed",
             "lifecycle_state": "active",
             "name": export_response.get("name"),
@@ -1644,7 +1646,7 @@ class FinRLXResearchService:
 
         enriched: dict = {}
         try:
-            with open(meta_file, "r", encoding="utf-8") as f:
+            with open(meta_file, encoding="utf-8") as f:
                 file_data = json.load(f)
                 if export_format == "json" and "metadata" in file_data:
                     enriched = file_data["metadata"]
@@ -1697,7 +1699,7 @@ class FinRLXResearchService:
         for entry in registry.get("exports", []):
             if entry.get("export_id") == export_id:
                 entry["lifecycle_state"] = "stale"
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 if reason:
                     entry.setdefault("warnings", []).append(f"Marked stale: {reason}")
                 self.save_dataset_export_registry(registry)
@@ -1756,13 +1758,13 @@ class FinRLXResearchService:
                     continue
                 seen_ids.add(export_id)
                 try:
-                    with open(os.path.join(export_dir, fname), "r", encoding="utf-8") as f:
+                    with open(os.path.join(export_dir, fname), encoding="utf-8") as f:
                         meta = json.load(f)
                     file_check = self._check_artifact_files(export_id, "jsonl")
                     entries.append({
                         "export_id": export_id,
                         "created_at": meta.get("created_at"),
-                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(UTC).isoformat(),
                         "status": "completed",
                         "lifecycle_state": "active",
                         "name": meta.get("name"),
@@ -1799,14 +1801,14 @@ class FinRLXResearchService:
                     continue
                 seen_ids.add(export_id)
                 try:
-                    with open(os.path.join(export_dir, fname), "r", encoding="utf-8") as f:
+                    with open(os.path.join(export_dir, fname), encoding="utf-8") as f:
                         file_data = json.load(f)
                     meta = file_data.get("metadata", file_data)
                     file_check = self._check_artifact_files(export_id, "json")
                     entries.append({
                         "export_id": export_id,
                         "created_at": meta.get("created_at"),
-                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(UTC).isoformat(),
                         "status": "completed",
                         "lifecycle_state": "active",
                         "name": meta.get("name"),
@@ -1838,7 +1840,7 @@ class FinRLXResearchService:
         # Sort newest first
         entries.sort(key=lambda e: e.get("created_at") or "", reverse=True)
 
-        registry = {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "exports": entries}
+        registry = {"version": 1, "updated_at": datetime.now(UTC).isoformat(), "exports": entries}
         self.save_dataset_export_registry(registry)
 
         return {"rebuilt": True, "export_count": len(entries), "safety_flags": self.DATASET_EXPORT_SAFETY_FLAGS}
@@ -1911,7 +1913,7 @@ class FinRLXResearchService:
     @staticmethod
     def _sanitize_experiment_value(value, max_len: int = 500):
         """Sanitize a metric/parameter value. Returns None if disallowed or non-primitive."""
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return value
         if isinstance(value, str):
             value = value[:max_len]
@@ -1964,7 +1966,7 @@ class FinRLXResearchService:
 
     @staticmethod
     def _empty_experiment_registry() -> dict:
-        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "experiments": []}
+        return {"version": 1, "updated_at": datetime.now(UTC).isoformat(), "experiments": []}
 
     @staticmethod
     def load_experiment_registry() -> dict:
@@ -1975,7 +1977,7 @@ class FinRLXResearchService:
             FinRLXResearchService.save_experiment_registry(reg)
             return reg
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or "experiments" not in data:
                 return {"version": 1, "updated_at": None, "experiments": [],
@@ -1997,7 +1999,7 @@ class FinRLXResearchService:
         exp_dir = FinRLXResearchService._experiments_dir()
         os.makedirs(exp_dir, exist_ok=True)
         path = FinRLXResearchService._experiment_registry_path()
-        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        registry["updated_at"] = datetime.now(UTC).isoformat()
         tmp_path = path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2, default=str)
@@ -2045,7 +2047,7 @@ class FinRLXResearchService:
         if linked_export.get("artifact_exists") is False:
             warnings.append("Linked dataset export artifact files are missing from disk.")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         experiment_id = gen_uuid()
 
         # Sanitize all user-controlled metadata
@@ -2138,7 +2140,7 @@ class FinRLXResearchService:
         for entry in registry.get("experiments", []):
             if entry.get("experiment_id") == experiment_id:
                 entry["lifecycle_state"] = lifecycle_state
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 if reason:
                     safe_reason = self._sanitize_experiment_text(reason, max_len=500)
                     entry.setdefault("warnings", []).append(f"State changed to {lifecycle_state}: {safe_reason}")
@@ -2190,7 +2192,7 @@ class FinRLXResearchService:
                     entry.setdefault("warnings", []).append(
                         "Some result metadata fields were redacted or dropped because they looked like paths or secrets.")
 
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 self.save_experiment_registry(registry)
                 return {**entry, "safety_flags": self.EXPERIMENT_SAFETY_FLAGS}
         return None
@@ -2279,7 +2281,7 @@ class FinRLXResearchService:
 
     @staticmethod
     def _empty_comparison_registry() -> dict:
-        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "comparisons": []}
+        return {"version": 1, "updated_at": datetime.now(UTC).isoformat(), "comparisons": []}
 
     @staticmethod
     def load_comparison_registry() -> dict:
@@ -2289,7 +2291,7 @@ class FinRLXResearchService:
             FinRLXResearchService.save_comparison_registry(reg)
             return reg
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or "comparisons" not in data:
                 return {"version": 1, "updated_at": None, "comparisons": [],
@@ -2310,7 +2312,7 @@ class FinRLXResearchService:
         cmp_dir = FinRLXResearchService._comparisons_dir()
         os.makedirs(cmp_dir, exist_ok=True)
         path = FinRLXResearchService._comparison_registry_path()
-        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        registry["updated_at"] = datetime.now(UTC).isoformat()
         tmp_path = path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2, default=str)
@@ -2355,7 +2357,7 @@ class FinRLXResearchService:
                 if mn in rm:
                     v = rm[mn]
                     avail += 1
-                    if isinstance(v, (int, float)):
+                    if isinstance(v, int | float):
                         values.append({"experiment_id": eid, "value": v})
                     else:
                         mixed = True
@@ -2468,7 +2470,7 @@ class FinRLXResearchService:
 
         # Build sanitized experiment dicts for comparison summary (use snapshot-safe metrics)
         sanitized_experiments = []
-        for exp, snap in zip(experiments, snapshots):
+        for exp, snap in zip(experiments, snapshots, strict=False):
             sanitized_experiments.append({
                 "experiment_id": exp.get("experiment_id"),
                 "lifecycle_state": exp.get("lifecycle_state"),
@@ -2479,7 +2481,7 @@ class FinRLXResearchService:
         summary = self._build_comparison_summary(sanitized_experiments, safe_priority)
         warnings.extend(summary.get("warnings", []))
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         comparison_id = gen_uuid()
 
         entry = {
@@ -2535,7 +2537,7 @@ class FinRLXResearchService:
         for entry in registry.get("comparisons", []):
             if entry.get("comparison_id") == comparison_id:
                 entry["lifecycle_state"] = "archived"
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 if reason:
                     safe_reason = self._sanitize_experiment_text(reason, max_len=500)
                     entry.setdefault("warnings", []).append(f"Archived: {safe_reason}")
@@ -2639,7 +2641,7 @@ class FinRLXResearchService:
         safe = {}
         allowed_keys = {"available_count", "missing_count", "coverage_ratio"}
         for k, v in entry.items():
-            if k in allowed_keys and isinstance(v, (int, float)):
+            if k in allowed_keys and isinstance(v, int | float):
                 safe[k] = v
         return safe
 
@@ -2657,7 +2659,7 @@ class FinRLXResearchService:
 
     @staticmethod
     def _empty_readiness_registry() -> dict:
-        return {"version": 1, "updated_at": datetime.now(timezone.utc).isoformat(), "readiness_reviews": []}
+        return {"version": 1, "updated_at": datetime.now(UTC).isoformat(), "readiness_reviews": []}
 
     @staticmethod
     def load_readiness_registry() -> dict:
@@ -2667,7 +2669,7 @@ class FinRLXResearchService:
             FinRLXResearchService.save_readiness_registry(reg)
             return reg
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or "readiness_reviews" not in data:
                 return {"version": 1, "updated_at": None, "readiness_reviews": [],
@@ -2688,7 +2690,7 @@ class FinRLXResearchService:
         rd = FinRLXResearchService._readiness_dir()
         os.makedirs(rd, exist_ok=True)
         path = FinRLXResearchService._readiness_registry_path()
-        registry["updated_at"] = datetime.now(timezone.utc).isoformat()
+        registry["updated_at"] = datetime.now(UTC).isoformat()
         tmp_path = path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2, default=str)
@@ -2904,7 +2906,7 @@ class FinRLXResearchService:
         else:
             suggested = "draft"
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         readiness_id = gen_uuid()
 
         entry = {
@@ -2977,7 +2979,7 @@ class FinRLXResearchService:
                         return {"error": f"Cannot mark research_review_ready: {len(blocking)} blocking finding(s) remain."}
 
                 entry["readiness_state"] = readiness_state
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 if reason:
                     safe_reason = self._sanitize_experiment_text(reason, max_len=500)
                     entry.setdefault("warnings", []).append(f"State changed to {readiness_state}: {safe_reason}")
@@ -2992,7 +2994,7 @@ class FinRLXResearchService:
         for entry in registry.get("readiness_reviews", []):
             if entry.get("readiness_id") == readiness_id:
                 entry["readiness_state"] = "archived"
-                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                entry["updated_at"] = datetime.now(UTC).isoformat()
                 if reason:
                     safe_reason = self._sanitize_experiment_text(reason, max_len=500)
                     entry.setdefault("warnings", []).append(f"Archived: {safe_reason}")
@@ -3178,7 +3180,7 @@ class FinRLXResearchService:
             file_readable = False
             if file_exists:
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with open(file_path, encoding="utf-8") as f:
                         f.read(1)
                     file_readable = True
                 except Exception:
@@ -3393,7 +3395,7 @@ class FinRLXResearchService:
             return None
         if isinstance(value, bool):
             return value
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return value
         if isinstance(value, str):
             return FinRLXResearchService._sanitize_mirror_value(value)
@@ -3429,7 +3431,7 @@ class FinRLXResearchService:
         if not os.path.exists(path):
             return {"_missing": True, items_key: [], "warnings": [f"{registry_kind} registry file not found"]}
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or items_key not in data:
                 return {"registry_corrupt": True, items_key: [],
@@ -3658,7 +3660,7 @@ class FinRLXResearchService:
                 db_result = await self.db.execute(stmt)
                 existing = db_result.scalar_one_or_none()
 
-                now = func.now()
+                func.now()
 
                 if existing:
                     existing.record_hash = candidate["record_hash"]
@@ -3670,7 +3672,7 @@ class FinRLXResearchService:
                     existing.warnings_json = candidate["warnings_json"]
                     existing.limitations_json = candidate["limitations_json"]
                     existing.mirror_status = candidate["mirror_status"]
-                    existing.last_seen_at = datetime.now(timezone.utc)
+                    existing.last_seen_at = datetime.now(UTC)
                     existing.research_only = True
                     existing.offline_only = True
                     existing.no_production_influence = True

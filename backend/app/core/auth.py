@@ -7,14 +7,13 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
 import jwt
 
 from app.core.config import settings
-
 
 _DEV_DEFAULT_JWT_SECRET = "dev-only-not-for-production-jwt-secret-rotate-me-please"
 
@@ -53,7 +52,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def issue_access_token(*, user_id: str, role: str) -> tuple[str, datetime]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expires_at = now + timedelta(minutes=settings.access_token_ttl_minutes)
     payload: dict[str, Any] = {
         "sub": user_id,
@@ -91,7 +90,7 @@ def hash_refresh_token(plaintext: str) -> str:
 
 
 def refresh_expires_at() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_ttl_days)
+    return datetime.now(UTC) + timedelta(days=settings.refresh_token_ttl_days)
 
 
 def timing_safe_dummy_hash() -> str:

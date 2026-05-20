@@ -7,11 +7,19 @@ Tables:
   feature_sets        — computed feature batches with completeness and freshness
   feature_values      — individual computed feature values per asset per feature
 """
-from datetime import datetime, date
+from datetime import date, datetime
 
 from sqlalchemy import (
-    Date, DateTime, Float, Integer, String, Text, JSON, Boolean,
-    Index, func,
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 

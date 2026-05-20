@@ -5,14 +5,14 @@ evaluates promotion readiness gates, and persists promotion review reports.
 
 Does NOT automatically promote ML or change engine active status.
 """
-from datetime import datetime, date, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.base import gen_uuid
 from app.models.modeling import MLPromotionReview, ModelValidationReport
 from app.models.validation import BacktestExperiment
-from app.models.base import gen_uuid
 from app.services.backtesting import BacktestService
 
 MIN_SAMPLE_FOR_PROMOTION = 20
@@ -86,7 +86,7 @@ class MLPromotionService:
         end_date: date | None = None,
     ) -> MLPromotionReview:
         """Run baseline + shadow backtests and compare results."""
-        now = datetime.now(timezone.utc)
+        datetime.now(UTC)
         if end_date is None:
             end_date = date.today()
         if start_date is None:
@@ -119,7 +119,7 @@ class MLPromotionService:
         model_key: str = "ml_return_forecaster",
     ) -> MLPromotionReview:
         """Compare two backtest runs and produce a promotion review report."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         warnings = []
 
         baseline_bt = (await self.db.execute(

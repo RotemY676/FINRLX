@@ -12,17 +12,23 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
+from app.models.reference import Asset
+from app.models.validation import PaperPortfolio
 from app.schemas.common import ApiResponse
 from app.schemas.paper import (
-    PaperPortfolioDetail, PaperHolding, PaperEvent,
-    PaperDriftResponse, PaperCreateRequest,
-    PaperValuationPoint, PaperTradeResponse, PaperPerformanceSummary,
-    PaperAssetAttribution, PaperDecisionAttribution,
+    PaperAssetAttribution,
+    PaperCreateRequest,
+    PaperDecisionAttribution,
+    PaperDriftResponse,
+    PaperEvent,
+    PaperHolding,
+    PaperPerformanceSummary,
+    PaperPortfolioDetail,
+    PaperTradeResponse,
+    PaperValuationPoint,
 )
-from app.models.validation import PaperPortfolio
-from app.models.reference import Asset
 from app.services.paper import PaperPortfolioService
 
 router = APIRouter()

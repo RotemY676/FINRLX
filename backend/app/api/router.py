@@ -1,37 +1,37 @@
 """Central API router. All v1 routes are registered here."""
 from fastapi import APIRouter
 
-from app.api.v1.overview import router as overview_router
-from app.api.v1.recommendations import router as recommendations_router
-from app.api.v1.decision import router as decision_router
-from app.api.v1.comparison import router as comparison_router
-from app.api.v1.replay import router as replay_router
-from app.api.v1.backtests import router as backtests_router
-from app.api.v1.paper import router as paper_router
-from app.api.v1.engines import router as engines_router
-from app.api.v1.regime import router as regime_router
-from app.api.v1.ops import router as ops_router
-from app.api.v1.scenario import router as scenario_router
 from app.api.v1.actions import router as actions_router
-from app.api.v1.pricechart import router as pricechart_router
-from app.api.v1.ingest import router as ingest_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.backtests import router as backtests_router
+from app.api.v1.comparison import router as comparison_router
+from app.api.v1.decision import router as decision_router
+from app.api.v1.engines import router as engines_router
 from app.api.v1.features import router as features_router
-from app.api.v1.pipeline import router as pipeline_router
-from app.api.v1.publication import router as publication_router
-from app.api.v1.models import router as models_router
-from app.api.v1.model_validation import router as model_validation_router
-from app.api.v1.model_promotion import router as model_promotion_router
-from app.api.v1.ml_ops import router as ml_ops_router
-from app.api.v1.policies import router as policies_router
+from app.api.v1.flags import router as flags_router
+from app.api.v1.health import router as health_router
+from app.api.v1.ingest import router as ingest_router
 from app.api.v1.integrations import router as integrations_router
-from app.api.v1.universe import router as universe_router
+from app.api.v1.ml_ops import router as ml_ops_router
+from app.api.v1.model_promotion import router as model_promotion_router
+from app.api.v1.model_validation import router as model_validation_router
+from app.api.v1.models import router as models_router
+from app.api.v1.ops import router as ops_router
+from app.api.v1.overview import router as overview_router
+from app.api.v1.paper import router as paper_router
+from app.api.v1.pipeline import router as pipeline_router
+from app.api.v1.policies import router as policies_router
+from app.api.v1.pricechart import router as pricechart_router
+from app.api.v1.publication import router as publication_router
+from app.api.v1.recommendations import router as recommendations_router
+from app.api.v1.regime import router as regime_router
+from app.api.v1.replay import router as replay_router
 from app.api.v1.rl import router as rl_router
-from app.api.v1.rl_training import router as rl_training_router
 from app.api.v1.rl_benchmark import router as rl_benchmark_router
 from app.api.v1.rl_finrlx import router as rl_finrlx_router
-from app.api.v1.health import router as health_router
-from app.api.v1.auth import router as auth_router
-from app.api.v1.flags import router as flags_router
+from app.api.v1.rl_training import router as rl_training_router
+from app.api.v1.scenario import router as scenario_router
+from app.api.v1.universe import router as universe_router
 
 api_router = APIRouter()
 

@@ -9,15 +9,15 @@ Methodology:
   - Produce promotion readiness assessment
 """
 import math
-from datetime import datetime, date, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.modeling import ModelPrediction, ModelRun, ModelDefinition, ModelValidationReport
-from app.models.ingestion import MarketBar
-from app.models.signal import SignalRun, SignalOutput
 from app.models.base import gen_uuid
+from app.models.ingestion import MarketBar
+from app.models.modeling import ModelPrediction, ModelRun, ModelValidationReport
+from app.models.signal import SignalOutput, SignalRun
 
 MIN_SAMPLE_FOR_REVIEW = 20
 MIN_ACCURACY_FOR_REVIEW = 0.52
@@ -78,7 +78,7 @@ class MLValidationService:
         self, model_key: str = "ml_return_forecaster", horizon_days: int = 20,
     ) -> ModelValidationReport:
         """Evaluate ML predictions against realized returns."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Get latest completed predict run
         pred_run = (await self.db.execute(

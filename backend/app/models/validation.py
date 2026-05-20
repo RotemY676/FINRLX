@@ -4,7 +4,7 @@ Maps to Data Model doc 11, Domain 7: Validation, Backtest, Paper, Replay.
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, Float, JSON, Boolean, Integer, func
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

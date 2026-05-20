@@ -5,21 +5,19 @@ trainer, policy snapshots, evaluation, and dataset export.
 
 No neural networks. No GPU. No external RL libraries. Offline/shadow only.
 """
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.rl import (
-    RLAgentDefinition, RLTrainingRun, RLPolicySnapshot,
-    RLEnvironmentRun, RLEpisode,
-)
-from app.models.ingestion import MarketBar
-from app.models.reference import Asset, Universe, UniverseMembership
 from app.models.base import gen_uuid
+from app.models.rl import (
+    RLAgentDefinition,
+    RLPolicySnapshot,
+    RLTrainingRun,
+)
+from app.services.rl_agents import AGENTS
 from app.services.rl_environment import RLEnvironmentService
-from app.services.rl_agents import AGENTS, heuristic_baseline_agent
-
 
 DEFAULT_AGENTS = [
     {
@@ -115,7 +113,7 @@ class RLTrainingService:
         config: dict | None = None,
     ) -> RLTrainingRun:
         """Train a baseline agent via deterministic grid search."""
-        now = datetime.now(timezone.utc)
+        datetime.now(UTC)
         env_svc = RLEnvironmentService(self.db)
         canonical_key, _ = env_svc.resolve_key(environment_key)
 
@@ -174,7 +172,7 @@ class RLTrainingService:
         self.db.add(snapshot)
 
         run.status = "completed"
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = datetime.now(UTC)
         run.metrics = {
             "total_reward": best_reward,
             "total_return": baseline_return,
@@ -212,7 +210,6 @@ class RLTrainingService:
         blend_weights = payload.get("weights")
         used_policy_weights = False
         fallback_warning = None
-        agent_label = snapshot.agent_key
 
         if snapshot.policy_type == "score_weighted_blend" and blend_weights:
             # Register the policy-derived agent temporarily
@@ -232,7 +229,6 @@ class RLTrainingService:
             sim = await env_svc.run_offline_simulation(
                 snapshot.environment_key, eval_start_date, eval_end_date, "heuristic_baseline",
             )
-            agent_label = "heuristic_baseline"
 
         eval_warnings = list(sim.warnings or [])
         if fallback_warning:

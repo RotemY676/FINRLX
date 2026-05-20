@@ -13,7 +13,7 @@ Security notes:
 - Generic error messages on auth failures (no username enumeration)
 - Email allowlist enforced when settings.require_email_allowlist=True
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -136,7 +136,7 @@ async def signup(
         password_hash=hash_password(payload.password),
         is_active=True,
         role="user",
-        last_login_at=datetime.now(timezone.utc),
+        last_login_at=datetime.now(UTC),
     )
     db.add(user)
     await db.flush()
@@ -169,7 +169,7 @@ async def login(
     if not verify_password(payload.password, user.password_hash):
         raise _GENERIC_AUTH_FAIL
 
-    user.last_login_at = datetime.now(timezone.utc)
+    user.last_login_at = datetime.now(UTC)
     tokens, _ = await _issue_token_pair(db, user, request)
     await db.commit()
     await db.refresh(user)
@@ -192,13 +192,13 @@ async def refresh(
     if refresh_row is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if refresh_row.revoked_at is not None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
     # SQLite strips tz info on round-trip; treat naive timestamps as UTC.
     expires_at = refresh_row.expires_at
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        expires_at = expires_at.replace(tzinfo=UTC)
     if expires_at <= now:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
 
@@ -236,7 +236,7 @@ async def logout(
             detail="Refresh token does not belong to the authenticated user",
         )
     if refresh_row.revoked_at is None:
-        refresh_row.revoked_at = datetime.now(timezone.utc)
+        refresh_row.revoked_at = datetime.now(UTC)
         await db.commit()
     return {"ok": True}
 

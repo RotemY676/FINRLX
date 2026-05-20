@@ -5,12 +5,15 @@ and warnings into a single ops-oriented summary.
 
 Does NOT activate ML or change any model status.
 """
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.modeling import (
-    ModelDefinition, ModelRun, ModelPrediction,
-    ModelValidationReport, MLPromotionReview,
+    MLPromotionReview,
+    ModelDefinition,
+    ModelPrediction,
+    ModelRun,
+    ModelValidationReport,
 )
 
 

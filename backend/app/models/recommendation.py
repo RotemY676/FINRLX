@@ -3,15 +3,14 @@
 Maps to Data Model doc 11, Domain 6: Recommendation and Publication.
 The Recommendation is the canonical output of the entire decision pipeline.
 """
+import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, Float, Enum, JSON, func
+from sqlalchemy import JSON, DateTime, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.models.base import TimestampMixin, gen_uuid
-
-import enum
 
 
 class PublicationStatus(str, enum.Enum):

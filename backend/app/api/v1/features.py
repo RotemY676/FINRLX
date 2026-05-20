@@ -9,13 +9,16 @@ GET  /api/v1/features/definitions    — list feature definitions
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
 from app.schemas.common import ApiResponse
 from app.schemas.feature import (
-    FeatureDefinitionResponse, FeatureValueResponse,
-    FeatureSetResponse, FeatureComputeRequest, FeatureComputeResult,
+    FeatureComputeRequest,
+    FeatureComputeResult,
+    FeatureDefinitionResponse,
+    FeatureSetResponse,
     FeatureStatusResponse,
+    FeatureValueResponse,
 )
 from app.services.features import FeatureService
 
@@ -62,6 +65,7 @@ async def list_feature_definitions(db: AsyncSession = Depends(get_db)):
     svc = FeatureService(db)
     await svc.ensure_default_definitions()
     from sqlalchemy import select
+
     from app.models.feature import FeatureDefinition
     rows = (await db.execute(select(FeatureDefinition).order_by(FeatureDefinition.category))).scalars().all()
     items = [

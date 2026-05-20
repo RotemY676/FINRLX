@@ -2,7 +2,7 @@
 
 Maps to Data Model doc 11, Domain 4: Signal and Engine Output (registry extension).
 """
-from sqlalchemy import String, Text, JSON, Integer, Boolean
+from sqlalchemy import JSON, Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

@@ -7,16 +7,14 @@ Both rely on a Bearer token in the Authorization header.
 """
 from __future__ import annotations
 
+import jwt
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import jwt
-
 from app.core.auth import decode_access_token
 from app.core.database import get_db
 from app.models.auth import User
-
 
 _UNAUTHORIZED = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

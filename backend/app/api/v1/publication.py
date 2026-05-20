@@ -12,13 +12,16 @@ GET  /api/v1/publication/status
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
 from app.schemas.common import ApiResponse
 from app.schemas.publication import (
-    PublicationGateResult, PublicationGateCheck,
-    PublicationActionRequest, PublicationTransitionResponse,
-    PublicationStatusResponse, PublicationHistoryEntry,
+    PublicationActionRequest,
+    PublicationGateCheck,
+    PublicationGateResult,
+    PublicationHistoryEntry,
+    PublicationStatusResponse,
+    PublicationTransitionResponse,
 )
 from app.services.publication import PublicationService
 

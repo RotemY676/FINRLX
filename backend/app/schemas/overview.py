@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.recommendation import RecommendationSummary, ConfidenceTriplet
+from app.schemas.recommendation import RecommendationSummary
 
 
 class HealthSummary(BaseModel):

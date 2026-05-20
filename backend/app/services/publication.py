@@ -10,16 +10,15 @@ State machine:
   approved -> deferred
   published -> superseded
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.recommendation import Recommendation, RecommendationWeight
-from app.models.signal import SignalRun
+from app.models.base import gen_uuid
 from app.models.feature import FeatureSet
 from app.models.ops import AuditEvent, Incident, PolicyBreach
-from app.models.base import gen_uuid
+from app.models.recommendation import Recommendation, RecommendationWeight
 
 # ── State machine ────────────────────────────────────────────────────
 
@@ -221,7 +220,7 @@ class PublicationService:
         # Execute transition
         rec.status = target_status
         if target_status in ("published", "published_with_warning"):
-            rec.published_at = datetime.now(timezone.utc)
+            rec.published_at = datetime.now(UTC)
             # Supersede any previously published recommendations
             prev_published = (await self.db.execute(
                 select(Recommendation)
@@ -244,7 +243,7 @@ class PublicationService:
                 "reason": reason,
                 "gate_result": gate_result["overall"] if gate_result else None,
             },
-            occurred_at=datetime.now(timezone.utc),
+            occurred_at=datetime.now(UTC),
         )
         self.db.add(audit)
         await self.db.commit()

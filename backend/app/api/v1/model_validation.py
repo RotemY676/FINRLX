@@ -9,11 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
+from app.models.modeling import ModelValidationReport
 from app.schemas.common import ApiResponse
 from app.services.ml_validation import MLValidationService
-from app.models.modeling import ModelValidationReport
 
 router = APIRouter()
 

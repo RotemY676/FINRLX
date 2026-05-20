@@ -6,13 +6,12 @@ The simulation is a simplified model: it computes deltas based on parameter
 deviations from the baseline. A real implementation would run the full
 engine pipeline with modified inputs.
 """
-import math
 
 from fastapi import APIRouter
 
 from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
-from app.schemas.scenario import ScenarioParams, ScenarioResult, ScenarioDelta
+from app.schemas.scenario import ScenarioDelta, ScenarioParams, ScenarioResult
 
 router = APIRouter()
 

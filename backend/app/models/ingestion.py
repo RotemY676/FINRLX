@@ -7,11 +7,18 @@ Tables:
   news_events   — text/news items with source, timestamp, optional sentiment
   ingestion_manifests — tracks what was ingested, when, coverage, status
 """
-from datetime import datetime, date
+from datetime import date, datetime
 
 from sqlalchemy import (
-    Date, DateTime, Float, Integer, String, Text, JSON,
-    UniqueConstraint, Index, func,
+    JSON,
+    Date,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 

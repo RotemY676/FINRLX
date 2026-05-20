@@ -12,11 +12,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
+from app.models.modeling import MLPromotionReview
 from app.schemas.common import ApiResponse
 from app.services.ml_promotion import MLPromotionService
-from app.models.modeling import MLPromotionReview
 
 router = APIRouter()
 

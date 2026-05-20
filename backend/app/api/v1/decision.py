@@ -3,21 +3,30 @@
 GET /api/v1/recommendations/{id}/stages — all pipeline stages for a recommendation.
 Maps to API Contract doc 12, Decision Breakdown.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.decision import (
-    SelectionRunView, AllocationView, TimingView, RiskOverlayView,
-    AssetSelection, AllocationEntry, RiskAdjustment, DecisionStagesResponse,
-)
+from app.core.database import get_db
 from app.models.decision_pipeline import (
-    SelectionRun, AllocationResult, TimingResult, RiskOverlayResult,
+    AllocationResult,
+    RiskOverlayResult,
+    SelectionRun,
+    TimingResult,
 )
 from app.models.reference import Asset
+from app.schemas.common import ApiResponse
+from app.schemas.decision import (
+    AllocationEntry,
+    AllocationView,
+    AssetSelection,
+    DecisionStagesResponse,
+    RiskAdjustment,
+    RiskOverlayView,
+    SelectionRunView,
+    TimingView,
+)
 
 router = APIRouter()
 

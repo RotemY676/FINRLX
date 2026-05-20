@@ -4,15 +4,14 @@ Phase 6F: editable, audited policy constraints.
 Publication gates reference these rules for documentation;
 hardcoded fallbacks remain active where is_enforced=False.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.policy import PolicyRule, PolicyRuleHistory
-from app.models.ops import AuditEvent, PolicyBreach
 from app.models.base import gen_uuid
-
+from app.models.ops import AuditEvent, PolicyBreach
+from app.models.policy import PolicyRule, PolicyRuleHistory
 
 DEFAULT_POLICY_RULES = [
     {"key": "position_cap_max", "name": "Max single position", "category": "position_cap",
@@ -94,7 +93,7 @@ class PolicyService:
         previous = rule.threshold_value
         rule.threshold_value = new_value
         rule.version += 1
-        rule.updated_at = datetime.now(timezone.utc)
+        rule.updated_at = datetime.now(UTC)
 
         self.db.add(PolicyRuleHistory(
             id=gen_uuid(),
@@ -109,7 +108,7 @@ class PolicyService:
             id=gen_uuid(), actor=actor, action="policy_update",
             object_type="policy_rule", object_id=rule.id,
             details={"key": key, "previous": previous, "new": new_value, "reason": reason},
-            occurred_at=datetime.now(timezone.utc),
+            occurred_at=datetime.now(UTC),
         ))
         await self.db.commit()
         return rule

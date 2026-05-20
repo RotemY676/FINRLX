@@ -8,8 +8,8 @@ GET /api/v1/ml-ops/models/{model_key}/shadow-status
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
+from app.core.database import get_db
 from app.schemas.common import ApiResponse
 from app.schemas.ml_ops import MLOpsSummaryResponse, MLOpsWarning
 from app.services.ml_ops import MLOpsService

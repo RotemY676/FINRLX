@@ -7,19 +7,21 @@ Offline/shadow only — does NOT influence live pipeline, publication, or recomm
 """
 import hashlib
 import json
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.rl import (
-    RLBenchmarkReport, RLEnvironmentRun, RLEpisode, RLStep,
-    RLPolicySnapshot,
-)
-from app.models.ops import AuditEvent
 from app.models.base import gen_uuid
-from app.services.rl_environment import RLEnvironmentService
+from app.models.ops import AuditEvent
+from app.models.rl import (
+    RLBenchmarkReport,
+    RLEpisode,
+    RLPolicySnapshot,
+    RLStep,
+)
 from app.services.rl_agents import AGENTS
+from app.services.rl_environment import RLEnvironmentService
 from app.services.rl_training import _score_weighted_agent_fn
 
 
@@ -81,7 +83,7 @@ class RLBenchmarkService:
         ensure_score_weighted_baseline: bool = True,
     ) -> RLBenchmarkReport:
         """Run benchmark comparing multiple agents on the same window."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         env_svc = RLEnvironmentService(self.db)
         canonical_key, _ = env_svc.resolve_key(environment_key)
 
@@ -227,7 +229,7 @@ class RLBenchmarkService:
 
         is_complete = len(skipped_agents) == 0 and len(executed_agents) == len(agents_to_run)
         report.status = "completed" if is_complete else "partial"
-        report.completed_at = datetime.now(timezone.utc)
+        report.completed_at = datetime.now(UTC)
         report.compared_agents = executed_agents  # only agents that actually ran
         report.metrics_by_agent = metrics_by_agent
         report.reward_breakdown_by_agent = reward_breakdown
@@ -282,7 +284,7 @@ class RLBenchmarkService:
                 "invariant_check_results": invariant_checks,
                 "warnings": warnings,
             },
-            occurred_at=datetime.now(timezone.utc),
+            occurred_at=datetime.now(UTC),
         ))
 
         await self.db.commit()

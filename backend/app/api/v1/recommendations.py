@@ -8,12 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.api.deps import make_meta
-from app.schemas.common import ApiResponse
-from app.schemas.recommendation import RecommendationDetail, ConfidenceTriplet, WeightEntry
+from app.core.database import get_db
 from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.reference import Asset
+from app.schemas.common import ApiResponse
+from app.schemas.recommendation import ConfidenceTriplet, RecommendationDetail, WeightEntry
 
 router = APIRouter()
 

@@ -3,12 +3,11 @@
 Phase 6F: makes data/source integrations visible and governable.
 Truthfully distinguishes real local adapters from illustrative/placeholder entries.
 """
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ingestion import IngestionManifest
 from app.models.ops import DataFeed
-
 
 # Real providers are those backed by actual IngestService adapters
 REAL_PROVIDERS = {"local_deterministic", "seed", "local", "yfinance"}

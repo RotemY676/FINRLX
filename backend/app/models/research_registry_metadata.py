@@ -1,6 +1,7 @@
 """Research registry metadata mirror — Postgres-backed sanitized summary."""
 from datetime import datetime
-from sqlalchemy import DateTime, String, Text, Boolean, JSON, Index, UniqueConstraint, func
+
+from sqlalchemy import JSON, Boolean, DateTime, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base

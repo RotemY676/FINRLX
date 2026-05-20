@@ -14,14 +14,14 @@ side (idempotent upsert into market_bars + manifest).
 import hashlib
 import logging
 import random
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func, delete
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
-from app.models.reference import Asset
 from app.models.base import gen_uuid
+from app.models.ingestion import IngestionManifest, MarketBar, NewsEvent
+from app.models.reference import Asset
 from app.services.data_providers import yfinance_provider
 
 logger = logging.getLogger(__name__)
@@ -130,7 +130,7 @@ def _generate_news(tickers: list[str], start: date, end: date, source: str) -> l
 
             hour = rng.randint(6, 20)
             minute = rng.randint(0, 59)
-            pub_dt = datetime(d.year, d.month, d.day, hour, minute, tzinfo=timezone.utc)
+            pub_dt = datetime(d.year, d.month, d.day, hour, minute, tzinfo=UTC)
 
             events.append({
                 "id": gen_uuid(),
@@ -196,7 +196,7 @@ class IngestService:
         date_to: date | None = None,
     ) -> IngestionManifest:
         """Ingest OHLCV bars for the given assets and date range."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if date_to is None:
             date_to = date.today()
         if date_from is None:
@@ -213,7 +213,7 @@ class IngestService:
         if not asset_map:
             manifest.status = "failed"
             manifest.error_message = "No matching assets found"
-            manifest.completed_at = datetime.now(timezone.utc)
+            manifest.completed_at = datetime.now(UTC)
             await self.db.commit()
             return manifest
 
@@ -259,7 +259,7 @@ class IngestService:
 
         manifest.asset_count = len(asset_map)
         manifest.row_count = total_rows
-        manifest.completed_at = datetime.now(timezone.utc)
+        manifest.completed_at = datetime.now(UTC)
 
         await self.db.commit()
         return manifest
@@ -271,7 +271,7 @@ class IngestService:
         date_to: date | None = None,
     ) -> IngestionManifest:
         """Ingest news events for the given date range."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if date_to is None:
             date_to = date.today()
         if date_from is None:
@@ -289,7 +289,7 @@ class IngestService:
         if not tickers:
             manifest.status = "failed"
             manifest.error_message = "No assets in database"
-            manifest.completed_at = datetime.now(timezone.utc)
+            manifest.completed_at = datetime.now(UTC)
             await self.db.commit()
             return manifest
 
@@ -309,7 +309,7 @@ class IngestService:
         manifest.status = "completed"
         manifest.asset_count = len(tickers)
         manifest.row_count = inserted
-        manifest.completed_at = datetime.now(timezone.utc)
+        manifest.completed_at = datetime.now(UTC)
 
         await self.db.commit()
         return manifest
@@ -357,7 +357,7 @@ class IngestService:
             elif manifest_status == "completed":
                 ref_time = r.completed_at or r.started_at
                 if ref_time:
-                    age = datetime.now(timezone.utc) - ref_time.replace(tzinfo=timezone.utc)
+                    age = datetime.now(UTC) - ref_time.replace(tzinfo=UTC)
                     health = "stale" if age > timedelta(hours=24) else "healthy"
                 else:
                     health = "healthy"

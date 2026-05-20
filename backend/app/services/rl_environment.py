@@ -8,21 +8,18 @@ Runs offline simulations with baseline/random agents.
 
 Does NOT train RL models or influence live pipeline.
 """
-import math
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.rl import RLEnvironmentDefinition, RLEnvironmentRun, RLEpisode, RLStep
-from app.models.ingestion import MarketBar
-from app.models.feature import FeatureSet, FeatureValue
-from app.models.signal import SignalRun, SignalOutput
-from app.models.reference import Asset, Universe, UniverseMembership
-from app.models.policy import PolicyRule
 from app.models.base import gen_uuid
+from app.models.ingestion import MarketBar
+from app.models.policy import PolicyRule
+from app.models.reference import Asset, Universe, UniverseMembership
+from app.models.rl import RLEnvironmentDefinition, RLEnvironmentRun, RLEpisode, RLStep
+from app.models.signal import SignalOutput, SignalRun
 from app.services.rl_agents import AGENTS
-
 
 DEFAULT_STATE_SCHEMA = {
     "fields": ["asset_returns", "feature_values", "engine_scores", "portfolio_weights",
@@ -248,7 +245,7 @@ class RLEnvironmentService:
         agent_type: str = "heuristic_baseline",
     ) -> RLEnvironmentRun:
         """Run an offline simulation episode."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if end_date is None:
             end_date = date.today()
         if start_date is None:
@@ -392,7 +389,7 @@ class RLEnvironmentService:
         episode.warnings = warnings if warnings else None
 
         run.status = "completed"
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = datetime.now(UTC)
         run.metrics = {
             "total_return": round(total_return, 4),
             "total_reward": round(total_reward, 4),

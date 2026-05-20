@@ -2,7 +2,7 @@
 
 Maps to design handoff: modules.jsx EvidenceCard structure.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class EvidenceItem(BaseModel):
