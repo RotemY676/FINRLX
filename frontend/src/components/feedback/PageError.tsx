@@ -8,9 +8,12 @@ interface Props {
 
 export function PageError({ title, message, hint }: Props) {
   return (
-    <div className="rounded-lg border border-breach/30 bg-breach-soft p-pad">
+    <div
+      role="alert"
+      className="rounded-lg border border-breach/30 bg-breach-soft p-pad"
+    >
       <div className="flex items-start gap-2">
-        <Icon name="alert-triangle" size={16} className="text-breach mt-0.5 shrink-0" />
+        <Icon name="alert-triangle" size={16} className="text-breach mt-0.5 shrink-0" aria-hidden="true" />
         <div>
           <h2 className="text-[14px] font-semibold text-breach-soft-ink mb-1">
             {title || "Error"}

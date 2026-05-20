@@ -488,3 +488,28 @@ VoiceOver rotor can now jump cleanly across all five landmarks.
 | next build | 17 routes |
 | playwright chromium | **22 passed** (+1 new skip-link test) |
 | axe-core | clean across all routes |
+
+---
+
+## UX-3.3 — Live regions for action results / loading / error
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/components/feedback/PageError.tsx` — wrapper gets `role="alert"`. When a page transitions into error state (API 503, malformed response), screen-reader users get an automatic "Error: …" announcement without needing focus. Icon gets `aria-hidden` since the heading already conveys "Error".
+- `frontend/src/components/feedback/PageLoading.tsx` — wrapper gets `role="status" aria-live="polite" aria-label={label || "Loading"}`. The animated dots get `aria-hidden` so the AT only reads the label. Polite politeness (not assertive) so loading announcements don't preempt other speech.
+- The decision-page action message already carried `role="status" aria-live="polite"` from UX-2.2.
+
+### Why
+Two PMs in the user research from `fintech-disclaimer-and-marketing-guard` discovery noted that recommendation feedback (save / promote / defer) needs an audible "happened" signal beyond visual color. Live regions are the WCAG-canonical way; they cost nothing in code complexity and pay off the moment a user enables VoiceOver.
+
+PageError + PageLoading carry every page's load and error UX — fixing them once covers every route.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | 22 passed |
+| axe-core | clean across all routes |
