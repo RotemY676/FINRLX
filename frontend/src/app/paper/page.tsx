@@ -11,6 +11,7 @@ import { SourceBadge } from "@/components/recommendation/SourceBadge";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { track } from "@/lib/analytics";
 
 function driftColor(d: number): string {
   if (Math.abs(d) > 0.01) return d > 0 ? "text-pos" : "text-breach";
@@ -25,6 +26,7 @@ export default function PaperPage() {
   const { openPane } = usePaneContext();
 
   useEffect(() => {
+    void track("paper_trade", { view: "portfolio_summary" });
     fetchCurrentPaper()
       .then(async (res) => {
         setData(res.data);

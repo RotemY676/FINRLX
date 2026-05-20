@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { track } from "@/lib/analytics";
+
 /**
  * Blocking one-time disclaimer modal (Phase MVP-5).
  *
@@ -47,6 +49,7 @@ export function DisclaimerModal() {
     } catch {
       // Ignore — we still close so the user can use the app this session.
     }
+    void track("disclaimer_accept", { version: DISCLAIMER_VERSION });
     setOpen(false);
   };
 

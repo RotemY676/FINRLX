@@ -13,6 +13,7 @@ import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { track } from "@/lib/analytics";
 
 function StageSnapshotCard({ stage, data, capturedAt }: {
   stage: string;
@@ -49,6 +50,7 @@ export default function ReplayPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    void track("replay_open");
     fetchReplayList()
       .then(async (res) => {
         setList(res.data);

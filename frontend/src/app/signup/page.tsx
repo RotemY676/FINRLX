@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { track } from "@/lib/analytics";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function SignupPage() {
     setBusy(true);
     try {
       await signup(email, password);
+      void track("signup");
       router.push("/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");

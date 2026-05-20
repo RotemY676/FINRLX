@@ -22,6 +22,7 @@ import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { ScenarioCard } from "@/components/decision/ScenarioCard";
 import { PriceChartCard } from "@/components/charts/PriceChartCard";
+import { track } from "@/lib/analytics";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
 
@@ -40,6 +41,7 @@ export default function DecisionPage() {
       .then(async (res) => {
         setRec(res.data);
         if (res.data) {
+          void track("first_rec_view", { recommendation_id: res.data.id });
           const [s, e, d] = await Promise.all([
             fetchDecisionStages(res.data.id),
             fetchEvidence(),
