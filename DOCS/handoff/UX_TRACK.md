@@ -305,3 +305,37 @@ Audit flagged the Holdings table as 5-col `overflow-x-auto`-only — same defect
 | next build | 17 routes |
 | playwright chromium | **17 passed** (+1 new paper-mobile spec) |
 | axe-core on `/paper` @ 375px | 0 serious violations |
+
+---
+
+## UX-2.4 — `/replay` selector + StageSnapshotCard mobile refactor
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/replay/page.tsx`:
+
+  **StageSnapshotCard (the forensics view audit ranked unusable on mobile):**
+  - Was: `<div><span w-32 shrink-0>key</span><span truncate>value</span></div>` — 128px label column of 375px viewport = 34%, leaving ~210px for value with truncation.
+  - Now: semantic `<dl><dt>/<dd>` with `flex flex-col md:flex-row`. On mobile the key sits above its value; the value uses `break-words` so long JSON-stringified values wrap instead of truncating. On md+, exact prior layout via `md:w-32 md:shrink-0` on `<dt>` and `md:truncate md:flex-1` on `<dd>`.
+
+  **Replay selector rows:**
+  - Were: clickable `<div>` elements (no a11y role, not keyboard-focusable).
+  - Now: a `<ul role="list">` of `<li><button>` with `aria-pressed`, `aria-label` carrying ticker + date + position count for screen reader users. Each button: `w-full flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-2 p-3 min-h-11`. Mobile gets a 2-line stack (ID + count on row 1, status + date on row 2); desktop keeps the original 1-row split layout.
+  - Selected state preserved (`bg-primary-soft border border-primary`) plus new `focus-visible:bg-surface-3` for keyboard nav.
+
+- `frontend/tests/e2e/replay-mobile.spec.ts` — new spec at 375×667, axe-clean check.
+
+### Why
+The audit flagged StageSnapshotCard as "fundamentally desktop-only" — the forensics use case (PMs reading why a recommendation was made on a specific date) breaks when values truncate to ellipses. Stacking key over value gives every value the full row width without sacrificing density at md+.
+
+The selector `<div onClick>` pattern silently broke keyboard navigation. Promoting to `<button>` inside `<li>` makes the list browseable via Tab + Enter, and `aria-pressed` communicates the selected state to assistive tech.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | **18 passed** (+1 new replay-mobile spec) |
+| axe-core on `/replay` @ 375px | 0 serious violations |

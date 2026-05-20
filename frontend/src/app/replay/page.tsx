@@ -28,17 +28,20 @@ function StageSnapshotCard({ stage, data, capturedAt }: {
           {fmtTime(capturedAt)}
         </span>
       </div>
-      <div className="space-y-1 text-[11px]">
+      {/* Mobile: key stacked above value so the value gets full row width
+          (the old w-32 label ate 34% of a 375px viewport and truncated values).
+          Desktop (md+): key | value side-by-side as before. */}
+      <dl className="space-y-2 md:space-y-1 text-[11px]">
         {Object.entries(data).map(([key, val]) => {
           const display = typeof val === "object" ? JSON.stringify(val).slice(0, 80) + (JSON.stringify(val).length > 80 ? "..." : "") : String(val);
           return (
-            <div key={key} className="flex gap-2">
-              <span className="text-ink-4 w-32 shrink-0 font-mono">{key}</span>
-              <span className="text-ink-2 truncate">{display}</span>
+            <div key={key} className="flex flex-col md:flex-row md:gap-2">
+              <dt className="text-ink-4 md:w-32 md:shrink-0 font-mono">{key}</dt>
+              <dd className="text-ink-2 break-words md:truncate md:flex-1">{display}</dd>
             </div>
           );
         })}
-      </div>
+      </dl>
     </div>
   );
 }
@@ -80,33 +83,39 @@ export default function ReplayPage() {
       {/* Replay selector */}
       <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
         <h3 className="text-[13px] font-semibold text-ink mb-3">Available Replays</h3>
-        {list.items.map((item) => (
-          <div
-            key={item.id}
-            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-              detail?.recommendation_id === item.recommendation_id
-                ? "bg-primary-soft border border-primary"
-                : "hover:bg-surface-3"
-            }`}
-            onClick={async () => {
+        <ul className="space-y-1" role="list">
+          {list.items.map((item) => {
+            const isSelected = detail?.recommendation_id === item.recommendation_id;
+            const onSelect = async () => {
               const res = await fetchReplay(item.recommendation_id);
               setDetail(res.data);
-            }}
-          >
-            <div>
-              <span className="text-[13px] font-mono">{item.recommendation_id.slice(0, 8)}...</span>
-              <span className="text-[11px] text-ink-4 ml-2">
-                {item.total_positions} positions
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={item.status} />
-              <span className="text-[11px] text-ink-4">
-                {fmtDate(item.captured_at)}
-              </span>
-            </div>
-          </div>
-        ))}
+            };
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={onSelect}
+                  aria-pressed={isSelected}
+                  aria-label={`Replay ${item.recommendation_id.slice(0, 8)}, captured ${fmtDate(item.captured_at)}, ${item.total_positions} positions`}
+                  className={`w-full flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-2 p-3 min-h-11 rounded-lg text-left transition-colors ${
+                    isSelected
+                      ? "bg-primary-soft border border-primary"
+                      : "hover:bg-surface-3 focus-visible:bg-surface-3"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-[13px] font-mono text-ink">{item.recommendation_id.slice(0, 8)}…</span>
+                    <span className="text-[11px] text-ink-4">{item.total_positions} positions</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={item.status} />
+                    <span className="text-[11px] text-ink-4">{fmtDate(item.captured_at)}</span>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {detail && (
