@@ -85,7 +85,10 @@ export default function ComparisonPage() {
       {/* ── Multi-engine comparison matrix — now from real backend ── */}
       {engines && engines.engines.length > 0 && (
         <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-          <h3 className="text-[13px] font-semibold text-ink mb-4">Engine Matrix</h3>
+          <div className="flex items-baseline justify-between mb-3">
+            <h3 className="text-[13px] font-semibold text-ink">Engine Matrix</h3>
+            <span className="md:hidden text-[11px] text-ink-4">Tap a row for detail</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12.5px]">
               <thead>
@@ -93,94 +96,126 @@ export default function ComparisonPage() {
                   <th className="text-left py-2 pr-3 font-medium">Engine</th>
                   <th className="text-left py-2 pr-3 font-medium">Stance</th>
                   <th className="text-left py-2 pr-3 font-medium">Confidence</th>
-                  <th className="text-right py-2 pr-3 font-medium">Weight</th>
-                  <th className="text-left py-2 pr-3 font-medium">Horizon</th>
-                  <th className="text-left py-2 pr-3 font-medium">Risk</th>
-                  <th className="text-left py-2 font-medium">Top Drivers</th>
+                  <th className="hidden md:table-cell text-right py-2 pr-3 font-medium">Weight</th>
+                  <th className="hidden md:table-cell text-left py-2 pr-3 font-medium">Horizon</th>
+                  <th className="hidden md:table-cell text-left py-2 pr-3 font-medium">Risk</th>
+                  <th className="hidden lg:table-cell text-left py-2 font-medium">Top Drivers</th>
                 </tr>
               </thead>
               <tbody>
-                {engines.engines.map((eng) => (
-                  <tr
-                    key={eng.engine_key}
-                    className="border-b border-line/50 hover:bg-surface-3 cursor-pointer transition-colors"
-                    onClick={() =>
-                      openPane(`${eng.engine_name} · Methodology`, (
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-[11px] text-ink-4">Engine</p>
-                            <p className="text-[14px] font-semibold text-ink">{eng.engine_name}</p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <p className="text-[11px] text-ink-4">Stance</p>
-                              <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-ink-4">Confidence</p>
-                              <p className="text-[14px] font-mono text-ink">{(eng.confidence * 100).toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[11px] text-ink-4 mb-1">What it sees (drivers)</p>
-                            <ul className="space-y-1">
-                              {eng.drivers.map((d, i) => <li key={i} className="text-[12px] text-ink-2">• {d}</li>)}
-                            </ul>
-                          </div>
-                          <div>
-                            <p className="text-[11px] text-ink-4 mb-1">What it ignores</p>
-                            <ul className="space-y-1">
-                              {eng.ignores.map((d, i) => <li key={i} className="text-[12px] text-ink-3">• {d}</li>)}
-                            </ul>
-                          </div>
-                          {eng.note && (
-                            <div className="pt-3 border-t border-line">
-                              <p className="text-[11px] text-ink-4 mb-1">Note</p>
-                              <p className="text-[12px] text-ink-2">{eng.note}</p>
-                            </div>
-                          )}
+                {engines.engines.map((eng) => {
+                  const openDetail = () =>
+                    openPane(`${eng.engine_name} · Methodology`, (
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[11px] text-ink-4">Engine</p>
+                          <p className="text-[14px] font-semibold text-ink">{eng.engine_name}</p>
                         </div>
-                      ))
-                    }
-                  >
-                    <td className="py-2 pr-3 font-medium text-ink">
-                      {eng.engine_name}
-                      {eng.engine_key === "ml_return_forecaster" && (
-                        <span className="ml-2"><SourceBadge source="shadow" label="Shadow / experimental" /></span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-14 h-1.5 bg-surface-3 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${eng.confidence >= 0.7 ? "bg-pos" : eng.confidence >= 0.55 ? "bg-caution" : "bg-breach"}`} style={{ width: `${eng.confidence * 100}%` }} />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[11px] text-ink-4">Stance</p>
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4">Confidence</p>
+                            <p className="text-[14px] font-mono text-ink">{(eng.confidence * 100).toFixed(0)}%</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4">Weight</p>
+                            <p className="text-[14px] font-mono text-ink">{(eng.weight * 100).toFixed(0)}%</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4">Horizon</p>
+                            <p className="text-[14px] text-ink">{eng.horizon}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-ink-4">Risk</p>
+                            <p className="text-[14px] text-ink">{eng.risk_read}</p>
+                          </div>
                         </div>
-                        <span className="text-[11px] font-mono text-ink-2">{eng.confidence.toFixed(2)}</span>
+                        <div>
+                          <p className="text-[11px] text-ink-4 mb-1">What it sees (drivers)</p>
+                          <ul className="space-y-1">
+                            {eng.drivers.map((d, i) => <li key={i} className="text-[12px] text-ink-2">• {d}</li>)}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-ink-4 mb-1">What it ignores</p>
+                          <ul className="space-y-1">
+                            {eng.ignores.map((d, i) => <li key={i} className="text-[12px] text-ink-3">• {d}</li>)}
+                          </ul>
+                        </div>
+                        {eng.note && (
+                          <div className="pt-3 border-t border-line">
+                            <p className="text-[11px] text-ink-4 mb-1">Note</p>
+                            <p className="text-[12px] text-ink-2">{eng.note}</p>
+                          </div>
+                        )}
                       </div>
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-ink-2">{(eng.weight * 100).toFixed(0)}%</td>
-                    <td className="py-2 pr-3 text-ink-2">{eng.horizon}</td>
-                    <td className="py-2 pr-3">
-                      <span className={`text-[11px] ${eng.risk_read === "Low" ? "text-pos" : eng.risk_read === "Moderate" ? "text-ink-2" : eng.risk_read === "Elevated" ? "text-caution" : "text-breach"}`}>{eng.risk_read}</span>
-                    </td>
-                    <td className="py-2 text-ink-3 text-[11px]">{eng.drivers.slice(0, 2).join("; ")}</td>
-                  </tr>
-                ))}
+                    ));
+                  return (
+                    <tr
+                      key={eng.engine_key}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${eng.engine_name} — open methodology detail`}
+                      className="border-b border-line/50 hover:bg-surface-3 focus-visible:bg-surface-3 cursor-pointer transition-colors"
+                      onClick={openDetail}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openDetail();
+                        }
+                      }}
+                    >
+                      <td className="py-3 md:py-2 pr-3 font-medium text-ink">
+                        {eng.engine_name}
+                        {eng.engine_key === "ml_return_forecaster" && (
+                          <span className="ml-2"><SourceBadge source="shadow" label="Shadow / experimental" /></span>
+                        )}
+                        {/* Mobile-only context line: weight + risk shown inline since their columns are hidden. */}
+                        <div className="md:hidden text-[11px] text-ink-4 mt-0.5">
+                          {(eng.weight * 100).toFixed(0)}% · {eng.horizon} · {eng.risk_read}
+                        </div>
+                      </td>
+                      <td className="py-3 md:py-2 pr-3">
+                        <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[eng.stance] || ""}`}>{eng.stance}</span>
+                      </td>
+                      <td className="py-3 md:py-2 pr-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 sm:w-14 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${eng.confidence >= 0.7 ? "bg-pos" : eng.confidence >= 0.55 ? "bg-caution" : "bg-breach"}`} style={{ width: `${eng.confidence * 100}%` }} />
+                          </div>
+                          <span className="text-[11px] font-mono text-ink-2">{eng.confidence.toFixed(2)}</span>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell py-2 pr-3 text-right font-mono text-ink-2">{(eng.weight * 100).toFixed(0)}%</td>
+                      <td className="hidden md:table-cell py-2 pr-3 text-ink-2">{eng.horizon}</td>
+                      <td className="hidden md:table-cell py-2 pr-3">
+                        <span className={`text-[11px] ${eng.risk_read === "Low" ? "text-pos" : eng.risk_read === "Moderate" ? "text-ink-2" : eng.risk_read === "Elevated" ? "text-caution" : "text-breach"}`}>{eng.risk_read}</span>
+                      </td>
+                      <td className="hidden lg:table-cell py-2 text-ink-3 text-[11px]">{eng.drivers.slice(0, 2).join("; ")}</td>
+                    </tr>
+                  );
+                })}
                 {/* Synthesis row */}
                 <tr className="bg-primary-soft">
-                  <td className="py-2 pr-3 font-semibold text-primary-soft-ink">Synthesis</td>
-                  <td className="py-2 pr-3">
+                  <td className="py-3 md:py-2 pr-3 font-semibold text-primary-soft-ink">
+                    Synthesis
+                    <div className="md:hidden text-[11px] text-primary-soft-ink/80 mt-0.5">
+                      100% · Weighted across all engines
+                    </div>
+                  </td>
+                  <td className="py-3 md:py-2 pr-3">
                     <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[engines.synthesis_stance] || ""}`}>{engines.synthesis_stance}</span>
                   </td>
-                  <td className="py-2 pr-3">
+                  <td className="py-3 md:py-2 pr-3">
                     <span className="text-[11px] font-mono text-primary-soft-ink">{engines.synthesis_confidence.toFixed(2)}</span>
                   </td>
-                  <td className="py-2 pr-3 text-right font-mono text-primary-soft-ink">100%</td>
-                  <td className="py-2 pr-3 text-primary-soft-ink">—</td>
-                  <td className="py-2 pr-3 text-primary-soft-ink">—</td>
-                  <td className="py-2 text-primary-soft-ink text-[11px]">Weighted across all engines</td>
+                  <td className="hidden md:table-cell py-2 pr-3 text-right font-mono text-primary-soft-ink">100%</td>
+                  <td className="hidden md:table-cell py-2 pr-3 text-primary-soft-ink">—</td>
+                  <td className="hidden md:table-cell py-2 pr-3 text-primary-soft-ink">—</td>
+                  <td className="hidden lg:table-cell py-2 text-primary-soft-ink text-[11px]">Weighted across all engines</td>
                 </tr>
               </tbody>
             </table>
@@ -205,26 +240,26 @@ export default function ComparisonPage() {
 
       {/* Position detail table */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <h3 className="text-[13px] font-semibold text-ink">Position Detail</h3>
-          <span className="text-[11px] text-ink-4">Click a row to inspect</span>
+          <span className="text-[11px] text-ink-4">Tap a row to inspect</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-line text-[11px] text-ink-4 uppercase tracking-wider">
                 <th className="text-left py-2 pr-3 font-medium">Ticker</th>
-                <th className="text-left py-2 pr-3 font-medium">Name</th>
-                <th className="text-right py-2 pr-3 font-medium">Rec</th>
-                <th className="text-right py-2 pr-3 font-medium">Bench</th>
+                <th className="hidden md:table-cell text-left py-2 pr-3 font-medium">Name</th>
+                <th className="hidden md:table-cell text-right py-2 pr-3 font-medium">Rec</th>
+                <th className="hidden md:table-cell text-right py-2 pr-3 font-medium">Bench</th>
                 <th className="text-right py-2 pr-3 font-medium">Active</th>
                 <th className="text-left py-2 font-medium">Stance</th>
               </tr>
             </thead>
             <tbody>
-              {data.weights.map((row) => (
-                <tr key={row.asset_id} className="border-b border-line/50 hover:bg-surface-3 cursor-pointer transition-colors"
-                  onClick={() => openPane(`${row.ticker} · Comparison`, (
+              {data.weights.map((row) => {
+                const openDetail = () =>
+                  openPane(`${row.ticker} · Comparison`, (
                     <div className="space-y-4">
                       <p className="text-[13px] font-medium text-ink">{row.name}</p>
                       <div className="grid grid-cols-2 gap-3">
@@ -235,20 +270,44 @@ export default function ComparisonPage() {
                         <p className={`text-[18px] font-mono font-semibold ${row.delta > 0.005 ? "text-pos" : row.delta < -0.005 ? "text-breach" : "text-ink-3"}`}>{row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%</p>
                       </div>
                     </div>
-                  ))}
-                >
-                  <td className="py-2 pr-3 font-mono font-semibold text-ink">{row.ticker}</td>
-                  <td className="py-2 pr-3 text-ink-2">{row.name}</td>
-                  <td className="py-2 pr-3 text-right font-mono">{(row.recommendation_weight * 100).toFixed(1)}%</td>
-                  <td className="py-2 pr-3 text-right font-mono text-ink-3">{(row.benchmark_weight * 100).toFixed(1)}%</td>
-                  <td className={`py-2 pr-3 text-right font-mono ${row.delta > 0.005 ? "text-pos" : row.delta < -0.005 ? "text-breach" : "text-ink-3"}`}>
-                    {row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%
-                  </td>
-                  <td className="py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[row.recommendation_stance || "neutral"] || ""}`}>{row.recommendation_stance || "neutral"}</span>
-                  </td>
-                </tr>
-              ))}
+                  ));
+                return (
+                  <tr
+                    key={row.asset_id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${row.ticker} — open position detail`}
+                    className="border-b border-line/50 hover:bg-surface-3 focus-visible:bg-surface-3 cursor-pointer transition-colors"
+                    onClick={openDetail}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openDetail();
+                      }
+                    }}
+                  >
+                    <td className="py-3 md:py-2 pr-3 font-mono font-semibold text-ink">
+                      {row.ticker}
+                      {/* Mobile-only: show name + rec/bench inline, since their columns hide below md. */}
+                      <div className="md:hidden text-[11px] text-ink-3 mt-0.5 font-sans font-normal">
+                        {row.name}
+                      </div>
+                      <div className="md:hidden text-[11px] text-ink-4 mt-0.5 font-sans font-normal">
+                        Rec {(row.recommendation_weight * 100).toFixed(1)}% · Bench {(row.benchmark_weight * 100).toFixed(1)}%
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-ink-2">{row.name}</td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-right font-mono">{(row.recommendation_weight * 100).toFixed(1)}%</td>
+                    <td className="hidden md:table-cell py-2 pr-3 text-right font-mono text-ink-3">{(row.benchmark_weight * 100).toFixed(1)}%</td>
+                    <td className={`py-3 md:py-2 pr-3 text-right font-mono ${row.delta > 0.005 ? "text-pos" : row.delta < -0.005 ? "text-breach" : "text-ink-3"}`}>
+                      {row.delta > 0 ? "+" : ""}{(row.delta * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-3 md:py-2">
+                      <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${STANCE_STYLE[row.recommendation_stance || "neutral"] || ""}`}>{row.recommendation_stance || "neutral"}</span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

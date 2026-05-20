@@ -182,3 +182,49 @@ The lint is a vitest test rather than an ESLint rule because it integrates with 
 
 ### Phase UX-1 closes here
 Foundation is in place: viewport meta, mobile-first CSS base, mobile drawer for nav, bottom-sheet for context pane, all design tokens valid, touch-target lint as a no-regression gate. Next: Phase UX-2 — mobile-first refactor of the six dense surfaces (`/comparison`, `/decision`, `/paper`, `/replay`, `/backtests`, `/admin`).
+
+---
+
+## UX-2.1 — `/comparison` mobile refactor (Engine Matrix + Position Detail)
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/comparison/page.tsx` — both tables now use the **pinned-primary-column + hide-secondary-columns** pattern from the fintech UX research (UX Movement / NN/g / Mobbin). Specifics:
+
+  **Engine Matrix:**
+  - Mobile (<md): visible columns = Engine, Stance, Confidence-microbar (3 columns)
+  - md+: adds Weight, Horizon, Risk (6 columns)
+  - lg+: adds Top Drivers (7 columns — full desktop view)
+  - On mobile the Engine cell carries an inline secondary line ("`{weight}% · {horizon} · {risk_read}`") so the hidden columns aren't lost.
+  - Synthesis row gets the same treatment with an inline summary line on mobile.
+
+  **Position Detail:**
+  - Mobile: visible columns = Ticker, Active delta, Stance (3 columns)
+  - md+: adds Name, Rec, Bench (6 columns)
+  - On mobile the Ticker cell carries an inline two-line summary ("`{name}` / `Rec {x}% · Bench {y}%`") for context.
+
+- Both tables: each row gets `role="button" tabIndex={0}` + `onKeyDown` (Enter/Space) for keyboard a11y, plus `focus-visible:bg-surface-3` for keyboard navigation feedback. The existing click → `openPane(...)` flow is preserved verbatim — on mobile, that pane is now a bottom sheet (UX-1.3), giving the full data the column-hide left out. Engine methodology pane now also exposes Weight / Horizon / Risk (previously surfaced only by the visible columns; needed in the sheet now that those columns hide on mobile).
+- Row padding raised from `py-2` (32px row) → `py-3 md:py-2` (48px+ on mobile, original 32px on desktop) so taps don't miss on rows of small numerical data.
+- Confidence microbar shrunk from `w-14` → `w-10 sm:w-14` so the column doesn't overflow on 375px.
+
+- `frontend/tests/e2e/comparison-mobile.spec.ts` — new spec runs the page in both 375×667 and 1280×720 viewports. Mobile check includes `expectNoSeriousAxeViolations`.
+
+### Why
+The audit flagged `/comparison` as one of the two worst surfaces on mobile: 7-column Engine Matrix and 6-column Position Detail both relying on `overflow-x-auto` as the only mobile affordance, with `text-[12.5px]` making horizontal scroll truly miserable. The synthesis row extending off-screen meant the actual recommendation was invisible without scrolling.
+
+The hide-columns approach (instead of cards-per-engine) was chosen because (a) the ContextPane bottom sheet already exists and gives the full detail, (b) the column-hide preserves desktop fidelity exactly, and (c) UX research (Koyfin/AlphaSense companion apps) cites pinned-primary + tap-detail as analyst-grade. A card-per-engine alternative would have duplicated information already in the sheet.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed (incl. touch-targets lint) |
+| next build | 17 routes |
+| playwright chromium | **15 passed** (+2 new comparison-mobile specs at 375 + 1280) |
+| axe-core on `/comparison` @ 375px | 0 serious violations |
+
+### Honest limitations
+- The 9 buttons in the action strip on `/decision` were not touched here — that's UX-2.2.
+- I didn't add a visual-regression `toHaveScreenshot` baseline. Visual diffs land when the design polish lands in UX-4 (right now the visuals are still going to shift).
+- Synthesis row's inline mobile summary uses a fixed string ("`100% · Weighted across all engines`"); if the backend ever computes a different synthesis weight, that string drifts. Tracked for future hardening if the synthesis weight becomes dynamic.
