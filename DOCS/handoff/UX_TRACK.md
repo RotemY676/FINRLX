@@ -648,3 +648,27 @@ Next: **Phase UX-5 — iOS prep**:
 - 5.5 PWA manifest + service worker so the site is installable as iOS Home Screen app
 
 Then the **post-MVP product track** (re-confirmed 2026-05-21): A2 Ops command → A3 Policy Editor → A4 Integrations → B1 Risk workspace → B2 News intelligence → B3 Saved views → C1..C7 MVP debt closure. Phase D iOS stays skipped (PWA-first).
+
+---
+
+## UX-5.1 — Design tokens JSON export + contract test
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `frontend/src/design/tokens.json` (new) — structured export of every color, radius, spacing, typography, and shadow token. Mirrors `globals.css` :root + :root[data-theme=dark] exactly. JSON shape is iOS-codegen-ready: `color.light.*` / `color.dark.*` maps directly to a `Color.finrlxLight` / `Color.finrlxDark` enum in Swift.
+- `frontend/src/__tests__/tokens-contract.test.ts` (new) — vitest contract. Parses `globals.css`, extracts every `--var` declaration from `:root` and `:root[data-theme=dark]`, asserts every key in `tokens.color.{light,dark}` matches its CSS counterpart exactly, and (in reverse) asserts globals.css doesn't declare a color custom property the JSON forgot. **3 tests, all green.**
+- The JSON file carries a `swift_bridging_notes` section explaining the codegen mapping (oklch → Color sRGB, font-fallback chain for SF Pro, px-to-pt 1:1, reduced-motion handled by SwiftUI primitives not tokens) so the eventual Swift codegen script has a written brief.
+
+### Why
+Without a single source of truth, the iOS app's colors will drift from the web's the moment someone tweaks `--accent` in CSS without remembering to update Swift. The JSON + the contract test enforces "edit one, edit both" at CI time. CI will fail loudly if the two diverge, before any iOS code is even written.
+
+The contract test is intentionally one-way-strict on color tokens (the JSON must cover every color in globals.css) but tolerant on non-color tokens (radii/shadows/typography) — those are easier to reason about as one-line strings and don't carry the same drift risk.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | **17 passed** (+3 new tokens-contract tests; was 14) |
+| next build | unchanged |
+| playwright chromium | unchanged |
