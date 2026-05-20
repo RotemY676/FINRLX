@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/shell/AppShell";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -10,6 +10,16 @@ import { SentryClientInit } from "./sentry-init";
 export const metadata: Metadata = {
   title: "FINRLX",
   description: "Private decision-intelligence platform for medium-term investing",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafbfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1d24" },
+  ],
 };
 
 export default function RootLayout({

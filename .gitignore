@@ -98,3 +98,6 @@ research/finrlx_cpu/.venv/
 tsconfig.tsbuildinfo
 frontend/test-results/
 frontend/playwright-report/
+
+# Per-user Claude Code settings (personal permissions, env, hooks)
+.claude/settings.local.json
