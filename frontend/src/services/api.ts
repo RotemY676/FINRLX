@@ -1826,3 +1826,68 @@ export async function syncFinrlxRegistryMetadataMirror(params: { dry_run: boolea
     body: JSON.stringify(params),
   });
 }
+
+// ── Phase A1 — Universe workspace ──
+
+export interface UniverseListItem {
+  universe_id: string;
+  name: string;
+  description: string | null;
+  asset_count: number;
+}
+
+export interface UniverseAsset {
+  asset_id: string;
+  ticker: string;
+  name: string;
+  sector: string | null;
+  is_active: boolean;
+}
+
+export interface UniverseDetail {
+  universe_id: string;
+  name: string;
+  description: string | null;
+  asset_count: number;
+  active_asset_count: number;
+  tickers: string[];
+  assets: UniverseAsset[];
+}
+
+export interface UniverseCoverageDomain {
+  covered: number;
+  total: number;
+  pct: number;
+}
+
+export interface UniverseCoverage {
+  universe_id: string;
+  asset_count: number;
+  coverage: {
+    market_bars: UniverseCoverageDomain;
+    features: UniverseCoverageDomain;
+    signals: UniverseCoverageDomain;
+    model_predictions: UniverseCoverageDomain;
+  };
+}
+
+export interface UniverseReadiness extends UniverseCoverage {
+  readiness_status: "ready" | "incomplete";
+  warnings: string[];
+}
+
+export async function fetchUniverses(): Promise<ApiResponse<UniverseListItem[]>> {
+  return apiFetch<UniverseListItem[]>("/api/v1/universes");
+}
+
+export async function fetchUniverseDetail(universeId: string): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>(`/api/v1/universes/${universeId}`);
+}
+
+export async function fetchUniverseCoverage(universeId: string): Promise<ApiResponse<UniverseCoverage>> {
+  return apiFetch<UniverseCoverage>(`/api/v1/universes/${universeId}/coverage`);
+}
+
+export async function fetchUniverseReadiness(universeId: string): Promise<ApiResponse<UniverseReadiness>> {
+  return apiFetch<UniverseReadiness>(`/api/v1/universes/${universeId}/readiness`);
+}

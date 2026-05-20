@@ -27,6 +27,7 @@ export interface FeatureFlags {
   paper_trading: boolean;
   backtests: boolean;
   replay: boolean;
+  universe_ui: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -39,6 +40,7 @@ const FAIL_CLOSED: FeatureFlags = {
   paper_trading: false,
   backtests: false,
   replay: false,
+  universe_ui: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -64,6 +66,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             paper_trading: Boolean(data.paper_trading),
             backtests: Boolean(data.backtests),
             replay: Boolean(data.replay),
+            universe_ui: Boolean(data.universe_ui),
           });
         }
       })

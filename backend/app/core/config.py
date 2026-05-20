@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     feature_paper_trading: bool = True    # Paper portfolio surface
     feature_backtests: bool = True        # Backtest surface
     feature_replay: bool = True           # Replay surface
+    feature_universe_ui: bool = True      # Universe workspace surface (Phase A1)
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific

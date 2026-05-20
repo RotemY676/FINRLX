@@ -24,7 +24,7 @@ const WORKSPACES: ReadonlyArray<{
   { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
   { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
   { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
-  { key: "universe", href: "#", label: "Universe", icon: "universe" },
+  { key: "universe", href: "/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
   { key: "news", href: "#", label: "News intelligence", icon: "news" },
 ];
 

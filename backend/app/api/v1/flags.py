@@ -27,5 +27,6 @@ async def flags() -> ApiResponse[dict]:
             "paper_trading": settings.feature_paper_trading,
             "backtests": settings.feature_backtests,
             "replay": settings.feature_replay,
+            "universe_ui": settings.feature_universe_ui,
         },
     )
