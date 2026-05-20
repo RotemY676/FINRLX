@@ -42,7 +42,10 @@ export default function SignupPage() {
         <input
           id="email"
           type="email"
+          inputMode="email"
           autoComplete="email"
+          autoCapitalize="off"
+          spellCheck={false}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -56,6 +59,8 @@ export default function SignupPage() {
           id="password"
           type="password"
           autoComplete="new-password"
+          autoCapitalize="off"
+          spellCheck={false}
           required
           minLength={12}
           maxLength={128}

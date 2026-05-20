@@ -513,3 +513,27 @@ PageError + PageLoading carry every page's load and error UX — fixing them onc
 | next build | 17 routes |
 | playwright chromium | 22 passed |
 | axe-core | clean across all routes |
+
+---
+
+## UX-3.4 — Form attributes for iOS soft-keyboard + autofill
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/signup/page.tsx` + `frontend/src/app/login/page.tsx` — auth forms:
+  - Email input: added `inputMode="email"`, `autoCapitalize="off"`, `spellCheck={false}` alongside existing `type="email" autoComplete="email"`. `type=email` alone is enough on modern iOS to trigger the email keyboard, but the explicit `inputMode` is more robust against edge cases and older Safari versions. `autoCapitalize="off"` + `spellCheck={false}` stop iOS from suggesting "Capitalized@gmail.com" or red-underlining valid email addresses.
+  - Password input: added `autoCapitalize="off"`, `spellCheck={false}` to prevent the same two iOS papercuts on password entry.
+
+### Why
+The audit flagged "zero `inputMode` anywhere" as a generic concern. The actual user-facing forms (signup, login, onboarding) already used the right `type` and `autoComplete` attributes. The marginal improvements here are the iOS-specific `autoCapitalize` + `spellCheck` defaults, which prevent two predictable annoyances: capitalized email letters and red-underlined password characters.
+
+Admin Research Wizard text inputs (UUIDs, ticker symbols, JSON config) were intentionally not changed — they're gated behind UX-2.6's mobile-desktop-only notice and the wizard is desktop-first by design.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | 22 passed |
