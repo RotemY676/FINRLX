@@ -1,13 +1,18 @@
-"""Ingestion service with deterministic local adapter.
+"""Ingestion service.
 
 Phase 4A: introduces the ingestion contract and internal data flow.
-Uses a local/mock adapter that generates deterministic OHLCV bars and
-news events so the pipeline is testable and repeatable.
+Phase MVP-2: adds yfinance as the first real market-data provider.
 
-Real external adapters (e.g. Alpha Vantage, Polygon, Reuters) will be
-added in a future phase without changing the service interface.
+The service routes `ingest_bars(source=...)` to the appropriate provider:
+  - "local"             — deterministic random-walk OHLCV (kept for tests)
+  - "local_deterministic" — alias of "local"
+  - "yfinance"          — Yahoo Finance via the yfinance package
+
+Providers all return (list[dict], warnings) and the service handles the DB
+side (idempotent upsert into market_bars + manifest).
 """
 import hashlib
+import logging
 import random
 from datetime import date, datetime, timezone, timedelta
 
@@ -17,6 +22,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ingestion import MarketBar, NewsEvent, IngestionManifest
 from app.models.reference import Asset
 from app.models.base import gen_uuid
+from app.services.data_providers import yfinance_provider
+
+logger = logging.getLogger(__name__)
 
 
 # ── Deterministic local adapter ──────────────────────────────────────
@@ -142,6 +150,28 @@ def _generate_news(tickers: list[str], start: date, end: date, source: str) -> l
     return events
 
 
+# ── Provider router ─────────────────────────────────────────────────
+
+
+def _fetch_bars_by_provider(
+    source: str,
+    ticker: str,
+    asset_id: str,
+    date_from: date,
+    date_to: date,
+) -> tuple[list[dict], list[str]]:
+    """Dispatch to the configured provider, returning (bars, warnings).
+
+    `source` is treated as a freeform manifest label for backward compatibility.
+    The only special-cased provider key is "yfinance"; everything else routes
+    to the deterministic local generator (which stamps the original `source`
+    onto each bar so callers can still tell ingestions apart).
+    """
+    if source == "yfinance":
+        return yfinance_provider.fetch_bars(ticker, asset_id, date_from, date_to)
+    return _generate_bars(ticker, asset_id, date_from, date_to, source), []
+
+
 # ── Service class ────────────────────────────────────────────────────
 
 class IngestService:
@@ -172,7 +202,6 @@ class IngestService:
         if date_from is None:
             date_from = date_to - timedelta(days=90)
 
-        # Create manifest
         manifest = IngestionManifest(
             id=gen_uuid(), source=source, kind="bars",
             status="running", started_at=now,
@@ -189,21 +218,45 @@ class IngestService:
             return manifest
 
         total_rows = 0
+        provider_warnings: list[str] = []
         for ticker, asset_id in asset_map.items():
-            bars = _generate_bars(ticker, asset_id, date_from, date_to, source)
-            for bar_data in bars:
-                # Check for existing bar (idempotent upsert)
-                existing = (await self.db.execute(
-                    select(MarketBar.id)
+            bars, warnings = _fetch_bars_by_provider(
+                source, ticker, asset_id, date_from, date_to
+            )
+            provider_warnings.extend(warnings)
+            if not bars:
+                continue
+            # One range query per ticker (was: one SELECT per bar — N+1).
+            existing_dates: set[date] = set(
+                (await self.db.execute(
+                    select(MarketBar.bar_date)
                     .where(MarketBar.asset_id == asset_id)
-                    .where(MarketBar.bar_date == bar_data["bar_date"])
-                    .where(MarketBar.interval == bar_data["interval"])
-                )).scalar()
-                if not existing:
+                    .where(MarketBar.interval == "1d")
+                    .where(MarketBar.bar_date >= date_from)
+                    .where(MarketBar.bar_date <= date_to)
+                )).scalars().all()
+            )
+            for bar_data in bars:
+                if bar_data["bar_date"] not in existing_dates:
                     self.db.add(MarketBar(**bar_data))
                     total_rows += 1
 
-        manifest.status = "completed"
+        # Status semantics:
+        #   completed: any bars ingested, no critical issues
+        #   partial:   bars ingested but provider raised warnings
+        #   failed:    no bars ingested at all
+        if total_rows == 0:
+            manifest.status = "failed"
+            manifest.error_message = (
+                "Provider returned no bars. "
+                + (("Warnings: " + "; ".join(provider_warnings[:5])) if provider_warnings else "")
+            )
+        elif provider_warnings:
+            manifest.status = "partial"
+            manifest.details = {"warnings": provider_warnings[:50]}
+        else:
+            manifest.status = "completed"
+
         manifest.asset_count = len(asset_map)
         manifest.row_count = total_rows
         manifest.completed_at = datetime.now(timezone.utc)
@@ -243,7 +296,6 @@ class IngestService:
         events = _generate_news(tickers, date_from, date_to, source)
         inserted = 0
         for ev_data in events:
-            # Idempotent: skip if same source + published_at + headline exists
             existing = (await self.db.execute(
                 select(NewsEvent.id)
                 .where(NewsEvent.source == ev_data["source"])

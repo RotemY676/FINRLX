@@ -11,7 +11,7 @@ from app.models.ops import DataFeed
 
 
 # Real providers are those backed by actual IngestService adapters
-REAL_PROVIDERS = {"local_deterministic", "seed"}
+REAL_PROVIDERS = {"local_deterministic", "seed", "local", "yfinance"}
 
 # Known placeholder/demo feed names from seeded data
 PLACEHOLDER_FEED_NAMES = {
