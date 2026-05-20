@@ -62,50 +62,60 @@ export default function BacktestsPage() {
       {/* Experiment list */}
       <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
         <h3 className="text-[13px] font-semibold text-ink mb-3">Experiments</h3>
-        {list.items.map((item) => (
-          <div
-            key={item.id}
-            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-              detail?.id === item.id
-                ? "bg-primary-soft border border-primary"
-                : "hover:bg-surface-3"
-            }`}
-            onClick={async () => {
+        <ul className="space-y-1" role="list">
+          {list.items.map((item) => {
+            const isSelected = detail?.id === item.id;
+            const onSelect = async () => {
               const res = await fetchBacktest(item.id);
               setDetail(res.data);
-            }}
-          >
-            <div>
-              <span className="text-[13px] font-medium">{item.name}</span>
-              {item.start_date && item.end_date && (
-                <span className="text-[11px] text-ink-4 ml-2">
-                  {fmtDate(item.start_date)} — {fmtDate(item.end_date)}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {item.total_return != null && (
-                <span className={`font-mono text-[13px] ${item.total_return >= 0 ? "text-pos" : "text-breach"}`}>
-                  {pct(item.total_return)}
-                </span>
-              )}
-              <StatusBadge status={item.status} />
-              {item.source_type === "pipeline_backtest" && (
-                <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
-              )}
-              {(item.source_type === "seed_demo" || item.source_type === "unknown") && (
-                <span className="px-2 py-0.5 bg-caution-soft text-caution-soft-ink rounded-md text-[10px] font-medium">
-                  {item.source_type === "seed_demo" ? "Seed / Demo" : "Unverified"}
-                </span>
-              )}
-              {item.is_promoted && (
-                <span className="px-2 py-0.5 bg-primary-soft text-primary rounded-md text-[11px] font-medium">
-                  promoted
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+            };
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={onSelect}
+                  aria-pressed={isSelected}
+                  aria-label={`${item.name} — open backtest detail`}
+                  className={`w-full flex flex-col md:flex-row md:items-center md:justify-between gap-1.5 md:gap-3 p-3 min-h-11 rounded-lg text-left transition-colors ${
+                    isSelected
+                      ? "bg-primary-soft border border-primary"
+                      : "hover:bg-surface-3 focus-visible:bg-surface-3"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <span className="text-[13px] font-medium text-ink">{item.name}</span>
+                    {item.start_date && item.end_date && (
+                      <span className="block md:inline text-[11px] text-ink-4 md:ml-2 mt-0.5 md:mt-0">
+                        {fmtDate(item.start_date)} — {fmtDate(item.end_date)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center flex-wrap gap-2 md:gap-3 shrink-0">
+                    {item.total_return != null && (
+                      <span className={`font-mono text-[13px] ${item.total_return >= 0 ? "text-pos" : "text-breach"}`}>
+                        {pct(item.total_return)}
+                      </span>
+                    )}
+                    <StatusBadge status={item.status} />
+                    {item.source_type === "pipeline_backtest" && (
+                      <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
+                    )}
+                    {(item.source_type === "seed_demo" || item.source_type === "unknown") && (
+                      <span className="px-2 py-0.5 bg-caution-soft text-caution-soft-ink rounded-md text-[10px] font-medium">
+                        {item.source_type === "seed_demo" ? "Seed / Demo" : "Unverified"}
+                      </span>
+                    )}
+                    {item.is_promoted && (
+                      <span className="px-2 py-0.5 bg-primary-soft text-primary rounded-md text-[11px] font-medium">
+                        promoted
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {detail && (
@@ -157,44 +167,44 @@ export default function BacktestsPage() {
           {/* Config table */}
           <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
             <h3 className="text-[13px] font-semibold text-ink mb-3">Experiment Configuration</h3>
-            <div className="space-y-1">
+            <dl className="space-y-2 md:space-y-1 text-[13px]">
               {Object.entries(detail.config).map(([key, val]) => (
-                <div key={key} className="flex gap-3 text-[13px]">
-                  <span className="text-ink-3 w-40 shrink-0">{key.replace(/_/g, " ")}</span>
-                  <span className="text-ink-2">{String(val)}</span>
+                <div key={key} className="flex flex-col md:flex-row md:gap-3">
+                  <dt className="text-ink-3 md:w-40 md:shrink-0">{key.replace(/_/g, " ")}</dt>
+                  <dd className="text-ink-2 break-words md:flex-1">{String(val)}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
 
           {/* Provenance */}
           {detail.source_type === "pipeline_backtest" && (
             <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
               <h3 className="text-[13px] font-semibold text-ink mb-3">Provenance</h3>
-              <div className="space-y-1 text-[13px]">
-                <div className="flex gap-3">
-                  <span className="text-ink-3 w-40 shrink-0">Source type</span>
-                  <span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span>
+              <dl className="space-y-2 md:space-y-1 text-[13px]">
+                <div className="flex flex-col md:flex-row md:gap-3">
+                  <dt className="text-ink-3 md:w-40 md:shrink-0">Source type</dt>
+                  <dd><span className="px-2 py-0.5 bg-pos-soft text-pos-soft-ink rounded-md text-[10px] font-medium">Pipeline</span></dd>
                 </div>
                 {detail.decision_count != null && (
-                  <div className="flex gap-3">
-                    <span className="text-ink-3 w-40 shrink-0">Decision points</span>
-                    <span className="text-ink-2 font-mono">{detail.decision_count}</span>
+                  <div className="flex flex-col md:flex-row md:gap-3">
+                    <dt className="text-ink-3 md:w-40 md:shrink-0">Decision points</dt>
+                    <dd className="text-ink-2 font-mono">{detail.decision_count}</dd>
                   </div>
                 )}
                 {detail.market_bar_window && (
-                  <div className="flex gap-3">
-                    <span className="text-ink-3 w-40 shrink-0">Market bar window</span>
-                    <span className="text-ink-2 font-mono">{detail.market_bar_window.start} — {detail.market_bar_window.end}</span>
+                  <div className="flex flex-col md:flex-row md:gap-3">
+                    <dt className="text-ink-3 md:w-40 md:shrink-0">Market bar window</dt>
+                    <dd className="text-ink-2 font-mono break-words">{detail.market_bar_window.start} — {detail.market_bar_window.end}</dd>
                   </div>
                 )}
-                <div className="flex gap-3">
-                  <span className="text-ink-3 w-40 shrink-0">Lineage</span>
-                  <span className={`text-[11px] font-medium ${detail.lineage_available ? "text-pos" : "text-ink-3"}`}>
+                <div className="flex flex-col md:flex-row md:gap-3">
+                  <dt className="text-ink-3 md:w-40 md:shrink-0">Lineage</dt>
+                  <dd className={`text-[11px] font-medium ${detail.lineage_available ? "text-pos" : "text-ink-3"}`}>
                     {detail.lineage_available ? "Available" : "Not available"}
-                  </span>
+                  </dd>
                 </div>
-              </div>
+              </dl>
             </div>
           )}
 

@@ -339,3 +339,36 @@ The selector `<div onClick>` pattern silently broke keyboard navigation. Promoti
 | next build | 17 routes |
 | playwright chromium | **18 passed** (+1 new replay-mobile spec) |
 | axe-core on `/replay` @ 375px | 0 serious violations |
+
+---
+
+## UX-2.5 — `/backtests` experiment list + config tables mobile refactor
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/backtests/page.tsx`:
+
+  **Experiment list rows (the multi-element collision the audit flagged):**
+  - Were: clickable `<div>` with `flex justify-between` — on a 375px viewport, left side (name + date range) collided with right side (return % + status + source badge + promoted badge — up to 5 chips).
+  - Now: `<ul role="list">` of `<li><button>` with `aria-pressed` and `aria-label`. Mobile (`flex flex-col`) stacks name+date on row 1 and badges on row 2 via `flex flex-wrap` so they reflow cleanly. Desktop (`md:flex-row md:items-center md:justify-between`) keeps the original split layout exactly.
+  - Each button: `min-h-11` (HIG 44pt), `focus-visible:bg-surface-3` for keyboard nav.
+
+  **Experiment Configuration + Provenance:**
+  - Same `w-40 shrink-0` anti-pattern as the Replay StageSnapshotCard. Replaced both with semantic `<dl><dt>/<dd>` using the `flex flex-col md:flex-row` switch. `break-words` on `<dd>` so long market-bar-window strings wrap on mobile instead of overflowing.
+
+- `frontend/tests/e2e/backtests-mobile.spec.ts` — new spec at 375×667, axe-clean check.
+
+### Why
+The experiment list is the worst-impact surface on `/backtests` for a mobile user — they need to pick which run to inspect, and the desktop layout assumed all metadata could fit on one line. Stacking on mobile lets each row breathe without dropping any data.
+
+The Config and Provenance tables fail for the same reason as the replay forensics view: when the label takes 42% of viewport width, values get truncated and the page stops being useful.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed |
+| next build | 17 routes |
+| playwright chromium | **19 passed** (+1 new backtests-mobile spec) |
+| axe-core on `/backtests` @ 375px | 0 serious violations |
