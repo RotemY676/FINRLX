@@ -17,8 +17,8 @@ async def test_flags_endpoint_returns_default_payload_shape(client):
     assert "meta" in body
     assert "data" in body
     data = body["data"]
-    # MVP-4 flags + Phase A1 universe_ui must be present
-    assert set(data.keys()) == {"research_lane", "paper_trading", "backtests", "replay", "universe_ui"}
+    # MVP-4 flags + Phase A1 universe_ui + Phase A2 ops_ui must be present
+    assert set(data.keys()) == {"research_lane", "paper_trading", "backtests", "replay", "universe_ui", "ops_ui"}
     # Defaults are ON for the test environment
     for k in data:
         assert isinstance(data[k], bool), f"{k} must be bool, got {type(data[k])}"

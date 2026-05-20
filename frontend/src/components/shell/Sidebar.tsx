@@ -36,7 +36,11 @@ const OPS: ReadonlyArray<{
   countKey?: "overview" | "decisions" | "risk" | "ops";
   flagKey?: FlagKey;
 }> = [
-  { key: "admin", href: "/admin", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "research_lane" },
+  // Ops command (Phase A2) — daily-driver dashboard, mobile + desktop.
+  { key: "ops", href: "/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
+  // Research lab (desktop-only per UX-2.6) stays accessible from the nav for
+  // operators who want the wizard / kanban / pipeline canvas.
+  { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
 ];
 
 const SAVED = [

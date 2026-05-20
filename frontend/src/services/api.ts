@@ -1891,3 +1891,7 @@ export async function fetchUniverseCoverage(universeId: string): Promise<ApiResp
 export async function fetchUniverseReadiness(universeId: string): Promise<ApiResponse<UniverseReadiness>> {
   return apiFetch<UniverseReadiness>(`/api/v1/universes/${universeId}/readiness`);
 }
+
+// Phase A2 ops types + fetchers are already declared above (OpsData,
+// fetchOps, approveQueueItem, deferQueueItem, challengeQueueItem,
+// QueueActionResult). The /ops page consumes those directly.

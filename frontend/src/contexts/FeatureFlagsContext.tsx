@@ -28,6 +28,7 @@ export interface FeatureFlags {
   backtests: boolean;
   replay: boolean;
   universe_ui: boolean;
+  ops_ui: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -41,6 +42,7 @@ const FAIL_CLOSED: FeatureFlags = {
   backtests: false,
   replay: false,
   universe_ui: false,
+  ops_ui: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -67,6 +69,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             backtests: Boolean(data.backtests),
             replay: Boolean(data.replay),
             universe_ui: Boolean(data.universe_ui),
+            ops_ui: Boolean(data.ops_ui),
           });
         }
       })

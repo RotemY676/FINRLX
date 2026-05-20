@@ -28,5 +28,6 @@ async def flags() -> ApiResponse[dict]:
             "backtests": settings.feature_backtests,
             "replay": settings.feature_replay,
             "universe_ui": settings.feature_universe_ui,
+            "ops_ui": settings.feature_ops_ui,
         },
     )

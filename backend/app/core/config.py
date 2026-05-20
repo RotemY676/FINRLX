@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     feature_backtests: bool = True        # Backtest surface
     feature_replay: bool = True           # Replay surface
     feature_universe_ui: bool = True      # Universe workspace surface (Phase A1)
+    feature_ops_ui: bool = True           # Ops command center surface (Phase A2)
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific

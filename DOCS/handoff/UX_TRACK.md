@@ -780,3 +780,45 @@ All five UX-5 sub-phases are landed:
 The UX track ends here. Per the user-confirmed roadmap (memory: `project_post_mvp_roadmap.md`, re-confirmed 2026-05-21), the next track is the **post-MVP product track** — A2 Ops command → A3 Policy Editor → A4 Integrations → B1 Risk workspace → B2 News intelligence → B3 Saved views → C1..C7 MVP debt closure. Phase D iOS stays skipped.
 
 The auto-runnable portion of Phase UX-3 still has UX-3.6 outstanding — the manual VoiceOver pass that requires a real iPhone. That doesn't block the post-MVP track; it can be done in parallel by the user.
+
+---
+
+## A2 — Ops command page (post-MVP product track)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/ops/page.tsx` (new) — `/ops` route. Consumes `GET /api/v1/ops`, renders system KPIs + publication queue (with approve/defer/challenge actions wired to the corresponding POST endpoints) + feed/engine health grid + breaches/incidents lists + audit trail.
+- `frontend/src/components/ops/` (new directory, 5 components):
+  - `OpsKpiStrip` — KPI cards (queue depth / feed coverage / engine health / breaches / incidents / high-priority)
+  - `OpsQueuePanel` — publication queue with per-row Approve / Defer / Challenge buttons (min-h-11 on mobile, action calls refetch the dashboard so state is consistent)
+  - `OpsHealthGrid` — two-up Feeds + Engines side panels
+  - `OpsBreachesIncidents` — two-up policy breaches + open incidents
+  - `OpsAuditLog` — recent audit trail with actor/action/scope
+- `frontend/src/components/shell/Sidebar.tsx` — OPS entries reworked:
+  - "Ops command" now points to `/ops` (was `/admin`), gated by `flagKey: "ops_ui"`
+  - New "Research lab" entry pointing to `/admin` (the desktop-only pipeline canvas + wizard from UX-2.6), gated by the existing `research_lane` flag
+- `backend/app/core/config.py` + `backend/app/api/v1/flags.py` — `feature_ops_ui: bool = True` and exposed in `/api/v1/flags`. `backend/tests/test_mvp4_feature_flags.py` asserts the new key.
+- `frontend/src/contexts/FeatureFlagsContext.tsx` — added `ops_ui: boolean` to the typed `FeatureFlags`.
+- `frontend/tests/e2e/ops-mobile.spec.ts` (new) — render + axe-clean at 375×667 and 1280×720.
+
+### Why
+The Ops command surface from the design was misrouted to `/admin` since MVP — the audit identified this as a "labelled but not built" gap. `/admin` itself remains valuable (it's the desktop-only research lab with the pipeline canvas, kanban editor, and research wizard) so it stays accessible from the sidebar under a clearer label. The new `/ops` is the daily-driver dashboard that mobile + desktop both render usefully.
+
+Approve/Defer/Challenge actions were already implemented in the backend (UX-2.6 left them, the audit confirmed) — they just had no frontend wired to them. A2 closes that gap.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest | **747 passed, 2 skipped** (no regression; flag-shape test updated) |
+| backend ruff `app/` | clean |
+| backend mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | **18 routes** (+`/ops` at 4.5 kB) |
+| playwright chromium | **24 passed** (+2 new ops-mobile specs at 375 + 1280) |
+| axe-core on `/ops` @ 375px | 0 serious violations |
+
+### Honest limitations
+- Live action mutations call the real POST endpoints but Playwright tests run with the API mocked to 503, so the test verifies "render + axe clean" only. End-to-end action flow needs a backend + seed to verify, which is documented for the operator's deploy smoke (Phase MVP-7e).
+- The `OpsData` response also carries `ml_ops`, `policy`, `integrations_summary`, `universe`, `rl` blocks. A2 surfaces queue/feeds/engines/breaches/incidents/audit but doesn't render those secondary blocks yet — they will become standalone surfaces in A3 (Policy Editor) and A4 (Integrations), and the `ml_ops` + `rl` blocks belong to the research lab on `/admin`.
