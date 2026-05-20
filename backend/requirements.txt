@@ -27,3 +27,8 @@ slowapi==0.1.9
 
 # Observability (Phase MVP-7)
 sentry-sdk[fastapi]==2.19.2
+
+# News intelligence (Phase B2) — RSS aggregator + VADER sentiment.
+# Both pure-Python and small. No external API keys required.
+feedparser==6.0.11
+vaderSentiment==3.3.2

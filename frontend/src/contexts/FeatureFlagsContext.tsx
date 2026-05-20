@@ -32,6 +32,7 @@ export interface FeatureFlags {
   policy_ui: boolean;
   integrations_ui: boolean;
   risk_ui: boolean;
+  news_ui: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -49,6 +50,7 @@ const FAIL_CLOSED: FeatureFlags = {
   policy_ui: false,
   integrations_ui: false,
   risk_ui: false,
+  news_ui: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -79,6 +81,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             policy_ui: Boolean(data.policy_ui),
             integrations_ui: Boolean(data.integrations_ui),
             risk_ui: Boolean(data.risk_ui),
+            news_ui: Boolean(data.news_ui),
           });
         }
       })

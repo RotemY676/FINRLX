@@ -16,6 +16,7 @@ from app.api.v1.ml_ops import router as ml_ops_router
 from app.api.v1.model_promotion import router as model_promotion_router
 from app.api.v1.model_validation import router as model_validation_router
 from app.api.v1.models import router as models_router
+from app.api.v1.news import router as news_router
 from app.api.v1.ops import router as ops_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.paper import router as paper_router
@@ -61,6 +62,7 @@ api_router.include_router(policies_router, tags=["policies"])
 api_router.include_router(integrations_router, tags=["integrations"])
 api_router.include_router(universe_router, tags=["universes"])
 api_router.include_router(risk_router, tags=["risk"])
+api_router.include_router(news_router, tags=["news"])
 api_router.include_router(rl_router, tags=["rl"])
 api_router.include_router(rl_training_router, tags=["rl-training"])
 api_router.include_router(rl_benchmark_router, tags=["rl-benchmark"])

@@ -2042,3 +2042,32 @@ export interface RiskBundle {
 export async function fetchCurrentRisk(): Promise<ApiResponse<RiskBundle | null>> {
   return apiFetch<RiskBundle | null>("/api/v1/risk/current");
 }
+
+// ── Phase B2 — News intelligence ──
+
+export interface NewsItem {
+  source: string;
+  title: string;
+  link: string;
+  summary: string;
+  published: string | null;
+  sentiment_compound: number;
+  sentiment_label: "positive" | "neutral" | "negative" | string;
+}
+
+export interface NewsSummary {
+  total: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+  mean_compound: number;
+}
+
+export interface NewsBundle {
+  summary: NewsSummary;
+  items: NewsItem[];
+}
+
+export async function fetchNews(refresh = false): Promise<ApiResponse<NewsBundle>> {
+  return apiFetch<NewsBundle>(`/api/v1/news${refresh ? "?refresh=true" : ""}`);
+}

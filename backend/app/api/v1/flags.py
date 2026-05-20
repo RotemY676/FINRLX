@@ -32,5 +32,6 @@ async def flags() -> ApiResponse[dict]:
             "policy_ui": settings.feature_policy_ui,
             "integrations_ui": settings.feature_integrations_ui,
             "risk_ui": settings.feature_risk_ui,
+            "news_ui": settings.feature_news_ui,
         },
     )

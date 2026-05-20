@@ -955,3 +955,54 @@ Beta-vs-benchmark exposure is deliberately not shipped: it would require a bench
 - Parametric VaR assumes normal-distributed returns. For long-tailed P&L this understates tail risk. Historical-simulation VaR over the same series would be a one-method swap and a richer plot; tracked as a polish follow-up.
 - Beta is not computed (no benchmark series).
 - Concentration uses `current_weight` from holdings; if a portfolio's `current_weight` is stale (no recent valuation snapshot), the displayed concentration can drift from target. A "as-of date" footnote would resolve the ambiguity; deferred.
+
+---
+
+## B2 — News intelligence (RSS + VADER sentiment)
+**Date:** 2026-05-21
+**Status:** Closed; closes the audit's phantom-sidebar gap entirely
+
+### What shipped
+**Backend:**
+- `backend/requirements.txt` — `feedparser==6.0.11` + `vaderSentiment==3.3.2` added. Both pure-Python, no external API keys, no upstream rate limits to negotiate.
+- `backend/app/services/news.py` (new) — `NewsService.get_headlines()` aggregates 3 free RSS sources (Yahoo Finance Top, MarketWatch Top, MarketWatch Markets), scores each headline with VADER (compound score + bucketed label), de-duplicates by title-case, and caches results for 5 minutes. Fetch is parallel via `asyncio.run_in_executor` since feedparser is blocking I/O.
+- `backend/app/api/v1/news.py` (new) — `GET /api/v1/news` returns `{ summary, items }` where summary is total / positive / neutral / negative / mean compound. `?refresh=true` bypasses the cache.
+- `backend/app/api/router.py` — registered with tag `["news"]`.
+- `backend/app/core/config.py` + `flags.py` — `feature_news_ui` flag.
+- `backend/tests/test_phase_b2_news.py` (new) — **5 tests**: VADER label bucket boundaries, polarity sanity (positive/negative/neutral text scores correctly), empty input → neutral, end-to-end aggregation with monkey-patched feedparser fixtures including dedupe of case-different duplicates, and TTL cache invariant (second call within TTL doesn't re-fetch).
+
+**Frontend:**
+- `frontend/src/services/api.ts` — `NewsItem`, `NewsSummary`, `NewsBundle` types + `fetchNews(refresh)` fetcher.
+- `frontend/src/contexts/FeatureFlagsContext.tsx` — `news_ui` flag.
+- `frontend/src/app/news/page.tsx` (new) — `/news` route. Summary KPI strip (total / positive / negative / mean compound, color-coded), then a list of headlines as cards with title linking out, summary, source + published-at footer, and a sentiment badge in the top-right (color-coded). Refresh button bypasses the cache.
+- `frontend/src/components/shell/Sidebar.tsx` — "News intelligence" `href "#"` → `"/news"` gated by `news_ui`. **The audit's last phantom sidebar entry is now a real surface.**
+- `frontend/tests/e2e/news-mobile.spec.ts` (new) — render + axe at 375×667.
+
+### Why
+News was the last phantom-nav entry (`href="#"`) from the audit. Per the user-locked scope from 2026-05-20, the route was: **free RSS + VADER, no paid API**. That decision constrains scope nicely — RSS feeds are public and unauthenticated, VADER is rule-based and small, so the whole feature ships without any new credentials to manage, no rate-limit threading, and no recurring cost. The honest tradeoff is that we get rate-limited surface news, not Bloomberg-grade alpha-relevant news.
+
+### Gates
+| Gate | Result |
+|---|---|
+| backend pytest (news + flags) | 8 passed |
+| backend ruff `app/` + mypy | clean |
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | **22 routes** (+`/news`) |
+| playwright chromium | **28 passed** (+1 new news-mobile spec) |
+| axe-core on `/news` @ 375px | 0 serious violations |
+
+### Sidebar audit fully closed
+| Sidebar entry | Audit said `href="#"` | Status |
+|---|---|---|
+| Universe | yes | ✅ wired in A1 |
+| Risk workspace | yes | ✅ wired in B1 |
+| News intelligence | yes | ✅ wired in B2 (this commit) |
+| Ops command | mislabelled `/admin` | ✅ wired in A2 |
+
+**4 of 4 closed.** Every workspace + ops nav entry now points to a real surface.
+
+### Honest limitations
+- VADER is a general-purpose sentiment lexicon. Some finance-specific phrasing ("downgrade", "miss") it scores correctly; subtler trader-speak ("dovish", "hawkish", "topside") it doesn't. For a fund-grade signal, a finance-tuned model (FinBERT or similar) would be the next step. Out of scope per the no-paid-API constraint.
+- The cache is in-process. On a multi-instance deploy each instance fetches independently. Acceptable today; if we ever scale horizontally beyond 2-3 instances, a shared Redis cache becomes the obvious move (and would be paired with the slowapi → Redis migration tracked in C7).
+- No deployment of the new Python deps yet — `feedparser` and `vaderSentiment` are installed locally and listed in `requirements.txt`. Railway will pick them up on next deploy. Documented as an operator follow-up.
