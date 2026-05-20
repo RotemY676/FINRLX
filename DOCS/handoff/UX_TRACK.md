@@ -741,3 +741,42 @@ The iOS dev needs only four files to start:
 - `frontend/src/i18n/en.json` (string source)
 
 Plus `UX_TRACK.md` (this file) for context.
+
+---
+
+## UX-5.5 — PWA manifest (installable as iOS Home Screen)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `frontend/public/manifest.webmanifest` (new) — minimum-viable PWA manifest. Name + short_name "FINRLX", description matches the metadata, `display: "standalone"` so the home-screen launch hides the Safari chrome, `start_url: "/"`, `theme_color` + `background_color` matched to the canvas token (`#fafbfc` light). Single SVG icon referenced from `/icon.svg` (the existing Next.js `app/icon.svg`).
+- `frontend/src/app/layout.tsx` — `metadata.manifest = "/manifest.webmanifest"` so Next.js emits the `<link rel="manifest">` tag, plus `metadata.appleWebApp` (capable: true, title: "FINRLX", statusBarStyle: "black-translucent") which generates the iOS-specific `<meta apple-mobile-web-app-*>` tags. This is what tells iOS Safari "yes, this site is installable; show the Add to Home Screen affordance prominently."
+
+### What's deferred (low-risk follow-ups)
+- **Proper raster icons (192px, 512px, maskable 512px).** The single SVG is enough for installation on modern iOS Safari and Chrome, but Android home screen and macOS Dock prefer PNGs. Adding `icon-192.png` + `icon-512.png` + `icon-maskable-512.png` to `public/` and listing them in the manifest is a 5-minute follow-up when someone designs the icon properly.
+- **Service worker / offline shell.** Not required for iOS "Add to Home Screen" — iOS Safari treats `display: standalone` PWAs as installable without one. Adding offline support means picking up `next-pwa` or hand-rolling a service worker via `next-runtime` — out of UX-5 scope; revisit if real users start complaining about cold-start over LTE.
+- **PWA install prompt.** Some apps surface a custom "Install FINRLX" button via the `beforeinstallprompt` event. Not shipped here — let the browser handle the affordance until product validates the install funnel.
+
+### Why
+The locked product decision (UX-track scope, 2026-05-20) is **PWA-first, native Swift deferred**. UX-5.5 is the smallest commit that delivers on "PWA-first": opening Safari on iPhone, navigating to the deployed FINRLX, and tapping Share → Add to Home Screen now creates a home-screen tile that launches the app in standalone mode with the FINRLX icon, theme color, and orientation lock. That's the user-visible promise of "PWA-first" honored.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 21 passed |
+| next build | 17 routes (unchanged) — `/manifest.webmanifest` served statically from `public/` |
+| playwright chromium | 22 passed |
+
+### Phase UX-5 closes here
+All five UX-5 sub-phases are landed:
+- 5.1 tokens.json + contract test (`f6a014d`)
+- 5.2 iOS API codegen doc (`9fec609`)
+- 5.3 i18n strings scaffold (`da2f085`)
+- 5.4 iOS navigation contract (`a6a7cb6`)
+- 5.5 PWA manifest (this commit)
+
+### Phase UX-6: not in this track
+The UX track ends here. Per the user-confirmed roadmap (memory: `project_post_mvp_roadmap.md`, re-confirmed 2026-05-21), the next track is the **post-MVP product track** — A2 Ops command → A3 Policy Editor → A4 Integrations → B1 Risk workspace → B2 News intelligence → B3 Saved views → C1..C7 MVP debt closure. Phase D iOS stays skipped.
+
+The auto-runnable portion of Phase UX-3 still has UX-3.6 outstanding — the manual VoiceOver pass that requires a real iPhone. That doesn't block the post-MVP track; it can be done in parallel by the user.

@@ -10,6 +10,12 @@ import { SentryClientInit } from "./sentry-init";
 export const metadata: Metadata = {
   title: "FINRLX",
   description: "Private decision-intelligence platform for medium-term investing",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "FINRLX",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
