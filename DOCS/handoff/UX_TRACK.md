@@ -672,3 +672,20 @@ The contract test is intentionally one-way-strict on color tokens (the JSON must
 | vitest | **17 passed** (+3 new tokens-contract tests; was 14) |
 | next build | unchanged |
 | playwright chromium | unchanged |
+
+---
+
+## UX-5.2 — iOS API codegen scaffold (doc-only)
+**Date:** 2026-05-21
+**Status:** Closed
+
+### What shipped
+- `DOCS/handoff/UX_5_2_IOS_API_CODEGEN.md` — captures the plan for generating Swift Codable types + an async/await client from FastAPI's `/openapi.json` when Phase D opens. Covers: tool choice (Apple's `swift-openapi-generator`), expected project layout (`ios/finrlx/`), generator config including a path filter that excludes admin/RL endpoints, SwiftPM dependencies, JWT auth middleware pattern, and contract-testing approach.
+
+### Why
+Phase D iOS is currently deferred (PWA-first), but the OpenAPI generation strategy needs to be settled before the iOS dev starts — otherwise they'll either hand-roll types (drifts on every backend change) or pick a wrong tool that's expensive to switch later. Settling this now in a doc keeps the path open without committing code that has nothing to call into.
+
+No tests, no code shipped — this is a hand-off brief. The contract test in UX-5.1 + the path filter in this doc combine to give the iOS dev a "clone, configure, generate" experience.
+
+### Gates
+None — doc-only. tsc / vitest / build / playwright unchanged from UX-5.1.
