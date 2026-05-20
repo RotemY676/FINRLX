@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     rate_limit_ingest: str = "20/minute"
     rate_limit_recommendation_write: str = "30/minute"
 
+    # Observability (Phase MVP-7). When dsn is empty, the SDK initializer is
+    # a no-op — local dev + CI never reach Sentry. Set SENTRY_DSN in Railway
+    # to turn it on in production. `environment` is also logged so prod and
+    # preview deploys are separable in the Sentry UI.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_traces_sample_rate: float = 0.0  # 0 = no perf tracing in MVP
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

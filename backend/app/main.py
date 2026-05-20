@@ -10,8 +10,14 @@ from app.api.router import api_router
 from app.core.auth import guard_jwt_secret
 from app.core.config import settings
 from app.core.healthz import router as healthz_router
+from app.core.observability import init_sentry
 from app.core.rate_limit import limiter
 from app.core.security_headers import SecurityHeadersMiddleware
+
+# Phase MVP-7: initialize Sentry at module import so errors thrown during
+# app boot (e.g. database connection failures) are still captured. No-op
+# when SENTRY_DSN is empty.
+init_sentry()
 
 
 @asynccontextmanager

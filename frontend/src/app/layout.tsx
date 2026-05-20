@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ScopeProvider } from "@/contexts/ScopeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FeatureFlagsProvider } from "@/contexts/FeatureFlagsContext";
+import { SentryClientInit } from "./sentry-init";
 
 export const metadata: Metadata = {
   title: "FINRLX",
@@ -26,6 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <SentryClientInit />
         <ThemeProvider>
           <FeatureFlagsProvider>
             <AuthProvider>
