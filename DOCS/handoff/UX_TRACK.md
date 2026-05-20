@@ -228,3 +228,52 @@ The hide-columns approach (instead of cards-per-engine) was chosen because (a) t
 - The 9 buttons in the action strip on `/decision` were not touched here — that's UX-2.2.
 - I didn't add a visual-regression `toHaveScreenshot` baseline. Visual diffs land when the design polish lands in UX-4 (right now the visuals are still going to shift).
 - Synthesis row's inline mobile summary uses a fixed string ("`100% · Weighted across all engines`"); if the backend ever computes a different synthesis weight, that string drifts. Tracked for future hardening if the synthesis weight becomes dynamic.
+
+---
+
+## UX-2.2 — `/decision` action strip + risk gauges mobile refactor
+**Date:** 2026-05-20
+**Status:** Closed
+
+### What shipped
+- `frontend/src/app/decision/page.tsx`:
+
+  **Action strip (the 9-button row the audit called out):**
+  - Restructured into a `flex flex-col md:flex-row md:flex-wrap` container.
+  - The **3 primary CTAs with real handlers** (Save thesis, Promote paper, Defer) get `min-h-11` on mobile (HIG 44pt) and stack full-width — no more "Save as current thesis" being cropped at 1/3 of 375px. At md+ they revert to the inline row layout exactly as before.
+  - The **5 secondary affordances with no `onClick` handlers yet** (Bookmark, Share, Compare, Replay, More) get `hidden md:inline-flex` — they vanish on mobile until they earn real handlers and a proper "More" menu. They still take their original layout at md+.
+  - Each button gets explicit `type="button"`, plus `aria-label` on icon-only buttons (Bookmark, Share, More).
+  - Action message gets `role="status" aria-live="polite"` so VoiceOver announces "Saved" / "Failed" without needing focus.
+  - `animate-pulse` on the action message is desktop-only — `prefers-reduced-motion` already disables it globally per UX-1.1, but on mobile the message itself is right next to the just-tapped button, so blinking is unnecessary friction.
+
+  **Risk-constraints gauge bars (lines 200-217 in the old file):**
+  - The label was `w-40 shrink-0` — 160px on a 375px viewport, leaving the bar with ~115px and the percentage value with `w-8`. Useless on mobile.
+  - Now label-above-bar on mobile via a `md:contents` trick: the wrapper that holds `label` + `value` collapses to `display: contents` at md+ so the children become direct flex children of the gauge row. On mobile, the wrapper is `flex justify-between` (label left, value right) and the bar renders on its own row below.
+  - At md+, exact same horizontal layout as before via `md:flex md:items-center md:gap-3`, `md:w-40`, `md:w-8`, `md:order-last`, `md:flex-1`.
+  - Limit marker on the bar now has an explicit `aria-label="Limit N%"` (was `title=` only — not read by VoiceOver reliably).
+
+- `frontend/tests/e2e/decision-mobile.spec.ts` — new spec at 375×667 verifying the page renders without a 500 and is axe-clean. Cannot directly assert the action-strip stack with the API 503'd (page renders PageEmpty); the visual contract will be locked when UX-4 lands visual-regression.
+
+### Why
+The audit ranked the decision action strip among the worst mobile offenders: 9 buttons in a `flex-wrap` row, each `px-2.5 py-1.5` ≈ 28px tall (below 44pt), wrapping into 4-5 lines of cramped controls at 375px. The 5 secondary buttons being no-ops made the situation worse — they consumed space without adding value. Hiding them on mobile until they ship real behavior is the honest minimum.
+
+The risk gauges' `w-40 shrink-0` label was a desktop-only assumption — labels longer than the bar at the actual touch-target width broke the visual hierarchy. Label-above-bar restores the "value foregrounded against limit" semantic on mobile.
+
+### Gates
+| Gate | Result |
+|---|---|
+| tsc --noEmit | clean |
+| vitest | 14 passed (incl. touch-targets lint) |
+| next build | 17 routes |
+| playwright chromium | **16 passed** (+1 new decision-mobile spec) |
+| axe-core on `/decision` @ 375px | 0 serious violations |
+
+### Honest limitations
+- The 5 hidden-on-mobile secondary buttons need a proper "More" menu (bottom-sheet listing the same options). Deferred — first wire real handlers, then design the menu. Tracked as a follow-up.
+- The decision-mobile Playwright spec can't verify the action-strip layout directly (API mocked to 503, so the page is in PageEmpty state). When the visual-regression gate lands in UX-4, screenshots at 375 and 1280 will lock the contract. For now, the layout is verified manually + lint.
+
+### Out of scope for UX-2.2
+- `/paper` holdings table — UX-2.3
+- `/replay` stage cards — UX-2.4
+- `/backtests` equity curve + experiment list — UX-2.5
+- `/admin` shell — UX-2.6 (will likely just route mobile users to a "use desktop" notice given the audit's "fundamentally desktop-only" classification)

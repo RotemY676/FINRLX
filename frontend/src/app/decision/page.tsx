@@ -81,31 +81,41 @@ export default function DecisionPage() {
           )}
         </div>
         <ConfidenceBlock confidence={rec.confidence} />
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-line flex-wrap">
-          <button
-            disabled={actionLoading}
-            onClick={async () => { setActionLoading(true); try { const r = await actionSaveThesis(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
-            className="px-3 py-1.5 rounded-md bg-primary text-primary-ink text-[12.5px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-colors disabled:opacity-50"
-          ><Icon name="check" size={13} /> Save as current thesis</button>
-          <button
-            disabled={actionLoading}
-            onClick={async () => { setActionLoading(true); try { const r = await actionPromotePaper(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
-            className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors disabled:opacity-50"
-          ><Icon name="paper" size={13} /> Promote to paper</button>
-          <button
-            disabled={actionLoading}
-            onClick={async () => { setActionLoading(true); try { const r = await actionDefer(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
-            className="px-3 py-1.5 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium flex items-center gap-1.5 hover:bg-line transition-colors disabled:opacity-50"
-          ><Icon name="clock" size={13} /> Defer decision</button>
-          <div className="flex-1" />
-          {actionMsg && (
-            <span className="text-[11px] text-pos font-medium animate-pulse">{actionMsg}</span>
-          )}
-          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="bookmark" size={12} /></button>
-          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="share" size={12} /></button>
-          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="compare" size={12} /> Compare</button>
-          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="replay" size={12} /> Replay</button>
-          <button className="px-2.5 py-1.5 rounded-md text-ink-3 text-[12px] flex items-center gap-1 hover:bg-surface-3 transition-colors"><Icon name="dots" size={12} /></button>
+        {/* Action strip: 3 primary CTAs (handler-wired) + 5 secondary affordances
+            (no handlers yet — hidden on mobile to keep the 44pt grid breathable). */}
+        <div className="mt-4 pt-4 border-t border-line">
+          {/* Mobile: vertical stack so each CTA gets its own row and a 44pt floor.
+              Desktop: existing flex-wrap row. */}
+          <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-2 md:gap-2">
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={async () => { setActionLoading(true); try { const r = await actionSaveThesis(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+              className="inline-flex items-center justify-center md:justify-start gap-1.5 min-h-11 md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-md bg-primary text-primary-ink text-[13px] md:text-[12.5px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            ><Icon name="check" size={14} /> Save as current thesis</button>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={async () => { setActionLoading(true); try { const r = await actionPromotePaper(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+              className="inline-flex items-center justify-center md:justify-start gap-1.5 min-h-11 md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-md bg-surface-3 text-ink-2 text-[13px] md:text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
+            ><Icon name="paper" size={14} /> Promote to paper</button>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={async () => { setActionLoading(true); try { const r = await actionDefer(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
+              className="inline-flex items-center justify-center md:justify-start gap-1.5 min-h-11 md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-md bg-surface-3 text-ink-2 text-[13px] md:text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
+            ><Icon name="clock" size={14} /> Defer decision</button>
+            <div className="hidden md:block md:flex-1" />
+            {actionMsg && (
+              <span className="text-[11px] text-pos font-medium md:animate-pulse" role="status" aria-live="polite">{actionMsg}</span>
+            )}
+            {/* Secondary affordances — hidden below md until they get real handlers + a proper "More" menu (deferred to a later UX phase). */}
+            <button type="button" aria-label="Bookmark" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="bookmark" size={12} /></button>
+            <button type="button" aria-label="Share" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="share" size={12} /></button>
+            <button type="button" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="compare" size={12} /> Compare</button>
+            <button type="button" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="replay" size={12} /> Replay</button>
+            <button type="button" aria-label="More" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="dots" size={12} /></button>
+          </div>
         </div>
       </section>
 
@@ -197,8 +207,9 @@ export default function DecisionPage() {
         {stages?.risk_overlay ? (
           <div className="space-y-3">
             <p className="text-[12.5px] text-ink-2">{stages.risk_overlay.rationale}</p>
-            {/* Risk gauge bars */}
-            <div className="space-y-2">
+            {/* Risk gauge bars — stacked label-above-bar on mobile so the bar
+                gets the full row width; horizontal label-beside-bar on md+. */}
+            <div className="space-y-3 md:space-y-2">
               {[
                 { name: "Portfolio weight", value: 42, limit: 60, status: "ok" },
                 { name: "Sector concentration", value: 81, limit: 75, status: "caution" },
@@ -206,13 +217,17 @@ export default function DecisionPage() {
                 { name: "Correlation to top 5", value: 68, limit: 65, status: "caution" },
                 { name: "Realized vol (30d)", value: 42, limit: 50, status: "ok" },
               ].map((r) => (
-                <div key={r.name} className="flex items-center gap-3 text-[12px]">
-                  <span className="text-ink-2 w-40 shrink-0">{r.name}</span>
-                  <div className="flex-1 h-2 bg-surface-3 rounded-full overflow-hidden relative">
-                    <div className={`h-full rounded-full ${r.status === "ok" ? "bg-pos" : "bg-caution"}`} style={{ width: `${r.value}%` }} />
-                    <div className="absolute top-0 h-full w-0.5 bg-ink-4" style={{ left: `${r.limit}%` }} title={`Limit: ${r.limit}%`} />
+                <div key={r.name} className="text-[12px] md:flex md:items-center md:gap-3">
+                  {/* Mobile: label + value on first line, bar on second.
+                      Desktop: label | bar | value all in one row. */}
+                  <div className="flex items-center justify-between md:contents">
+                    <span className="text-ink-2 md:w-40 md:shrink-0">{r.name}</span>
+                    <span className={`font-mono md:w-8 md:text-right md:order-last ${r.status === "ok" ? "text-pos" : "text-caution"}`}>{r.value}%</span>
                   </div>
-                  <span className={`font-mono w-8 text-right ${r.status === "ok" ? "text-pos" : "text-caution"}`}>{r.value}%</span>
+                  <div className="mt-1 md:mt-0 h-2 bg-surface-3 rounded-full overflow-hidden relative md:flex-1">
+                    <div className={`h-full rounded-full ${r.status === "ok" ? "bg-pos" : "bg-caution"}`} style={{ width: `${r.value}%` }} />
+                    <div className="absolute top-0 h-full w-0.5 bg-ink-4" style={{ left: `${r.limit}%` }} title={`Limit: ${r.limit}%`} aria-label={`Limit ${r.limit}%`} />
+                  </div>
                 </div>
               ))}
             </div>
