@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
 import { AREA_META, AREAS_IN_ORDER } from "@/lib/help/toc";
+import { getHelpSearchIndex } from "@/lib/help/search";
+import { HelpSearch } from "./HelpSearch";
 import type { HelpPage } from "@/lib/help/types";
 
 const AREA_ICONS: Record<string, string> = {
@@ -16,8 +18,10 @@ const AREA_ICONS: Record<string, string> = {
 };
 
 export function HelpLandingBody({ pages }: { pages: HelpPage[] }) {
+  const index = getHelpSearchIndex();
   return (
     <div className="mt-4">
+      <HelpSearch index={index} />
       <section aria-labelledby="help-areas" className="mt-4">
         <h2 id="help-areas" className="sr-only">Browse Help</h2>
         <div className="grid gap-3 sm:grid-cols-2">
