@@ -23,6 +23,12 @@ from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.reference import Asset, Universe, UniverseMembership
 from app.models.signal import SignalOutput, SignalRun
 from app.services.engines import EngineService
+from app.services.profile_pipeline_overrides import (
+    ProfileOverrides,
+    cap_confidence,
+    cap_position_weight,
+    filter_universe_by_profile,
+)
 from app.services.provenance import (
     PIPELINE_VERSION,
     compute_input_hash,
@@ -60,8 +66,16 @@ class DecisionPipelineService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def _get_universe(self, universe_id: str | None) -> tuple[str, list[tuple[str, str]]]:
-        """Return (universe_id, [(asset_id, ticker)]) — use first universe if none specified."""
+    async def _get_universe(
+        self,
+        universe_id: str | None,
+        profile_overrides: ProfileOverrides | None = None,
+    ) -> tuple[str, list[tuple[str, str]]]:
+        """Return (universe_id, [(asset_id, ticker)]) — use first universe if none specified.
+
+        Phase W-5: when ``profile_overrides`` is set with non-empty sector
+        lists, the resulting asset list is filtered to honor them.
+        """
         if not universe_id:
             uni = (await self.db.execute(select(Universe.id).limit(1))).scalar()
             universe_id = uni
@@ -72,7 +86,12 @@ class DecisionPipelineService:
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
         )).all()
-        return universe_id, [(r.id, r.ticker) for r in rows]
+        universe_assets = [(r.id, r.ticker) for r in rows]
+        if profile_overrides is not None:
+            universe_assets = await filter_universe_by_profile(
+                self.db, universe_assets, profile_overrides
+            )
+        return universe_id, universe_assets
 
     async def _get_live_engine_keys(self) -> set[str]:
         """Return engine keys that are non-shadow (category != 'ml' or explicitly active non-experimental)."""
@@ -353,13 +372,29 @@ class DecisionPipelineService:
     # ── Stage: Risk Overlay ───────────────────────────────────────────
 
     async def run_risk_overlay(
-        self, rec_id: str, alloc: AllocationResult, asset_signals: dict[str, dict],
+        self,
+        rec_id: str,
+        alloc: AllocationResult,
+        asset_signals: dict[str, dict],
+        profile_overrides: ProfileOverrides | None = None,
     ) -> RiskOverlayResult:
-        """Enforce portfolio-level risk controls on allocation weights."""
+        """Enforce portfolio-level risk controls on allocation weights.
+
+        Phase W-5: when ``profile_overrides`` is set, the per-asset cap
+        is tightened to ``min(MAX_POSITION_WEIGHT, profile.max_position_pct)``.
+        """
         pre_weights = dict(alloc.weights or {})
         post_weights = dict(pre_weights)
         adjustments = []
-        constraints = ["max_position_15pct", "confidence_floor_20pct", "high_risk_trim_30pct", "cash_reserve_5pct"]
+        effective_cap = cap_position_weight(MAX_POSITION_WEIGHT, profile_overrides)
+        constraints = [
+            f"max_position_{int(round(effective_cap * 100))}pct",
+            "confidence_floor_20pct",
+            "high_risk_trim_30pct",
+            "cash_reserve_5pct",
+        ]
+        if profile_overrides is not None:
+            constraints.append(f"profile_bucket_{profile_overrides.risk_bucket}")
 
         for aid, w in list(post_weights.items()):
             sig = asset_signals.get(aid, {})
@@ -367,11 +402,11 @@ class DecisionPipelineService:
             conf = sig.get("confidence", 0.5)
             risk = sig.get("risk_level", "Moderate")
 
-            # Max position cap
-            if w > MAX_POSITION_WEIGHT:
-                new_w = MAX_POSITION_WEIGHT
+            # Max position cap (profile-aware)
+            if w > effective_cap:
+                new_w = effective_cap
                 adjustments.append({"asset_id": aid, "ticker": ticker,
-                    "reason": f"Capped at {MAX_POSITION_WEIGHT:.0%}", "delta": round(new_w - w, 4)})
+                    "reason": f"Capped at {effective_cap:.0%}", "delta": round(new_w - w, 4)})
                 post_weights[aid] = new_w
 
             # Confidence floor
@@ -419,14 +454,21 @@ class DecisionPipelineService:
         feature_set_id: str | None, signal_run_ids: list[str] | None,
         warnings: list[str],
         signal_outputs: list[SignalOutput] | None = None,
+        profile_overrides: ProfileOverrides | None = None,
     ) -> Recommendation:
-        """Create the final recommendation with weights and confidence triplet."""
+        """Create the final recommendation with weights and confidence triplet.
+
+        Phase W-5: when ``profile_overrides`` is set, the final
+        ``model_confidence`` is clipped to the profile's confidence_cap
+        and the rationale notes the profile binding.
+        """
         now = datetime.now(UTC)
         final_weights = overlay.post_risk_weights or {}
 
-        # Confidence triplet
+        # Confidence triplet (profile-aware: cap to user's risk-bucket ceiling)
         confidences = [asset_signals.get(aid, {}).get("confidence", 0.5) for aid in final_weights]
-        model_conf = round(sum(confidences) / max(len(confidences), 1), 3)
+        raw_model_conf = round(sum(confidences) / max(len(confidences), 1), 3)
+        model_conf = round(cap_confidence(raw_model_conf, profile_overrides), 3)
         data_conf = 0.90  # will be refined when feature freshness is checked
         operational_conf = 0.95 if not warnings else max(0.5, 0.95 - len(warnings) * 0.05)
 
@@ -501,13 +543,25 @@ class DecisionPipelineService:
         universe_id: str | None = None,
         feature_set_id: str | None = None,
         include_shadow_engines: bool = False,
+        profile_overrides: ProfileOverrides | None = None,
     ) -> dict:
-        """Run the complete decision pipeline: Selection → Allocation → Timing → Risk → Recommendation."""
+        """Run the complete decision pipeline: Selection → Allocation → Timing → Risk → Recommendation.
+
+        Phase W-5: when ``profile_overrides`` is set, the universe is
+        filtered by the user's sector lists and the risk overlay uses
+        the profile's per-asset cap. Behavior with overrides=None is
+        unchanged from earlier phases (regression-covered by tests).
+        """
         warnings = []
         stages = []
 
         if include_shadow_engines:
             warnings.append("Shadow/experimental ML signals included in this pipeline run.")
+        if profile_overrides is not None:
+            warnings.append(
+                f"Profile-aware pipeline run: bucket={profile_overrides.risk_bucket}, "
+                f"horizon={profile_overrides.horizon_band}"
+            )
 
         # 1. Get signals (exclude shadow by default)
         outputs, run_ids, fs_id = await self._get_registered_signals(signal_run_ids, feature_set_id, include_shadow=include_shadow_engines)
@@ -520,8 +574,8 @@ class DecisionPipelineService:
                 "message": "Pipeline failed: no engine signals available",
             }
 
-        # 2. Get universe
-        universe_id, universe_assets = await self._get_universe(universe_id)
+        # 2. Get universe (profile-filtered when overrides set)
+        universe_id, universe_assets = await self._get_universe(universe_id, profile_overrides)
         if not universe_assets:
             return {
                 "recommendation_id": None, "status": "failed",
@@ -567,15 +621,15 @@ class DecisionPipelineService:
         stages.append({"stage": "timing", "status": "completed", "record_id": timing.id,
                        "message": f"Urgency: {timing.urgency}"})
 
-        # 7. Risk overlay
-        overlay = await self.run_risk_overlay(rec_id, alloc, asset_signals)
+        # 7. Risk overlay (profile-aware when overrides set)
+        overlay = await self.run_risk_overlay(rec_id, alloc, asset_signals, profile_overrides)
         stages.append({"stage": "risk_overlay", "status": "completed", "record_id": overlay.id,
                        "message": f"{len(overlay.adjustments or [])} adjustments"})
 
-        # 8. Generate recommendation
+        # 8. Generate recommendation (profile-aware confidence cap when set)
         rec = await self.generate_recommendation(
             rec_id, universe_id, overlay, asset_signals, fs_id, run_ids, warnings,
-            signal_outputs=outputs,
+            signal_outputs=outputs, profile_overrides=profile_overrides,
         )
         stages.append({"stage": "recommendation", "status": "completed", "record_id": rec_id,
                        "message": "Draft recommendation created"})
