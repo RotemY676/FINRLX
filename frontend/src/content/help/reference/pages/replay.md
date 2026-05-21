@@ -9,6 +9,21 @@ order: 104
 
 Replay is the post-trade review tool. Pick a past recommendation from the list, and the screen reconstructs the rationale, positions, and pipeline-stage snapshots that produced it. The reconstruction is deterministic — see [Governance and audit](/help/concepts/governance-and-audit#the-guarantees).
 
+<Annotated
+  src="/help/screenshots/replay.png"
+  alt="The Replay / Forensics page showing the Available Replays list with status pills and the Replay Detail header below"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 30, y: 10, n: 1, label: "Page header — Replay / Forensics. Count below shows how many recommendations are available for forensic inspection." },
+    { x: 30, y: 17, n: 2, label: "Active replay row — highlighted row is the recommendation currently loaded; click any other row to switch context." },
+    { x: 88, y: 17, n: 3, label: "Status pill — draft / staged / published / deferred. Pills mirror the recommendation's lifecycle state at the snapshot." },
+    { x: 88, y: 73, n: 4, label: "Promoted recommendation — the green published pill marks the cycle that was promoted to paper." },
+    { x: 30, y: 90, n: 5, label: "Replay Detail — captured-at and data-as-of timestamps for the loaded recommendation. Scroll down for pipeline-stage snapshots." },
+  ]}
+  caption="The Replay page on the live workspace. The available-replays list is the entry point; click a row to load that recommendation."
+/>
+
 ## Sections
 
 ### Available replays

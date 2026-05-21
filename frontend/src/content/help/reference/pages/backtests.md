@@ -9,6 +9,21 @@ order: 105
 
 The Backtests page is the experiment workbench.
 
+<Annotated
+  src="/help/screenshots/backtests.png"
+  alt="The Backtests page showing the experiments table, the promotion review block, and the equity-curve panel"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 35, y: 16, n: 1, label: "Experiments table — every backtest run, with status, return, and a Pipeline / Seed pill identifying its provenance." },
+    { x: 88, y: 22, n: 2, label: "Status pill — completed (green) means the experiment finished cleanly; check the audit row to confirm provenance." },
+    { x: 30, y: 48, n: 3, label: "Promotion Review block — surfaces an experiment as a candidate when it passes the configured promotion criteria." },
+    { x: 22, y: 65, n: 4, label: "Metrics row — Total Return, Annualized Return, Max Drawdown, Sharpe, Volatility, Total Trades, Avg Turnover. See Reference → Metrics." },
+    { x: 22, y: 86, n: 5, label: "Equity curve — base 100 indexed to the start of the window; turbulence shading overlays calm vs. stressed regimes." },
+  ]}
+  caption="The Backtests page on the live workspace. The promotion-review block is the bridge from a backtest to a paper promotion."
+/>
+
 ## Sections
 
 ### Experiments table

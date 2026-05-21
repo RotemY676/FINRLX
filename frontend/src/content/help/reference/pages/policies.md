@@ -9,6 +9,21 @@ order: 108
 
 The Policies page is where you read and edit [policy controls](/help/reference/policy-controls) — the named parameters that constrain recommendations. It is also where active breaches are listed and resolved.
 
+<Annotated
+  src="/help/screenshots/policies.png"
+  alt="The Policies page showing the active-breach banner, CASH_FLOOR control, and the three CONFIDENCE_FLOOR layers"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 30, y: 12, n: 1, label: "Active breaches banner — the constraint that fired, with current vs. threshold and the actor who acknowledged." },
+    { x: 14, y: 22, n: 2, label: "CASH_FLOOR section — the minimum cash percentage policy. Edit / History buttons on the right open the editor or the audit trail." },
+    { x: 14, y: 30, n: 3, label: "CONFIDENCE_FLOOR (data) — minimum acceptable data confidence; recommendations below this are held in DRAFT." },
+    { x: 14, y: 42, n: 4, label: "CONFIDENCE_FLOOR (model) — minimum acceptable model confidence; gated by the engine's recent validation Sharpe." },
+    { x: 14, y: 56, n: 5, label: "CONFIDENCE_FLOOR (operational) — minimum acceptable operational confidence; gated by queue health and audit integrity." },
+  ]}
+  caption="Policy editor on the live workspace. Each named control has the same edit / history pattern; the breach banner is the action item."
+/>
+
 ## Sections
 
 ### Active breaches

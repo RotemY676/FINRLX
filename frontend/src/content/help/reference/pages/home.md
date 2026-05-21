@@ -9,6 +9,21 @@ order: 101
 
 The home page is the **Decision Command Center**. It is the only screen designed to be glanced at — every panel is a summary of a deeper screen, and every panel links to it.
 
+<Annotated
+  src="/help/screenshots/home.png"
+  alt="The Decision Command Center home page with status chips, stat cards, the Decision queue, the Opportunity radar, and the Research assistant"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 88, y: 3, n: 1, label: "Global Help button (?) — opens this Help center from any page in the workspace." },
+    { x: 44, y: 4, n: 2, label: "Data freshness chip — UNAVAILABLE here means the upstream feed has not reported. Open Ops → Data feeds to investigate." },
+    { x: 70, y: 4, n: 3, label: "Current recommendation chip — green OK with an 'as of' timestamp shows the most recent published cycle." },
+    { x: 12, y: 13, n: 4, label: "Regime stat card — the classifier's current label plus its confidence color. See Concepts → Regimes and turbulence." },
+    { x: 88, y: 30, n: 5, label: "Research assistant panel — currently labeled 'Preview only — ships in a later phase.' The prompt buttons are inert until the assistant lands." },
+  ]}
+  caption="The home dashboard as rendered on the live workspace. Numbers map to the legend below."
+/>
+
 ## Sections
 
 ### Decision queue

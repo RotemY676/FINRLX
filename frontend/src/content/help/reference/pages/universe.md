@@ -9,6 +9,21 @@ order: 109
 
 The Universe page is where you manage lists of tradable assets. Universes are point-in-time — see [Universe and features](/help/concepts/universe-and-features).
 
+<Annotated
+  src="/help/screenshots/universe.png"
+  alt="The Universe page showing the universes list, the active universe detail with member tickers, the coverage panel, the readiness panel, and the sector breakdown"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 22, y: 17, n: 1, label: "Universes list — every universe you have access to. The highlighted row is the active universe whose detail is shown to the right." },
+    { x: 55, y: 17, n: 2, label: "Active universe detail — member tickers and the 10/10 active count for the current cycle." },
+    { x: 55, y: 36, n: 3, label: "Coverage — per-data-channel completeness for the active universe. 100% means the feature pipeline has every input." },
+    { x: 88, y: 52, n: 4, label: "Readiness — green Ready badge means every asset has cleared the lookback window. Newly added assets warm up before promotion." },
+    { x: 55, y: 72, n: 5, label: "Sector breakdown — asset counts and weight percentages by sector. Useful for spotting concentration before promoting." },
+  ]}
+  caption="The Universe page on the live workspace. Coverage answers 'do we have data?'; readiness answers 'do we have enough history?'"
+/>
+
 ## Sections
 
 ### Universes list

@@ -9,6 +9,21 @@ order: 102
 
 The Decision page renders one recommendation in full. Every panel here is read-only by default; mutations happen via the action bar.
 
+<Annotated
+  src="/help/screenshots/decision.png"
+  alt="The Decision page showing the recommendation header, confidence gauges, action bar, and evidence narrative"
+  width={1440}
+  height={900}
+  callouts={[
+    { x: 30, y: 11, n: 1, label: "Recommendation header — ID, status (published), and the moderate-overweight summary the engine narrates." },
+    { x: 30, y: 22, n: 2, label: "Confidence gauges — model, data, and operational confidence. Each must clear its policy floor for publication." },
+    { x: 14, y: 30, n: 3, label: "Action bar — Save as current thesis, Promote to paper, Defer decision. Every action is audit-trailed." },
+    { x: 75, y: 30, n: 4, label: "Compare and Replay — Compare opens the engine matrix; Replay opens the forensic-replay view for this recommendation." },
+    { x: 18, y: 50, n: 5, label: "Evidence narrative — per-engine contribution to the rationale, with quantitative caveats and shadow / experimental flags." },
+  ]}
+  caption="The Decision page on the live workspace. Action-bar buttons are the only state-changing controls on the page."
+/>
+
 ## Sections
 
 ### Evidence narrative
