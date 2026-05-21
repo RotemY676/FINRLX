@@ -181,8 +181,18 @@ async def test_me_rejects_tampered_jwt_signature(client):
     email = _u("tamper-sig")
     signup_res = (await _signup(client, email)).json()
     access = signup_res["tokens"]["access_token"]
-    # Flip the last char of the signature.
-    tampered = access[:-1] + ("A" if access[-1] != "A" else "B")
+    # Flip a char in the middle of the signature. Tampering only the very
+    # last char is unreliable: in base64url the final char of an HMAC-SHA256
+    # signature carries 2 effective bits (rest is padding), so swapping it for
+    # a neighbouring char in 'A'..'P' can decode to the same bytes and the
+    # signature still verifies (~25% false-pass flake before this fix).
+    sig_start = access.rfind(".") + 1
+    pivot = sig_start + 4
+    tampered = (
+        access[:pivot]
+        + ("A" if access[pivot] != "A" else "B")
+        + access[pivot + 1 :]
+    )
     r = await client.get("/api/v1/auth/me", headers=_bearer(tampered))
     assert r.status_code == 401
 
