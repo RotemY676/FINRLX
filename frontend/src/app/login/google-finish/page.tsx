@@ -19,6 +19,7 @@ import {
   setAccessToken,
   setRefreshToken,
 } from "@/services/auth";
+import { fetchMyProfile } from "@/features/wizard/api";
 
 function GoogleFinishInner() {
   const router = useRouter();
@@ -48,9 +49,18 @@ function GoogleFinishInner() {
     setRefreshToken(refresh);
     // Clean the hash so a refresh doesn't leak tokens via copy-paste.
     window.history.replaceState(null, "", window.location.pathname);
-    // Hand off to the overview page; AuthContext will fetch /auth/me
-    // on mount and pick up the session.
-    router.replace("/");
+    // WIZ-2: First-time Google users must complete the investor profile
+    // wizard before landing on the decision center. Probe /profile/me; if
+    // there's no profile, send them to /onboarding. Returning users go
+    // straight to the home page. Network errors fall back to "/" so a
+    // probe failure does not block the sign-in flow.
+    fetchMyProfile()
+      .then((me) => {
+        router.replace(me.has_profile ? "/" : "/onboarding");
+      })
+      .catch(() => {
+        router.replace("/");
+      });
   }, [router, search]);
 
   return (

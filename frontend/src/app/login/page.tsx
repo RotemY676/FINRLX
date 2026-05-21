@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchMyProfile } from "@/features/wizard/api";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -24,7 +25,15 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email, password);
-      router.push("/");
+      // WIZ-2: a user who signed up via email but never completed the
+      // investor profile (e.g. they bailed mid-wizard) lands back on
+      // /onboarding on next sign-in. Profile-complete users go home.
+      try {
+        const me = await fetchMyProfile();
+        router.push(me.has_profile ? "/" : "/onboarding");
+      } catch {
+        router.push("/");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
