@@ -1,0 +1,169 @@
+================================================================
+PHASE HOME-1 — Decision Command Center — Local Verification Evidence
+Date: 2026-05-21
+Working directory: C:\Users\Rotem\projects\FINRLX
+Branch: main
+HEAD before changes: f0d56ca
+================================================================
+
+================================================================
+1. git rev-parse --short HEAD
+================================================================
+f0d56ca
+
+================================================================
+2. git status --short  (HOME-1 scope only — global status had
+   pre-existing unrelated changes in design/handoff-package and
+   research/ which are outside this phase)
+================================================================
+ M frontend/src/app/page.tsx
+ M frontend/src/components/shell/TopBar.tsx
+?? .claude/skills/finrlx-home-command-center/
+?? DOCS/handoff/PHASE_HOME1_DECISION_COMMAND_CENTER_REPORT.md
+?? DOCS/handoff/PHASE_HOME1_LOCAL_VERIFICATION_EVIDENCE.txt
+?? frontend/src/__tests__/home-command-center.test.tsx
+?? frontend/src/components/home/
+
+================================================================
+3. git diff --name-only  (HOME-1 scope only)
+================================================================
+frontend/src/app/page.tsx
+frontend/src/components/shell/TopBar.tsx
+
+================================================================
+4. git diff --stat  (HOME-1 modified files only)
+================================================================
+ frontend/src/app/page.tsx                | 344 ++-----------------------------
+ frontend/src/components/shell/TopBar.tsx |   2 +-
+ 2 files changed, 13 insertions(+), 333 deletions(-)
+
+================================================================
+5. ls .claude/skills/finrlx-home-command-center/
+================================================================
+SKILL.md
+
+================================================================
+6. ls frontend/src/components/home/
+================================================================
+DataFreshnessBadge.tsx
+DecisionCommandCenter.tsx
+DecisionQueuePanel.tsx
+GovernanceStatusCard.tsx
+HomePanelStates.tsx
+HomeStatusStrip.tsx
+OpportunityRadarTable.tsx
+PortfolioImpactCard.tsx
+ResearchAssistantPreview.tsx
+ResearchEventsFeed.tsx
+SectorHeatmapPreview.tsx
+ShadowResearchSnapshot.tsx
+SystemHealthMiniPanel.tsx
+homeData.ts
+homeTypes.ts
+
+================================================================
+7. npm run typecheck   (in frontend/)
+================================================================
+> finrlx-frontend@0.2.0 typecheck
+> tsc --noEmit
+
+(no errors — exit code 0)
+
+================================================================
+8. npm run test:ci   (in frontend/)
+================================================================
+Run summary (full per-test list in /tmp; verified live during this session):
+
+ Test Files  9 passed (9)
+      Tests  37 passed (37)
+   Duration  ~14s
+
+HOME-1 specific tests (all passing):
+
+  ✓ home command center (HOME-1) > renders a governance/safety panel with the canonical wording
+  ✓ home command center (HOME-1) > states 'Decision-support tool' and 'No broker execution' on the home tree
+  ✓ home command center (HOME-1) > states 'Research only' on the home tree
+  ✓ home command center (HOME-1) > renders the RL/shadow panel as shadow-only and not as a live recommendation
+  ✓ home command center (HOME-1) > contains no CTA copy with forbidden execution language
+  ✓ home command center (HOME-1) > renders the opportunity radar with a desktop table AND a mobile card path
+  ✓ home command center (HOME-1) > surfaces freshness/provenance labels when pipeline data is fresh
+  ✓ home command center (HOME-1) > shows an empty-state for the paper portfolio when no portfolio exists
+  ✓ home command center — partial data failure > renders panel-level unavailable states instead of crashing when sources fail
+  ✓ home page module — safe CTA enumeration > lists only safe action labels in homeData.ts
+
+Pre-existing tests (still passing — not regressed by HOME-1):
+
+  ✓ DisclaimerBanner (4 tests)
+  ✓ DisclaimerModal (3 tests)
+  ✓ format date helpers (4 tests)
+  ✓ analytics.track (2 tests)
+  ✓ i18n helper (4 tests)
+  ✓ tokens.json contract (3 tests)
+  ✓ touch target lint (UX-1.5 gate) — confirmed PASS, all new <button> elements
+    in components/home/** ship with min-h-11 or are pointer-only
+  ✓ wizard validation + constants (6 tests)
+
+================================================================
+9. npm run build   (in frontend/)
+================================================================
+  ✓ Compiled successfully
+  ✓ Generating static pages (27/27)
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    11.8 kB         122 kB   ← HOME-1
+├ ○ /_not-found                            998 B         103 kB
+├ ○ /admin                                100 kB         207 kB
+├ ○ /backtests                           2.84 kB         220 kB
+├ ○ /comparison                          11.6 kB         221 kB
+├ ○ /decision                            13.6 kB         231 kB
+├ ○ /disclaimer                            131 B         102 kB
+├ ○ /feedback                             3.3 kB         106 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ○ /integrations                        2.81 kB         109 kB
+├ ○ /login                                  3 kB         109 kB
+├ ○ /login/google-finish                  1.8 kB         104 kB
+├ ○ /news                                3.04 kB         113 kB
+├ ○ /onboarding                          1.95 kB         109 kB
+├ ○ /ops                                 3.74 kB         110 kB
+├ ○ /paper                               5.65 kB         219 kB
+├ ○ /policies                             4.3 kB         111 kB
+├ ○ /privacy                               131 B         102 kB
+├ ○ /profile                             2.82 kB         109 kB
+├ ○ /replay                              3.28 kB         117 kB
+├ ○ /risk                                3.19 kB         113 kB
+├ ○ /signup                              3.31 kB         109 kB
+├ ○ /templates                           3.84 kB         106 kB
+├ ○ /terms                                 131 B         102 kB
+└ ○ /universe                            3.29 kB         110 kB
+
++ First Load JS shared by all             102 kB
+○  (Static)  prerendered as static content
+
+Build warnings observed: pre-existing @prisma/instrumentation
+"Critical dependency: the request of a dependency is an expression"
+warnings from the @sentry/nextjs runtime. These exist in `main` before
+HOME-1 changes and are unrelated to this phase.
+
+================================================================
+10. pytest (backend)
+================================================================
+NOT RUN — no backend files were modified in this phase. All home-page data
+is aggregated frontend-side from existing endpoints via Promise.allSettled-
+equivalent error handling in `frontend/src/components/home/homeData.ts`.
+
+================================================================
+11. Browser / Playwright verification
+================================================================
+NOT RUN — local dev server was not started in this session, and no
+Playwright run was executed for `/`. Build verification establishes that
+the route compiles and statically renders without errors. A follow-up
+should:
+
+  1. `npm run dev` (in frontend/)
+  2. Open http://localhost:3000/ and capture screenshots at
+     390px (mobile), 768px (tablet), 1440px (desktop).
+  3. Optionally add a Playwright smoke under frontend/e2e/ targeting `/`.
+
+================================================================
+End of evidence — Phase HOME-1
+================================================================

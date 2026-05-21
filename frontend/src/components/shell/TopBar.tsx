@@ -11,7 +11,7 @@ const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
 
 const CRUMB_MAP: Record<string, string> = {
-  "/": "Home",
+  "/": "Decision Command Center",
   "/decision": "Decision",
   "/comparison": "Engine comparison",
   "/replay": "Replay",
