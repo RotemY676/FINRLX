@@ -1,4 +1,14 @@
-fastapi==0.115.6
+# Phase OP-5: bumped 0.115.6 -> 0.118.0 to pull in starlette>=0.46
+# (Starlette CVEs patched). FastAPI 0.115 -> 0.118 has no breaking
+# change that affects us: we read Authorization headers manually
+# (no HTTPBearer 401-vs-403 impact) and our only yield-dependency is
+# get_db, which never feeds a StreamingResponse from a long-running
+# DB iterator. See DOCS/handoff/PHASE_OP5_FRAMEWORK_UPGRADES.md.
+fastapi==0.118.0
+# Pin starlette below 1.0 — FastAPI 0.118 doesn't yet adapt to the
+# Starlette 1.0 router API (`on_startup` removed). Revisit when
+# FastAPI publishes a 1.x release line.
+starlette>=0.46,<1.0
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.1
