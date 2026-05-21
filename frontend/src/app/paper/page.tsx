@@ -12,6 +12,7 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { track } from "@/lib/analytics";
+import CurrencyValuation from "@/features/wizard/CurrencyValuation";
 
 function driftColor(d: number): string {
   if (Math.abs(d) > 0.01) return d > 0 ? "text-pos" : "text-breach";
@@ -75,6 +76,9 @@ export default function PaperPage() {
           This portfolio is from seeded/demo data and may not reflect real market conditions.
         </div>
       )}
+
+      {/* Phase FX-3 — base-currency valuation card */}
+      <CurrencyValuation />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-gap">
