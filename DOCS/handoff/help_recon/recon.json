@@ -1,0 +1,6652 @@
+{
+  "pages": [
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/paper",
+          "text": "Open paper portfolio"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Decision Command Center"
+        },
+        {
+          "level": "H2",
+          "text": "Decision queue"
+        },
+        {
+          "level": "H2",
+          "text": "Paper portfolio"
+        },
+        {
+          "level": "H2",
+          "text": "Opportunity radar"
+        },
+        {
+          "level": "H2",
+          "text": "Research events"
+        },
+        {
+          "level": "H2",
+          "text": "Research assistant"
+        },
+        {
+          "level": "H2",
+          "text": "Governance"
+        },
+        {
+          "level": "H2",
+          "text": "Sector tilt"
+        },
+        {
+          "level": "H2",
+          "text": "Shadow research"
+        },
+        {
+          "level": "H2",
+          "text": "System health"
+        }
+      ],
+      "buttonsCount": 10,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Why did this ticker enter the radar?",
+          "aria": ""
+        },
+        {
+          "text": "Show risk factors for the top position.",
+          "aria": ""
+        },
+        {
+          "text": "Compare engines on the current recommendation.",
+          "aria": ""
+        },
+        {
+          "text": "Explain stale data on the regime panel.",
+          "aria": ""
+        },
+        {
+          "text": "Summarize evidence behind today's queue.",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 12,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        },
+        {
+          "tag": "span",
+          "title": "Pipeline data · freshness unavailable",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "UNAVAILABLE Pipeline data · freshness unavailable"
+        },
+        {
+          "tag": "span",
+          "title": "Current recommendation · as of 2026-04-24 16:54",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "OK Current recommendation · as of 2026-04-24 16:54"
+        },
+        {
+          "tag": "span",
+          "title": "Regime · as of 2026-05-21 20:50",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "OK Regime · as of 2026-05-21 20:50"
+        },
+        {
+          "tag": "button",
+          "title": "Preview only — assistant ships in a later phase",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Why did this ticker enter the radar?"
+        },
+        {
+          "tag": "button",
+          "title": "Preview only — assistant ships in a later phase",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Show risk factors for the top position."
+        },
+        {
+          "tag": "button",
+          "title": "Preview only — assistant ships in a later phase",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Compare engines on the current recommendation."
+        },
+        {
+          "tag": "button",
+          "title": "Preview only — assistant ships in a later phase",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Explain stale data on the regime panel."
+        },
+        {
+          "tag": "button",
+          "title": "Preview only — assistant ships in a later phase",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Summarize evidence behind today's queue."
+        }
+      ],
+      "helpAffordances": [
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "INFO",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "button",
+          "text": "Why did this ticker enter the radar?",
+          "aria": "",
+          "title": "Preview only — assistant ships in a later phase",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "Why did this ticker enter the radar?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        }
+      ],
+      "emptyState": [],
+      "allLinksCount": 41,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "#decision-queue",
+          "text": "NEEDS REVIEW 10 1 critical · 3 warning"
+        },
+        {
+          "href": "/paper",
+          "text": "PAPER PORTFOLIO 31% invested 69% cash"
+        },
+        {
+          "href": "/risk",
+          "text": "View risk"
+        },
+        {
+          "href": "/ops",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/ops",
+          "text": "Open ops"
+        },
+        {
+          "href": "/ops",
+          "text": "Open ops"
+        },
+        {
+          "href": "/ops",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/ops",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/risk",
+          "text": "View risk"
+        },
+        {
+          "href": "/risk",
+          "text": "View risk"
+        },
+        {
+          "href": "/paper",
+          "text": "Open paper portfolio"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/decision",
+          "text": "Review evidence"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Decision Command Center Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Decision Command Center Hi, there. This screen answers: what changed, what needs review, what evidence supports it, and what is stale, shadow-only, or blocked. UNAVAILABLE Pipeline data · freshness unavailable OK Current recommendation · as of 2026-04-24 16:54 OK Regime · as of 2026-05-21 20:50 · A newer pipeline-generated draft exists but is not published yet. REGIME Risk-on · late-cycle confidence 0.78 · 41d NEEDS REVIEW 10 1 critical · 3 warning PAPER PORTFOLIO 31% invested 69% cash DATA HEALTH Attention 1 unavailable · 0 stale GOVERNANCE Research-only no broker · shadow research only Decision queue What needs review today 10 items Breach · Energy net exposure · 12% / 10% CRITICAL ACTIVE breach · utilization 120% · related Hard breach · escalated source · ops.breaches View risk MSFT · TRIM WARNING PENDING Azure cav",
+      "label": "home",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\01-home.png"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/decision",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H3",
+          "text": "Evidence narrative"
+        },
+        {
+          "level": "H3",
+          "text": "Engine disagreement"
+        },
+        {
+          "level": "H3",
+          "text": "1 Warning"
+        },
+        {
+          "level": "H3",
+          "text": "Price · AAPL"
+        },
+        {
+          "level": "H3",
+          "text": "Portfolio Weights"
+        },
+        {
+          "level": "H3",
+          "text": "Positions"
+        },
+        {
+          "level": "H3",
+          "text": "Risk constraints"
+        },
+        {
+          "level": "H3",
+          "text": "Scenario controls"
+        },
+        {
+          "level": "H2",
+          "text": "Decision Pipeline"
+        },
+        {
+          "level": "H3",
+          "text": "Selection"
+        },
+        {
+          "level": "H3",
+          "text": "Allocation"
+        },
+        {
+          "level": "H3",
+          "text": "Timing"
+        },
+        {
+          "level": "H3",
+          "text": "Risk Overlay"
+        },
+        {
+          "level": "H3",
+          "text": "Publication Metadata"
+        }
+      ],
+      "buttonsCount": 13,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Save as current thesis",
+          "aria": ""
+        },
+        {
+          "text": "Promote to paper",
+          "aria": ""
+        },
+        {
+          "text": "Defer decision",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Bookmark"
+        },
+        {
+          "text": "",
+          "aria": "Share"
+        },
+        {
+          "text": "Compare",
+          "aria": ""
+        },
+        {
+          "text": "Replay",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "More"
+        }
+      ],
+      "tooltipNodesCount": 9,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "Limit: 60%",
+          "dataTooltip": "",
+          "ariaLabel": "Limit 60%",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "Limit: 75%",
+          "dataTooltip": "",
+          "ariaLabel": "Limit 75%",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "Limit: 60%",
+          "dataTooltip": "",
+          "ariaLabel": "Limit 60%",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "Limit: 65%",
+          "dataTooltip": "",
+          "ariaLabel": "Limit 65%",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "Limit: 50%",
+          "dataTooltip": "",
+          "ariaLabel": "Limit 50%",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Decision Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 e3fcab53-9e5f-4b… published Data as of 2026-04-24 16:54 Moderate overweight in technology driven by strong earnings momentum and positive sentiment signals. Underweight energy on declining price momentum. Risk overlay reduced NVDA position due to concentration limits. Positions 10 Horizon 5d Engine agreement 2/4 Dispersion 50% 78 Model confidence High· 78 92 Data quality High· 92 95 Operational readiness High· 95 Save as current thesis Promote to paper Defer decision Compare Replay Evidence narrative 01 ML Return Forecaster (Baseline) — volatility_20d: 0.196 → -0.074. drawdown_20d: -0.059 → -0.059. news_sentiment_7d: -0.602 → -0.100. Caveats: ML baseline / experimental / shadow. ml_return_forecaster -0.30 02 News Sentiment — 7d sentiment -0.838 (negative, 1 articles). news_sentiment +0.27 03 Risk & Quality — Volatility 27.7%. Max dr",
+      "label": "Decisions 13",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\02-decision.png",
+      "navText": "Decisions 13"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/login",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Sign in"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Sign in",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 22,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "https://backend-production-aab8.up.railway.app/api/v1/auth/google/start",
+          "text": "Sign in with Google"
+        },
+        {
+          "href": "/signup",
+          "text": "Request access"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Sign in FINRLX private beta · invite-only Sign in with Google OR USE EMAIL Email Password Sign in No account? Request access Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "My profile",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\03-profile.png",
+      "navText": "My profile"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/login",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Sign in"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Sign in",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 22,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "https://backend-production-aab8.up.railway.app/api/v1/auth/google/start",
+          "text": "Sign in with Google"
+        },
+        {
+          "href": "/signup",
+          "text": "Request access"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Sign in FINRLX private beta · invite-only Sign in with Google OR USE EMAIL Email Password Sign in No account? Request access Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "Templates",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\04-templates.png",
+      "navText": "Templates"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/comparison",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Engine Comparison"
+        },
+        {
+          "level": "H3",
+          "text": "Engine Matrix"
+        },
+        {
+          "level": "H3",
+          "text": "Engine Alignment"
+        },
+        {
+          "level": "H3",
+          "text": "Weight Comparison (Rec vs Equal Weight)"
+        },
+        {
+          "level": "H3",
+          "text": "Position Detail"
+        },
+        {
+          "level": "H3",
+          "text": "Recommendation Rationale"
+        }
+      ],
+      "buttonsCount": 19,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Technical Momentum sell 0.80 33% 3M Moderate 5d return +1.3%; 20d return -15.1%",
+          "aria": "Technical Momentum — open methodology detail"
+        },
+        {
+          "text": "Risk & Quality sell 0.79 33% 3M High Volatility 27.7%; Max drawdown -15.8%",
+          "aria": "Risk & Quality — open methodology detail"
+        },
+        {
+          "text": "News Sentiment hold 0.25 33% 3M Moderate 7d sentiment -0.838 (negative, 1 articles); 7d sentiment 0.895 (positive, 1 articles)",
+          "aria": "News Sentiment — open methodology detail"
+        },
+        {
+          "text": "ML Return Forecaster (Baseline)Shadow / experimental hold 0.72 33% 3M Moderate volatility_20d: 0.196 → -0.074; drawdown_20d: -0.059 → -0.059",
+          "aria": "ML Return Forecaster (Baseline) — open methodology detail"
+        },
+        {
+          "text": "AAPL Apple Inc. 15.0% 10.0% +5.0% overweight",
+          "aria": "AAPL — open position detail"
+        },
+        {
+          "text": "MSFT Microsoft Corp. 14.0% 10.0% +4.0% overweight",
+          "aria": "MSFT — open position detail"
+        },
+        {
+          "text": "GOOGL Alphabet Inc. 12.0% 10.0% +2.0% overweight",
+          "aria": "GOOGL — open position detail"
+        },
+        {
+          "text": "AMZN Amazon.com Inc. 10.0% 10.0% 0.0% neutral",
+          "aria": "AMZN — open position detail"
+        },
+        {
+          "text": "JPM JPMorgan Chase & Co. 10.0% 10.0% 0.0% overweight",
+          "aria": "JPM — open position detail"
+        },
+        {
+          "text": "V Visa Inc. 9.0% 10.0% -1.0% neutral",
+          "aria": "V — open position detail"
+        },
+        {
+          "text": "PG Procter & Gamble Co. 8.0% 10.0% -2.0% neutral",
+          "aria": "PG — open position detail"
+        },
+        {
+          "text": "NVDA NVIDIA Corp. 8.0% 10.0% -2.0% overweight",
+          "aria": "NVDA — open position detail"
+        },
+        {
+          "text": "JNJ Johnson & Johnson 8.0% 10.0% -2.0% neutral",
+          "aria": "JNJ — open position detail"
+        },
+        {
+          "text": "XOM Exxon Mobil Corp. 6.0% 10.0% -4.0% underweight",
+          "aria": "XOM — open position detail"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Engine comparison Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Engine Comparison 4 engines · synthesis: sell Total Active Weight 22.0% Top 3 Concentration 41% Rec vs 30% Equal Weight Engine Dispersion 50% 0 buy · 4 other 78 Model confidence High· 78 92 Data quality High· 92 95 Operational readiness High· 95 Engine Matrix ENGINE STANCE CONFIDENCE WEIGHT HORIZON RISK TOP DRIVERS Technical Momentum sell 0.80 33% 3M Moderate 5d return +1.3%; 20d return -15.1% Risk & Quality sell 0.79 33% 3M High Volatility 27.7%; Max drawdown -15.8% News Sentiment hold 0.25 33% 3M Moderate 7d sentiment -0.838 (negative, 1 articles); 7d sentiment 0.895 (positive, 1 articles) ML Return Forecaster (Baseline)Shadow / experimental hold 0.72 33% 3M Moderate volatility_20d: 0.196 → -0.074; drawdown_20d: -0.059 → -0.059 Synthesis sell 0.64 100% — — Weighted across all engines Engine Alignment Bubble size = engine ",
+      "label": "Engine comparison",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\05-comparison.png",
+      "navText": "Engine comparison"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/risk",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Risk workspace"
+        },
+        {
+          "level": "H2",
+          "text": "Exposure"
+        },
+        {
+          "level": "H2",
+          "text": "Concentration"
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Risk Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Risk workspace Paper — Pipeline-generated recommendation with 10 position · 23 daily snapshots VaR 95% (daily) 0.45% 22 returns VaR 99% (daily) 0.63% parametric, normal Current drawdown -0.1% peak 98544 Max drawdown -0.1% since inception Exposure Long 30.5% Short 0.0% Gross 30.5% Net 30.5% Cash 69.5% Concentration 10 positions Top 1 15.0% Top 3 20.7% Top 5 23.5% Sector breakdown Consumer Discretionary 15.0% Technology 5.6% Financials 5.1% Healthcare 2.0% Energy 1.4% Consumer Staples 1.4% Volatility (daily, sample stddev): 0.27%. VaR uses parametric normal assumption (1.6449·σ for 95%, 2.3263·σ for 99%). Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "Risk workspace 3",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\06-risk.png",
+      "navText": "Risk workspace 3"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/replay",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Replay / Forensics"
+        },
+        {
+          "level": "H3",
+          "text": "Available Replays"
+        },
+        {
+          "level": "H2",
+          "text": "Replay Detail"
+        },
+        {
+          "level": "H3",
+          "text": "Rationale at Snapshot"
+        },
+        {
+          "level": "H3",
+          "text": "Positions at SnapshotClick a row to inspect"
+        },
+        {
+          "level": "H2",
+          "text": "Pipeline Stage Snapshots"
+        }
+      ],
+      "buttonsCount": 18,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "a52ffc3e… 10 positions draft 2026-04-25",
+          "aria": "Replay a52ffc3e, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "47f2312a… 10 positions draft 2026-04-25",
+          "aria": "Replay 47f2312a, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "aa2cba21… 10 positions draft 2026-04-25",
+          "aria": "Replay aa2cba21, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "e91b6a14… 10 positions draft 2026-04-25",
+          "aria": "Replay e91b6a14, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "3c5d65cc… 10 positions draft 2026-04-25",
+          "aria": "Replay 3c5d65cc, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "232cf42e… 10 positions draft 2026-04-25",
+          "aria": "Replay 232cf42e, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "28b7a77f… 10 positions draft 2026-04-25",
+          "aria": "Replay 28b7a77f, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "d102b73c… 10 positions staged 2026-04-25",
+          "aria": "Replay d102b73c, captured 2026-04-25, 10 positions"
+        },
+        {
+          "text": "6dcd11cb… 10 positions draft 2026-04-24",
+          "aria": "Replay 6dcd11cb, captured 2026-04-24, 10 positions"
+        },
+        {
+          "text": "9d6e9f77… 10 positions draft 2026-04-24",
+          "aria": "Replay 9d6e9f77, captured 2026-04-24, 10 positions"
+        },
+        {
+          "text": "28359daa… 10 positions deferred 2026-04-24",
+          "aria": "Replay 28359daa, captured 2026-04-24, 10 positions"
+        },
+        {
+          "text": "6e1658ae… 10 positions draft 2026-04-24",
+          "aria": "Replay 6e1658ae, captured 2026-04-24, 10 positions"
+        },
+        {
+          "text": "e3fcab53… 10 positions published 2026-04-24",
+          "aria": "Replay e3fcab53, captured 2026-04-24, 10 positions"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Replay Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Replay / Forensics 13 recommendation replays available Available Replays a52ffc3e… 10 positions draft 2026-04-25 47f2312a… 10 positions draft 2026-04-25 aa2cba21… 10 positions draft 2026-04-25 e91b6a14… 10 positions draft 2026-04-25 3c5d65cc… 10 positions draft 2026-04-25 232cf42e… 10 positions draft 2026-04-25 28b7a77f… 10 positions draft 2026-04-25 d102b73c… 10 positions staged 2026-04-25 6dcd11cb… 10 positions draft 2026-04-24 9d6e9f77… 10 positions draft 2026-04-24 28359daa… 10 positions deferred 2026-04-24 6e1658ae… 10 positions draft 2026-04-24 e3fcab53… 10 positions published 2026-04-24 Replay Detail Captured 2026-04-25 09:59 · data as of 2026-04-25 06:36 draft Rationale at Snapshot Pipeline-generated recommendation with 10 positions, total invested 66.5%. Based on 3 engine runs. 60 Model confidence Mixed· 60 90 Data quality Hi",
+      "label": "Replay & forensics",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\07-replay.png",
+      "navText": "Replay & forensics"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/backtests",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Backtests"
+        },
+        {
+          "level": "H3",
+          "text": "Experiments"
+        },
+        {
+          "level": "H2",
+          "text": "Promotion Review — Shadow ML"
+        },
+        {
+          "level": "H3",
+          "text": "Equity Curve (base 100)"
+        },
+        {
+          "level": "H3",
+          "text": "Experiment Configuration"
+        },
+        {
+          "level": "H3",
+          "text": "Provenance"
+        }
+      ],
+      "buttonsCount": 11,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Promotion Review — Shadow ML2026-02-24 — 2026-04-25 -2.1% completed Pipeline",
+          "aria": "Promotion Review — Shadow ML — open backtest detail"
+        },
+        {
+          "text": "Promotion Review — Baseline2026-02-24 — 2026-04-25 -2.1% completed Pipeline",
+          "aria": "Promotion Review — Baseline — open backtest detail"
+        },
+        {
+          "text": "Promotion Review — Shadow ML2026-02-24 — 2026-04-25 -2.1% completed Pipeline",
+          "aria": "Promotion Review — Shadow ML — open backtest detail"
+        },
+        {
+          "text": "Promotion Review — Baseline2026-02-24 — 2026-04-25 -2.1% completed Pipeline",
+          "aria": "Promotion Review — Baseline — open backtest detail"
+        },
+        {
+          "text": "Pipeline Backtest - Production Smoke2026-02-23 — 2026-04-24 -1.1% completed Pipeline",
+          "aria": "Pipeline Backtest - Production Smoke — open backtest detail"
+        },
+        {
+          "text": "Momentum Tilt v1 — 12-Month Walk-Forward2025-04-24 — 2026-03-25 27.2% completed Seed / Demo",
+          "aria": "Momentum Tilt v1 — 12-Month Walk-Forward — open backtest detail"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Backtests Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Backtests 6 experiments Experiments Promotion Review — Shadow ML2026-02-24 — 2026-04-25 -2.1% completed Pipeline Promotion Review — Baseline2026-02-24 — 2026-04-25 -2.1% completed Pipeline Promotion Review — Shadow ML2026-02-24 — 2026-04-25 -2.1% completed Pipeline Promotion Review — Baseline2026-02-24 — 2026-04-25 -2.1% completed Pipeline Pipeline Backtest - Production Smoke2026-02-23 — 2026-04-24 -1.1% completed Pipeline Momentum Tilt v1 — 12-Month Walk-Forward2025-04-24 — 2026-03-25 27.2% completed Seed / Demo Promotion Review — Shadow ML Unknown universe · 2026-02-24 — 2026-04-25 completed Total Return -2.1% Annualized Return -12.0% Max Drawdown -2.0% Sharpe Ratio — Volatility — Total Trades 20 Avg Turnover 117.6% Equity Curve (base 100) 02-24 02-24 03-26 04-25 97.9 98.45 99 99.55 100.1 Experiment Configuration rebalance freque",
+      "label": "Backtests",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\08-backtests.png",
+      "navText": "Backtests"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/paper",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Paper Portfolio"
+        },
+        {
+          "level": "H3",
+          "text": "Performance Summary"
+        },
+        {
+          "level": "H3",
+          "text": "Drift from Target"
+        },
+        {
+          "level": "H3",
+          "text": "Holdings"
+        },
+        {
+          "level": "H3",
+          "text": "1 Warning"
+        },
+        {
+          "level": "H3",
+          "text": "Event Log"
+        }
+      ],
+      "buttonsCount": 15,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "AMZN Amazon.com Inc. 15.0% 15.0% 0.0%",
+          "aria": "AMZN — open paper detail"
+        },
+        {
+          "text": "JPM JPMorgan Chase & Co. 3.7% 3.7% 0.0%",
+          "aria": "JPM — open paper detail"
+        },
+        {
+          "text": "JNJ Johnson & Johnson 2.0% 2.0% 0.0%",
+          "aria": "JNJ — open paper detail"
+        },
+        {
+          "text": "AAPL Apple Inc. 1.4% 1.4% 0.0%",
+          "aria": "AAPL — open paper detail"
+        },
+        {
+          "text": "MSFT Microsoft Corp. 1.4% 1.4% 0.0%",
+          "aria": "MSFT — open paper detail"
+        },
+        {
+          "text": "GOOGL Alphabet Inc. 1.4% 1.4% 0.0%",
+          "aria": "GOOGL — open paper detail"
+        },
+        {
+          "text": "XOM Exxon Mobil Corp. 1.4% 1.4% 0.0%",
+          "aria": "XOM — open paper detail"
+        },
+        {
+          "text": "PG Procter & Gamble Co. 1.4% 1.4% 0.0%",
+          "aria": "PG — open paper detail"
+        },
+        {
+          "text": "NVDA NVIDIA Corp. 1.4% 1.4% 0.0%",
+          "aria": "NVDA — open paper detail"
+        },
+        {
+          "text": "V Visa Inc. 1.4% 1.4% 0.0%",
+          "aria": "V — open paper detail"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Paper portfolio Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Paper Portfolio Paper — Pipeline-generated recommendation with 10 position Source: 28359daa... published Test paper This is a test paper portfolio created from an unpublished recommendation (allow_unpublished=true). Treat as experimental. This portfolio is from seeded/demo data and may not reflect real market conditions. Valuation in USD EUR ILS GBP Total value $28,960 Per-holding FX detail (10 positions, as of 2026-05-21) Invested 30.5% Cash 69.5% Rebalances 0 Last: 2026-04-24 Max Drift 0.0% Performance Summary Total Return 2.0% Sharpe 5.41 Max Drawdown -0.7% Volatility 4.2% Trades 10 Days 23 Performance is measured from first available valuation snapshot, not original starting cash. Portfolio Value $100,000.00 Drift from Target AMZN JPM JNJ AAPL MSFT GOOGL XOM PG NVDA V 0% 1% 2% 3% 4% Holdings Tap a row to inspect Ticker Na",
+      "label": "Paper portfolio",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\09-paper.png",
+      "navText": "Paper portfolio"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/universe",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Universe"
+        },
+        {
+          "level": "H3",
+          "text": "Universes"
+        },
+        {
+          "level": "H2",
+          "text": "US Large Cap Core"
+        },
+        {
+          "level": "H3",
+          "text": "Coverage"
+        },
+        {
+          "level": "H3",
+          "text": "Readiness"
+        },
+        {
+          "level": "H3",
+          "text": "Sector breakdown"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "US Large Cap Core 10 Core large-cap US equity universe",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Universe Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Universe Saved universes · coverage · readiness · sector breakdown Universes US Large Cap Core 10 Core large-cap US equity universe US Large Cap Core 10/10 active Core large-cap US equity universe AAPL MSFT GOOGL AMZN JPM JNJ XOM PG NVDA V Coverage 10 assets Market bars 10/10 · 100% Features 10/10 · 100% Signals 10/10 · 100% Model predictions 10/10 · 100% Readiness Ready All coverage thresholds met. Sector breakdown 10 assets Technology 4 · 40% Financials 2 · 20% Consumer Discretionary 1 · 10% Healthcare 1 · 10% Energy 1 · 10% Consumer Staples 1 · 10% Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "Universe",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\10-universe.png",
+      "navText": "Universe"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/news",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "News intelligence"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Refresh",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [
+        {
+          "tag": "a",
+          "text": "The Clock May Be Ticking on Rivian Stock Under $15. Is Now the Time to Buy?",
+          "aria": "",
+          "title": "",
+          "href": "https://finance.yahoo.com/markets/stocks/articles/clock-may-ticking-rivian-stock-122000802.html"
+        },
+        {
+          "tag": "a",
+          "text": "My private student loan disappeared, so I thought it was forgiven — now a debt collector is after me. Am I in trouble?",
+          "aria": "",
+          "title": "",
+          "href": "https://finance.yahoo.com/economy/policy/articles/private-student-loan-disappeared-thought-123000021.html"
+        },
+        {
+          "tag": "a",
+          "text": "Generac Holdings Stock: Is Wall Street Bullish or Bearish?",
+          "aria": "",
+          "title": "",
+          "href": "https://finance.yahoo.com/markets/stocks/articles/generac-holdings-stock-wall-street-123426581.html"
+        },
+        {
+          "tag": "a",
+          "text": "I’m 66 and have $85,000 in my HSA. When should I start spending it?",
+          "aria": "",
+          "title": "",
+          "href": "https://www.marketwatch.com/story/im-66-and-have-85-000-in-my-hsa-should-i-spend-it-all-by-a-certain-age-66939bd9?mod=mw_rss_topstories"
+        }
+      ],
+      "emptyState": [],
+      "allLinksCount": 80,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "https://finance.yahoo.com/economy/articles/target-sees-unexpected-shift-customer-150445821.html",
+          "text": "Target sees unexpected shift in customer behavior"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/options/articles/call-buying-frenzy-means-p-122050887.html",
+          "text": "What the Call Buying Frenzy Means for the S&P 500"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/sterling-infrastructure-strl-beneficiary-ai-122229338.html",
+          "text": "Sterling Infrastructure (STRL): A Beneficiary of AI Expansion Strategy"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/commodities/articles/corn-falling-back-early-wednesday-122505924.html",
+          "text": "Corn Falling Back Early on Wednesday"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/commodities/articles/soybeans-facing-early-midweek-weakness-122505854.html",
+          "text": "Soybeans Facing Early Midweek Weakness"
+        },
+        {
+          "href": "https://finance.yahoo.com/research/reports/ARGUS_47102_MarketUpdate_1779386230000?yptr=yahoo&ncid=yahooproperties_plusresear_nm5q6ze1cei",
+          "text": "Market Update: CSX, NEM, SCHW, UL, HUBS"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/clock-may-ticking-rivian-stock-122000802.html",
+          "text": "The Clock May Be Ticking on Rivian Stock Under $15. Is Now the Time to Buy?"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/article/investors-might-be-penalizing-nvidia-for-not-boosting-cash-returns-like-its-big-tech-peers-122358951.html",
+          "text": "Investors might be penalizing Nvidia for not boosting cash returns like its Big Tech peers"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/mastec-mtz-benefits-investment-ai-121127700.html",
+          "text": "MasTec (MTZ) Benefits from Investment in AI-Capable Data Centers"
+        },
+        {
+          "href": "https://finance.yahoo.com/economy/policy/articles/private-student-loan-disappeared-thought-123000021.html",
+          "text": "My private student loan disappeared, so I thought it was forgiven — now a debt collector is after me. Am I in trouble?"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/toll-brothers-inc-q2-2026-123000206.html",
+          "text": "Toll Brothers, Inc. Q2 2026 Earnings Call Summary"
+        },
+        {
+          "href": "https://finance.yahoo.com/research/reports/ARGUS_3235_AnalystReport_1779386230000?yptr=yahoo&ncid=yahooproperties_plusresear_nm5q6ze1cei",
+          "text": "Analyst Report: Newmont Corp"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/commodities/articles/invest-gold-p-500-depends-121529640.html",
+          "text": "Should You Invest in Gold or the S&P 500? It Depends."
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/corvel-corporation-q4-2026-earnings-123000744.html",
+          "text": "CorVel Corporation Q4 2026 Earnings Call Summary"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/lowes-companies-inc-q1-2026-123000099.html",
+          "text": "Lowe's Companies, Inc. Q1 2026 Earnings Call Summary"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/educational-development-corporation-q4-2026-123000421.html",
+          "text": "Educational Development Corporation Q4 2026 Earnings Call Summary"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/stoneco-stne-credit-revenue-186-123359133.html",
+          "text": "StoneCo (STNE): Credit Revenue Up 186% Year Over Year and an Extraordinary Dividend on Top"
+        },
+        {
+          "href": "https://finance.yahoo.com/research/reports/ARGUS_3657_AnalystReport_1779386230000?yptr=yahoo&ncid=yahooproperties_plusresear_nm5q6ze1cei",
+          "text": "Analyst Report: Charles Schwab Corp/The"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/p-500-futures-rise-ahead-121320832.html",
+          "text": "S&P 500 futures rise ahead of Nvidia Q1 earnings"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/indias-nykaa-seeks-meta-music-123316522.html",
+          "text": "India's Nykaa seeks to include Meta in music copyright fight with Zee"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/scotiabank-says-wix-com-wix-123408227.html",
+          "text": "Scotiabank Says the Wix.com (WIX) Selloff Is Significantly Overdone"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/intellicheck-idn-flips-net-loss-123446308.html",
+          "text": "Intellicheck (IDN) Flips From a Net Loss to Profit on Record SaaS Revenue"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/stocks/articles/generac-holdings-stock-wall-street-123426581.html",
+          "text": "Generac Holdings Stock: Is Wall Street Bullish or Bearish?"
+        },
+        {
+          "href": "https://finance.yahoo.com/research/reports/ARGUS_3717_AnalystReport_1779386230000?yptr=yahoo&ncid=yahooproperties_plusresear_nm5q6ze1cei",
+          "text": "Analyst Report: Unilever PLC"
+        },
+        {
+          "href": "https://finance.yahoo.com/markets/crypto/articles/tether-takes-full-control-twenty-121236408.html",
+          "text": "Tether Takes Full Control of Twenty One Capital (XXI) After Buying SoftBank Stake"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/quantum-stocks-soar-as-trump-administration-is-reportedly-buying-in-d6ed17b2?mod=mw_rss_topstories",
+          "text": "Quantum stocks soar as the Trump administration looks to be buying in"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/nycs-mamdani-boasts-new-50-world-cup-ticket-program-that-is-five-lattes-in-new-york-city-4ebba812?mod=mw_rss_topstories",
+          "text": "NYC’s Mamdani boasts new $50 World Cup ticket program: ‘That is five lattes in New York City!’"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/elon-musks-xai-is-draining-spacexs-cash-with-little-to-show-for-it-9517874d?mod=mw_rss_topstories",
+          "text": "Elon Musk’s xAI is draining SpaceX’s cash, with little to show for it"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/annuity-payouts-are-the-highest-theyve-been-in-years-thanks-inflation-d4d3f565?mod=mw_rss_topstories",
+          "text": "Annuity payouts are the highest they’ve been in years. Thanks, inflation."
+        },
+        {
+          "href": "https://www.marketwatch.com/story/local-tv-faces-financial-pinch-as-political-ad-spending-increasingly-moves-online-73c73d24?mod=mw_rss_topstories",
+          "text": "Local TV faces financial pinch as political ad spending increasingly moves online"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/im-66-and-have-85-000-in-my-hsa-should-i-spend-it-all-by-a-certain-age-66939bd9?mod=mw_rss_topstories",
+          "text": "I’m 66 and have $85,000 in my HSA. When should I start spending it?"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/trumps-ai-executive-order-was-set-to-feature-voluntary-participation-by-companies-he-has-delayed-it-a46ba03d?mod=mw_rss_topstories",
+          "text": "Trump’s AI executive order was set to feature voluntary participation by companies. He has delayed it."
+        },
+        {
+          "href": "https://www.marketwatch.com/story/as-iran-war-drags-on-this-is-how-quickly-global-oil-stocks-are-being-depleted-and-travel-season-is-starting-soon-c6948319?mod=mw_rss_topstories",
+          "text": "Oil prices turn lower on hopes for Iran deal; crude supplies are declining as travel season starts Memorial Day weekend"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/the-bond-market-just-flipped-the-script-on-investors-wall-street-is-acting-like-nothings-wrong-f321cc5b?mod=mw_rss_topstories",
+          "text": "The bond market just flipped the script on investors — Wall Street is acting like nothing’s wrong"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/walmart-sees-slowing-sales-growth-and-warns-of-a-profit-miss-in-contrast-to-rival-target-1f114fa0?mod=mw_rss_topstories",
+          "text": "People are putting less gas in their tanks as high prices crimp budgets, Walmart says"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/jobless-claims-fall-to-lowest-level-since-mid-may-bda58e3b?mod=mw_rss_marketpulse",
+          "text": "Jobless claims fall to lowest level since mid-May"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/jobless-claims-stay-low-in-latest-week-27b4b50b?mod=mw_rss_marketpulse",
+          "text": "Jobless claims stay low in latest week"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/consumer-credit-growth-soars-in-december-d405d18e?mod=mw_rss_marketpulse",
+          "text": "Consumer credit growth soars in December"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/u-s-productivity-slows-down-in-fourth-quarter-while-unit-labor-costs-accelerate-3c2b9092?mod=mw_rss_marketpulse",
+          "text": "U.S. productivity slows down in fourth quarter while unit labor costs accelerate"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/beyond-to-buy-rights-to-buy-buy-baby-brand-and-reunite-it-with-bed-bath-beyond-4383c6be?mod=mw_rss_marketpulse",
+          "text": "Beyond to buy rights to Buy Buy Baby brand and reunite it with Bed Bath & Beyond"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/trump-asks-supreme-court-to-pause-tiktok-ban-2b724ae6?mod=mw_rss_marketpulse",
+          "text": "Trump asks Supreme Court to pause TikTok ban"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/amazon-says-it-had-best-ever-thanksgiving-holiday-week-with-record-sales-and-number-of-items-sold-786e0143?mod=mw_rss_marketpulse",
+          "text": "Amazon says it had best-ever Thanksgiving Holiday week with record sales and number of items sold"
+        },
+        {
+          "href": "https://www.marketwatch.com/story/u-s-stock-futures-and-bond-yields-drop-on-reports-putin-has-updated-nuclear-doctrine-4b9792c4?mod=mw_rss_marketpulse",
+          "text": "U.S. stock futures and bond yields drop on reports Putin has updated nuclear doctrine"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX News Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 News intelligence 60 headlines · VADER sentiment · RSS sources (cached 5 min) Refresh Total 60 Positive 22 Negative 11 Mean compound +0.09 Target sees unexpected shift in customer behavior neutral +0.00 Yahoo Finance — Top · 2026-05-20T15:04:45Z What the Call Buying Frenzy Means for the S&P 500 negative -0.32 Yahoo Finance — Top · 2026-05-20T12:20:50Z Sterling Infrastructure (STRL): A Beneficiary of AI Expansion Strategy positive +0.48 Yahoo Finance — Top · 2026-05-20T12:22:29Z Corn Falling Back Early on Wednesday negative -0.15 Yahoo Finance — Top · 2026-05-20T12:25:05Z Soybeans Facing Early Midweek Weakness negative -0.42 Yahoo Finance — Top · 2026-05-20T12:25:05Z Market Update: CSX, NEM, SCHW, UL, HUBS neutral +0.00 Yahoo Finance — Top · 2026-05-21T17:57:10Z The Clock May Be Ticking on Rivian Stock Under $15. Is Now the Time to Buy? ",
+      "label": "News intelligence",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\11-news.png",
+      "navText": "News intelligence"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/ops",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Ops command"
+        },
+        {
+          "level": "H3",
+          "text": "Publication queue"
+        },
+        {
+          "level": "H3",
+          "text": "Data feeds"
+        },
+        {
+          "level": "H3",
+          "text": "Engines"
+        },
+        {
+          "level": "H3",
+          "text": "Policy breaches"
+        },
+        {
+          "level": "H3",
+          "text": "Open incidents"
+        },
+        {
+          "level": "H3",
+          "text": "Audit trail"
+        }
+      ],
+      "buttonsCount": 14,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Approve",
+          "aria": ""
+        },
+        {
+          "text": "Defer",
+          "aria": ""
+        },
+        {
+          "text": "Challenge",
+          "aria": ""
+        },
+        {
+          "text": "Approve",
+          "aria": ""
+        },
+        {
+          "text": "Defer",
+          "aria": ""
+        },
+        {
+          "text": "Challenge",
+          "aria": ""
+        },
+        {
+          "text": "Approve",
+          "aria": ""
+        },
+        {
+          "text": "Defer",
+          "aria": ""
+        },
+        {
+          "text": "Challenge",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Ops Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Ops command Queue · feeds · engines · breaches · incidents · audit Queue depth 3 pending items Feed coverage 4/6 feeds healthy Engine health 0/8 engines ok Policy breaches 1 hard breaches Open incidents 2 unresolved High priority 0 queue items Publication queue 3 pending MSFT mid TRIM · −0.9% · conf 62% J. Park · 8m · Azure caveat Approve Defer Challenge JPM low HOLD · +0.1% · conf 59% J. Park · 2h · rate sensitivity Approve Defer Challenge V low LONG · +1.2% · conf 63% R. Mikhailov · 3h Approve Defer Challenge Data feeds Alt data · satellite 2.4h 41% Bloomberg · price feed 12ms 100% Earnings · Factset 3s 99.4% Fundamentals · internal 0s 100% Options flow · CBOE 14m 72% Reuters · news intel 0s 99.8% Engines Flow 60000ms drift 0.0% Fundamentals 60000ms drift 0.0% Momentum 60000ms drift 0.0% Narrative 60000ms drift 0.0% News Sentiment 20ms",
+      "label": "Ops command 2",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\12-ops.png",
+      "navText": "Ops command 2"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/policies",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Policy Editor"
+        },
+        {
+          "level": "H2",
+          "text": "Active breaches"
+        },
+        {
+          "level": "H2",
+          "text": "CASH_FLOOR"
+        },
+        {
+          "level": "H3",
+          "text": "Cash reserve floor"
+        },
+        {
+          "level": "H2",
+          "text": "CONFIDENCE_FLOOR"
+        },
+        {
+          "level": "H3",
+          "text": "Min data confidence"
+        },
+        {
+          "level": "H3",
+          "text": "Min model confidence"
+        },
+        {
+          "level": "H3",
+          "text": "Min operational confidence"
+        },
+        {
+          "level": "H2",
+          "text": "DATA_FRESHNESS"
+        },
+        {
+          "level": "H3",
+          "text": "Feature freshness max age"
+        },
+        {
+          "level": "H2",
+          "text": "EXPOSURE_CAP"
+        },
+        {
+          "level": "H3",
+          "text": "Max total invested"
+        },
+        {
+          "level": "H2",
+          "text": "MODEL_SHADOW"
+        },
+        {
+          "level": "H3",
+          "text": "ML remains shadow"
+        },
+        {
+          "level": "H2",
+          "text": "POSITION_CAP"
+        },
+        {
+          "level": "H3",
+          "text": "Max single position"
+        },
+        {
+          "level": "H2",
+          "text": "PUBLICATION_GATE"
+        },
+        {
+          "level": "H3",
+          "text": "Lineage required"
+        },
+        {
+          "level": "H2",
+          "text": "SECTOR_CAP"
+        },
+        {
+          "level": "H3",
+          "text": "Sector concentration cap"
+        }
+      ],
+      "buttonsCount": 25,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        },
+        {
+          "text": "Edit",
+          "aria": ""
+        },
+        {
+          "text": "History",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Policies Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Policy Editor 10 rules · 3 active breaches Active breaches Energy net exposure · 12% / 10% 120% · +1.9% · Hard breach · escalated Semiconductors · 28.1% / 30% 94% · +0.8% · NVDA promotion would add ~0.6% NVDA single-name · 4.2% / 5.0% 84% · +0.3% · Reviewed by J. Park · 12m ago CASH_FLOOR Cash reserve floor warning advisory only Minimum cash allocation cash_floor · v1 · cash_floor 0.05weight Edit History CONFIDENCE_FLOOR Min data confidence block advisory only Minimum data confidence for publication confidence_data_min · v1 · confidence_floor 0.5score Edit History Min model confidence block advisory only Minimum model confidence for publication confidence_model_min · v1 · confidence_floor 0.25score Edit History Min operational confidence block advisory only Minimum operational confidence for publication confidence_operational_min · ",
+      "label": "Policies",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\13-policies.png",
+      "navText": "Policies"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/integrations",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Integrations"
+        },
+        {
+          "level": "H2",
+          "text": "FUNDAMENTALS"
+        },
+        {
+          "level": "H3",
+          "text": "Earnings · Factset"
+        },
+        {
+          "level": "H3",
+          "text": "Fundamentals · internal"
+        },
+        {
+          "level": "H2",
+          "text": "MARKET DATA"
+        },
+        {
+          "level": "H3",
+          "text": "Local adapter (seed)"
+        },
+        {
+          "level": "H3",
+          "text": "Bloomberg · price feed"
+        },
+        {
+          "level": "H3",
+          "text": "Options flow · CBOE"
+        },
+        {
+          "level": "H2",
+          "text": "NEWS & SENTIMENT"
+        },
+        {
+          "level": "H3",
+          "text": "Reuters · news intel"
+        },
+        {
+          "level": "H2",
+          "text": "ALTERNATIVE & SENTIMENT"
+        },
+        {
+          "level": "H3",
+          "text": "Alt data · satellite"
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Integrations Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Integrations 7 data sources connected Total 7 Healthy 1 Degraded 0 Placeholder 5 Real providers 2 FUNDAMENTALS Earnings · Factset placeholder placeholder earnings_factset Coverage: 99.4% Freshness: 3s Last OK 2026-04-24 19:54 Placeholder/demo feed — not backed by real integration Next action: connect_real_provider Fundamentals · internal ok fundamentals_internal Coverage: 100% Freshness: 0s Last OK 2026-04-24 19:54 MARKET DATA Local adapter (seed) healthy seed Coverage: 10 assets, 650 rows Freshness: current Last OK 2026-04-24 19:54 Bloomberg · price feed placeholder placeholder bloomberg_price_feed Coverage: 100% Freshness: 12ms Last OK 2026-04-24 19:54 Placeholder/demo feed — not backed by real integration Next action: connect_real_provider Options flow · CBOE placeholder placeholder options_flow_cboe Coverage: 72% Freshness: ",
+      "label": "Integrations",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\14-integrations.png",
+      "navText": "Integrations"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/admin",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Ops Command Center"
+        },
+        {
+          "level": "H3",
+          "text": "Research Data"
+        },
+        {
+          "level": "H3",
+          "text": "Dataset Export for Local Research"
+        }
+      ],
+      "buttonsCount": 15,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "⌘K",
+          "aria": ""
+        },
+        {
+          "text": "Research Data",
+          "aria": ""
+        },
+        {
+          "text": "Experiments",
+          "aria": ""
+        },
+        {
+          "text": "Comparisons",
+          "aria": ""
+        },
+        {
+          "text": "Readiness",
+          "aria": ""
+        },
+        {
+          "text": "Safety / Ops",
+          "aria": ""
+        },
+        {
+          "text": "Run Dataset Export",
+          "aria": ""
+        },
+        {
+          "text": "Rebuild Registry",
+          "aria": ""
+        },
+        {
+          "text": "Start Research Workflow",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Open activity feed"
+        }
+      ],
+      "tooltipNodesCount": 15,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Open command palette",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "⌘K"
+        },
+        {
+          "tag": "button",
+          "title": "Help",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "title": "A descriptive name for this dataset export.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Local Research Dataset Export Benchmark Dataset Export Feature Validation Export Full Universe Snapshot Targeted Candidate Export Custom..."
+        },
+        {
+          "tag": "input",
+          "title": "The start of the date range for market data to include in the export.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "title": "The end of the date range. Must be after start date.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "title": "JSONL is recommended for large datasets. JSON is better for small, human-readable exports.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "JSONL JSON"
+        },
+        {
+          "tag": "input",
+          "title": "Optional. Link this export to a specific research candidate for targeted analysis.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "title": "Optional. Link this export to a benchmark report for comparative analysis.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "title": "Include computed features (momentum, volatility, etc.) in the export.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "title": "Include target variables (forward returns) in the export.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "title": "Include data quality warnings and flags in the export.",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [
+        {
+          "tag": "button",
+          "text": "",
+          "aria": "",
+          "title": "Help",
+          "href": ""
+        }
+      ],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Research lab Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Ops Command Center Research workflow pipeline with governed data exports, experiments, comparisons, and readiness reviews. ⌘K Research Data Experiments Comparisons Readiness Safety / Ops Universe 10 Exports 0 Experiments 0 Comparisons 0 Readiness 0 1 Research Data Export shadow datasets for local offline research. The system scans your asset universe, extracts features, targets and signals, then packages them into a governed dataset for analysis. Dataset Export for Local Research Research-only Offline-only No production influence Export shadow dataset for local offline research. Not used by production decisions. Not eligible for promotion. No broker execution. 1 Fill in the export name, date range, and format. Choose which data to include. 2 Acknowledge the research-only constraint and click Run Dataset Export. 3 Review the expo",
+      "label": "Research lab",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\15-admin.png",
+      "navText": "Research lab"
+    },
+    {
+      "url": "https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1916422275%3A1779396993208721&access_type=online&client_id=1098106959567-omavmebpk553veh0oq0mu1aeenloeuuc.apps.googleusercontent.com&o2v=2&prompt=select_account&redirect_uri=https%3A%2F%2Fbackend-production-aab8.up.railway.app%2Fapi%2Fv1%2Fauth%2Fgoogle%2Fcallback&response_type=code&scope=openid+email+profile&service=lso&state=b1MsYi4ORn9CQhXRUodW120acBgH0aOs4YX-MyOa03E&flowName=GeneralOAuthFlow&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAN8aVgYiu_dLpS-gzmeJKYpzwdVrBJpIYUsVIkFD68JuOfV592Acbq6dt4OREQoUyz1jUsWoxlgj7LmzO6vMYsnnYc82Y_BVk-Qp1Wz7NUT-9miqDjQkQU5lvurUHf7nfedyv7OWtqr6KtVAC8ODxOSqgqhIbH0I3c-4O5vzlPVn67zYE8JwS6DM6N0B37sbM3bRm6dnjqNjmYlwK85gS1cvXttYnXCghCffjs3qfx5FPp3QR_CbLDRyXkaJBDA-66EygDA9D6ANLwenGPMABjF7JWkNn6BTBiIER811p5aEgTgW9U_-zhMoIpiB0d-gtTrbKHKC-FIwRSAAf8Ar676vXSGJxtykB5xLaZKc-LfEongGkDwfrOkbp7yo4tmD4soM321WVUpDDoL1LytMDlp67gc-rfLVvgZv8syy1jAt19kS7x8q3OuQAwoc11p5NcLg2c9hzVZHzis9YAaAcxrKyouQejK5VVlDH4qcbGlxkSH-1jzxg9qeY6yBOVygTReWKbL%26flowName%3DGeneralOAuthFlow%26as%3DS1916422275%253A1779396993208721%26client_id%3D1098106959567-omavmebpk553veh0oq0mu1aeenloeuuc.apps.googleusercontent.com%26requestPath%3D%252Fsignin%252Foauth%252Fconsent%23&app_domain=https%3A%2F%2Fbackend-production-aab8.up.railway.app&rart=ANgoxcdGITc7KrGzGaMyVeOrgo5hMuUJq5my4MKUy9ACIiB19QrhXOJGtc9Qz7uvcGPSkSJplS67Cj-8cSHwMvuIY4eZRH1p8EeFt4tTmP1D8ItbvMe3FzU",
+      "title": "Sign in - Google Accounts",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(31, 31, 31)",
+        "fontFamily": "\"Google Sans\", roboto, \"Noto Sans Myanmar UI\", \"Noto Sans Khmer\", arial, sans-serif",
+        "fontSize": "14px"
+      },
+      "navLinks": [],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Sign in"
+        }
+      ],
+      "buttonsCount": 4,
+      "buttonsSample": [
+        {
+          "text": "backend-production-aab8.up.railway.app",
+          "aria": ""
+        },
+        {
+          "text": "Forgot email?",
+          "aria": ""
+        },
+        {
+          "text": "Next",
+          "aria": ""
+        },
+        {
+          "text": "Create account",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 2,
+      "tooltipNodesSample": [
+        {
+          "tag": "input",
+          "title": "",
+          "dataTooltip": "",
+          "ariaLabel": "Email or phone",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "title": "",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "English (United States)"
+        }
+      ],
+      "helpAffordances": [
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "span",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Email or phone Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "div",
+          "text": "Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "button",
+          "text": "Forgot email?",
+          "aria": "",
+          "title": "",
+          "href": ""
+        },
+        {
+          "tag": "a",
+          "text": "Help",
+          "aria": "",
+          "title": "",
+          "href": "https://support.google.com/accounts?hl=en-US&p=account_iph"
+        }
+      ],
+      "emptyState": [],
+      "allLinksCount": 3,
+      "allLinksSample": [
+        {
+          "href": "https://support.google.com/accounts?hl=en-US&p=account_iph",
+          "text": "Help"
+        },
+        {
+          "href": "https://accounts.google.com/TOS?loc=IL&hl=en-US&privacy=true",
+          "text": "Privacy"
+        },
+        {
+          "href": "https://accounts.google.com/TOS?loc=IL&hl=en-US",
+          "text": "Terms"
+        }
+      ],
+      "bodyTextSnippet": "Sign in with Google Sign in to continue to backend-production-aab8.up.railway.app Email or phone Forgot email? Next Create account English (United States) Help Privacy Terms",
+      "label": "Send feedback",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\16-feedback.png",
+      "navText": "Send feedback"
+    }
+  ],
+  "probes": [
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/help",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/help",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-help.png",
+      "probedPath": "/help",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/help"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/docs",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/docs",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-docs.png",
+      "probedPath": "/docs",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/docs"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/manual",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/manual",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-manual.png",
+      "probedPath": "/manual",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/manual"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/faq",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/faq",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-faq.png",
+      "probedPath": "/faq",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/faq"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/support",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/support",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-support.png",
+      "probedPath": "/support",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/support"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/login",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Sign in"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Sign in",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 22,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "https://backend-production-aab8.up.railway.app/api/v1/auth/google/start",
+          "text": "Sign in with Google"
+        },
+        {
+          "href": "/signup",
+          "text": "Request access"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Sign in FINRLX private beta · invite-only Sign in with Google OR USE EMAIL Email Password Sign in No account? Request access Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/onboarding",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-onboarding.png",
+      "probedPath": "/onboarding",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/login"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/login",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "oklch(0.985 0.003 240)",
+        "color": "oklch(0.22 0.015 250)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "Sign in"
+        }
+      ],
+      "buttonsCount": 6,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        },
+        {
+          "text": "Sign in",
+          "aria": ""
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 22,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "https://backend-production-aab8.up.railway.app/api/v1/auth/google/start",
+          "text": "Sign in with Google"
+        },
+        {
+          "href": "/signup",
+          "text": "Request access"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 Sign in FINRLX private beta · invite-only Sign in with Google OR USE EMAIL Email Password Sign in No account? Request access Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/profile",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-profile.png",
+      "probedPath": "/profile",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/login"
+    },
+    {
+      "url": "https://frontend-production-7e8b1.up.railway.app/home",
+      "title": "FINRLX",
+      "visual": {
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)",
+        "fontFamily": "\"Inter Tight\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+        "fontSize": "13.5px"
+      },
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        }
+      ],
+      "headings": [
+        {
+          "level": "H1",
+          "text": "404"
+        },
+        {
+          "level": "H2",
+          "text": "This page could not be found."
+        }
+      ],
+      "buttonsCount": 5,
+      "buttonsSample": [
+        {
+          "text": "",
+          "aria": "Open navigation"
+        },
+        {
+          "text": "Aa",
+          "aria": ""
+        },
+        {
+          "text": "",
+          "aria": "Switch to dark theme"
+        },
+        {
+          "text": "",
+          "aria": "Notifications"
+        },
+        {
+          "text": "",
+          "aria": "Show context pane"
+        }
+      ],
+      "tooltipNodesCount": 4,
+      "tooltipNodesSample": [
+        {
+          "tag": "button",
+          "title": "Density: default — click to cycle",
+          "dataTooltip": "",
+          "ariaLabel": "",
+          "text": "Aa"
+        },
+        {
+          "tag": "button",
+          "title": "Switch to dark theme",
+          "dataTooltip": "",
+          "ariaLabel": "Switch to dark theme",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Notifications",
+          "dataTooltip": "",
+          "ariaLabel": "Notifications",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "title": "Toggle context pane",
+          "dataTooltip": "",
+          "ariaLabel": "Show context pane",
+          "text": ""
+        }
+      ],
+      "helpAffordances": [],
+      "emptyState": [],
+      "allLinksCount": 20,
+      "allLinksSample": [
+        {
+          "href": "#main-content",
+          "text": "Skip to main content"
+        },
+        {
+          "href": "/",
+          "text": "Overview 3"
+        },
+        {
+          "href": "/decision",
+          "text": "Decisions 13"
+        },
+        {
+          "href": "/profile",
+          "text": "My profile"
+        },
+        {
+          "href": "/templates",
+          "text": "Templates"
+        },
+        {
+          "href": "/comparison",
+          "text": "Engine comparison"
+        },
+        {
+          "href": "/risk",
+          "text": "Risk workspace 3"
+        },
+        {
+          "href": "/replay",
+          "text": "Replay & forensics"
+        },
+        {
+          "href": "/backtests",
+          "text": "Backtests"
+        },
+        {
+          "href": "/paper",
+          "text": "Paper portfolio"
+        },
+        {
+          "href": "/universe",
+          "text": "Universe"
+        },
+        {
+          "href": "/news",
+          "text": "News intelligence"
+        },
+        {
+          "href": "/ops",
+          "text": "Ops command 2"
+        },
+        {
+          "href": "/policies",
+          "text": "Policies"
+        },
+        {
+          "href": "/integrations",
+          "text": "Integrations"
+        },
+        {
+          "href": "/admin",
+          "text": "Research lab"
+        },
+        {
+          "href": "/feedback",
+          "text": "Send feedback"
+        },
+        {
+          "href": "/disclaimer",
+          "text": "full disclaimer"
+        },
+        {
+          "href": "/terms",
+          "text": "terms"
+        },
+        {
+          "href": "/privacy",
+          "text": "privacy"
+        }
+      ],
+      "bodyTextSnippet": "Skip to main content FINRLX Workspace Regime Risk-on · late-cycle Horizon 1M Universe US Large Cap Search… ⌘K Aa WORKSPACES Overview 3 Decisions 13 My profile Templates Engine comparison Risk workspace 3 Replay & forensics Backtests Paper portfolio Universe News intelligence OPERATIONS Ops command 2 Policies Integrations Research lab Send feedback v0.3.0 404 This page could not be found. Not investment advice. FINRLX is a decision-support tool for educational research. Output is generated by models on historical data and is not a recommendation to buy or sell any security. See the full disclaimer, terms, and privacy.",
+      "label": "probe:/home",
+      "screenshot": "C:\\Users\\Rotem\\projects\\FINRLX\\DOCS\\handoff\\help_recon\\probe-home.png",
+      "probedPath": "/home",
+      "finalUrl": "https://frontend-production-7e8b1.up.railway.app/home"
+    }
+  ],
+  "errors": []
+}

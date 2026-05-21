@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -28,6 +29,7 @@ const CRUMB_MAP: Record<string, string> = {
   "/policies": "Policies",
   "/integrations": "Integrations",
   "/universe": "Universe",
+  "/help": "Help center",
 };
 
 interface TopBarProps {
@@ -40,7 +42,9 @@ interface TopBarProps {
 
 export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = false }: TopBarProps) {
   const pathname = usePathname() ?? "/";
-  const crumb = CRUMB_MAP[pathname] || "Workspace";
+  const crumb =
+    CRUMB_MAP[pathname] ||
+    (pathname.startsWith("/help") ? "Help center" : "Workspace");
   const { theme, toggleTheme } = useTheme();
   const scope = useScope();
 
@@ -140,6 +144,17 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       >
         <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
       </button>
+
+      {/* Help center — global entry point, every page. Deep-links into /help. */}
+      <Link
+        href="/help"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        title="Help center"
+        aria-label="Open Help center"
+        data-help-trigger="topbar"
+      >
+        <Icon name="help-circle" size={18} />
+      </Link>
 
       {/* Notifications — hidden on mobile to free up TopBar real estate; the
           drawer-equivalent surface for notifications lands in a future phase. */}

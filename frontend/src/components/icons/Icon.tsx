@@ -60,6 +60,12 @@ export function Icon({ name, size = 16, className = "", strokeWidth = 1.6, style
     case "user": return (<svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>);
     case "layers": return (<svg {...p}><path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>);
     case "message": return (<svg {...p}><path d="M21 12a8 8 0 0 1-12 7l-5 2 1.6-4.8A8 8 0 1 1 21 12Z"/></svg>);
+    // Phase H-0 — Help section icons.
+    case "help-circle": return (<svg {...p}><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.83 1c0 2-3 2.4-3 4.3"/><path d="M12 17.5v.5"/></svg>);
+    case "book-open": return (<svg {...p}><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2Z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8Z"/></svg>);
+    case "lightbulb": return (<svg {...p}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>);
+    case "compass": return (<svg {...p}><circle cx="12" cy="12" r="9"/><path d="m16 8-3 8-5 0 3-8Z"/></svg>);
+    case "list-tree": return (<svg {...p}><path d="M5 4h12"/><path d="M9 9h8"/><path d="M9 14h8"/><path d="M9 19h8"/><path d="M5 4v14a1 1 0 0 0 1 1h3"/></svg>);
     default: return null;
   }
 }

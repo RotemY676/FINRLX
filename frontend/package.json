@@ -17,11 +17,16 @@
     "@sentry/nextjs": "^8.50.0",
     "cmdk": "^1.1.1",
     "framer-motion": "^12.38.0",
+    "gray-matter": "^4.0.3",
     "next": "^15.5.18",
+    "next-mdx-remote": "^5.0.0",
     "posthog-js": "^1.205.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "recharts": "^2.15.0"
+    "recharts": "^2.15.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
