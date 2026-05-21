@@ -29,6 +29,7 @@ from app.models.profile import (
     InvestorProfileRevision,
     ProfileQuestion,
 )
+from app.models.recommendation_template import RecommendationTemplate
 from app.schemas.common import ApiResponse
 from app.schemas.profile import (
     InvestorProfileResponse,
@@ -213,6 +214,46 @@ async def list_my_revisions(
     return ApiResponse(
         meta=make_meta(), data=[_revision_to_response(r) for r in rows]
     )
+
+
+@router.post(
+    "/profile/apply-template/{key}",
+    response_model=ApiResponse[InvestorProfileResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def apply_template_to_profile(
+    key: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[InvestorProfileResponse]:
+    """Phase TPL-3 — merge a template's preferences into the current profile.
+
+    Personal dimensions (risk_score, knowledge, financial bands,
+    instruments_traded) are preserved. Universe + operational fields
+    (bucket, horizon, goal, max DD, sectors, leverage, currency, cadence,
+    region) are replaced from the template.
+
+    Requires a saved profile — caller must complete the wizard first.
+    """
+    template = (
+        await db.execute(
+            select(RecommendationTemplate).where(RecommendationTemplate.key == key)
+        )
+    ).scalar_one_or_none()
+    if template is None or not template.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"template {key!r} not found",
+        )
+
+    service = ProfileService(db)
+    try:
+        updated = await service.apply_template(user.id, template)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return ApiResponse(meta=make_meta(), data=_profile_to_response(updated))
 
 
 @router.post("/profile/run-pipeline", response_model=ApiResponse[dict])

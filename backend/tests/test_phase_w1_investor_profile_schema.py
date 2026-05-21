@@ -118,7 +118,13 @@ async def test_profile_revision_appendable():
 
 @pytest.mark.asyncio
 async def test_seed_profile_questions_idempotent():
-    """Running the seed script twice leaves the catalog at the same count."""
+    """Running the seed script twice never inserts duplicates.
+
+    Idempotency contract: ``second["inserted"] == 0`` and the catalog
+    count is unchanged across the second run, regardless of whether
+    other tests already seeded the catalog before this test ran (the
+    in-memory test DB is session-scoped in conftest.py).
+    """
     # Override the seed script's session source so it writes to the
     # in-memory test DB rather than the configured engine.
     import scripts.seed_profile_questions as seed_mod
@@ -131,11 +137,14 @@ async def test_seed_profile_questions_idempotent():
     finally:
         seed_mod.async_session_factory = original
 
-    assert first["inserted"] == len(QUESTIONS)
-    assert first["skipped"] == 0
+    # The seed catalog must cover every defined question, but other
+    # tests may have populated it first, so we test the invariant — not
+    # the absolute insertion count.
+    assert first["total_now"] >= len(QUESTIONS)
     assert second["inserted"] == 0
-    assert second["skipped"] == len(QUESTIONS)
-    assert first["total_now"] == second["total_now"] == len(QUESTIONS)
+    assert second["skipped"] >= first["skipped"]
+    # Second pass cannot grow the catalog beyond what the first pass left.
+    assert second["total_now"] == first["total_now"]
 
 
 @pytest.mark.asyncio

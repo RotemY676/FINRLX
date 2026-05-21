@@ -36,6 +36,7 @@ from app.models.profile import (
     InvestorProfileRevision,
     ProfileQuestion,
 )
+from app.models.recommendation_template import RecommendationTemplate
 
 RISK_ITEM_PREFIX = "R_"  # all step-4 question codes start with R_
 MIN_RISK_SCORE = 8
@@ -379,3 +380,65 @@ class ProfileService:
         await self.db.commit()
         await self.db.refresh(profile)
         return profile
+
+    async def apply_template(
+        self,
+        user_id: str,
+        template: RecommendationTemplate,
+    ) -> InvestorProfile:
+        """Merge a template's preferences into the user's current profile.
+
+        Only **non-personal** fields are overridden — risk bucket, horizon,
+        goal, max DD, sector lists, leverage policy, base currency, cadence,
+        region. We deliberately do NOT touch the user's risk_score,
+        knowledge_level, financial bands, or instruments_traded — those
+        belong to the person, not the template.
+
+        Raises ``ValueError`` if the user has no profile yet (they should
+        complete the wizard first).
+        """
+        current = await self.get_current(user_id)
+        if current is None:
+            raise ValueError(
+                "no_profile: complete the wizard before applying a template"
+            )
+
+        current.version += 1
+        current.risk_bucket = template.risk_bucket
+        current.horizon_band = template.horizon_band
+        current.primary_goal = template.primary_goal
+        current.max_drawdown_pct = template.max_drawdown_pct
+        current.sector_whitelist_json = template.sector_whitelist_json
+        current.sector_blacklist_json = template.sector_blacklist_json
+        current.exclude_leverage = template.exclude_leverage
+        current.base_currency = template.base_currency
+        current.trading_frequency = template.trading_frequency
+        current.region_preference = template.region_preference
+
+        await self.db.flush()
+
+        revision = InvestorProfileRevision(
+            profile_id=current.id,
+            user_id=user_id,
+            version=current.version,
+            snapshot_json=json.dumps(
+                {
+                    "applied_template_key": template.key,
+                    "applied_template_id": template.id,
+                    "scored": {
+                        "risk_bucket": current.risk_bucket,
+                        "horizon_band": current.horizon_band,
+                        "primary_goal": current.primary_goal,
+                        "max_drawdown_pct": current.max_drawdown_pct,
+                        "base_currency": current.base_currency,
+                        "trading_frequency": current.trading_frequency,
+                    },
+                },
+                sort_keys=True,
+            ),
+            change_summary=f"applied template:{template.key}",
+        )
+        self.db.add(revision)
+        await self.db.commit()
+        await self.db.refresh(current)
+        return current

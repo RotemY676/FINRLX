@@ -74,3 +74,51 @@ export async function runProfileAwarePipeline(): Promise<RunPipelineResult> {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+// ── Phase TPL — templates ────────────────────────────────────────────
+
+export interface TemplateMetrics {
+  equity_pct: number;
+  defensive_pct: number;
+  expected_annual_return_pct: number;
+  expected_volatility_pct: number;
+  expected_max_drawdown_pct: number;
+  sharpe_estimate: number;
+  confidence_label: string;
+  methodology_note: string;
+}
+
+export interface RecommendationTemplateView {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  badge: string;
+  risk_bucket: string;
+  horizon_band: string;
+  primary_goal: string;
+  max_drawdown_pct: number;
+  sector_whitelist: string[];
+  sector_blacklist: string[];
+  exclude_leverage: boolean;
+  base_currency: string;
+  trading_frequency: string;
+  region_preference: string;
+  is_seed: boolean;
+  is_active: boolean;
+  allocation_summary: string | null;
+  metrics: TemplateMetrics;
+}
+
+export async function fetchTemplates(): Promise<RecommendationTemplateView[]> {
+  return request<RecommendationTemplateView[]>("/api/v1/templates");
+}
+
+export async function applyTemplateToProfile(
+  key: string,
+): Promise<InvestorProfile> {
+  return request<InvestorProfile>(`/api/v1/profile/apply-template/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+}
