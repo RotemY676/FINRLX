@@ -307,6 +307,36 @@ async def _seed_pipeline_stages():
         inserted = await rl_train_svc.ensure_default_agent_definitions()
         print(f"  RL Agents: {inserted} new agent(s) created" if inserted else "  RL Agents: agents already exist")
 
+    # ── Investor profile question catalog (Phase W-1) ──
+    # Idempotent. Without this, /api/v1/profile/questions returns an empty list
+    # and the wizard renders "this step has no questions yet" in production.
+    try:
+        from scripts.seed_profile_questions import seed as _seed_profile_questions
+        pq = await _seed_profile_questions()
+        if pq["inserted"]:
+            print(
+                f"  Profile questions: {pq['inserted']} inserted "
+                f"(skipped {pq['skipped']} · total {pq['total_now']})"
+            )
+        else:
+            print(f"  Profile questions: already seeded ({pq['total_now']} active)")
+    except Exception as exc:  # noqa: BLE001 — boot seed must not crash app
+        print(f"  Profile questions: seed FAILED — {exc!r}")
+
+    # ── Recommendation templates (Phase TPL-1) ──
+    try:
+        from scripts.seed_recommendation_templates import seed as _seed_templates
+        tpl = await _seed_templates()
+        if tpl["inserted"]:
+            print(
+                f"  Templates: {tpl['inserted']} inserted "
+                f"(skipped {tpl['skipped']} · total {tpl['total_now']})"
+            )
+        else:
+            print(f"  Templates: already seeded ({tpl['total_now']} active)")
+    except Exception as exc:  # noqa: BLE001 — boot seed must not crash app
+        print(f"  Templates: seed FAILED — {exc!r}")
+
 
 async def seed():
     async with async_session_factory() as db:
