@@ -43,6 +43,10 @@ class PaperPortfolio(Base, TimestampMixin):
     last_rebalance_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     total_rebalances: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Phase FX-2: base currency for valuation translation. Defaults USD
+    # so pre-existing rows + tests continue to work.
+    base_currency: Mapped[str] = mapped_column(String(3), default="USD", server_default="USD", nullable=False)
+
     # Provenance (Phase 5C)
     source_recommendation_id: Mapped[str | None] = mapped_column(String(36))
     source_type: Mapped[str] = mapped_column(String(30), default="unknown")  # recommendation_paper, seed_demo, unknown

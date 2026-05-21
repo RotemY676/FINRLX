@@ -104,7 +104,11 @@ async def test_filter_universe_passthrough_when_overrides_none():
 
 @pytest.mark.asyncio
 async def test_filter_universe_blacklist_drops_matching_sector():
-    """conftest seeds AAPL+MSFT as Technology. Blacklist Tech ⇒ both drop."""
+    """conftest seeds AAPL+MSFT as Technology. Blacklist Tech ⇒ both drop.
+
+    Scoped to AAPL+MSFT explicitly so other tests can add assets in
+    other sectors without breaking this contract.
+    """
     from sqlalchemy import select
 
     from app.models.reference import Asset
@@ -113,7 +117,11 @@ async def test_filter_universe_blacklist_drops_matching_sector():
     overrides = _make_overrides(sector_blacklist=("Technology",))
     async with test_session_factory() as db:
         rows = (
-            await db.execute(select(Asset.id, Asset.ticker))
+            await db.execute(
+                select(Asset.id, Asset.ticker).where(
+                    Asset.ticker.in_(("AAPL", "MSFT"))
+                )
+            )
         ).all()
         universe = [(r.id, r.ticker) for r in rows]
         filtered = await filter_universe_by_profile(db, universe, overrides)
@@ -123,6 +131,7 @@ async def test_filter_universe_blacklist_drops_matching_sector():
 
 @pytest.mark.asyncio
 async def test_filter_universe_whitelist_keeps_only_matching_sector():
+    """Scoped to AAPL+MSFT for the same reason as the blacklist test."""
     from sqlalchemy import select
 
     from app.models.reference import Asset
@@ -131,7 +140,11 @@ async def test_filter_universe_whitelist_keeps_only_matching_sector():
     overrides = _make_overrides(sector_whitelist=("Technology",))
     async with test_session_factory() as db:
         rows = (
-            await db.execute(select(Asset.id, Asset.ticker))
+            await db.execute(
+                select(Asset.id, Asset.ticker).where(
+                    Asset.ticker.in_(("AAPL", "MSFT"))
+                )
+            )
         ).all()
         universe = [(r.id, r.ticker) for r in rows]
         filtered = await filter_universe_by_profile(db, universe, overrides)

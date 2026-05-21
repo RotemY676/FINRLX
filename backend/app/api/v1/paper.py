@@ -30,6 +30,7 @@ from app.schemas.paper import (
     PaperValuationPoint,
 )
 from app.services.paper import PaperPortfolioService
+from app.services.paper_currency import value_portfolio_in_currency
 
 router = APIRouter()
 
@@ -100,6 +101,60 @@ async def get_current_paper(db: AsyncSession = Depends(get_db)):
         return ApiResponse(meta=make_meta(warnings=["No active paper portfolio"]), data=None)
     assets = {a.id: a for a in (await db.execute(select(Asset))).scalars().all()}
     return ApiResponse(meta=make_meta(), data=_build_detail(pp, assets))
+
+
+@router.get(
+    "/paper/current/valuation-in-currency",
+    response_model=ApiResponse[dict],
+)
+async def get_current_paper_valuation_in_currency(
+    currency: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Phase FX-2 — translate the active paper portfolio into a currency.
+
+    Query: ``currency=EUR`` (or any 3-letter ISO code supported by
+    the FX layer). Returns per-holding native + target valuations,
+    aggregate total, and any FX fallback warnings so the UI can show
+    a "stale" badge.
+    """
+    svc = PaperPortfolioService(db)
+    pp = await svc.get_current()
+    if not pp:
+        raise HTTPException(status_code=404, detail="no_active_paper_portfolio")
+
+    if not currency or len(currency) != 3:
+        raise HTTPException(
+            status_code=422, detail="currency must be a 3-letter ISO code"
+        )
+    target = currency.upper()
+
+    valuation = await value_portfolio_in_currency(db, pp, target)
+    return ApiResponse(
+        meta=make_meta(warnings=valuation.fx_warnings),
+        data={
+            "portfolio_id": valuation.portfolio_id,
+            "base_currency": valuation.base_currency,
+            "target_currency": valuation.target_currency,
+            "as_of_date": valuation.as_of_date.isoformat(),
+            "total_value_in_target": valuation.total_value_in_target,
+            "holdings": [
+                {
+                    "asset_id": h.asset_id,
+                    "ticker": h.ticker,
+                    "asset_currency": h.asset_currency,
+                    "quantity": h.quantity,
+                    "last_price": h.last_price,
+                    "value_native": h.value_native,
+                    "value_in_target": h.value_in_base,
+                    "fx_rate": h.fx_rate,
+                    "fx_rate_date": h.fx_rate_date.isoformat(),
+                    "fx_is_fallback": h.fx_is_fallback,
+                }
+                for h in valuation.holdings
+            ],
+        },
+    )
 
 
 @router.get("/paper", response_model=ApiResponse[list[PaperPortfolioDetail]])
