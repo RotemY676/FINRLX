@@ -17,6 +17,7 @@ from app.models.modeling import (
     ModelRun,
     ModelValidationReport,
 )
+from app.models.notification import Notification
 from app.models.ops import (
     AuditEvent,
     DataFeed,
@@ -82,4 +83,5 @@ __all__ = [
     "RecommendationTemplate", "TEMPLATE_KEYS",
     "FxRate",
     "JobRun",
+    "Notification",
 ]

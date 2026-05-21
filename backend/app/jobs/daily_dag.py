@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.fx_freshness import emit_incidents_if_stale, evaluate_freshness
 from app.services.fx_service import FxService
 from app.services.job_runs import record_job
+from app.services.notifications import notify_unsent_incidents
 
 JobFunc = Callable[[AsyncSession], Awaitable[str]]
 
@@ -46,12 +47,23 @@ async def job_daily_fx_freshness(db: AsyncSession) -> str:
     )
 
 
+async def job_daily_notify_incidents(db: AsyncSession) -> str:
+    result = await notify_unsent_incidents(db)
+    return (
+        f"sent={result.get('sent', 0)} "
+        f"skipped={result.get('skipped', 0)} "
+        f"failed={result.get('failed', 0)}"
+    )
+
+
 # Order matters: refresh before freshness so the freshness watchdog
 # never falsely opens an incident on the same run that would have
-# refreshed the missing rate.
+# refreshed the missing rate. Notify runs last so it picks up incidents
+# opened earlier in the same DAG run.
 DAILY_DAG: list[tuple[str, JobFunc]] = [
     ("daily_fx_refresh", job_daily_fx_refresh),
     ("daily_fx_freshness", job_daily_fx_freshness),
+    ("daily_notify_incidents", job_daily_notify_incidents),
 ]
 
 
