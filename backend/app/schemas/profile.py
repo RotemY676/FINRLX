@@ -60,6 +60,9 @@ class InvestorProfileResponse(BaseModel):
     completed_at: datetime
     created_at: datetime
     updated_at: datetime
+    # Phase W-7: raw answers exposed so the /profile edit page can pre-fill
+    # the wizard. Optional for backwards compatibility with W-2 clients.
+    raw_answers: dict[str, str | list[str]] | None = None
 
 
 class ProfileMeResponse(BaseModel):

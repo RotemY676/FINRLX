@@ -39,11 +39,13 @@ from app.schemas.profile import (
     ProfileRevisionResponse,
     ProfileStepResponse,
 )
+from app.services.pipeline import DecisionPipelineService
 from app.services.profile import (
     ProfileService,
     ProfileValidationError,
     score_answers,
 )
+from app.services.profile_pipeline_overrides import load_overrides_for_user
 
 router = APIRouter()
 
@@ -59,6 +61,10 @@ STEP_METADATA: dict[int, tuple[str, str]] = {
 
 
 def _profile_to_response(p: InvestorProfile) -> InvestorProfileResponse:
+    try:
+        raw_answers = json.loads(p.raw_answers_json or "{}")
+    except json.JSONDecodeError:
+        raw_answers = {}
     return InvestorProfileResponse(
         id=p.id,
         user_id=p.user_id,
@@ -83,6 +89,7 @@ def _profile_to_response(p: InvestorProfile) -> InvestorProfileResponse:
         completed_at=p.completed_at,
         created_at=p.created_at,
         updated_at=p.updated_at,
+        raw_answers=raw_answers,
     )
 
 
@@ -206,3 +213,26 @@ async def list_my_revisions(
     return ApiResponse(
         meta=make_meta(), data=[_revision_to_response(r) for r in rows]
     )
+
+
+@router.post("/profile/run-pipeline", response_model=ApiResponse[dict])
+async def run_profile_aware_pipeline(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[dict]:
+    """Phase W-7 — trigger a recommendation run bound to the user's profile.
+
+    Loads the active InvestorProfile, translates it into
+    ProfileOverrides via load_overrides_for_user, and calls the
+    decision pipeline with those overrides. Returns the run summary
+    (status, recommendation_id, stages, warnings).
+    """
+    overrides = await load_overrides_for_user(db, user.id)
+    if overrides is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="no_profile: complete the wizard before requesting a profile-aware run",
+        )
+    pipeline = DecisionPipelineService(db)
+    result = await pipeline.run_pipeline(profile_overrides=overrides)
+    return ApiResponse(meta=make_meta(), data=result)

@@ -59,3 +59,18 @@ export async function submitProfile(
     body: JSON.stringify({ answers, change_summary: changeSummary }),
   });
 }
+
+export interface RunPipelineResult {
+  recommendation_id: string | null;
+  status: string;
+  stages?: unknown;
+  warnings?: string[];
+  message?: string;
+}
+
+export async function runProfileAwarePipeline(): Promise<RunPipelineResult> {
+  return request<RunPipelineResult>("/api/v1/profile/run-pipeline", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+}
