@@ -25,7 +25,9 @@ anyio==4.7.0
 
 # Auth (Phase MVP-1)
 # Phase MVP-5: bumped from 2.10.1 to address PYSEC-2026-120
-PyJWT==2.12.0
+# [crypto] extra pulls in `cryptography` — required for RS256 verification
+# of Google's id_tokens in app/services/google_oauth.py.
+PyJWT[crypto]==2.12.0
 bcrypt==4.2.1
 email-validator==2.2.0
 
