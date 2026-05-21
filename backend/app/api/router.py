@@ -18,6 +18,7 @@ from app.api.v1.model_validation import router as model_validation_router
 from app.api.v1.models import router as models_router
 from app.api.v1.news import router as news_router
 from app.api.v1.ops import router as ops_router
+from app.api.v1.ops_jobs import router as ops_jobs_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.paper import router as paper_router
 from app.api.v1.pipeline import router as pipeline_router
@@ -50,6 +51,7 @@ api_router.include_router(paper_router, tags=["paper"])
 api_router.include_router(engines_router, tags=["engines"])
 api_router.include_router(regime_router, tags=["regime"])
 api_router.include_router(ops_router, tags=["ops"])
+api_router.include_router(ops_jobs_router, tags=["ops-jobs"])
 api_router.include_router(scenario_router, tags=["scenario"])
 api_router.include_router(actions_router, tags=["actions"])
 api_router.include_router(pricechart_router, tags=["pricechart"])

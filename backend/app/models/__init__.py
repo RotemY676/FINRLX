@@ -9,6 +9,7 @@ from app.models.engine import EngineDefinition
 from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
 from app.models.fx import FxRate
 from app.models.ingestion import IngestionManifest, MarketBar, NewsEvent
+from app.models.jobs import JobRun
 from app.models.modeling import (
     MLPromotionReview,
     ModelDefinition,
@@ -80,4 +81,5 @@ __all__ = [
     "InvestorProfile", "InvestorProfileRevision", "ProfileQuestion",
     "RecommendationTemplate", "TEMPLATE_KEYS",
     "FxRate",
+    "JobRun",
 ]
