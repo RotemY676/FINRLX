@@ -5,20 +5,29 @@ import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScope } from "@/contexts/ScopeContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { UserMenu } from "@/components/shell/UserMenu";
 
 const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
 
 const CRUMB_MAP: Record<string, string> = {
-  "/": "Overview",
-  "/decision": "Decision Workspace",
-  "/comparison": "Engine Comparison",
-  "/replay": "Replay & Forensics",
+  "/": "Home",
+  "/decision": "Decision",
+  "/comparison": "Engine comparison",
+  "/replay": "Replay",
   "/backtests": "Backtests",
-  "/paper": "Paper Portfolio",
-  "/admin": "Ops Command Center",
+  "/paper": "Paper portfolio",
+  "/admin": "Research lab",
+  "/profile": "My profile",
+  "/templates": "Templates",
+  "/feedback": "Send feedback",
+  "/onboarding": "Welcome",
+  "/risk": "Risk",
+  "/news": "News",
+  "/ops": "Ops",
+  "/policies": "Policies",
+  "/integrations": "Integrations",
+  "/universe": "Universe",
 };
 
 interface TopBarProps {
@@ -70,9 +79,7 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       {/* Brand */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="w-5 h-5 rounded-md bg-primary" aria-hidden="true" />
-        <span className="font-semibold text-ink">
-          QuantPipeline<em className="font-normal text-ink-3 not-italic"> · decision</em>
-        </span>
+        <span className="font-semibold text-ink">FINRLX</span>
       </div>
 
       {/* Nav toggle — opens the mobile drawer below md, collapses the column above md */}
@@ -86,12 +93,8 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
         <Icon name="panel-left" size={18} />
       </button>
 
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-ink-3">
-        <span>Workspaces</span>
-        <Icon name="chevron-right" size={11} className="text-ink-4" />
-        <span className="text-ink font-medium">{crumb}</span>
-      </nav>
+      {/* Current page label — replaces the noisy "Workspaces > X" breadcrumb. */}
+      <span className="text-ink font-medium">{crumb}</span>
 
       {/* Spacer */}
       <div className="flex-1" />
@@ -162,44 +165,9 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
         <Icon name="panel-right" size={18} className="text-ink-3" />
       </button>
 
-      {/* User chip + sign-out */}
-      <UserChip />
+      {/* Avatar dropdown — UI-1 follow-up. Replaces the static chip +
+          adjacent "Sign out" button with the industry-standard pattern. */}
+      <UserMenu />
     </header>
-  );
-}
-
-function UserChip() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  if (!user) return null;
-  const initials = user.email
-    .split("@")[0]
-    .split(".")
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("")
-    .slice(0, 2) || "?";
-  return (
-    <div className="flex items-center gap-1">
-      <div
-        className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-ink text-[12px] font-semibold shrink-0"
-        title={user.email}
-        aria-label={`Signed in as ${user.email}`}
-      >
-        {initials}
-      </div>
-      {/* "Sign out" text only on md+; on mobile the avatar is a single tappable
-          control (a separate sign-out flow lands when the More menu lands). */}
-      <button
-        onClick={async () => {
-          await logout();
-          router.push("/login");
-        }}
-        className="hidden md:inline-flex items-center justify-center h-9 px-3 text-[12px] text-ink-3 hover:text-ink hover:bg-surface-3 rounded-md transition-colors"
-        title="Sign out"
-        aria-label="Sign out"
-      >
-        Sign out
-      </button>
-    </div>
   );
 }
