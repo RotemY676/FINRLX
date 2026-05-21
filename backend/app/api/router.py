@@ -8,6 +8,7 @@ from app.api.v1.comparison import router as comparison_router
 from app.api.v1.decision import router as decision_router
 from app.api.v1.engines import router as engines_router
 from app.api.v1.features import router as features_router
+from app.api.v1.feedback import router as feedback_router
 from app.api.v1.flags import router as flags_router
 from app.api.v1.health import router as health_router
 from app.api.v1.ingest import router as ingest_router
@@ -19,6 +20,7 @@ from app.api.v1.models import router as models_router
 from app.api.v1.news import router as news_router
 from app.api.v1.ops import router as ops_router
 from app.api.v1.ops_jobs import router as ops_jobs_router
+from app.api.v1.ops_users import router as ops_users_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.paper import router as paper_router
 from app.api.v1.pipeline import router as pipeline_router
@@ -52,6 +54,8 @@ api_router.include_router(engines_router, tags=["engines"])
 api_router.include_router(regime_router, tags=["regime"])
 api_router.include_router(ops_router, tags=["ops"])
 api_router.include_router(ops_jobs_router, tags=["ops-jobs"])
+api_router.include_router(ops_users_router, tags=["ops-users"])
+api_router.include_router(feedback_router, tags=["feedback"])
 api_router.include_router(scenario_router, tags=["scenario"])
 api_router.include_router(actions_router, tags=["actions"])
 api_router.include_router(pricechart_router, tags=["pricechart"])
