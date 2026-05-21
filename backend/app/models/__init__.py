@@ -24,6 +24,11 @@ from app.models.ops import (
     SystemHealthSnapshot,
 )
 from app.models.policy import PolicyRule, PolicyRuleHistory
+from app.models.profile import (
+    InvestorProfile,
+    InvestorProfileRevision,
+    ProfileQuestion,
+)
 from app.models.recommendation import PublicationStatus, Recommendation, RecommendationWeight
 from app.models.reference import Asset, Benchmark, Universe, UniverseMembership
 from app.models.research_registry_metadata import ResearchRegistryMetadata
@@ -67,4 +72,5 @@ __all__ = [
     "ResearchRegistryMetadata",
     "User", "RefreshToken", "EmailAllowlist",
     "SavedView",
+    "InvestorProfile", "InvestorProfileRevision", "ProfileQuestion",
 ]
