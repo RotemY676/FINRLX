@@ -15,6 +15,7 @@ import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PolicyRuleCard } from "@/components/policies/PolicyRuleCard";
+import { HelpLink } from "@/components/help/HelpLink";
 
 export default function PoliciesPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
@@ -84,11 +85,21 @@ export default function PoliciesPage() {
 
   return (
     <div className="space-y-gap max-w-[1200px]">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Policy Editor</h1>
-        <p className="text-[12px] text-ink-3 mt-0.5">
-          {rules.length} rules · {breaches.filter((b) => b.is_active).length} active breaches
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">
+            Policy Editor
+            <HelpLink anchor="reference/pages/policies" label="Open Policies help" />
+          </h1>
+          <p className="text-[12px] text-ink-3 mt-0.5">
+            {rules.length} rules · {breaches.filter((b) => b.is_active).length} active breaches
+          </p>
+        </div>
+        <HelpLink
+          anchor="guides/edit-a-policy"
+          label="How to edit a policy"
+          variant="inline"
+        />
       </div>
 
       {breaches.length > 0 && (
@@ -110,8 +121,12 @@ export default function PoliciesPage() {
 
       {grouped.map(([category, catRules]) => (
         <section key={category} className="space-y-2">
-          <h2 className="text-[13px] font-semibold text-ink uppercase tracking-wider">
+          <h2 className="text-[13px] font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
             {category}
+            <HelpLink
+              anchor={`reference/policy-controls#${category.toLowerCase().replace(/_/g, "-")}`}
+              label={`What is ${category}?`}
+            />
           </h2>
           <div className="space-y-2">
             {catRules.map((rule) => (

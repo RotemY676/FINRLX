@@ -15,6 +15,7 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { SourceBadge } from "@/components/recommendation/SourceBadge";
+import { HelpLink } from "@/components/help/HelpLink";
 
 const STANCE_STYLE: Record<string, string> = {
   buy: "text-pos-soft-ink bg-pos-soft", sell: "text-breach-soft-ink bg-breach-soft",
@@ -44,7 +45,7 @@ export default function ComparisonPage() {
   return (
     <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-[20px] font-semibold text-ink">Engine Comparison</h1>
+        <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">Engine Comparison <HelpLink anchor="reference/pages/comparison" label="Open Engine comparison help" /></h1>
         <p className="text-[12px] text-ink-3 mt-0.5">
           {engines ? `${engines.engines.length} engines · synthesis: ${engines.synthesis_stance}` : `Recommendation vs ${data.benchmark_name}`}
         </p>

@@ -18,6 +18,7 @@ import { UniverseList } from "@/components/universe/UniverseList";
 import { CoveragePanel } from "@/components/universe/CoveragePanel";
 import { ReadinessPanel } from "@/components/universe/ReadinessPanel";
 import { SectorBreakdown } from "@/components/universe/SectorBreakdown";
+import { HelpLink } from "@/components/help/HelpLink";
 
 export default function UniversePage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
@@ -77,11 +78,21 @@ export default function UniversePage() {
 
   return (
     <div className="space-y-gap max-w-[1200px]">
-      <div>
-        <h1 className="text-[20px] font-semibold text-ink">Universe</h1>
-        <p className="text-[12px] text-ink-3 mt-0.5">
-          Saved universes · coverage · readiness · sector breakdown
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">
+            Universe
+            <HelpLink anchor="reference/pages/universe" label="Open Universe help" />
+          </h1>
+          <p className="text-[12px] text-ink-3 mt-0.5">
+            Saved universes · coverage · readiness · sector breakdown
+          </p>
+        </div>
+        <HelpLink
+          anchor="guides/manage-your-universe"
+          label="How to manage your universe"
+          variant="inline"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-gap">

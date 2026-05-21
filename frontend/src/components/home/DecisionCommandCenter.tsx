@@ -18,6 +18,7 @@ import { SectorHeatmapPreview } from "./SectorHeatmapPreview";
 import { ShadowResearchSnapshot } from "./ShadowResearchSnapshot";
 import { SystemHealthMiniPanel } from "./SystemHealthMiniPanel";
 import { loadHomeData } from "./homeData";
+import { HelpLink } from "@/components/help/HelpLink";
 
 import type { HomeViewModel } from "./homeTypes";
 
@@ -94,8 +95,9 @@ export function DecisionCommandCenter() {
       {/* Header */}
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-ink">
+          <h1 className="text-[22px] font-semibold text-ink flex items-center gap-2">
             Decision Command Center
+            <HelpLink anchor="getting-started/reading-the-dashboard" label="Read the dashboard — tutorial" />
           </h1>
           <p className="text-[13px] text-ink-3 mt-1 max-w-xl leading-snug">
             Hi, {view.greetingName}. This screen answers: what changed, what

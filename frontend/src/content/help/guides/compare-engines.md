@@ -7,6 +7,25 @@ updated: 2026-05-22
 order: 2
 ---
 
-The **Comparison** page renders an engine matrix that lets you see, for the same universe and the same window, how each engine would allocate. The two most useful views are the **Weight Comparison** (recommended weights vs. an equal-weight benchmark) and the **Engine Alignment** scatter, which shows how often two engines agree at the position level.
+The [Comparison page](/help/reference/pages/comparison) renders an engine matrix that lets you see, for the same universe and the same window, how each engine would allocate. Use this to gut-check an engine's behavior before promoting.
 
-This guide shows how to add an engine to the matrix, switch the comparison benchmark, and read the alignment chart.
+## Steps
+
+1. **Open Comparison.** Sidebar → WORKSPACES → Engine comparison.
+2. **Add an engine** via the toolbar selector. Start with the engine that produced your current recommendation plus equal weight as the baseline.
+3. **Read the matrix.** Each column is an engine; each row is a metric. The numbers are computed over the *same* window and the *same* universe — they are comparable.
+4. **Read the Engine Alignment scatter.** Each point is a position; the axes are two engines' recommended weights. Points on the diagonal mean both engines agree.
+5. **Read the Weight Comparison bars.** Per-name bars showing recommended weights vs. the equal-weight benchmark. Tall positive bars = the engine likes the name; tall negative bars = avoids.
+
+## How to interpret disagreement
+
+Disagreement is informative:
+
+- **Agreement at high conviction.** Multiple engines arrive at the same position from different starting points. This is a strong signal.
+- **Disagreement on a single name.** One engine sees something the others don't. Usually a regime-sensitive call. See [Regimes and turbulence](/help/concepts/regimes-and-turbulence).
+- **Wholesale disagreement.** The engines have nothing in common. Often a sign that the universe or the feature spec is starving one of them. See [Universe and features](/help/concepts/universe-and-features).
+
+## See also
+
+- [Comparison page](/help/reference/pages/comparison) — the reference.
+- [Agents and engines](/help/concepts/agents-and-engines) — the families.

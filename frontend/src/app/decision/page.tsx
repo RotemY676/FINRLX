@@ -22,6 +22,7 @@ import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { ScenarioCard } from "@/components/decision/ScenarioCard";
 import { PriceChartCard } from "@/components/charts/PriceChartCard";
+import { HelpLink } from "@/components/help/HelpLink";
 import { track } from "@/lib/analytics";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
@@ -99,12 +100,14 @@ export default function DecisionPage() {
               onClick={async () => { setActionLoading(true); try { const r = await actionPromotePaper(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
               className="inline-flex items-center justify-center md:justify-start gap-1.5 min-h-11 md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-md bg-surface-3 text-ink-2 text-[13px] md:text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
             ><Icon name="paper" size={14} /> Promote to paper</button>
+            <HelpLink anchor="guides/promote-to-paper" label="How to promote to paper" />
             <button
               type="button"
               disabled={actionLoading}
               onClick={async () => { setActionLoading(true); try { const r = await actionDefer(); setActionMsg(r.data.message); } catch { setActionMsg("Failed"); } finally { setActionLoading(false); }}}
               className="inline-flex items-center justify-center md:justify-start gap-1.5 min-h-11 md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-md bg-surface-3 text-ink-2 text-[13px] md:text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
             ><Icon name="clock" size={14} /> Defer decision</button>
+            <HelpLink anchor="guides/defer-or-save-a-thesis" label="What does defer do?" />
             <div className="hidden md:block md:flex-1" />
             {actionMsg && (
               <span className="text-[11px] text-pos font-medium md:animate-pulse" role="status" aria-live="polite">{actionMsg}</span>

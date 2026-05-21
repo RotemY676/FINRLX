@@ -13,6 +13,7 @@ import { WarningsBlock } from "@/components/recommendation/WarningsBlock";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { HelpLink } from "@/components/help/HelpLink";
 import { track } from "@/lib/analytics";
 
 function StageSnapshotCard({ stage, data, capturedAt }: {
@@ -74,7 +75,7 @@ export default function ReplayPage() {
   return (
     <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-[20px] font-semibold text-ink">Replay / Forensics</h1>
+        <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">Replay / Forensics <HelpLink anchor="reference/pages/replay" label="Open Replay help" /></h1>
         <p className="text-[11px] text-ink-4 mt-1">
           {list.total} recommendation replay{list.total !== 1 ? "s" : ""} available
         </p>

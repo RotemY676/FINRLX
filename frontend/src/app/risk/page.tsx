@@ -7,6 +7,7 @@ import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { HelpLink } from "@/components/help/HelpLink";
 
 function pct(v: number, digits = 1): string {
   return `${(v * 100).toFixed(digits)}%`;
@@ -56,7 +57,7 @@ export default function RiskPage() {
   return (
     <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-[20px] font-semibold text-ink">Risk workspace</h1>
+        <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">Risk workspace <HelpLink anchor="reference/pages/risk" label="Open Risk help" /></h1>
         <p className="text-[12px] text-ink-3 mt-0.5">
           {r.portfolio_name} · {r.snapshot_count} daily snapshots
         </p>
@@ -96,7 +97,7 @@ export default function RiskPage() {
 
       {/* Exposure */}
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-        <h2 className="text-[13px] font-semibold text-ink mb-3">Exposure</h2>
+        <h2 className="text-[13px] font-semibold text-ink mb-3 flex items-center gap-2">Exposure <HelpLink anchor="reference/policy-controls#exposure_single" label="What are exposure caps?" /></h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-gap text-[12.5px]">
           <div><p className="text-[11px] text-ink-4">Long</p><p className="text-ink font-mono mt-0.5">{pct(r.exposure.long_weight)}</p></div>
           <div><p className="text-[11px] text-ink-4">Short</p><p className="text-ink font-mono mt-0.5">{pct(r.exposure.short_weight)}</p></div>
