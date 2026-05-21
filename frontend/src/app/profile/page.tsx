@@ -278,6 +278,11 @@ export default function ProfilePage() {
           </div>
         ) : null}
 
+        <p style={viewStyles.rerunHint}>
+          Run the wizard again any time to update your knowledge level,
+          financial situation, risk appetite, objectives, or sector
+          preferences. A new revision is saved each time.
+        </p>
         <footer style={viewStyles.footer}>
           <button
             type="button"
@@ -293,6 +298,7 @@ export default function ProfilePage() {
           </button>
           <button
             type="button"
+            data-testid="rerun-wizard"
             onClick={() => {
               setMode("edit");
               setStep(FIRST_QUESTION_STEP);
@@ -301,7 +307,7 @@ export default function ProfilePage() {
             }}
             style={viewStyles.button}
           >
-            Edit profile
+            Re-run the wizard
           </button>
         </footer>
       </main>
@@ -411,11 +417,22 @@ const viewStyles: Record<string, CSSProperties> = {
     fontSize: 13,
     lineHeight: 1.5,
   },
+  rerunHint: {
+    marginTop: 24,
+    padding: "10px 14px",
+    background: "var(--input, #1a1a1f)",
+    border: "1px solid var(--border, #2a2a30)",
+    borderRadius: 8,
+    color: "var(--fg, #e9e9ee)",
+    opacity: 0.85,
+    fontSize: 12.5,
+    lineHeight: 1.5,
+  },
   footer: {
     display: "flex",
     flexWrap: "wrap",
     gap: 12,
-    marginTop: 24,
+    marginTop: 12,
     paddingTop: 16,
     borderTop: "1px solid var(--border, #2a2a30)",
   },
