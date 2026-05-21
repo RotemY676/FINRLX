@@ -7,6 +7,7 @@ from app.models.decision_pipeline import (
 )
 from app.models.engine import EngineDefinition
 from app.models.feature import FeatureDefinition, FeatureSet, FeatureValue
+from app.models.fx import FxRate
 from app.models.ingestion import IngestionManifest, MarketBar, NewsEvent
 from app.models.modeling import (
     MLPromotionReview,
@@ -78,4 +79,5 @@ __all__ = [
     "SavedView",
     "InvestorProfile", "InvestorProfileRevision", "ProfileQuestion",
     "RecommendationTemplate", "TEMPLATE_KEYS",
+    "FxRate",
 ]
