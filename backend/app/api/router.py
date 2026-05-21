@@ -23,6 +23,7 @@ from app.api.v1.paper import router as paper_router
 from app.api.v1.pipeline import router as pipeline_router
 from app.api.v1.policies import router as policies_router
 from app.api.v1.pricechart import router as pricechart_router
+from app.api.v1.profile import router as profile_router
 from app.api.v1.publication import router as publication_router
 from app.api.v1.recommendations import router as recommendations_router
 from app.api.v1.regime import router as regime_router
@@ -60,6 +61,7 @@ api_router.include_router(model_validation_router, tags=["model-validation"])
 api_router.include_router(model_promotion_router, tags=["model-promotion"])
 api_router.include_router(ml_ops_router, tags=["ml-ops"])
 api_router.include_router(policies_router, tags=["policies"])
+api_router.include_router(profile_router, tags=["profile"])
 api_router.include_router(integrations_router, tags=["integrations"])
 api_router.include_router(universe_router, tags=["universes"])
 api_router.include_router(risk_router, tags=["risk"])
