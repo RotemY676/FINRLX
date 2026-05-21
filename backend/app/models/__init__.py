@@ -30,6 +30,10 @@ from app.models.profile import (
     ProfileQuestion,
 )
 from app.models.recommendation import PublicationStatus, Recommendation, RecommendationWeight
+from app.models.recommendation_template import (
+    TEMPLATE_KEYS,
+    RecommendationTemplate,
+)
 from app.models.reference import Asset, Benchmark, Universe, UniverseMembership
 from app.models.research_registry_metadata import ResearchRegistryMetadata
 from app.models.rl import (
@@ -73,4 +77,5 @@ __all__ = [
     "User", "RefreshToken", "EmailAllowlist",
     "SavedView",
     "InvestorProfile", "InvestorProfileRevision", "ProfileQuestion",
+    "RecommendationTemplate", "TEMPLATE_KEYS",
 ]
