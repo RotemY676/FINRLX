@@ -12,7 +12,8 @@
     "test:ci": "vitest run --reporter=verbose",
     "e2e": "playwright test",
     "e2e:ci": "playwright test --reporter=list",
-    "help:shots": "tsx scripts/help-screenshots.ts"
+    "help:shots": "tsx scripts/help-screenshots.ts",
+    "help:audit": "tsx scripts/help-audit.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^8.50.0",

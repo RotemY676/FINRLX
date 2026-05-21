@@ -87,7 +87,7 @@ export function HelpSearch({ index }: { index: HelpSearchEntry[] }) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search the Help center…"
           className="w-full pl-9 pr-3 py-2 rounded-md bg-surface-2 border border-line focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-[14px] text-ink placeholder:text-ink-4"
-          aria-controls={`${listId}-results`}
+          aria-controls={showResults ? `${listId}-results` : undefined}
         />
       </div>
       {showResults && (
