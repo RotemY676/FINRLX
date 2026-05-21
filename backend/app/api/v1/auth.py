@@ -244,3 +244,149 @@ async def logout(
 @router.get("/me", response_model=UserPublic)
 async def me(current_user: User = Depends(get_current_user)) -> UserPublic:
     return _to_user_public(current_user)
+
+
+# ── Sign in with Google ─────────────────────────────────────────────
+
+
+import secrets as _secrets  # noqa: E402
+from urllib.parse import urlencode as _urlencode  # noqa: E402
+
+from fastapi.responses import RedirectResponse  # noqa: E402
+
+from app.services.google_oauth import (  # noqa: E402
+    GoogleOAuthDisabled,
+    GoogleOAuthError,
+    build_authorization_url,
+    exchange_code_for_id_token,
+    verify_id_token,
+)
+
+GOOGLE_STATE_COOKIE = "finrlx_google_state"
+GOOGLE_STATE_COOKIE_MAX_AGE = 600  # 10 minutes
+
+
+@router.get("/google/start")
+async def google_oauth_start() -> RedirectResponse:
+    """Redirect the browser to Google's OAuth consent screen.
+
+    Stores a random ``state`` token in an HttpOnly cookie + embeds the
+    same value in the URL. The callback verifies both match before
+    accepting the response — standard CSRF protection.
+    """
+    try:
+        state = _secrets.token_urlsafe(32)
+        url = build_authorization_url(state)
+    except GoogleOAuthDisabled as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    response = RedirectResponse(url, status_code=status.HTTP_302_FOUND)
+    response.set_cookie(
+        GOOGLE_STATE_COOKIE,
+        state,
+        max_age=GOOGLE_STATE_COOKIE_MAX_AGE,
+        httponly=True,
+        secure=not settings.debug,
+        samesite="lax",
+    )
+    return response
+
+
+@router.get("/google/callback")
+async def google_oauth_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    """Exchange Google's code for our own access token + redirect FE.
+
+    Allowlist enforced same as password signup: a Gmail address not in
+    ``email_allowlist`` cannot proceed.
+    """
+    # 1) Google reported an error before reaching us
+    if error:
+        return _google_callback_failure(f"Google: {error}")
+
+    # 2) Required params present
+    if not code or not state:
+        return _google_callback_failure("missing code or state")
+
+    # 3) State matches the cookie we set in /start
+    cookie_state = request.cookies.get(GOOGLE_STATE_COOKIE)
+    if not cookie_state or cookie_state != state:
+        return _google_callback_failure("state mismatch")
+
+    # 4) Exchange code → id_token, verify the signature + claims
+    try:
+        id_token = await exchange_code_for_id_token(code)
+        claims = verify_id_token(id_token)
+    except GoogleOAuthDisabled as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    except GoogleOAuthError as exc:
+        return _google_callback_failure(f"verification: {exc}")
+
+    email = _normalize_email(claims.email)
+
+    # 5) Same allowlist gate as password signup
+    if not await _is_allowlisted(db, email):
+        return _google_callback_failure(
+            "not_allowlisted: contact the operator to be added"
+        )
+
+    # 6) Find-or-create user. Existing users keep their password (if any);
+    # new users get a random unusable password — Google sign-in is the
+    # only credential they have until they explicitly set one.
+    existing = (
+        await db.execute(select(User).where(User.email == email))
+    ).scalar_one_or_none()
+    if existing is None:
+        user = User(
+            email=email,
+            password_hash=hash_password(_secrets.token_urlsafe(48)),
+            is_active=True,
+            role="user",
+            last_login_at=datetime.now(UTC),
+        )
+        db.add(user)
+        await db.flush()
+    else:
+        if not existing.is_active:
+            return _google_callback_failure("account inactive")
+        user = existing
+        user.last_login_at = datetime.now(UTC)
+
+    tokens, _ = await _issue_token_pair(db, user, request)
+    await db.commit()
+    await db.refresh(user)
+
+    # 7) Redirect to the frontend's "finish" page with our own tokens
+    # in the URL fragment so they don't hit the server log.
+    frag = _urlencode(
+        {
+            "access_token": tokens.access_token,
+            "refresh_token": tokens.refresh_token,
+            "access_token_expires_at": tokens.access_token_expires_at.isoformat(),
+            "user_email": user.email,
+        }
+    )
+    redirect = RedirectResponse(
+        f"{settings.google_oauth_post_login_redirect}#{frag}",
+        status_code=status.HTTP_302_FOUND,
+    )
+    redirect.delete_cookie(GOOGLE_STATE_COOKIE)
+    return redirect
+
+
+def _google_callback_failure(reason: str) -> RedirectResponse:
+    """Bounce to the FE with an ``error=`` query string for display."""
+    frag = _urlencode({"error": reason})
+    return RedirectResponse(
+        f"{settings.google_oauth_post_login_redirect}?{frag}",
+        status_code=status.HTTP_302_FOUND,
+    )

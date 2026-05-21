@@ -59,6 +59,20 @@ class Settings(BaseSettings):
     sentry_environment: str = "development"
     sentry_traces_sample_rate: float = 0.0  # 0 = no perf tracing in MVP
 
+    # Google OAuth (sign-in with Gmail). Empty client_id disables the
+    # /auth/google/* endpoints (they return 503), so the feature stays
+    # invisible to the FE until the operator provisions a Google Cloud
+    # OAuth client. See DOCS/handoff/PHASE_OAUTH_GOOGLE_SETUP.md.
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    # Backend callback URI registered in Google Cloud Console. Defaults to
+    # the local dev port; override via env in production.
+    google_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    # Frontend URL the user is sent back to after a successful exchange.
+    # The backend issues our own tokens and embeds them as URL fragments
+    # so localStorage is the only place that ever sees the access token.
+    google_oauth_post_login_redirect: str = "http://localhost:3000/login/google-finish"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
