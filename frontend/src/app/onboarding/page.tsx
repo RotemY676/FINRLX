@@ -1,159 +1,278 @@
 "use client";
 
+/**
+ * Phase W-3 — 8-step investor-profile wizard.
+ *
+ * Replaces the MVP-4 generic 4-step onboarding with a research-backed
+ * questionnaire that:
+ *   1. Welcome
+ *   2-7. Knowledge / Financial / Risk / Objectives / Universe / Operational
+ *   8. Review + submit
+ *
+ * Questions are loaded from GET /api/v1/profile/questions; the submission
+ * is computed server-side by POST /api/v1/profile.
+ *
+ * If the user already has a profile, we route them straight to /decision.
+ */
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { QuestionField } from "@/features/wizard/QuestionField";
+import { ReviewStep } from "@/features/wizard/ReviewStep";
+import { WizardLayout } from "@/features/wizard/WizardLayout";
+import { fetchMyProfile, fetchProfileQuestions, submitProfile } from "@/features/wizard/api";
+import type { AnswerMap, AnswerValue, ProfileQuestion, ProfileStep } from "@/features/wizard/types";
 
-type Step = 1 | 2 | 3 | 4;
+const TOTAL_STEPS = 8;
+const WELCOME_STEP = 1;
+const REVIEW_STEP = 8;
+
+interface StepDescriptor {
+  step: number;
+  title: string;
+  subtitle: string | null;
+}
+
+const STATIC_STEPS: Record<number, StepDescriptor> = {
+  1: {
+    step: 1,
+    title: "Welcome to FINRLX",
+    subtitle:
+      "FINRLX is a decision-intelligence platform for medium-term investing. The next 3 minutes calibrate every recommendation to you.",
+  },
+  8: {
+    step: 8,
+    title: "Review your profile",
+    subtitle: "We will compute your risk profile and store a versioned snapshot.",
+  },
+};
+
+function isStepComplete(step: ProfileStep | undefined, answers: AnswerMap): boolean {
+  if (!step) return true;
+  for (const q of step.questions) {
+    if (!q.is_required) continue;
+    const v = answers[q.code];
+    if (v === undefined) return false;
+    if (Array.isArray(v) && v.length === 0) return false;
+    if (typeof v === "string" && v.length === 0) return false;
+  }
+  return true;
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [step, setStep] = useState<Step>(1);
 
-  // Redirect to /login if the user lands here without being signed in.
+  const [step, setStep] = useState(WELCOME_STEP);
+  const [steps, setSteps] = useState<ProfileStep[]>([]);
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace("/login");
     }
   }, [isLoading, user, router]);
 
+  // If the user already has a profile, skip onboarding.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) return;
+    fetchMyProfile()
+      .then((me) => {
+        if (cancelled) return;
+        if (me.has_profile) {
+          router.replace("/decision");
+        }
+      })
+      .catch(() => {
+        // Non-fatal: continue showing the wizard. The user can still submit.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, router]);
+
+  // Load the catalog.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) return;
+    setIsLoadingQuestions(true);
+    fetchProfileQuestions()
+      .then((data) => {
+        if (cancelled) return;
+        setSteps(data);
+      })
+      .catch((err: Error) => {
+        if (cancelled) return;
+        setError(`Could not load the wizard questions: ${err.message}`);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingQuestions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const stepIndex = useMemo(
+    () => new Map(steps.map((s) => [s.step, s])),
+    [steps],
+  );
+
+  const currentServerStep = stepIndex.get(step);
+
+  const stepDescriptor: StepDescriptor = useMemo(() => {
+    if (STATIC_STEPS[step]) return STATIC_STEPS[step];
+    if (currentServerStep) {
+      const dimensionLabel: Record<string, string> = {
+        knowledge: "About what you know and have done",
+        financial: "About your financial situation (banded — no exact figures)",
+        risk: "About your appetite for risk",
+        objectives: "About what you want this portfolio to achieve",
+        universe: "About which assets you want to consider",
+        operational: "About how the system should behave",
+      };
+      return {
+        step,
+        title: currentServerStep.label,
+        subtitle: dimensionLabel[currentServerStep.dimension_hint] ?? null,
+      };
+    }
+    return { step, title: `Step ${step}`, subtitle: null };
+  }, [step, currentServerStep]);
+
+  const stepComplete = useMemo(() => {
+    if (step === WELCOME_STEP || step === REVIEW_STEP) return true;
+    return isStepComplete(currentServerStep, answers);
+  }, [step, currentServerStep, answers]);
+
+  const handleAnswer = useCallback((code: string, value: AnswerValue) => {
+    setAnswers((prev) => ({ ...prev, [code]: value }));
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setError(null);
+    setStep((s) => Math.max(WELCOME_STEP, s - 1));
+  }, []);
+
+  const handleNext = useCallback(async () => {
+    setError(null);
+    if (step < REVIEW_STEP) {
+      setStep((s) => Math.min(REVIEW_STEP, s + 1));
+      return;
+    }
+    // Final submit
+    setIsSubmitting(true);
+    try {
+      await submitProfile(answers, "wizard initial submit");
+      router.replace("/decision");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setIsSubmitting(false);
+    }
+  }, [step, answers, router]);
+
   if (isLoading || !user) return null;
 
   return (
-    <div style={styles.wrap}>
-      <ProgressBar step={step} />
-      {step === 1 && <Welcome name={user.email} onNext={() => setStep(2)} />}
-      {step === 2 && <Disclaimer onAccept={() => setStep(3)} onDecline={() => router.push("/")} />}
-      {step === 3 && <Universe onNext={() => setStep(4)} />}
-      {step === 4 && <FirstRecommendation onDone={() => router.push("/")} />}
-    </div>
-  );
-}
-
-function ProgressBar({ step }: { step: Step }) {
-  const pct = (step / 4) * 100;
-  return (
-    <div style={styles.progressWrap}>
-      <div style={{ ...styles.progressBar, width: `${pct}%` }} />
-      <div style={styles.progressLabel}>Step {step} of 4</div>
-    </div>
-  );
-}
-
-function Welcome({ name, onNext }: { name: string; onNext: () => void }) {
-  return (
-    <div style={styles.card}>
-      <h1 style={styles.h1}>Welcome, {name.split("@")[0]}.</h1>
-      <p style={styles.p}>
-        FINRLX is a decision-intelligence platform for medium-term equity investing.
-        Its output is a single recommendation object: a portfolio of weights, with
-        confidence, rationale, and full replayability.
-      </p>
-      <p style={styles.p}>
-        In the next three minutes we&apos;ll cover the legal disclaimer, the
-        investable universe, and produce your first recommendation.
-      </p>
-      <button onClick={onNext} style={styles.button}>Begin</button>
-    </div>
-  );
-}
-
-function Disclaimer({ onAccept, onDecline }: { onAccept: () => void; onDecline: () => void }) {
-  const [agreed, setAgreed] = useState(false);
-  return (
-    <div style={styles.card}>
-      <h1 style={styles.h1}>Important: this is not investment advice</h1>
-      <div style={styles.disclaimer}>
-        <p>
-          FINRLX is an educational and research tool. The recommendations it
-          generates are <strong>not</strong> personal investment advice, are not
-          tailored to your financial situation, and must not be the sole basis
-          for any trading decision.
-        </p>
-        <p>
-          During the closed beta, the platform shows <strong>paper trading
-          only</strong>. No real orders are placed and no real money is at risk.
-        </p>
-        <p>
-          Past performance, including any backtest result, is not predictive of
-          future returns. Models can be wrong. Data can be stale. Verify before
-          acting.
-        </p>
-      </div>
-      <label style={styles.checkLabel}>
-        <input
-          type="checkbox"
-          checked={agreed}
-          onChange={(e) => setAgreed(e.target.checked)}
-          style={styles.checkInput}
+    <WizardLayout
+      step={step}
+      title={stepDescriptor.title}
+      subtitle={stepDescriptor.subtitle}
+      error={error}
+      isSubmitting={isSubmitting}
+      canGoBack={step > WELCOME_STEP}
+      canGoNext={stepComplete && !isLoadingQuestions}
+      nextLabel={step === REVIEW_STEP ? "Submit profile" : "Continue"}
+      onBack={handleBack}
+      onNext={handleNext}
+    >
+      {step === WELCOME_STEP ? (
+        <WelcomeContent />
+      ) : step === REVIEW_STEP ? (
+        <ReviewStep answers={answers} steps={steps} />
+      ) : isLoadingQuestions ? (
+        <p style={loadingStyle}>Loading…</p>
+      ) : currentServerStep ? (
+        <QuestionGroup
+          step={currentServerStep}
+          answers={answers}
+          onAnswer={handleAnswer}
         />
-        I understand FINRLX provides educational research, not investment advice.
-      </label>
-      <div style={styles.row}>
-        <button onClick={onDecline} style={styles.buttonGhost}>Exit</button>
-        <button onClick={onAccept} disabled={!agreed} style={styles.button}>
-          I agree
-        </button>
-      </div>
-    </div>
+      ) : (
+        <p style={loadingStyle}>This step has no questions yet.</p>
+      )}
+    </WizardLayout>
   );
 }
 
-const SEED_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "JPM", "JNJ", "XOM", "PG", "NVDA", "V"];
-
-function Universe({ onNext }: { onNext: () => void }) {
+function WelcomeContent() {
   return (
-    <div style={styles.card}>
-      <h1 style={styles.h1}>Your investable universe</h1>
-      <p style={styles.p}>
-        The beta universe is fixed to 10 large-cap US equities. You can request
-        additions after the beta. Your first recommendation is constructed from
-        these tickers using real market data (yfinance).
+    <div>
+      <p style={welcomeStyles.intro}>
+        FINRLX is <strong>research, not investment advice</strong>. The wizard
+        below captures the same suitability dimensions a regulated advisor
+        would assess (knowledge, financial situation, objectives, risk
+        appetite, sector preferences), so every recommendation can be
+        traced back to a saved profile.
       </p>
-      <div style={styles.universeGrid}>
-        {SEED_TICKERS.map((t) => (
-          <span key={t} style={styles.ticker}>{t}</span>
-        ))}
-      </div>
-      <button onClick={onNext} style={styles.button}>Looks good</button>
+      <ul style={welcomeStyles.list}>
+        <li>Takes about 3 minutes.</li>
+        <li>No precise income or net-worth figures — only bands.</li>
+        <li>You can revise your profile at any time.</li>
+      </ul>
     </div>
   );
 }
 
-function FirstRecommendation({ onDone }: { onDone: () => void }) {
+function QuestionGroup({
+  step,
+  answers,
+  onAnswer,
+}: {
+  step: ProfileStep;
+  answers: AnswerMap;
+  onAnswer: (code: string, value: AnswerValue) => void;
+}) {
   return (
-    <div style={styles.card}>
-      <h1 style={styles.h1}>You&apos;re all set</h1>
-      <p style={styles.p}>
-        Your first recommendation will be generated on the next operator pipeline
-        run. The Overview screen will populate as soon as it&apos;s ready.
-      </p>
-      <p style={styles.p}>
-        Every recommendation comes with: a confidence triplet (model · data · ops),
-        a per-asset rationale, and a tamper-evident replay hash so you can
-        reproduce the exact result deterministically.
-      </p>
-      <button onClick={onDone} style={styles.button}>Go to overview</button>
+    <div>
+      {step.questions.map((q: ProfileQuestion) => (
+        <QuestionField
+          key={q.code}
+          question={q}
+          value={answers[q.code]}
+          onChange={(v) => onAnswer(q.code, v)}
+        />
+      ))}
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  wrap: { minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "var(--bg, #0a0a0a)" },
-  progressWrap: { position: "fixed", top: 0, left: 0, right: 0, height: 4, background: "var(--border, #2a2a30)" },
-  progressBar: { height: "100%", background: "var(--accent, #4f9fff)", transition: "width 240ms ease-out" },
-  progressLabel: { position: "absolute", top: 12, right: 16, fontSize: 12, color: "var(--fg, #e9e9ee)", opacity: 0.6 },
-  card: { width: "100%", maxWidth: 580, padding: 36, background: "var(--card, #131316)", border: "1px solid var(--border, #2a2a30)", borderRadius: 14, color: "var(--fg, #e9e9ee)" },
-  h1: { margin: 0, fontSize: 26, fontWeight: 600, marginBottom: 16 },
-  p: { margin: "12px 0", lineHeight: 1.6, fontSize: 14, opacity: 0.85 },
-  button: { marginTop: 20, padding: "12px 20px", background: "var(--accent, #4f9fff)", color: "#fff", border: 0, borderRadius: 8, fontWeight: 600, cursor: "pointer", minHeight: 44, fontSize: 14 },
-  buttonGhost: { marginTop: 20, padding: "12px 20px", background: "transparent", color: "inherit", border: "1px solid var(--border, #2a2a30)", borderRadius: 8, fontWeight: 500, cursor: "pointer", minHeight: 44, fontSize: 14 },
-  disclaimer: { background: "var(--input, #1a1a1f)", border: "1px solid var(--border, #2a2a30)", borderRadius: 8, padding: 16, marginTop: 16, fontSize: 13, lineHeight: 1.6 },
-  checkLabel: { display: "flex", alignItems: "flex-start", gap: 8, marginTop: 16, fontSize: 13, lineHeight: 1.5, cursor: "pointer" },
-  checkInput: { marginTop: 3, width: 18, height: 18, flexShrink: 0 },
-  row: { display: "flex", gap: 12, justifyContent: "flex-end" },
-  universeGrid: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 },
-  ticker: { padding: "8px 14px", background: "var(--input, #1a1a1f)", border: "1px solid var(--border, #2a2a30)", borderRadius: 999, fontSize: 13, fontFamily: "ui-monospace, monospace", letterSpacing: 0.5 },
+const loadingStyle: CSSProperties = {
+  textAlign: "center",
+  fontSize: 14,
+  opacity: 0.6,
+  padding: 32,
+};
+
+const welcomeStyles: Record<string, CSSProperties> = {
+  intro: {
+    margin: 0,
+    fontSize: 15,
+    lineHeight: 1.65,
+    color: "var(--fg, #e9e9ee)",
+  },
+  list: {
+    marginTop: 18,
+    paddingLeft: 22,
+    fontSize: 14,
+    lineHeight: 1.7,
+    opacity: 0.85,
+  },
 };
