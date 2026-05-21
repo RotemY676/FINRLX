@@ -106,3 +106,16 @@ A single source of truth for FINRLX, organized using the Diátaxis framework (ev
 ## Next step
 
 Commit the audit script + the a11y fix, push, run the audit once more after deploy to confirm zero critical violations. **The Help center is now feature-complete and ready for production use.**
+
+---
+
+## Final re-audit (2026-05-22, post-deploy of the aria-controls fix)
+
+Ran `npm run help:audit` against the live Railway deploy after the H-7 commit landed.
+
+| Page | Critical | Serious | Moderate |
+|---|---|---|---|
+| `/help` | **0** | 0 | 0 |
+| `/help/concepts/weight-centric-pipeline` | **0** | 0 | 0 |
+
+Route reachability and HelpLink counts unchanged from the previous run (48/48 routes 200, 21 in-page anchors across 8 app pages). The `aria-controls` conditional fix landed cleanly — the Help center is now at **zero critical / serious / moderate a11y violations** on both audited pages.
