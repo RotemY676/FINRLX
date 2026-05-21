@@ -20,6 +20,9 @@ const WORKSPACES: ReadonlyArray<{
 }> = [
   { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" },
   { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" },
+  // Phase W-7 + TPL-3: personal investor profile + pre-made templates.
+  { key: "profile", href: "/profile", label: "My profile", icon: "user" },
+  { key: "templates", href: "/templates", label: "Templates", icon: "layers" },
   { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
   { key: "risk", href: "/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
   { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
@@ -46,6 +49,8 @@ const OPS: ReadonlyArray<{
   // Research lab (desktop-only per UX-2.6) stays accessible from the nav for
   // operators who want the wizard / kanban / pipeline canvas.
   { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
+  // Phase BETA-2: in-app feedback for closed-beta testers.
+  { key: "feedback", href: "/feedback", label: "Send feedback", icon: "message" },
 ];
 
 // Saved views are now DB-backed per user (Phase B3). Sidebar fetches the

@@ -56,6 +56,10 @@ export function Icon({ name, size = 16, className = "", strokeWidth = 1.6, style
     case "database": return (<svg {...p}><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>);
     case "sun": return (<svg {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>);
     case "moon": return (<svg {...p}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>);
+    // Phase BETA-3 follow-up — sidebar entries for /profile, /templates, /feedback.
+    case "user": return (<svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>);
+    case "layers": return (<svg {...p}><path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>);
+    case "message": return (<svg {...p}><path d="M21 12a8 8 0 0 1-12 7l-5 2 1.6-4.8A8 8 0 1 1 21 12Z"/></svg>);
     default: return null;
   }
 }
