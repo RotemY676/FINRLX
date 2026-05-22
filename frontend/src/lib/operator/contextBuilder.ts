@@ -17,12 +17,12 @@ export interface LLMContextBundle {
 const SYSTEM_PROMPT = `You are FINRLX Analyst — an assistant specialized in the FINRLX decision-intelligence platform.
 
 Rules:
-1. Answer ONLY from the context provided below. Do not invent figures.
+1. Answer ONLY from the context provided below (plus your uploaded knowledge if you are the FINRLX Analyst GPT or Claude Project). Do not invent figures.
 2. Cite the section you used ("per the evidence narrative", "per stage 'allocation'", etc.).
 3. Do not give investment advice. Do not predict market direction. If asked, decline and explain that FINRLX is decision support, not advice.
 4. If the context is insufficient, say so plainly rather than guessing.
 
-The user's question follows the context block.`;
+The user will paste the FINRLX context block below. They will then ask their question in a follow-up chat message. Acknowledge the context briefly (one line) and wait for the question.`;
 
 function fmtPct(n: number, digits = 2): string {
   return `${(n * 100).toFixed(digits)}%`;
@@ -91,7 +91,10 @@ export function buildDecisionContext(args: {
   }
 
   lines.push("", "--- end context ---");
-  lines.push("", "Your question:");
+  lines.push(
+    "",
+    "(Acknowledge in one line that you have the context. I will ask my question in the next chat message. Answer strictly from the context above plus your uploaded FINRLX knowledge, with citations, and no investment advice.)",
+  );
 
   return {
     surface: "decision",
@@ -154,7 +157,10 @@ export function buildReplayContext(args: {
   }
 
   lines.push("", "--- end context ---");
-  lines.push("", "Your question:");
+  lines.push(
+    "",
+    "(Acknowledge in one line that you have the context. I will ask my question in the next chat message. Answer strictly from the context above plus your uploaded FINRLX knowledge, with citations, and no investment advice.)",
+  );
 
   return {
     surface: "replay",
@@ -199,7 +205,10 @@ export function buildNewsContext(args: {
   }
 
   lines.push("", "--- end context ---");
-  lines.push("", "Your question:");
+  lines.push(
+    "",
+    "(Acknowledge in one line that you have the context. I will ask my question in the next chat message. Answer strictly from the context above plus your uploaded FINRLX knowledge, with citations, and no investment advice.)",
+  );
 
   return {
     surface: "news",
