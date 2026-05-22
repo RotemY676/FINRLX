@@ -15,6 +15,7 @@ import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { HelpLink } from "@/components/help/HelpLink";
 import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
+import { AnalystNotesPanel } from "@/components/operator/AnalystNotesPanel";
 import { buildReplayContext } from "@/lib/operator/contextBuilder";
 import { track } from "@/lib/analytics";
 
@@ -193,6 +194,11 @@ export default function ReplayPage() {
               ))}
             </div>
           </div>
+
+          {/* Phase O-4 — archived LLM analyses linked to this recommendation.
+              Renders nothing when the operator_console flag is off or when
+              no notes have been pasted back yet. */}
+          <AnalystNotesPanel recommendationId={detail.recommendation_id} />
         </>
       )}
     </div>
