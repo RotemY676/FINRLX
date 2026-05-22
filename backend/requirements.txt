@@ -53,3 +53,9 @@ vaderSentiment==3.3.2
 # multipart/form-data POST bodies.
 pypdf==5.1.0
 python-multipart==0.0.20
+
+# Phase 17.2 — Anthropic SDK for document-analysis LLM calls.
+# Provider activates only when LLM_PROVIDER=anthropic AND
+# LLM_ANTHROPIC_API_KEY are both set; otherwise the surface stays
+# behind the stub (503).
+anthropic==0.42.0
