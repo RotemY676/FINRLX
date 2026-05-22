@@ -42,6 +42,16 @@ class Settings(BaseSettings):
     feature_news_ui: bool = True          # News intelligence surface (Phase B2)
     feature_operator_console: bool = False  # Phase O-0: single-operator LLM workbench. OFF by default; opt-in per env.
 
+    # LLM provider abstraction (Phase O-5). All providers ship as STUBS today.
+    # Set llm_provider + the matching key to enable in-app assistant features.
+    # Empty llm_provider keeps every /api/v1/assistant/* endpoint at 503,
+    # which is the intended state for the zero-token operator-console phase.
+    llm_provider: str = ""  # "" | "anthropic" | "openai" | "local"
+    llm_model: str = ""     # provider picks a sensible default when empty
+    llm_anthropic_api_key: str = ""
+    llm_openai_api_key: str = ""
+    llm_local_base_url: str = "http://localhost:11434"
+
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific
     # decorators tighten the cost on auth + write-heavy paths. Tests disable

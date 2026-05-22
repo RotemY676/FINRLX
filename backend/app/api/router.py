@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.actions import router as actions_router
+from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.backtests import router as backtests_router
 from app.api.v1.comparison import router as comparison_router
@@ -75,6 +76,7 @@ api_router.include_router(universe_router, tags=["universes"])
 api_router.include_router(risk_router, tags=["risk"])
 api_router.include_router(news_router, tags=["news"])
 api_router.include_router(operator_router, tags=["operator"])
+api_router.include_router(assistant_router, tags=["assistant"])
 api_router.include_router(saved_views_router, tags=["saved-views"])
 api_router.include_router(templates_router, tags=["templates"])
 api_router.include_router(rl_router, tags=["rl"])
