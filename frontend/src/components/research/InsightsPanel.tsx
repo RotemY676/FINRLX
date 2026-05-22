@@ -1,0 +1,401 @@
+"use client";
+
+/**
+ * Phase 18.7 — Cross-quarter SEC insights panel for /research/[ticker].
+ *
+ * Auto-flow on mount (the experience the user asked for):
+ *   1. GET /research/{ticker}/insights — show cached if present + fresh (<7d).
+ *   2. If null OR stale, chain:
+ *        POST /research/{ticker}/auto-ingest (fetches 6 filings from SEC)
+ *        → POST /research/{ticker}/insights (LLM synthesizes trajectory)
+ *        → GET /research/{ticker}/insights (show result)
+ *   3. Every step has its own progress copy ("Fetching from SEC...",
+ *      "Analyzing with Gemini..."), so the user knows what's happening
+ *      even when the round-trip is slow.
+ *
+ * Honest empty/error states:
+ *   - Unknown ticker (non-US listing) → 404 from auto-ingest → render
+ *     "This ticker is not in SEC's database" without inventing data.
+ *   - SEC unreachable → 503 → render the actual reason from the API.
+ *   - LLM chain exhausted → 503 → render the failure verbatim.
+ *
+ * Owned by skills:
+ *   - finrlx-ai-ux-governance: LLM output is grounded in citable
+ *     filings; provider + model + accessions shown alongside the prose.
+ *   - finrlx-fintech-dashboard-patterns: provenance footer on every
+ *     insight (provider, model, "generated 2h ago", quarters covered).
+ *   - fintech-disclaimer-and-marketing-guard: 18.8 will add the
+ *     decision-support disclaimer card-footer.
+ */
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  fetchInsights,
+  generateInsights,
+  triggerAutoIngest,
+  type AutoIngestData,
+  type TickerInsightsData,
+} from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { Icon } from "@/components/icons/Icon";
+
+
+interface Props {
+  ticker: string;
+}
+
+// "Stale" threshold: how old insights must be before we suggest a refresh.
+// 7 days matches the Phase 18 storage decision (insights re-run weekly).
+const STALE_AFTER_DAYS = 7;
+
+type PhaseState =
+  | "idle"                       // before mount completes
+  | "loading_cached"             // GET /insights in flight
+  | "ingesting_filings"          // POST /auto-ingest in flight
+  | "analyzing"                  // POST /insights in flight
+  | "ready"                      // showing cached or freshly-generated insights
+  | "no_coverage"                // 404 from auto-ingest (non-US ticker)
+  | "error";                     // any other failure path
+
+
+function daysSince(iso: string): number {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  return Math.floor((now - then) / (1000 * 60 * 60 * 24));
+}
+
+
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+
+/**
+ * Minimal markdown renderer for the LLM's structured output. The
+ * prompt constrains the model to ## headers + bullets + paragraphs +
+ * bold. We render those; everything else passes through as text.
+ *
+ * Deliberately tiny — no dep on react-markdown — because the input
+ * shape is bounded by our prompt. If a future phase widens what the
+ * LLM is allowed to emit, swap this for a real markdown library.
+ */
+function renderMarkdown(text: string): React.ReactNode {
+  const lines = text.split("\n");
+  const out: React.ReactNode[] = [];
+  let bulletGroup: string[] = [];
+
+  const flushBullets = () => {
+    if (bulletGroup.length === 0) return;
+    out.push(
+      <ul key={`ul-${out.length}`} className="list-disc list-outside pl-5 space-y-1 my-2 text-body-sm text-ink-2">
+        {bulletGroup.map((b, i) => (
+          <li key={i}>{renderInline(b)}</li>
+        ))}
+      </ul>
+    );
+    bulletGroup = [];
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      flushBullets();
+      continue;
+    }
+    if (line.startsWith("### ")) {
+      flushBullets();
+      out.push(
+        <h4 key={out.length} className="text-body-sm font-semibold text-ink mt-3 mb-1">
+          {line.slice(4)}
+        </h4>
+      );
+    } else if (line.startsWith("## ")) {
+      flushBullets();
+      out.push(
+        <h3 key={out.length} className="text-card-title text-ink mt-4 mb-1">
+          {line.slice(3)}
+        </h3>
+      );
+    } else if (line.startsWith("# ")) {
+      flushBullets();
+      out.push(
+        <h2 key={out.length} className="text-card-title text-ink mt-4 mb-1">
+          {line.slice(2)}
+        </h2>
+      );
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      bulletGroup.push(line.slice(2));
+    } else {
+      flushBullets();
+      out.push(
+        <p key={out.length} className="text-body-sm text-ink-2 leading-relaxed my-2">
+          {renderInline(line)}
+        </p>
+      );
+    }
+  }
+  flushBullets();
+  return out;
+}
+
+
+/** Inline replacements: **bold**. Keep simple. */
+function renderInline(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const re = /\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(<strong key={parts.length} className="text-ink font-semibold">{match[1]}</strong>);
+    lastIndex = re.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts.length > 0 ? parts : text;
+}
+
+
+export function InsightsPanel({ ticker }: Props) {
+  const { user } = useAuth();
+  const [phase, setPhase] = useState<PhaseState>("idle");
+  const [insights, setInsights] = useState<TickerInsightsData | null>(null);
+  const [ingestResult, setIngestResult] = useState<AutoIngestData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // ── The auto-flow ──────────────────────────────────────────────
+
+  const runFullFlow = useCallback(
+    async (forceRefresh: boolean = false) => {
+      setError(null);
+      setIngestResult(null);
+
+      // Step 1: see if we have cached insights worth showing.
+      if (!forceRefresh) {
+        setPhase("loading_cached");
+        try {
+          const cached = await fetchInsights(ticker);
+          if (cached.data && daysSince(cached.data.generated_at) < STALE_AFTER_DAYS) {
+            setInsights(cached.data);
+            setPhase("ready");
+            return;
+          }
+          // We have a stale row OR no row; either way we generate fresh.
+          if (cached.data) {
+            setInsights(cached.data); // show stale while we regenerate
+          }
+        } catch (e) {
+          // GET shouldn't fail for known reasons — log and proceed to
+          // ingest. The next call's error message will surface what's wrong.
+          console.warn("fetchInsights failed:", e);
+        }
+      }
+
+      // Step 2: ensure filings are ingested.
+      setPhase("ingesting_filings");
+      try {
+        const ingest = await triggerAutoIngest(ticker, 6);
+        setIngestResult(ingest.data);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // 404 → non-US ticker. Render the dedicated "no coverage" state.
+        if (msg.includes("404") || msg.toLowerCase().includes("not present in sec")) {
+          setPhase("no_coverage");
+          return;
+        }
+        setError(msg);
+        setPhase("error");
+        return;
+      }
+
+      // Step 3: synthesize insights.
+      setPhase("analyzing");
+      try {
+        const result = await generateInsights(ticker);
+        setInsights(result.data);
+        setPhase("ready");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(msg);
+        setPhase("error");
+      }
+    },
+    [ticker],
+  );
+
+  useEffect(() => {
+    if (!user) return; // panel is auth-gated; AuthContext gates earlier in the UI
+    runFullFlow(false);
+  }, [user, runFullFlow]);
+
+  // ── Render helpers ─────────────────────────────────────────────
+
+  if (!user) {
+    return (
+      <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+        <h2 className="text-card-title text-ink mb-2">SEC quarterly insights</h2>
+        <p className="text-body-sm text-ink-3">
+          Sign in to see auto-generated trajectory insights from this
+          ticker&rsquo;s last 6 quarterly filings.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="insights-heading"
+      className="rounded-lg border border-line bg-surface p-pad shadow-sm"
+    >
+      <header className="flex items-start gap-2 mb-3 flex-wrap">
+        <Icon name="sparkle" size={14} className="text-ink-3 mt-0.5" />
+        <h2 id="insights-heading" className="text-card-title text-ink">
+          SEC quarterly insights
+        </h2>
+        {phase === "ready" && insights && (
+          <div className="ml-auto flex items-center gap-3 text-meta text-ink-4">
+            <span className="font-mono">
+              {daysSince(insights.generated_at) >= STALE_AFTER_DAYS ? "Stale · " : ""}
+              {timeAgo(insights.generated_at)}
+            </span>
+            <button
+              type="button"
+              onClick={() => runFullFlow(true)}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+              aria-label="Regenerate insights"
+            >
+              <Icon name="replay" size={12} />
+              Refresh
+            </button>
+          </div>
+        )}
+      </header>
+
+      {/* Phase indicators */}
+      {phase === "loading_cached" && (
+        <p className="text-body-sm text-ink-3">Loading cached insights…</p>
+      )}
+      {phase === "ingesting_filings" && (
+        <ProgressLine
+          icon="database"
+          label="Fetching last 6 quarterly filings from SEC EDGAR…"
+          sublabel="Typically 10–30 seconds for fresh ingest."
+        />
+      )}
+      {phase === "analyzing" && (
+        <>
+          {ingestResult && (
+            <p className="text-meta text-ink-4 mb-2 font-mono">
+              Ingested {ingestResult.ingested} · Skipped {ingestResult.skipped_existing}
+              {ingestResult.failed > 0 && ` · Failed ${ingestResult.failed}`}
+            </p>
+          )}
+          <ProgressLine
+            icon="sparkles"
+            label="Synthesizing trajectory across quarters…"
+            sublabel="Reading ~100K tokens of filing text; takes 10–30 seconds."
+          />
+        </>
+      )}
+
+      {/* No-coverage path (non-US ticker) */}
+      {phase === "no_coverage" && (
+        <div className="text-body-sm text-ink-3">
+          <p className="mb-2">
+            <strong className="text-ink">{ticker.toUpperCase()}</strong> is not in SEC&rsquo;s
+            EDGAR database. SEC coverage is limited to US-registered issuers; foreign
+            listings (LSE, TASE, etc.) won&rsquo;t appear here.
+          </p>
+          <p className="text-ink-4">
+            You can still upload quarterly reports manually via the Research documents
+            panel below.
+          </p>
+        </div>
+      )}
+
+      {/* Error path — surface the raw error so the operator knows what went wrong */}
+      {phase === "error" && (
+        <div className="text-body-sm text-breach-soft-ink bg-breach-soft p-3 rounded-md">
+          <p className="font-medium">Could not generate insights.</p>
+          <p className="text-ink-3 mt-1 font-mono text-meta break-all">{error}</p>
+          <button
+            type="button"
+            onClick={() => runFullFlow(true)}
+            className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            <Icon name="replay" size={12} />
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Ready state — render the insights markdown + provenance footer */}
+      {phase === "ready" && insights && (
+        <div>
+          <div className="prose-finrlx">{renderMarkdown(insights.summary_text)}</div>
+
+          <footer className="mt-4 pt-3 border-t border-line">
+            <p className="text-meta text-ink-4 font-mono">
+              {insights.quarters_covered.length} quarters analyzed:{" "}
+              {insights.quarters_covered.map((acc, i) => (
+                <span key={acc}>
+                  {i > 0 ? ", " : ""}
+                  {acc}
+                </span>
+              ))}
+            </p>
+            <p className="text-meta text-ink-4 font-mono mt-1">
+              Generated by {insights.provider} ({insights.model}) ·{" "}
+              {insights.input_tokens !== null && insights.output_tokens !== null
+                ? `${insights.input_tokens.toLocaleString()} in / ${insights.output_tokens.toLocaleString()} out tokens`
+                : "tokens not reported"}
+            </p>
+          </footer>
+        </div>
+      )}
+
+      {/* Stale-but-rendered fallback: cached + currently refreshing */}
+      {(phase === "ingesting_filings" || phase === "analyzing") && insights && (
+        <div className="mt-4 pt-3 border-t border-line opacity-60">
+          <p className="text-meta text-ink-4 mb-2">
+            Showing previous insights ({timeAgo(insights.generated_at)}) while we refresh:
+          </p>
+          <div className="prose-finrlx">{renderMarkdown(insights.summary_text)}</div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+
+function ProgressLine({
+  icon,
+  label,
+  sublabel,
+}: {
+  icon: string;
+  label: string;
+  sublabel?: string;
+}) {
+  return (
+    <div className="flex items-start gap-2 text-body-sm text-ink-2 py-2">
+      <Icon name={icon} size={14} className="text-primary animate-pulse mt-0.5" />
+      <div>
+        <p>{label}</p>
+        {sublabel && <p className="text-meta text-ink-4 mt-0.5">{sublabel}</p>}
+      </div>
+    </div>
+  );
+}

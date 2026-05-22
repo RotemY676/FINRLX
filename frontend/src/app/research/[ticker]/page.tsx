@@ -27,6 +27,7 @@ import { Icon } from "@/components/icons/Icon";
 import { FundamentalsPanel } from "@/components/research/FundamentalsPanel";
 import { PeersPanel } from "@/components/research/PeersPanel";
 import { DocumentsPanel } from "@/components/research/DocumentsPanel";
+import { InsightsPanel } from "@/components/research/InsightsPanel";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 
 interface PageProps {
@@ -169,6 +170,12 @@ export default function ResearchTickerPage({ params }: PageProps) {
         {flags.research_fundamentals_ui && <FundamentalsPanel ticker={ticker} />}
         {flags.research_peers_ui && <PeersPanel ticker={ticker} />}
       </div>
+
+      {/* Phase 18.7 — Cross-quarter SEC insights. On mount, auto-fetches
+          the last 6 quarterly filings from SEC EDGAR, runs the LLM
+          synthesis, and renders the trajectory + latest-quarter delta.
+          Caches for 7 days; falls back gracefully for non-US tickers. */}
+      <InsightsPanel ticker={ticker} />
 
       {/* Phase 17.3 — Document upload + LLM analysis. The panel handles
           its own auth gating (sign-in prompt when no user) and surfaces

@@ -2314,3 +2314,76 @@ export async function fetchBudgetUsage(): Promise<ApiResponse<BudgetUsageData>> 
     headers: _docsAuthHeaders(),
   });
 }
+
+// ── Phase 18 — SEC EDGAR auto-ingest + cross-quarter insights ──────
+
+export interface TickerInsightsData {
+  id: string;
+  ticker: string;
+  summary_text: string;
+  quarters_covered: string[];
+  provider: string;
+  model: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_estimate_usd: number | null;
+  generated_at: string;
+  generated_by_email: string;
+}
+
+export interface AutoIngestFailureData {
+  accession_no: string;
+  form: string;
+  reason: string;
+}
+
+export interface AutoIngestData {
+  ticker: string;
+  cik: string;
+  ingested: number;
+  skipped_existing: number;
+  failed: number;
+  failures: AutoIngestFailureData[];
+  document_ids: string[];
+}
+
+// GET — returns null in `data` when no insights have been generated yet.
+export async function fetchInsights(
+  ticker: string,
+): Promise<ApiResponse<TickerInsightsData | null>> {
+  return apiFetch<TickerInsightsData | null>(
+    `/api/v1/research/${encodeURIComponent(ticker)}/insights`,
+    { headers: _docsAuthHeaders() },
+  );
+}
+
+// POST — generates a NEW TickerInsights row from current sec_auto documents.
+// Returns 409 if there are no documents ready; the FE should chain
+// triggerAutoIngest() first.
+export async function generateInsights(
+  ticker: string,
+): Promise<ApiResponse<TickerInsightsData>> {
+  return apiFetch<TickerInsightsData>(
+    `/api/v1/research/${encodeURIComponent(ticker)}/insights`,
+    {
+      method: "POST",
+      headers: _docsAuthHeaders(),
+    },
+  );
+}
+
+// POST — fetches the last `limit` quarterly filings from SEC EDGAR,
+// downloads + extracts, persists as research_documents rows. Idempotent
+// (dedups via (ticker, sec_accession_no) unique index).
+export async function triggerAutoIngest(
+  ticker: string,
+  limit: number = 6,
+): Promise<ApiResponse<AutoIngestData>> {
+  return apiFetch<AutoIngestData>(
+    `/api/v1/research/${encodeURIComponent(ticker)}/auto-ingest?limit=${limit}`,
+    {
+      method: "POST",
+      headers: _docsAuthHeaders(),
+    },
+  );
+}
