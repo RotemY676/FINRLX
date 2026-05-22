@@ -10,47 +10,97 @@ import { useFeatureFlags, FeatureFlags } from "@/contexts/FeatureFlagsContext";
 
 type FlagKey = keyof FeatureFlags;
 
-const WORKSPACES: ReadonlyArray<{
+interface NavEntry {
   key: string;
   href: string;
   label: string;
   icon: string;
   countKey?: "overview" | "decisions" | "risk" | "ops";
   flagKey?: FlagKey;
-}> = [
-  { key: "overview", href: "/", label: "Overview", icon: "overview", countKey: "overview" },
-  { key: "decision", href: "/decision", label: "Decisions", icon: "decision", countKey: "decisions" },
-  // Phase W-7 + TPL-3: personal investor profile + pre-made templates.
-  { key: "profile", href: "/profile", label: "My profile", icon: "user" },
-  { key: "templates", href: "/templates", label: "Templates", icon: "layers" },
-  { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
-  { key: "risk", href: "/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
-  { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
-  { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
-  { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
-  { key: "universe", href: "/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
-  { key: "news", href: "/news", label: "News intelligence", icon: "news", flagKey: "news_ui" },
-];
+}
 
-const OPS: ReadonlyArray<{
+interface NavArea {
+  /** Stable area key — also used as the `aria-labelledby` anchor and for active-state matching. */
   key: string;
-  href: string;
+  /** Section heading shown above the entries (hidden when sidebar is collapsed on desktop). */
   label: string;
-  icon: string;
-  countKey?: "overview" | "decisions" | "risk" | "ops";
-  flagKey?: FlagKey;
-}> = [
-  // Ops command (Phase A2) — daily-driver dashboard, mobile + desktop.
-  { key: "ops", href: "/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
-  // Policy Editor (Phase A3) — guardrail rules + history + active breaches.
-  { key: "policies", href: "/policies", label: "Policies", icon: "check", flagKey: "policy_ui" },
-  // Integrations (Phase A4) — data source health + coverage + warnings.
-  { key: "integrations", href: "/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
-  // Research lab (desktop-only per UX-2.6) stays accessible from the nav for
-  // operators who want the wizard / kanban / pipeline canvas.
-  { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
-  // Phase BETA-2: in-app feedback for closed-beta testers.
-  { key: "feedback", href: "/feedback", label: "Send feedback", icon: "message" },
+  /** Routes whose presence should light up this area's section in the active state. */
+  paths: ReadonlyArray<string>;
+  entries: ReadonlyArray<NavEntry>;
+}
+
+// Phase 4 information architecture: the seven product areas from
+// DOCS/handoff/FINRLX_UX_PHASE_2_INFORMATION_ARCHITECTURE.md. Existing
+// routes still live under their current paths — they migrate into proper
+// sub-routes when their owning phase opens (Phases 6 / 8 / 10).
+const AREAS: ReadonlyArray<NavArea> = [
+  {
+    key: "home",
+    label: "Home",
+    paths: ["/"],
+    entries: [
+      { key: "home", href: "/", label: "Command center", icon: "overview", countKey: "overview" },
+    ],
+  },
+  {
+    key: "research",
+    label: "Research",
+    paths: ["/universe", "/backtests"],
+    entries: [
+      { key: "universe", href: "/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
+      { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
+    ],
+  },
+  {
+    key: "decisions",
+    label: "Decisions",
+    paths: ["/decision", "/comparison", "/replay", "/templates"],
+    entries: [
+      { key: "decision", href: "/decision", label: "Current recommendation", icon: "decision", countKey: "decisions" },
+      { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
+      { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
+      { key: "templates", href: "/templates", label: "Templates", icon: "layers" },
+    ],
+  },
+  {
+    key: "portfolio",
+    label: "Portfolio & Risk",
+    paths: ["/paper", "/risk"],
+    entries: [
+      { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
+      { key: "risk", href: "/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
+    ],
+  },
+  {
+    key: "insights",
+    label: "Insights",
+    paths: ["/news"],
+    entries: [
+      { key: "news", href: "/news", label: "News intelligence", icon: "news", flagKey: "news_ui" },
+    ],
+  },
+  {
+    key: "ops",
+    label: "Ops & Governance",
+    paths: ["/ops", "/policies", "/integrations", "/admin", "/operator"],
+    entries: [
+      { key: "ops", href: "/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
+      { key: "policies", href: "/policies", label: "Policies", icon: "check", flagKey: "policy_ui" },
+      { key: "integrations", href: "/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
+      // Desktop-only research lab. Sidebar entry survives so operators can find it; the page itself shows a desktop-only gate on mobile.
+      { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
+      { key: "operator", href: "/operator", label: "Operator console", icon: "user", flagKey: "operator_console" },
+    ],
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    paths: ["/profile", "/feedback"],
+    entries: [
+      { key: "profile", href: "/profile", label: "My profile", icon: "user" },
+      { key: "feedback", href: "/feedback", label: "Send feedback", icon: "message" },
+    ],
+  },
 ];
 
 // Saved views are now DB-backed per user (Phase B3). Sidebar fetches the
@@ -116,7 +166,7 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
     return flags[flagKey];
   };
 
-  const renderNavItem = (item: (typeof WORKSPACES)[number] | (typeof OPS)[number]) => {
+  const renderNavItem = (item: NavEntry) => {
     if (!isGatedVisible(item.flagKey)) return null;
     const active = isActive(item.href);
     const badge = getBadge(item.countKey);
@@ -125,7 +175,11 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
         key={item.key}
         href={item.href}
         onClick={onMobileClose}
-        className={`flex items-center gap-2.5 px-3 min-h-11 md:min-h-0 md:py-1.5 mx-1.5 rounded-md text-[13px] transition-colors ${
+        // aria-current per the Phase 2 navigation spec (§7) — assistive
+        // tech announces the active entry rather than relying on the
+        // visual highlight alone.
+        aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-2.5 px-3 min-h-11 md:min-h-0 md:py-1.5 mx-1.5 rounded-md text-caption transition-colors ${
           active
             ? "bg-primary-soft text-primary-soft-ink font-medium"
             : "text-ink-2 hover:bg-surface-3"
@@ -139,13 +193,38 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
           {item.label}
         </span>
         {badge && (
-          <span className={`text-[11px] font-mono min-w-[20px] text-center rounded-sm px-1 ${
+          <span className={`text-meta font-mono min-w-[20px] text-center rounded-sm px-1 ${
             collapsed ? "md:hidden" : ""
           } ${active ? "text-primary" : "text-ink-4 bg-surface-2"}`}>
             {badge}
           </span>
         )}
       </Link>
+    );
+  };
+
+  /** Render one product-area section. Hides the section entirely when every entry it contains is flag-gated off, so the divider doesn't show a phantom heading. */
+  const renderArea = (area: NavArea, withDivider: boolean) => {
+    const visibleEntries = area.entries.filter((entry) => isGatedVisible(entry.flagKey));
+    if (visibleEntries.length === 0) return null;
+    const headingId = `nav-area-${area.key}`;
+    return (
+      <div
+        key={area.key}
+        role="group"
+        aria-labelledby={headingId}
+        className={withDivider ? "py-2 border-t border-line" : "py-2"}
+      >
+        <div
+          id={headingId}
+          className={`px-3 py-1.5 text-meta font-semibold uppercase tracking-wider text-ink-4 ${
+            collapsed ? "md:hidden" : ""
+          }`}
+        >
+          {area.label}
+        </div>
+        {visibleEntries.map(renderNavItem)}
+      </div>
     );
   };
 
@@ -169,34 +248,23 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
         "shrink-0 border-r border-line bg-surface flex flex-col overflow-y-auto",
       ].join(" ")}
     >
-      {/* Workspaces */}
-      <div className="py-2">
-        <div className={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-4 ${collapsed ? "md:hidden" : ""}`}>
-          Workspaces
-        </div>
-        {WORKSPACES.map(renderNavItem)}
-      </div>
-
-      {/* Operations */}
-      <div className="py-2 border-t border-line">
-        <div className={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-4 ${collapsed ? "md:hidden" : ""}`}>
-          Operations
-        </div>
-        {OPS.map(renderNavItem)}
-      </div>
+      {/* Seven product areas — the Phase 4 IA. Each area renders its own
+          section with an `aria-labelledby` group; sections with all
+          entries flag-gated off self-suppress. */}
+      {AREAS.map((area, idx) => renderArea(area, idx > 0))}
 
       {/* Saved views — DB-backed per-user (Phase B3). Section hides when the
           user has no saved views OR is signed-out, so we don't ship an
           "empty" pile that misleads. Hides entirely on md+ when collapsed. */}
       {savedViews.length > 0 && (
         <div className={`py-2 border-t border-line mt-auto ${collapsed ? "md:hidden" : ""}`}>
-          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-4">
+          <div className="px-3 py-1.5 text-meta font-semibold uppercase tracking-wider text-ink-4">
             Saved views
           </div>
           {savedViews.map((v) => (
             <div
               key={v.id}
-              className="flex items-center gap-2 px-3 min-h-11 md:min-h-0 md:py-1 mx-1.5 rounded-md text-[12px] text-ink-3 hover:bg-surface-3 cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-3 min-h-11 md:min-h-0 md:py-1 mx-1.5 rounded-md text-meta text-ink-3 hover:bg-surface-3 cursor-pointer transition-colors"
               title={`${v.scope} · ${v.created_at?.slice(0, 10) ?? ""}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${v.tone ? "bg-current " + v.tone : "bg-ink-4"}`} />
@@ -208,7 +276,7 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
 
       {/* Version */}
       <div className={`px-3 py-2 border-t border-line ${collapsed ? "md:hidden" : ""}`}>
-        <span className="text-[11px] text-ink-4">v0.3.0</span>
+        <span className="text-meta text-ink-4">v0.3.0</span>
       </div>
     </aside>
   );

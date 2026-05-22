@@ -11,25 +11,38 @@ import { UserMenu } from "@/components/shell/UserMenu";
 const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
 
-const CRUMB_MAP: Record<string, string> = {
-  "/": "Decision Command Center",
-  "/decision": "Decision",
-  "/comparison": "Engine comparison",
-  "/replay": "Replay",
-  "/backtests": "Backtests",
-  "/paper": "Paper portfolio",
-  "/admin": "Research lab",
-  "/profile": "My profile",
-  "/templates": "Templates",
-  "/feedback": "Send feedback",
-  "/onboarding": "Welcome",
-  "/risk": "Risk",
-  "/news": "News",
-  "/ops": "Ops",
-  "/policies": "Policies",
-  "/integrations": "Integrations",
-  "/universe": "Universe",
-  "/help": "Help center",
+/**
+ * Phase 4 area-aware breadcrumbs. Each route knows which product area it
+ * belongs to (per `DOCS/handoff/FINRLX_UX_PHASE_2_INFORMATION_ARCHITECTURE.md`)
+ * plus its own short title. The breadcrumb renders as `Area · Title` when
+ * both are present, falling back to the title alone for the root and for
+ * routes outside the seven areas (legal, auth).
+ */
+interface CrumbDescriptor {
+  area: string | null;
+  title: string;
+}
+
+const CRUMB_MAP: Record<string, CrumbDescriptor> = {
+  "/": { area: null, title: "Decision Command Center" },
+  "/decision": { area: "Decisions", title: "Current recommendation" },
+  "/comparison": { area: "Decisions", title: "Engine comparison" },
+  "/replay": { area: "Decisions", title: "Replay & forensics" },
+  "/templates": { area: "Decisions", title: "Templates" },
+  "/backtests": { area: "Research", title: "Backtests" },
+  "/universe": { area: "Research", title: "Universe" },
+  "/paper": { area: "Portfolio & Risk", title: "Paper portfolio" },
+  "/risk": { area: "Portfolio & Risk", title: "Risk workspace" },
+  "/news": { area: "Insights", title: "News intelligence" },
+  "/ops": { area: "Ops & Governance", title: "Ops command" },
+  "/policies": { area: "Ops & Governance", title: "Policies" },
+  "/integrations": { area: "Ops & Governance", title: "Integrations" },
+  "/admin": { area: "Ops & Governance", title: "Research lab" },
+  "/operator": { area: "Ops & Governance", title: "Operator console" },
+  "/profile": { area: "Settings", title: "My profile" },
+  "/feedback": { area: "Settings", title: "Send feedback" },
+  "/help": { area: "Settings", title: "Help center" },
+  "/onboarding": { area: null, title: "Welcome" },
 };
 
 interface TopBarProps {
@@ -42,9 +55,11 @@ interface TopBarProps {
 
 export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = false }: TopBarProps) {
   const pathname = usePathname() ?? "/";
-  const crumb =
+  const crumbDescriptor: CrumbDescriptor =
     CRUMB_MAP[pathname] ||
-    (pathname.startsWith("/help") ? "Help center" : "Workspace");
+    (pathname.startsWith("/help")
+      ? { area: "Settings", title: "Help center" }
+      : { area: null, title: "Workspace" });
   const { theme, toggleTheme } = useTheme();
   const scope = useScope();
 
@@ -97,8 +112,25 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
         <Icon name="panel-left" size={18} />
       </button>
 
-      {/* Current page label — replaces the noisy "Workspaces > X" breadcrumb. */}
-      <span className="text-ink font-medium">{crumb}</span>
+      {/* Area-aware breadcrumb. Renders `Area · Page` when the route lives
+          in one of the seven product areas; falls back to the page title
+          alone for the root, legal pages, and auth flows. The middle dot
+          uses U+00B7 per the Vercel web-design-guidelines mirror
+          (Unicode glyphs, not "ASCII slashes"). The area segment hides
+          on mobile (< 640 px) so the TopBar slot does not crowd. */}
+      <nav aria-label="Breadcrumb" className="min-w-0">
+        <ol className="flex items-center gap-1.5 text-body-sm">
+          {crumbDescriptor.area && (
+            <>
+              <li className="hidden sm:inline text-ink-3 truncate">{crumbDescriptor.area}</li>
+              <li className="hidden sm:inline text-ink-4" aria-hidden="true">·</li>
+            </>
+          )}
+          <li aria-current="page" className="text-ink font-medium truncate">
+            {crumbDescriptor.title}
+          </li>
+        </ol>
+      </nav>
 
       {/* Spacer */}
       <div className="flex-1" />
