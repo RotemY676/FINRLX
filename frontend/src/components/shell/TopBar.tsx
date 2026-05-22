@@ -25,6 +25,7 @@ interface CrumbDescriptor {
 
 const CRUMB_MAP: Record<string, CrumbDescriptor> = {
   "/": { area: null, title: "Decision Command Center" },
+  "/research": { area: "Research", title: "Research hub" },
   "/decision": { area: "Decisions", title: "Current recommendation" },
   "/comparison": { area: "Decisions", title: "Engine comparison" },
   "/replay": { area: "Decisions", title: "Replay & forensics" },
@@ -59,7 +60,9 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
     CRUMB_MAP[pathname] ||
     (pathname.startsWith("/help")
       ? { area: "Settings", title: "Help center" }
-      : { area: null, title: "Workspace" });
+      : pathname.startsWith("/research/")
+        ? { area: "Research", title: pathname.split("/")[2]?.toUpperCase() ?? "Ticker" }
+        : { area: null, title: "Workspace" });
   const { theme, toggleTheme } = useTheme();
   const scope = useScope();
 

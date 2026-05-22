@@ -45,8 +45,10 @@ const AREAS: ReadonlyArray<NavArea> = [
   {
     key: "research",
     label: "Research",
-    paths: ["/universe", "/backtests"],
+    paths: ["/research", "/universe", "/backtests"],
     entries: [
+      // Phase 6 — Research hub landing.
+      { key: "research-hub", href: "/research", label: "Research hub", icon: "search" },
       { key: "universe", href: "/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
       { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
     ],
