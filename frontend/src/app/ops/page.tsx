@@ -53,8 +53,8 @@ export default function OpsPage() {
     <div className="space-y-gap max-w-[1200px]">
       <div className="flex items-baseline justify-between gap-2">
         <div>
-          <h1 className="text-[20px] font-semibold text-ink">Ops command</h1>
-          <p className="text-[12px] text-ink-3 mt-0.5">
+          <h1 className="text-page-title text-ink">Ops command</h1>
+          <p className="text-body-sm text-ink-2 mt-0.5">
             Queue · feeds · engines · breaches · incidents · audit
           </p>
         </div>
@@ -64,7 +64,7 @@ export default function OpsPage() {
         <div
           role="status"
           aria-live="polite"
-          className="rounded-md bg-primary-soft text-primary-soft-ink px-3 py-2 text-[12.5px]"
+          className="rounded-md bg-primary-soft text-primary-soft-ink px-3 py-2 text-caption"
         >
           {actionMsg}
         </div>

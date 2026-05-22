@@ -87,11 +87,11 @@ export default function PoliciesPage() {
     <div className="space-y-gap max-w-[1200px]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">
+          <h1 className="text-page-title text-ink flex items-center gap-2">
             Policy Editor
             <HelpLink anchor="reference/pages/policies" label="Open Policies help" />
           </h1>
-          <p className="text-[12px] text-ink-3 mt-0.5">
+          <p className="text-body-sm text-ink-2 mt-0.5">
             {rules.length} rules · {breaches.filter((b) => b.is_active).length} active breaches
           </p>
         </div>
