@@ -58,6 +58,17 @@ class Settings(BaseSettings):
     llm_openai_api_key: str = ""
     llm_local_base_url: str = "http://localhost:11434"
 
+    # Phase 17 — Research documents (PDF uploads + LLM analysis).
+    # Uploads land on a host filesystem path. Locally this is relative;
+    # production sets this to a Railway volume mount (e.g.
+    # /data/finrlx_documents). The directory is created on first
+    # upload if missing.
+    documents_storage_path: str = "./_finrlx_documents"
+    # Hard size cap per upload — bigger PDFs are rejected at the
+    # multipart layer so we don't burn memory on extraction. 50 MB
+    # comfortably accommodates most 10-Q / 10-K filings.
+    documents_max_size_mb: int = 50
+
     # Phase 16 — Fundamentals + Peers provider abstraction. Empty
     # `fundamentals_provider` means the stub provider is used (endpoints
     # respond with a structurally-complete envelope tagged source="stub";

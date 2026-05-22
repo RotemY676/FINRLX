@@ -18,6 +18,7 @@ from app.models.modeling import (
     ModelRun,
     ModelValidationReport,
 )
+from app.models.document import ResearchDocument
 from app.models.notification import Notification
 from app.models.operator import OperatorAnalysis
 from app.models.ops import (
@@ -88,4 +89,5 @@ __all__ = [
     "Notification",
     "Feedback",
     "OperatorAnalysis",
+    "ResearchDocument",
 ]

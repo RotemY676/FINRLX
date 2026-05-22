@@ -44,3 +44,12 @@ sentry-sdk[fastapi]==2.19.2
 # Both pure-Python and small. No external API keys required.
 feedparser==6.0.11
 vaderSentiment==3.3.2
+
+# Research document analysis (Phase 17.0)
+# pypdf is pure-Python, MIT-licensed PDF text extractor. Handles
+# typical 10-Q / 10-K filings (which are text-based, not scanned).
+# Scanned PDFs would need OCR (pytesseract) — a follow-up.
+# python-multipart is required by FastAPI for `UploadFile` to accept
+# multipart/form-data POST bodies.
+pypdf==5.1.0
+python-multipart==0.0.20
