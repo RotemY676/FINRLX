@@ -26,6 +26,7 @@ async def test_flags_endpoint_returns_default_payload_shape(client):
         "integrations_ui",   # A4
         "risk_ui",           # B1
         "news_ui",           # B2
+        "operator_console",  # O-0
     }
     # Defaults are ON for the test environment
     for k in data:

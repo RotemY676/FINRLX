@@ -23,6 +23,8 @@ import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { ScenarioCard } from "@/components/decision/ScenarioCard";
 import { PriceChartCard } from "@/components/charts/PriceChartCard";
 import { HelpLink } from "@/components/help/HelpLink";
+import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
+import { buildDecisionContext } from "@/lib/operator/contextBuilder";
 import { track } from "@/lib/analytics";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
@@ -69,6 +71,9 @@ export default function DecisionPage() {
           <span className="text-[11px] font-mono text-ink-3">{rec.id.slice(0, 16)}…</span>
           <StatusBadge status={rec.status} />
           {rec.data_as_of && <span className="text-[11px] text-ink-4 ml-auto">Data as of {rec.data_as_of.slice(0, 16).replace("T", " ")}</span>}
+        </div>
+        <div className="mb-3">
+          <CopyLLMContextButton bundle={buildDecisionContext({ rec, evidence })} />
         </div>
         {rec.rationale_summary && <p className="text-[14px] text-ink-2 leading-relaxed mb-4">{rec.rationale_summary}</p>}
         <div className="flex items-center gap-6 mb-4 flex-wrap">

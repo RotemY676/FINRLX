@@ -14,6 +14,8 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { HelpLink } from "@/components/help/HelpLink";
+import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
+import { buildReplayContext } from "@/lib/operator/contextBuilder";
 import { track } from "@/lib/analytics";
 
 function StageSnapshotCard({ stage, data, capturedAt }: {
@@ -138,6 +140,10 @@ export default function ReplayPage() {
               </p>
             </div>
             <StatusBadge status={detail.status} />
+          </div>
+
+          <div>
+            <CopyLLMContextButton bundle={buildReplayContext({ replay: detail })} />
           </div>
 
           {/* Rationale */}

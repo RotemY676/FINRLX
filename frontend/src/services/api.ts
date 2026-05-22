@@ -336,7 +336,7 @@ export interface PaperPortfolioData {
 
 // Fetch functions
 
-async function apiFetch<T>(
+export async function apiFetch<T>(
   path: string,
   init?: RequestInit
 ): Promise<ApiResponse<T>> {

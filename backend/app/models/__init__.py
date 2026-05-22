@@ -19,6 +19,7 @@ from app.models.modeling import (
     ModelValidationReport,
 )
 from app.models.notification import Notification
+from app.models.operator import OperatorAnalysis
 from app.models.ops import (
     AuditEvent,
     DataFeed,
@@ -86,4 +87,5 @@ __all__ = [
     "JobRun",
     "Notification",
     "Feedback",
+    "OperatorAnalysis",
 ]

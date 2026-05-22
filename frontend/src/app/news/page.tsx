@@ -7,6 +7,8 @@ import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
+import { buildNewsContext } from "@/lib/operator/contextBuilder";
 
 const SENTIMENT_STYLE: Record<string, string> = {
   positive: "bg-pos-soft text-pos-soft-ink",
@@ -71,14 +73,17 @@ export default function NewsPage() {
             {s.total} headlines · VADER sentiment · RSS sources (cached 5 min)
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => load(true)}
-          disabled={refreshing}
-          className="inline-flex items-center justify-center min-h-11 md:min-h-0 md:h-9 px-3 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
-        >
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <CopyLLMContextButton bundle={buildNewsContext({ bundle: data })} />
+          <button
+            type="button"
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center min-h-11 md:min-h-0 md:h-9 px-3 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
+          >
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
       </div>
 
       {/* Summary strip */}

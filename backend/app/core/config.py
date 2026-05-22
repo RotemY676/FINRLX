@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     feature_integrations_ui: bool = True  # Integrations surface (Phase A4)
     feature_risk_ui: bool = True          # Risk workspace surface (Phase B1)
     feature_news_ui: bool = True          # News intelligence surface (Phase B2)
+    feature_operator_console: bool = False  # Phase O-0: single-operator LLM workbench. OFF by default; opt-in per env.
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific
