@@ -240,8 +240,9 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
       id="primary-nav"
       aria-label="Primary navigation"
       className={[
-        // mobile-first: fixed overlay, full-height under the topbar (h-11=44px)
-        "fixed inset-y-0 left-0 top-11 z-30 w-64 transform transition-transform",
+        // mobile-first: fixed overlay, full-height under the topbar.
+        // Phase 14.1 — top-14 (56 px) tracks the new TopBar height.
+        "fixed inset-y-0 left-0 top-14 z-30 w-64 transform transition-transform",
         mobileTransform,
         // md+: revert to in-flow column
         "md:static md:top-auto md:translate-x-0 md:transition-all",

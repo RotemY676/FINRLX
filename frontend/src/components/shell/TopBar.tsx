@@ -96,23 +96,26 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
     <header
       role="banner"
       aria-label="FINRLX top navigation"
-      className="h-11 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface text-[13px]"
+      // Phase 14.1 — taller (h-14 / 56 px desktop) so the TopBar reads
+      // as a real chrome surface, not a strip. Mobile keeps min-h-11
+      // tap targets via min-h-11 on each interactive child.
+      className="h-14 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface"
     >
       {/* Brand */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="w-5 h-5 rounded-md bg-primary" aria-hidden="true" />
-        <span className="font-semibold text-ink">FINRLX</span>
+        <div className="w-6 h-6 rounded-md bg-primary" aria-hidden="true" />
+        <span className="font-semibold text-ink text-card-title">FINRLX</span>
       </div>
 
       {/* Nav toggle — opens the mobile drawer below md, collapses the column above md */}
       <button
         onClick={onToggleNav}
-        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-10 md:w-10 rounded-md hover:bg-surface-3 text-ink-2 transition-colors"
         aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
         aria-expanded={mobileNavOpen}
         aria-controls="primary-nav"
       >
-        <Icon name="panel-left" size={18} />
+        <Icon name="panel-left" size={20} />
       </button>
 
       {/* Area-aware breadcrumb. Renders `Area · Page` when the route lives
@@ -120,16 +123,18 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
           alone for the root, legal pages, and auth flows. The middle dot
           uses U+00B7 per the Vercel web-design-guidelines mirror
           (Unicode glyphs, not "ASCII slashes"). The area segment hides
-          on mobile (< 640 px) so the TopBar slot does not crowd. */}
+          on mobile (< 640 px) so the TopBar slot does not crowd.
+          Phase 14.1 — body-sm title with explicit semibold; area
+          segment at body-sm but ink-3 weight-normal for contrast. */}
       <nav aria-label="Breadcrumb" className="min-w-0">
-        <ol className="flex items-center gap-1.5 text-body-sm">
+        <ol className="flex items-center gap-2 text-body-sm">
           {crumbDescriptor.area && (
             <>
               <li className="hidden sm:inline text-ink-3 truncate">{crumbDescriptor.area}</li>
               <li className="hidden sm:inline text-ink-4" aria-hidden="true">·</li>
             </>
           )}
-          <li aria-current="page" className="text-ink font-medium truncate">
+          <li aria-current="page" className="text-ink font-semibold truncate">
             {crumbDescriptor.title}
           </li>
         </ol>
@@ -138,34 +143,38 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Scope chips — dynamic from ScopeContext */}
+      {/* Scope chips — dynamic from ScopeContext.
+          Phase 14.1: bumped to text-body-sm for legibility; dropped the
+          half-faded look. */}
       <div className="hidden lg:flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-2 text-ink-2 text-body-sm">
           <span className={`w-1.5 h-1.5 rounded-full ${scope.regimeConfidence > 0.7 ? "bg-pos" : scope.regimeConfidence > 0.4 ? "bg-caution" : "bg-breach"}`} />
-          Regime <b className="text-ink font-medium ml-0.5">{scope.isLoading ? "..." : scope.regime}</b>
+          Regime <b className="text-ink font-semibold ml-0.5">{scope.isLoading ? "…" : scope.regime}</b>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
-          <Icon name="clock" size={11} />
-          Horizon <b className="text-ink font-medium ml-0.5">{scope.horizon}</b>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-2 text-ink-2 text-body-sm">
+          <Icon name="clock" size={13} />
+          Horizon <b className="text-ink font-semibold ml-0.5">{scope.horizon}</b>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-ink-2 text-[12px]">
-          <Icon name="universe" size={11} />
-          Universe <b className="text-ink font-medium ml-0.5">{scope.universe}</b>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-2 text-ink-2 text-body-sm">
+          <Icon name="universe" size={13} />
+          Universe <b className="text-ink font-semibold ml-0.5">{scope.universe}</b>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-surface-2 text-ink-4 text-[12px] w-56">
-        <Icon name="search" size={13} />
+      {/* Search — placeholder chip in 14.1. Replaced by the real
+          CommandPalette trigger in sub-phase 14.3. */}
+      <div className="hidden md:flex items-center gap-2 px-3 h-10 rounded-md bg-surface-2 text-ink-4 text-body-sm w-64">
+        <Icon name="search" size={15} />
         <span>Search…</span>
-        <span className="ml-auto px-1 py-0.5 rounded bg-surface-3 text-[10px] text-ink-3 font-mono">⌘K</span>
+        <span className="ml-auto px-1.5 py-0.5 rounded bg-surface-3 text-meta text-ink-3 font-mono">⌘K</span>
       </div>
 
       {/* Density selector */}
       <button
         onClick={cycleDensity}
-        className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-md hover:bg-surface-3 text-ink-3 text-[10px] font-mono transition-colors"
+        className="hidden lg:flex items-center justify-center w-10 h-10 rounded-md hover:bg-surface-3 text-ink-2 text-body-sm font-mono transition-colors"
         title={`Density: ${density} — click to cycle`}
+        aria-label={`Density: ${density}. Click to cycle.`}
       >
         {density === "compact" ? "Aa−" : density === "comfortable" ? "Aa+" : "Aa"}
       </button>
@@ -173,50 +182,55 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
-        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-10 md:w-10 rounded-md hover:bg-surface-3 text-ink-2 transition-colors"
         title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
         aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
       >
-        <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
+        <Icon name={theme === "light" ? "moon" : "sun"} size={20} />
       </button>
 
       {/* Help center — global entry point, every page. Deep-links into /help. */}
       <Link
         href="/help"
-        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors"
+        className="inline-flex items-center justify-center h-11 w-11 md:h-10 md:w-10 rounded-md hover:bg-surface-3 text-ink-2 transition-colors"
         title="Help center"
         aria-label="Open Help center"
         data-help-trigger="topbar"
       >
-        <Icon name="help-circle" size={18} />
+        <Icon name="help-circle" size={20} />
       </Link>
 
-      {/* Notifications — hidden on mobile to free up TopBar real estate; the
-          drawer-equivalent surface for notifications lands in a future phase. */}
+      {/* Notifications — Phase 14.4 will wire this to NotificationsPanel.
+          The current button still does nothing functional; the red dot is
+          purely visual until 14.4 lands. */}
       <button
-        className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-surface-3 text-ink-3 transition-colors relative"
-        title="Notifications"
+        className="hidden md:inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-surface-3 text-ink-2 transition-colors relative"
+        title="Notifications (coming in sub-phase 14.4)"
         aria-label="Notifications"
       >
-        <Icon name="bell" size={15} />
-        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-breach" />
+        <Icon name="bell" size={20} />
+        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-breach" />
       </button>
 
       {/* Context pane toggle. On mobile (<md) the pane opens as a bottom sheet;
-          on desktop it docks as a right aside. */}
+          on desktop it docks as a right aside. Phase 14.1 — dropped the
+          half-faded look (opacity 0.45) that read as "disabled" to users.
+          Active state now uses a subtle background tint. */}
       <button
         onClick={onToggleCtx}
-        className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-md hover:bg-surface-3 transition-colors"
+        className={`inline-flex items-center justify-center h-11 w-11 md:h-10 md:w-10 rounded-md transition-colors ${
+          ctxVisible
+            ? "bg-primary-soft text-primary-soft-ink"
+            : "hover:bg-surface-3 text-ink-2"
+        }`}
         title="Toggle context pane"
         aria-label={ctxVisible ? "Hide context pane" : "Show context pane"}
         aria-expanded={ctxVisible}
-        style={{ opacity: ctxVisible ? 1 : 0.45 }}
       >
-        <Icon name="panel-right" size={18} className="text-ink-3" />
+        <Icon name="panel-right" size={20} />
       </button>
 
-      {/* Avatar dropdown — UI-1 follow-up. Replaces the static chip +
-          adjacent "Sign out" button with the industry-standard pattern. */}
+      {/* Avatar dropdown — Gmail-style rich menu landing in sub-phase 14.2. */}
       <UserMenu />
     </header>
   );

@@ -74,8 +74,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             onMobileClose={closeMobileNav}
           />
           {mobileOpen && (
+            // Phase 14.1 — TopBar grew from h-11 to h-14; the mobile-drawer
+            // backdrop has to start below the new TopBar height so it
+            // doesn't draw on top of the brand row.
             <div
-              className="md:hidden fixed inset-0 top-11 z-20 bg-ink/40 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 top-14 z-20 bg-ink/40 backdrop-blur-sm"
               onClick={closeMobileNav}
               aria-hidden="true"
             />
