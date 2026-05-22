@@ -45,6 +45,29 @@
   --accent: oklch(0.46 0.13 215);
   --accent-2: oklch(0.45 0.14 290);
 
+  /* Phase 3 semantic aliases. Map state semantics onto existing palette so
+     consumers can say `bg-stale-soft text-stale-soft-ink` etc. and the
+     intent reads cleanly. Visual values are identical to their underlying
+     palette entries; the names exist for clarity in component code. */
+  --stale: var(--caution);
+  --stale-soft: var(--caution-soft);
+  --stale-soft-ink: var(--caution-soft-ink);
+
+  --blocked: var(--breach);
+  --blocked-soft: var(--breach-soft);
+  --blocked-soft-ink: var(--breach-soft-ink);
+
+  --governance: var(--primary);
+  --governance-soft: var(--primary-soft);
+  --governance-soft-ink: var(--primary-soft-ink);
+
+  /* Shadow (research-only lane) needs its own soft/ink pair since
+     `--accent-2` did not previously ship one. Soft variant is a light
+     purple at the same hue family as `--accent-2`. */
+  --shadow: var(--accent-2);
+  --shadow-soft: oklch(0.95 0.03 290);
+  --shadow-soft-ink: oklch(0.38 0.13 290);
+
   --r-sm: 6px;
   --r-md: 8px;
   --r-lg: 12px;
@@ -57,7 +80,11 @@
   --dens-pad: 16px;
   --dens-row: 36px;
   --dens-gap: 16px;
-  --dens-text: 13.5px;
+  /* Phase 3 — bump from 13.5px so inherited body copy reads at 14.5px in
+     default density. Compact (12.5) and comfortable (14) tracks remain
+     unchanged. Pages that need the playbook 15px body explicitly use the
+     Tailwind `text-body` token added in tailwind.config.ts. */
+  --dens-text: 14.5px;
 
   --font-sans: "Inter Tight", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: "Fraunces", Georgia, serif;
@@ -99,6 +126,24 @@
 
   --accent: oklch(0.7 0.12 215);
   --accent-2: oklch(0.68 0.14 290);
+
+  /* Phase 3 semantic aliases — dark theme. Override the soft/ink values
+     for shadow so the lane reads correctly on dark surfaces. */
+  --stale: var(--caution);
+  --stale-soft: var(--caution-soft);
+  --stale-soft-ink: var(--caution-soft-ink);
+
+  --blocked: var(--breach);
+  --blocked-soft: var(--breach-soft);
+  --blocked-soft-ink: var(--breach-soft-ink);
+
+  --governance: var(--primary);
+  --governance-soft: var(--primary-soft);
+  --governance-soft-ink: var(--primary-soft-ink);
+
+  --shadow: var(--accent-2);
+  --shadow-soft: oklch(0.3 0.08 290);
+  --shadow-soft-ink: oklch(0.85 0.12 290);
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
   --shadow-md: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.35);

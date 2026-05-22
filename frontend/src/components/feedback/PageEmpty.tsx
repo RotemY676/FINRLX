@@ -38,8 +38,8 @@ export function PageEmpty({ title, message, icon, action }: Props) {
           </span>
         </div>
       )}
-      <h2 className="text-[15px] font-semibold text-ink mb-1">{title}</h2>
-      <p className="text-[13px] text-ink-3 max-w-md mx-auto">{message}</p>
+      <h2 className="text-section-title text-ink mb-1">{title}</h2>
+      <p className="text-body-sm text-ink-3 max-w-md mx-auto">{message}</p>
       {ActionEl && <div className="mt-5 flex justify-center">{ActionEl}</div>}
     </div>
   );

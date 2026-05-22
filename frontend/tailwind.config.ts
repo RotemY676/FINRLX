@@ -31,6 +31,42 @@ const config: Config = {
           "soft-ink": "var(--breach-soft-ink)",
         },
         accent: { DEFAULT: "var(--accent)", 2: "var(--accent-2)" },
+        // Phase 3 semantic aliases — map state semantics onto existing
+        // palette via CSS variables defined in globals.css.
+        stale: {
+          DEFAULT: "var(--stale)",
+          soft: "var(--stale-soft)",
+          "soft-ink": "var(--stale-soft-ink)",
+        },
+        blocked: {
+          DEFAULT: "var(--blocked)",
+          soft: "var(--blocked-soft)",
+          "soft-ink": "var(--blocked-soft-ink)",
+        },
+        governance: {
+          DEFAULT: "var(--governance)",
+          soft: "var(--governance-soft)",
+          "soft-ink": "var(--governance-soft-ink)",
+        },
+        shadow: {
+          DEFAULT: "var(--shadow)",
+          soft: "var(--shadow-soft)",
+          "soft-ink": "var(--shadow-soft-ink)",
+        },
+      },
+      // Phase 3 typography scale (playbook §3.3). Existing `text-[Npx]`
+      // utilities still work; named tokens are how Phases 5–10 opt into
+      // the new readable scale. Compact + comfortable density modes
+      // adjust via :root[data-density="…"] in globals.css.
+      fontSize: {
+        "page-title": ["28px", { lineHeight: "1.2", fontWeight: "600" }],
+        "section-title": ["20px", { lineHeight: "1.3", fontWeight: "600" }],
+        "card-title": ["16px", { lineHeight: "1.4", fontWeight: "600" }],
+        body: ["15px", { lineHeight: "1.5" }],
+        "body-sm": ["14px", { lineHeight: "1.5" }],
+        table: ["14px", { lineHeight: "1.4" }],
+        caption: ["12.5px", { lineHeight: "1.4" }],
+        meta: ["12.5px", { lineHeight: "1.4" }],
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

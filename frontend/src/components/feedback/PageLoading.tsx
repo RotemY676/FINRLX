@@ -28,7 +28,7 @@ export function InlineLoading({ label }: { label?: string }) {
         <span className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:150ms]" />
         <span className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:300ms]" />
       </div>
-      <p className="text-[13px] text-ink-3">{label || "Loading..."}</p>
+      <p className="text-body-sm text-ink-3">{label || "Loading..."}</p>
     </div>
   );
 }
