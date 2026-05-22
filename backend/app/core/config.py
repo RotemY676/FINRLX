@@ -69,6 +69,15 @@ class Settings(BaseSettings):
     # comfortably accommodates most 10-Q / 10-K filings.
     documents_max_size_mb: int = 50
 
+    # Phase 17.1 — Monthly LLM token budget (input + output, summed
+    # across providers). The analyze endpoint pre-estimates the call
+    # cost and refuses with 503 when current-month usage would exceed
+    # this cap. 10M tokens / month is generous for an operator-grade
+    # tool; tune per Anthropic billing tolerance. Resets on the first
+    # of each month (the budget tracker reads the current year/month
+    # bucket only — no manual reset needed).
+    max_monthly_llm_tokens: int = 10_000_000
+
     # Phase 16 — Fundamentals + Peers provider abstraction. Empty
     # `fundamentals_provider` means the stub provider is used (endpoints
     # respond with a structurally-complete envelope tagged source="stub";

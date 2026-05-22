@@ -19,6 +19,7 @@ from app.models.modeling import (
     ModelValidationReport,
 )
 from app.models.document import ResearchDocument
+from app.models.document_analysis import DocumentAnalysis, LLMTokenUsage
 from app.models.notification import Notification
 from app.models.operator import OperatorAnalysis
 from app.models.ops import (
@@ -90,4 +91,6 @@ __all__ = [
     "Feedback",
     "OperatorAnalysis",
     "ResearchDocument",
+    "DocumentAnalysis",
+    "LLMTokenUsage",
 ]
