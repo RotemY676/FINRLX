@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Icon } from "@/components/icons/Icon";
 
 import { PanelShell } from "./HomePanelStates";
@@ -11,41 +13,53 @@ const SUGGESTED_PROMPTS = [
 ];
 
 /**
- * Research assistant preview — non-interactive. There is no live assistant
- * backend on the home page, so this card is honest about its scope: it
- * shows the kinds of questions you can ask, and the rules the assistant
- * follows when one ships.
+ * Phase 11 — Research assistant entry-point card.
+ *
+ * No live in-app LLM yet (backend `/api/v1/assistant/*` returns 503
+ * unless `LLM_PROVIDER` is configured). FINRLX's canonical path for
+ * assistant context today is the operator console at `/operator`,
+ * which captures GPT/Claude responses against a recommendation,
+ * replay, news item, or manual surface.
+ *
+ * Each suggested prompt deep-links to `/operator?surface=manual&prompt=...`
+ * so the operator lands with the question pre-filled.
+ *
+ * Constraints encoded by `finrlx-ai-ux-governance`:
+ *   - assistant is NEVER a trading interface
+ *   - sources are required on every answer
+ *   - blank-chat-as-band-aid is forbidden — guided prompts only
+ *   - limitations footer always present
  */
 export function ResearchAssistantPreview() {
   return (
     <PanelShell
       icon="sparkle"
       title="Research assistant"
-      subtitle="Source-grounded answers. Preview only."
+      subtitle="Source-grounded answers via the operator console"
     >
-      <p className="text-[12px] text-ink-2 leading-relaxed">
+      <p className="text-caption text-ink-2 leading-relaxed">
         Ask FINRLX about a ticker, thesis, risk, filing, signal, or decision.
-        Answers must be source-grounded. AI does not trade, approve, or publish
-        recommendations.
+        Answers must be source-grounded. The assistant does not trade,
+        approve, or publish recommendations.
       </p>
       <div className="mt-3 space-y-1.5">
         {SUGGESTED_PROMPTS.map((p) => (
-          <button
+          <Link
             key={p}
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="w-full text-left rounded-md border border-line bg-surface-2 px-3 min-h-11 md:min-h-0 md:py-2 text-[12px] text-ink-2 hover:border-primary hover:bg-surface-3 transition-colors flex items-center gap-2"
-            title="Preview only — assistant ships in a later phase"
+            href={`/operator?surface=manual&prompt=${encodeURIComponent(p)}`}
+            className="w-full text-left rounded-md border border-line bg-surface-2 px-3 min-h-11 md:min-h-0 md:py-2 text-caption text-ink-2 hover:border-primary hover:bg-surface-3 transition-colors flex items-center gap-2"
+            title="Opens the operator console with this prompt pre-filled"
           >
             <Icon name="search" size={12} className="text-ink-4 shrink-0" />
             <span className="truncate">{p}</span>
-          </button>
+            <Icon name="chevron-right" size={12} className="text-ink-4 shrink-0 ml-auto" />
+          </Link>
         ))}
       </div>
-      <p className="mt-3 text-[10.5px] text-ink-4 leading-snug">
+      <p className="mt-3 text-meta text-ink-4 leading-snug">
         The assistant must cite a source for every claim, label uncertainty
         explicitly, and decline questions that ask for a trade instruction.
+        FINRLX never tells you to buy or sell.
       </p>
     </PanelShell>
   );

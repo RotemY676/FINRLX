@@ -34,6 +34,9 @@ function OperatorConsoleInner() {
   const params = useSearchParams();
   const recParam = params?.get("rec") ?? null;
   const surfaceParam = (params?.get("surface") as OperatorAnalysisSurface) ?? "decision";
+  // Phase 11: home assistant prompts deep-link with a `prompt` query
+  // param so the operator lands with the question already typed in.
+  const promptParam = params?.get("prompt") ?? "";
 
   const [surface, setSurface] = useState<OperatorAnalysisSurface>(
     SURFACE_OPTIONS.includes(surfaceParam) ? surfaceParam : "decision",
@@ -41,7 +44,7 @@ function OperatorConsoleInner() {
   const [source, setSource] = useState<OperatorAnalysisSource>("gpt");
   const [recommendationId, setRecommendationId] = useState<string>(recParam ?? "");
   const [response, setResponse] = useState("");
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(promptParam);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
