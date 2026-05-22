@@ -120,11 +120,23 @@ class AnthropicProvider(LLMProvider):
                 "unreachable from this backend instance."
             ) from e
         except APIStatusError as e:
-            # 5xx or other unexpected response. Surface the status
-            # without leaking the response body (may contain prompt
-            # echo).
+            # 4xx / 5xx. Anthropic's error body is shaped
+            # {"error": {"type": "...", "message": "..."}} and is
+            # designed for client-side reporting (doesn't echo the
+            # prompt) so it's safe to surface the type + message.
+            # Falls back to just the status if the body is unparseable.
+            detail = ""
+            try:
+                body = e.response.json() if e.response is not None else {}
+                err = body.get("error", {}) if isinstance(body, dict) else {}
+                err_type = err.get("type", "")
+                err_msg = err.get("message", "")
+                if err_type or err_msg:
+                    detail = f" ({err_type}: {err_msg})".strip()
+            except (ValueError, AttributeError):
+                pass
             raise StubProviderError(
-                f"Anthropic API returned status {e.status_code}."
+                f"Anthropic API returned status {e.status_code}.{detail}"
             ) from e
 
         # The Messages API returns a list of content blocks. We only

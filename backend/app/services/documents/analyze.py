@@ -158,20 +158,20 @@ async def analyze_document(
         ),
     ]
 
-    last_error: StubProviderError | None = None
+    errors: list[tuple[str, str]] = []
     for provider in chain:
         try:
             response = await provider.chat(messages, max_tokens=2048)
         except StubProviderError as e:
-            # Log and try the next provider in the chain. The cause is
-            # preserved so it surfaces in the final error if all
-            # providers fail.
+            # Log and try the next provider in the chain. We collect
+            # EVERY provider's failure (not just the last) so the
+            # aggregate error message is actually useful for debugging.
             logger.warning(
                 "LLM provider %s failed (%s); trying next in chain",
                 provider.name,
                 e,
             )
-            last_error = e
+            errors.append((provider.name, str(e)))
             continue
         return AnalysisResult(
             response_text=response.text,
@@ -181,10 +181,9 @@ async def analyze_document(
             output_tokens=response.output_tokens,
         )
 
-    # Exhausted the chain. Re-raise the last error so the endpoint
-    # surfaces the most recent failure detail (typically the paid
-    # provider's reason, since it's last in a free-first chain).
+    # Exhausted the chain. Surface EVERY provider's error so the
+    # operator can see why each one failed, not just the last.
+    breakdown = "; ".join(f"{name}: {msg}" for name, msg in errors)
     raise StubProviderError(
-        "All configured LLM providers failed. "
-        f"Last error: {last_error}"
+        f"All {len(errors)} configured LLM providers failed. {breakdown}"
     )
