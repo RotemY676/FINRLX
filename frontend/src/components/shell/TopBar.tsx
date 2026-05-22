@@ -52,9 +52,17 @@ interface TopBarProps {
   ctxVisible: boolean;
   /** When true on a mobile viewport, the nav drawer is open. */
   mobileNavOpen?: boolean;
+  /** Phase 14.3 — open the global command palette. */
+  onOpenPalette: () => void;
 }
 
-export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = false }: TopBarProps) {
+export function TopBar({
+  onToggleNav,
+  onToggleCtx,
+  ctxVisible,
+  mobileNavOpen = false,
+  onOpenPalette,
+}: TopBarProps) {
   const pathname = usePathname() ?? "/";
   const crumbDescriptor: CrumbDescriptor =
     CRUMB_MAP[pathname] ||
@@ -161,13 +169,31 @@ export function TopBar({ onToggleNav, onToggleCtx, ctxVisible, mobileNavOpen = f
         </div>
       </div>
 
-      {/* Search — placeholder chip in 14.1. Replaced by the real
-          CommandPalette trigger in sub-phase 14.3. */}
-      <div className="hidden md:flex items-center gap-2 px-3 h-10 rounded-md bg-surface-2 text-ink-4 text-body-sm w-64">
-        <Icon name="search" size={15} />
-        <span>Search…</span>
-        <span className="ml-auto px-1.5 py-0.5 rounded bg-surface-3 text-meta text-ink-3 font-mono">⌘K</span>
-      </div>
+      {/* Search — Phase 14.3 — opens the global CommandPalette. The
+          chip on the TopBar is the visible trigger; ⌘K opens from
+          anywhere. Mobile gets a compact icon-only button so the
+          TopBar slot stays breathable. */}
+      <button
+        type="button"
+        onClick={onOpenPalette}
+        aria-label="Open search palette"
+        aria-keyshortcuts="Meta+K Control+K"
+        className="hidden md:flex items-center gap-2 px-3 h-10 rounded-md bg-surface-2 hover:bg-surface-3 text-ink-3 text-body-sm w-64 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        <Icon name="search" size={16} />
+        <span className="flex-1 text-left">Search FINRLX…</span>
+        <kbd className="ml-auto px-1.5 py-0.5 rounded bg-surface-3 text-meta text-ink-3 font-mono">
+          ⌘K
+        </kbd>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenPalette}
+        aria-label="Open search palette"
+        className="md:hidden inline-flex items-center justify-center h-11 w-11 rounded-md hover:bg-surface-3 text-ink-2 transition-colors"
+      >
+        <Icon name="search" size={20} />
+      </button>
 
       {/* Density selector */}
       <button

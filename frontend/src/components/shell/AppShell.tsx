@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { PaneProvider, ContextPanePanel, usePaneContext } from "./ContextPane";
+import { CommandPalette } from "./CommandPalette";
 import { DisclaimerBanner } from "../legal/DisclaimerBanner";
 import { DisclaimerModal } from "../legal/DisclaimerModal";
 
@@ -29,7 +30,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function ShellInner({ children }: { children: React.ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const { pane, openTab, closePane } = usePaneContext();
+
+  // Phase 14.3 — global ⌘K / Ctrl+K opens the command palette.
+  // Hook lives here so the keybind is available on every page, and
+  // so the palette renders above the AppShell content (z-index).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isCmdK =
+        (e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K");
+      if (!isCmdK) return;
+      e.preventDefault();
+      setPaletteOpen((v) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const onToggleNav = useCallback(() => {
     // matchMedia is the cheapest viewport probe; it stays correct after a
@@ -66,6 +83,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           onToggleCtx={onToggleCtx}
           ctxVisible={pane.isOpen}
           mobileNavOpen={mobileOpen}
+          onOpenPalette={() => setPaletteOpen(true)}
+        />
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
         />
         <div className="relative flex flex-1 overflow-hidden">
           <Sidebar
