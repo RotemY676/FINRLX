@@ -1,0 +1,2219 @@
+[
+  {
+    "route": "/",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 5
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\_root.png",
+    "durationMs": 10185
+  },
+  {
+    "route": "/admin",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\admin.png",
+    "durationMs": 15040
+  },
+  {
+    "route": "/backtests",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\backtests.png",
+    "durationMs": 12819
+  },
+  {
+    "route": "/comparison",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "svg-img-alt",
+          "impact": "serious",
+          "nodes": 5
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\comparison.png",
+    "durationMs": 16576
+  },
+  {
+    "route": "/decision",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 2,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\decision.png",
+    "durationMs": 9785
+  },
+  {
+    "route": "/disclaimer",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\disclaimer.png",
+    "durationMs": 9254
+  },
+  {
+    "route": "/feedback",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\feedback.png",
+    "durationMs": 11945
+  },
+  {
+    "route": "/help",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\help.png",
+    "durationMs": 10366
+  },
+  {
+    "route": "/integrations",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\integrations.png",
+    "durationMs": 11518
+  },
+  {
+    "route": "/login",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\login.png",
+    "durationMs": 8730
+  },
+  {
+    "route": "/news",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\news.png",
+    "durationMs": 11660
+  },
+  {
+    "route": "/onboarding",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\onboarding.png",
+    "durationMs": 11440
+  },
+  {
+    "route": "/operator",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\operator.png",
+    "durationMs": 13842
+  },
+  {
+    "route": "/ops",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": 14
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 6
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\ops.png",
+    "durationMs": 14527
+  },
+  {
+    "route": "/paper",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\paper.png",
+    "durationMs": 9486
+  },
+  {
+    "route": "/policies",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\policies.png",
+    "durationMs": 16234
+  },
+  {
+    "route": "/privacy",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\privacy.png",
+    "durationMs": 9206
+  },
+  {
+    "route": "/profile",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\profile.png",
+    "durationMs": 9672
+  },
+  {
+    "route": "/replay",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\replay.png",
+    "durationMs": 15352
+  },
+  {
+    "route": "/research",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\research.png",
+    "durationMs": 9352
+  },
+  {
+    "route": "/risk",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\risk.png",
+    "durationMs": 8561
+  },
+  {
+    "route": "/signup",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\signup.png",
+    "durationMs": 9748
+  },
+  {
+    "route": "/templates",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\templates.png",
+    "durationMs": 11988
+  },
+  {
+    "route": "/terms",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\terms.png",
+    "durationMs": 9007
+  },
+  {
+    "route": "/universe",
+    "viewport": "desktop-1280",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1280\\universe.png",
+    "durationMs": 7379
+  },
+  {
+    "route": "/",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 8
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\_root.png",
+    "durationMs": 16709
+  },
+  {
+    "route": "/admin",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\admin.png",
+    "durationMs": 15595
+  },
+  {
+    "route": "/backtests",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\backtests.png",
+    "durationMs": 10003
+  },
+  {
+    "route": "/comparison",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "svg-img-alt",
+          "impact": "serious",
+          "nodes": 5
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\comparison.png",
+    "durationMs": 12831
+  },
+  {
+    "route": "/decision",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 2,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\decision.png",
+    "durationMs": 14964
+  },
+  {
+    "route": "/disclaimer",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\disclaimer.png",
+    "durationMs": 14674
+  },
+  {
+    "route": "/feedback",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\feedback.png",
+    "durationMs": 11226
+  },
+  {
+    "route": "/help",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "id": "link-in-text-block",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\help.png",
+    "durationMs": 16869
+  },
+  {
+    "route": "/integrations",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\integrations.png",
+    "durationMs": 14042
+  },
+  {
+    "route": "/login",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\login.png",
+    "durationMs": 16048
+  },
+  {
+    "route": "/news",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\news.png",
+    "durationMs": 9564
+  },
+  {
+    "route": "/onboarding",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\onboarding.png",
+    "durationMs": 7297
+  },
+  {
+    "route": "/operator",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\operator.png",
+    "durationMs": 13164
+  },
+  {
+    "route": "/ops",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": 14
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 6
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\ops.png",
+    "durationMs": 15477
+  },
+  {
+    "route": "/paper",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\paper.png",
+    "durationMs": 11364
+  },
+  {
+    "route": "/policies",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\policies.png",
+    "durationMs": 13594
+  },
+  {
+    "route": "/privacy",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\privacy.png",
+    "durationMs": 15241
+  },
+  {
+    "route": "/profile",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\profile.png",
+    "durationMs": 6911
+  },
+  {
+    "route": "/replay",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\replay.png",
+    "durationMs": 12658
+  },
+  {
+    "route": "/research",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\research.png",
+    "durationMs": 8528
+  },
+  {
+    "route": "/risk",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\risk.png",
+    "durationMs": 15071
+  },
+  {
+    "route": "/signup",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\signup.png",
+    "durationMs": 15246
+  },
+  {
+    "route": "/templates",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\templates.png",
+    "durationMs": 7512
+  },
+  {
+    "route": "/terms",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\terms.png",
+    "durationMs": 14267
+  },
+  {
+    "route": "/universe",
+    "viewport": "desktop-1920",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\desktop-1920\\universe.png",
+    "durationMs": 12295
+  },
+  {
+    "route": "/",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\_root.png",
+    "durationMs": 11985
+  },
+  {
+    "route": "/admin",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\admin.png",
+    "durationMs": 6826
+  },
+  {
+    "route": "/backtests",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\backtests.png",
+    "durationMs": 12006
+  },
+  {
+    "route": "/comparison",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "id": "svg-img-alt",
+          "impact": "serious",
+          "nodes": 5
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\comparison.png",
+    "durationMs": 11246
+  },
+  {
+    "route": "/decision",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 2,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\decision.png",
+    "durationMs": 13533
+  },
+  {
+    "route": "/disclaimer",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\disclaimer.png",
+    "durationMs": 6883
+  },
+  {
+    "route": "/feedback",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\feedback.png",
+    "durationMs": 7441
+  },
+  {
+    "route": "/help",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\help.png",
+    "durationMs": 13187
+  },
+  {
+    "route": "/integrations",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\integrations.png",
+    "durationMs": 6768
+  },
+  {
+    "route": "/login",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\login.png",
+    "durationMs": 10227
+  },
+  {
+    "route": "/news",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\news.png",
+    "durationMs": 13588
+  },
+  {
+    "route": "/onboarding",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\onboarding.png",
+    "durationMs": 5886
+  },
+  {
+    "route": "/operator",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\operator.png",
+    "durationMs": 8454
+  },
+  {
+    "route": "/ops",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": 14
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\ops.png",
+    "durationMs": 11363
+  },
+  {
+    "route": "/paper",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\paper.png",
+    "durationMs": 12430
+  },
+  {
+    "route": "/policies",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\policies.png",
+    "durationMs": 10185
+  },
+  {
+    "route": "/privacy",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\privacy.png",
+    "durationMs": 6525
+  },
+  {
+    "route": "/profile",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\profile.png",
+    "durationMs": 8610
+  },
+  {
+    "route": "/replay",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\replay.png",
+    "durationMs": 10461
+  },
+  {
+    "route": "/research",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\research.png",
+    "durationMs": 13136
+  },
+  {
+    "route": "/risk",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\risk.png",
+    "durationMs": 11114
+  },
+  {
+    "route": "/signup",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\signup.png",
+    "durationMs": 8586
+  },
+  {
+    "route": "/templates",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\templates.png",
+    "durationMs": 9097
+  },
+  {
+    "route": "/terms",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\iphone-15\\terms.png",
+    "durationMs": 6929
+  },
+  {
+    "route": "/universe",
+    "viewport": "iphone-15",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\iphone-15\\universe.png",
+    "durationMs": 9411
+  },
+  {
+    "route": "/",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\_root.png",
+    "durationMs": 9156
+  },
+  {
+    "route": "/admin",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\admin.png",
+    "durationMs": 6992
+  },
+  {
+    "route": "/backtests",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\backtests.png",
+    "durationMs": 13238
+  },
+  {
+    "route": "/comparison",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "id": "svg-img-alt",
+          "impact": "serious",
+          "nodes": 5
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\comparison.png",
+    "durationMs": 6194
+  },
+  {
+    "route": "/decision",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 2,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\decision.png",
+    "durationMs": 10389
+  },
+  {
+    "route": "/disclaimer",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\disclaimer.png",
+    "durationMs": 7544
+  },
+  {
+    "route": "/feedback",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\feedback.png",
+    "durationMs": 9112
+  },
+  {
+    "route": "/help",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\help.png",
+    "durationMs": 9849
+  },
+  {
+    "route": "/integrations",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\integrations.png",
+    "durationMs": 14321
+  },
+  {
+    "route": "/login",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\login.png",
+    "durationMs": 8163
+  },
+  {
+    "route": "/news",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\news.png",
+    "durationMs": 13496
+  },
+  {
+    "route": "/onboarding",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\onboarding.png",
+    "durationMs": 5497
+  },
+  {
+    "route": "/operator",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\operator.png",
+    "durationMs": 8845
+  },
+  {
+    "route": "/ops",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": 14
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 4
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\ops.png",
+    "durationMs": 12797
+  },
+  {
+    "route": "/paper",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\paper.png",
+    "durationMs": 12873
+  },
+  {
+    "route": "/policies",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\policies.png",
+    "durationMs": 10186
+  },
+  {
+    "route": "/privacy",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\privacy.png",
+    "durationMs": 9330
+  },
+  {
+    "route": "/profile",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\profile.png",
+    "durationMs": 7081
+  },
+  {
+    "route": "/replay",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\replay.png",
+    "durationMs": 11799
+  },
+  {
+    "route": "/research",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\research.png",
+    "durationMs": 13580
+  },
+  {
+    "route": "/risk",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\risk.png",
+    "durationMs": 14060
+  },
+  {
+    "route": "/signup",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\signup.png",
+    "durationMs": 7853
+  },
+  {
+    "route": "/templates",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\templates.png",
+    "durationMs": 5641
+  },
+  {
+    "route": "/terms",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "rules": []
+    },
+    "screenshot": "screenshots\\pixel-8\\terms.png",
+    "durationMs": 11014
+  },
+  {
+    "route": "/universe",
+    "viewport": "pixel-8",
+    "status": "ok",
+    "httpStatus": 200,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "axe": {
+      "critical": 0,
+      "serious": 1,
+      "moderate": 0,
+      "minor": 0,
+      "rules": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "screenshot": "screenshots\\pixel-8\\universe.png",
+    "durationMs": 14199
+  }
+]

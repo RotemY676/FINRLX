@@ -71,12 +71,13 @@ export function ScenarioCard() {
         {/* Horizon */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[12px] text-ink-2">Horizon</label>
+            <label htmlFor="scenario-horizon" className="text-[12px] text-ink-2">Horizon</label>
             <span className="text-[12px] font-mono text-ink">{params.horizon_days}d</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-4">1W</span>
             <input
+              id="scenario-horizon"
               type="range" min={7} max={180} value={params.horizon_days}
               onChange={(e) => updateParam("horizon_days", Number(e.target.value))}
               className="flex-1 h-1.5 accent-primary"
@@ -88,12 +89,13 @@ export function ScenarioCard() {
         {/* Rate shock */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[12px] text-ink-2">Rate shock</label>
+            <label htmlFor="scenario-rate-shock" className="text-[12px] text-ink-2">Rate shock</label>
             <span className="text-[12px] font-mono text-ink">{params.rate_shock_bps > 0 ? "+" : ""}{params.rate_shock_bps} bps</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-4">−200</span>
             <input
+              id="scenario-rate-shock"
               type="range" min={-200} max={200} value={params.rate_shock_bps}
               onChange={(e) => updateParam("rate_shock_bps", Number(e.target.value))}
               className="flex-1 h-1.5 accent-primary"
@@ -105,12 +107,13 @@ export function ScenarioCard() {
         {/* Correlation */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[12px] text-ink-2">Cross-asset correlation</label>
+            <label htmlFor="scenario-correlation" className="text-[12px] text-ink-2">Cross-asset correlation</label>
             <span className="text-[12px] font-mono text-ink">{params.correlation.toFixed(2)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-4">0.00</span>
             <input
+              id="scenario-correlation"
               type="range" min={0} max={100} value={Math.round(params.correlation * 100)}
               onChange={(e) => updateParam("correlation", Number(e.target.value) / 100)}
               className="flex-1 h-1.5 accent-primary"
@@ -122,12 +125,13 @@ export function ScenarioCard() {
         {/* Earnings revision weight */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[12px] text-ink-2">Earnings revision weight</label>
+            <label htmlFor="scenario-earnings-weight" className="text-[12px] text-ink-2">Earnings revision weight</label>
             <span className="text-[12px] font-mono text-ink">{Math.round(params.earnings_revision_weight * 100)}%</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-4">0%</span>
             <input
+              id="scenario-earnings-weight"
               type="range" min={0} max={100} value={Math.round(params.earnings_revision_weight * 100)}
               onChange={(e) => updateParam("earnings_revision_weight", Number(e.target.value) / 100)}
               className="flex-1 h-1.5 accent-primary"
@@ -147,6 +151,10 @@ export function ScenarioCard() {
           <div key={key} className="flex items-center justify-between">
             <span className="text-[12px] text-ink-2">{label}</span>
             <button
+              type="button"
+              role="switch"
+              aria-checked={params[key]}
+              aria-label={`Toggle ${label}`}
               onClick={() => updateParam(key, !params[key])}
               className={`w-9 h-5 rounded-full transition-colors relative ${params[key] ? "bg-primary" : "bg-surface-3"}`}
             >

@@ -1,0 +1,23 @@
+{
+  "route": "/disclaimer",
+  "viewport": "desktop-1920",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  "screenshot": "screenshots\\desktop-1920\\disclaimer.png",
+  "durationMs": 14674
+}

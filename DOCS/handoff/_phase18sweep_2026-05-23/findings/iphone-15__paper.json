@@ -1,0 +1,19 @@
+{
+  "route": "/paper",
+  "viewport": "iphone-15",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0,
+    "rules": []
+  },
+  "screenshot": "screenshots\\iphone-15\\paper.png",
+  "durationMs": 12430
+}

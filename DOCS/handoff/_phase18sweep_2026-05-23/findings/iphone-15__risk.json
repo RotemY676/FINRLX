@@ -1,0 +1,23 @@
+{
+  "route": "/risk",
+  "viewport": "iphone-15",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  "screenshot": "screenshots\\iphone-15\\risk.png",
+  "durationMs": 11114
+}

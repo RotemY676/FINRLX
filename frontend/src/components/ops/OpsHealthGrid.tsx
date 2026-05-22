@@ -10,8 +10,9 @@ const STATUS_STYLE: Record<string, string> = {
 function StatusDot({ status }: { status: string }) {
   return (
     <span
+      role="img"
+      aria-label={`Status: ${status}`}
       className={`w-2 h-2 rounded-full ${STATUS_STYLE[status] ?? "bg-breach"} shrink-0`}
-      aria-label={status}
     />
   );
 }

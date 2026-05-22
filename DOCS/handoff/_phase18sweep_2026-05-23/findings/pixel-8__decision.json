@@ -1,0 +1,33 @@
+{
+  "route": "/decision",
+  "viewport": "pixel-8",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 2,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "nodes": 3
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 1
+      },
+      {
+        "id": "label",
+        "impact": "critical",
+        "nodes": 4
+      }
+    ]
+  },
+  "screenshot": "screenshots\\pixel-8\\decision.png",
+  "durationMs": 10389
+}

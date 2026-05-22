@@ -1,0 +1,17 @@
+{
+  "route": "/research",
+  "viewport": "pixel-8",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0,
+    "rules": []
+  },
+  "screenshot": "screenshots\\pixel-8\\research.png",
+  "durationMs": 13580
+}

@@ -1,0 +1,25 @@
+{
+  "route": "/operator",
+  "viewport": "desktop-1920",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  "screenshot": "screenshots\\desktop-1920\\operator.png",
+  "durationMs": 13164
+}

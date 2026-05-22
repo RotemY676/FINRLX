@@ -1,0 +1,23 @@
+{
+  "route": "/backtests",
+  "viewport": "pixel-8",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 2
+      }
+    ]
+  },
+  "screenshot": "screenshots\\pixel-8\\backtests.png",
+  "durationMs": 13238
+}

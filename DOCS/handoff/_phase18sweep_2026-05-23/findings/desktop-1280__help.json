@@ -1,0 +1,23 @@
+{
+  "route": "/help",
+  "viewport": "desktop-1280",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 1,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 1
+      }
+    ]
+  },
+  "screenshot": "screenshots\\desktop-1280\\help.png",
+  "durationMs": 10366
+}

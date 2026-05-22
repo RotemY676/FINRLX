@@ -1,0 +1,60 @@
+Total routes tested: 25
+Total findings entries: 100
+
+====================================================================================================
+AXE VIOLATIONS PER ROUTE (sum across all viewports)
+====================================================================================================
+Route                      Crit   Ser   Mod   Min  Top rules
+----------------------------------------------------------------------------------------------------
+/                             0     4     0     0  color-contrast(ser/8)
+/admin                        0     2     0     0  color-contrast(ser/1)
+/backtests                    0     4     0     0  color-contrast(ser/3)
+/comparison                   0     8     0     0  svg-img-alt(ser/5), color-contrast(ser/2)
+/decision                     8     4     0     0  label(cri/4), button-name(cri/3), color-contrast(ser/2)
+/disclaimer                   0     2     0     0  color-contrast(ser/1)
+/feedback                     0     2     0     0  color-contrast(ser/1)
+/help                         0     3     0     0  link-in-text-block(ser/3), color-contrast(ser/1)
+/integrations                 0     2     0     0  color-contrast(ser/1)
+/login                        0     2     0     0  color-contrast(ser/1)
+/news                         0     2     0     0  color-contrast(ser/1)
+/onboarding                   0     2     0     0  color-contrast(ser/1)
+/operator                     0     2     0     0  color-contrast(ser/1)
+/ops                          0     8     0     0  aria-prohibited-attr(ser/14), color-contrast(ser/6)
+/paper                        0     2     0     0  color-contrast(ser/2)
+/policies                     0     4     0     0  color-contrast(ser/4)
+/privacy                      0     2     0     0  color-contrast(ser/1)
+/profile                      0     2     0     0  color-contrast(ser/1)
+/replay                       0     4     0     0  color-contrast(ser/3)
+/research                     0     2     0     0  color-contrast(ser/1)
+/risk                         0     4     0     0  color-contrast(ser/2)
+/signup                       0     2     0     0  color-contrast(ser/1)
+/templates                    0     2     0     0  color-contrast(ser/1)
+/terms                        0     2     0     0  color-contrast(ser/1)
+/universe                     0     4     0     0  color-contrast(ser/3)
+
+====================================================================================================
+UNIQUE AXE RULES OBSERVED (across the whole sweep)
+====================================================================================================
+  button-name                         impact=critical on_routes= 1  max_nodes=3
+  label                               impact=critical on_routes= 1  max_nodes=4
+  color-contrast                      impact=serious  on_routes=25  max_nodes=8
+  svg-img-alt                         impact=serious  on_routes= 1  max_nodes=5
+  link-in-text-block                  impact=serious  on_routes= 1  max_nodes=3
+  aria-prohibited-attr                impact=serious  on_routes= 1  max_nodes=14
+
+====================================================================================================
+CONSOLE ERRORS PER ROUTE (deduped across viewports)
+====================================================================================================
+
+[/operator] http={200} fails=0
+  - Failed to load resource: the server responded with a status of 401 ()
+
+[/paper] http={200} fails=0
+  - Failed to load resource: the server responded with a status of 401 ()
+
+[/replay] http={200} fails=0
+  - Failed to load resource: the server responded with a status of 401 ()
+
+====================================================================================================
+PAGE ERRORS PER ROUTE
+====================================================================================================

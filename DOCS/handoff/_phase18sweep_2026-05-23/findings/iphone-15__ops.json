@@ -1,0 +1,28 @@
+{
+  "route": "/ops",
+  "viewport": "iphone-15",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 2,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "nodes": 14
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 2
+      }
+    ]
+  },
+  "screenshot": "screenshots\\iphone-15\\ops.png",
+  "durationMs": 11363
+}

@@ -1,0 +1,28 @@
+{
+  "route": "/ops",
+  "viewport": "desktop-1920",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 2,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "nodes": 14
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 6
+      }
+    ]
+  },
+  "screenshot": "screenshots\\desktop-1920\\ops.png",
+  "durationMs": 15477
+}

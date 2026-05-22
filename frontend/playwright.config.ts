@@ -10,7 +10,14 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * Chromium-only by default to keep CI cheap. Local devs can override via
  * `npx playwright test --project=firefox` once those projects are uncommented.
+ *
+ * BASE_URL / PORT are env-driven so an already-running `next dev` (e.g. on
+ * port 3001 when 3000 is taken) can be reused without editing this file.
  */
+const PORT = process.env.PLAYWRIGHT_PORT ?? "3000";
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+const DISABLE_WEBSERVER = process.env.PLAYWRIGHT_DISABLE_WEBSERVER === "1";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -20,19 +27,21 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   timeout: 30_000,
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: BASE_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
-  webServer: {
-    command: "npm run start -- --hostname 127.0.0.1",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    stdout: "pipe",
-    stderr: "pipe",
-  },
+  webServer: DISABLE_WEBSERVER
+    ? undefined
+    : {
+        command: "npm run start -- --hostname 127.0.0.1",
+        url: BASE_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
 });

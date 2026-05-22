@@ -1,0 +1,28 @@
+{
+  "route": "/comparison",
+  "viewport": "desktop-1280",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 2,
+    "moderate": 0,
+    "minor": 0,
+    "rules": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 2
+      },
+      {
+        "id": "svg-img-alt",
+        "impact": "serious",
+        "nodes": 5
+      }
+    ]
+  },
+  "screenshot": "screenshots\\desktop-1280\\comparison.png",
+  "durationMs": 16576
+}

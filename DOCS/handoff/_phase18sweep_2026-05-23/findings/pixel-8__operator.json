@@ -1,0 +1,19 @@
+{
+  "route": "/operator",
+  "viewport": "pixel-8",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0,
+    "rules": []
+  },
+  "screenshot": "screenshots\\pixel-8\\operator.png",
+  "durationMs": 8845
+}

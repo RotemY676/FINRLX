@@ -1,0 +1,17 @@
+{
+  "route": "/terms",
+  "viewport": "iphone-15",
+  "status": "ok",
+  "httpStatus": 200,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "axe": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0,
+    "rules": []
+  },
+  "screenshot": "screenshots\\iphone-15\\terms.png",
+  "durationMs": 6929
+}
