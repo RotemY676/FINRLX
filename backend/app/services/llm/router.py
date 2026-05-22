@@ -56,7 +56,7 @@ _PROVIDER_FACTORIES = {
     "gemini": lambda: (
         GeminiProvider(
             api_key=settings.llm_gemini_api_key,
-            model=settings.llm_model or "gemini-1.5-flash",
+            model=settings.llm_model or "gemini-2.5-flash",
         )
         if settings.llm_gemini_api_key
         else None

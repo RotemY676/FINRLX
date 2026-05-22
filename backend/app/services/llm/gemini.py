@@ -5,10 +5,19 @@ Activation:
   2. Set `LLM_GEMINI_API_KEY` env var.
   3. Set `LLM_PROVIDER=gemini` (single-provider mode) OR add
      `gemini` to `LLM_PROVIDER_CHAIN` (cascading mode).
-  4. Optionally set `LLM_MODEL` — defaults to gemini-1.5-flash, which
+  4. Optionally set `LLM_MODEL` — defaults to gemini-2.5-flash, which
      has a 1M-token context window (fits full 10-K filings in one
-     shot) and a generous free quota (~1.5M input tokens/day at the
-     time of writing).
+     shot) and is on the Google free-tier today.
+
+NOTE on model IDs: Google rotates model availability on the v1beta
+endpoint frequently (1.5-flash was retired in early 2026 in favor of
+2.x). If the default ID ever returns 404, the API response includes a
+pointer to ModelService.ListModels — set LLM_MODEL to a currently
+available ID as a hotfix while the default is updated. To list what
+your key can use:
+
+    curl "https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}" \
+      | jq '.models[] | select(.supportedGenerationMethods[]? == "generateContent") | .name'
 
 Why httpx instead of the google-generativeai SDK:
   - One fewer dependency. httpx is already in requirements.txt for
@@ -33,7 +42,7 @@ from app.services.llm.provider import LLMProvider, StubProviderError
 from app.services.llm.types import LLMMessage, LLMResponse
 
 
-_DEFAULT_MODEL = "gemini-1.5-flash"
+_DEFAULT_MODEL = "gemini-2.5-flash"
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 _REQUEST_TIMEOUT_SECONDS = 120.0
 

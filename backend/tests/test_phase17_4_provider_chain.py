@@ -270,7 +270,7 @@ async def test_gemini_happy_path_parses_response():
 
     assert resp.text == "Revenue was $12B in Q3."
     assert resp.provider == "gemini"
-    assert resp.model == "gemini-1.5-flash"
+    assert resp.model == "gemini-2.5-flash"
     assert resp.input_tokens == 120
     assert resp.output_tokens == 18
 
