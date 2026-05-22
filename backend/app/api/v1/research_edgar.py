@@ -233,6 +233,7 @@ def _insights_to_dict(row) -> dict:
         "id": row.id,
         "ticker": row.ticker,
         "summary_text": row.summary_text,
+        "metrics": row.metrics,  # Phase 18.6.1 — null when LLM didn't emit valid JSON
         "quarters_covered": list(row.quarters_covered or []),
         "provider": row.provider,
         "model": row.model,

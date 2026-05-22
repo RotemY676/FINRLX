@@ -45,11 +45,20 @@ class TickerInsights(Base):
     # "most recent insights for ticker X" a clean index scan.
     ticker: Mapped[str] = mapped_column(String(16), nullable=False)
 
-    # The LLM's full structured response. We store as plain text
-    # (the FE renders it as markdown). If a future phase wants
-    # structured fields (e.g. "trajectory_bullets", "watch_list"),
-    # add columns explicitly rather than overloading this field.
+    # The LLM's narrative (latest-quarter delta, risk-factor changes,
+    # what-to-watch sections). The trajectory itself lives in the
+    # structured `metrics` column below — the FE renders it as a
+    # chart, not inside this text.
     summary_text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Phase 18.6.1 — Structured metrics extracted from the LLM's
+    # JSON block. Shape: {"metrics": [{name, unit, quarters:
+    # [{period_end, label, value}, ...]}, ...]}. The FE renders these
+    # as a multi-series line chart matching PriceChartCard's style.
+    # Nullable so backwards-compat (older rows have no chart data)
+    # and to handle the rare case where the LLM emits no parseable
+    # JSON block.
+    metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # List of SEC accession numbers this analysis covered. Stored as
     # JSON so the FE can show "based on Q1 FY27 + Q4 FY26 + ..." with

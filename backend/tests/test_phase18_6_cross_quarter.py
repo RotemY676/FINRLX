@@ -148,6 +148,160 @@ async def test_generate_insights_persists_a_row(monkeypatch):
     assert len(rows) == 1
 
 
+# ── Phase 18.6.1 — Structured metrics JSON parsing ──────────────────
+
+
+def test_parse_metrics_block_happy_path():
+    from app.services.research.cross_quarter_analyze import _parse_metrics_block
+
+    text = (
+        '```json\n'
+        '{\n'
+        '  "metrics": [\n'
+        '    {\n'
+        '      "name": "Revenue",\n'
+        '      "unit": "USD millions",\n'
+        '      "quarters": [\n'
+        '        {"period_end": "2025-01-26", "label": "Q4 FY25", "value": 39331},\n'
+        '        {"period_end": "2025-04-27", "label": "Q1 FY26", "value": 44062}\n'
+        '      ]\n'
+        '    }\n'
+        '  ]\n'
+        '}\n'
+        '```\n\n## Latest-quarter delta\n\nRevenue grew.'
+    )
+    parsed = _parse_metrics_block(text)
+    assert parsed is not None
+    assert len(parsed["metrics"]) == 1
+    m = parsed["metrics"][0]
+    assert m["name"] == "Revenue"
+    assert m["unit"] == "USD millions"
+    assert len(m["quarters"]) == 2
+    assert m["quarters"][0]["value"] == 39331.0
+    assert m["quarters"][0]["label"] == "Q4 FY25"
+
+
+def test_parse_metrics_block_drops_invalid_metrics():
+    """A single bad metric shouldn't poison the whole block —
+    valid metrics still come through."""
+    from app.services.research.cross_quarter_analyze import _parse_metrics_block
+
+    text = (
+        '```json\n'
+        '{"metrics": [\n'
+        '  {"name": "Revenue", "unit": "USD", "quarters": [{"period_end": "2025-01-26", "label": "Q4", "value": 100}]},\n'
+        '  "garbage",\n'
+        '  {"name": "NoQuarters"},\n'
+        '  {"name": "BadValue", "quarters": [{"value": "not a number"}]}\n'
+        ']}\n'
+        '```'
+    )
+    parsed = _parse_metrics_block(text)
+    assert parsed is not None
+    assert len(parsed["metrics"]) == 1
+    assert parsed["metrics"][0]["name"] == "Revenue"
+
+
+def test_parse_metrics_block_returns_none_when_no_fence():
+    from app.services.research.cross_quarter_analyze import _parse_metrics_block
+
+    assert _parse_metrics_block("just markdown, no JSON block") is None
+
+
+def test_parse_metrics_block_returns_none_for_invalid_json():
+    """Malformed JSON inside the fence → None (the caller falls back
+    to narrative-only mode rather than blowing up)."""
+    from app.services.research.cross_quarter_analyze import _parse_metrics_block
+
+    text = '```json\n{not valid json\n```'
+    assert _parse_metrics_block(text) is None
+
+
+def test_strip_metrics_block_removes_only_the_fenced_block():
+    from app.services.research.cross_quarter_analyze import _strip_metrics_block
+
+    text = (
+        '```json\n{"metrics": []}\n```\n\n'
+        '## Latest-quarter delta\n\nRevenue grew.\n\n'
+        '## What to watch\n\nMargin.'
+    )
+    stripped = _strip_metrics_block(text)
+    assert "```" not in stripped
+    assert "Latest-quarter delta" in stripped
+    assert "What to watch" in stripped
+
+
+@pytest.mark.asyncio
+async def test_generate_insights_persists_metrics_when_llm_emits_json(monkeypatch):
+    """End-to-end: when the LLM response contains a JSON block, the
+    persisted row carries `metrics` AND `summary_text` has the JSON
+    stripped out."""
+    from app.services.documents import budget as budget_svc
+    from app.services.research import cross_quarter_analyze
+    from app.services.research.cross_quarter_analyze import generate_insights
+    from tests.conftest import test_session_factory
+
+    monkeypatch.setattr(budget_svc, "can_spend", _allow_budget())
+    async def _no_op_record(_db, *, provider, input_tokens, output_tokens):
+        pass
+    monkeypatch.setattr(budget_svc, "record_usage", _no_op_record)
+
+    llm_text = (
+        '```json\n'
+        '{"metrics": [{"name": "Revenue", "unit": "USD millions", '
+        '"quarters": [{"period_end": "2025-01-26", "label": "Q4 FY25", "value": 39331}]}]}\n'
+        '```\n\n'
+        '## Latest-quarter delta\n\nRevenue grew.'
+    )
+    monkeypatch.setattr(
+        cross_quarter_analyze, "get_provider_chain",
+        lambda: [_mock_llm_provider(llm_text)]
+    )
+
+    await _seed_sec_auto_docs("NVDA", n=2)
+
+    async with test_session_factory() as db:
+        result = await generate_insights(
+            db, ticker="NVDA", triggered_by_email="op@finrlx.local"
+        )
+
+    assert result.insights.metrics is not None
+    assert len(result.insights.metrics["metrics"]) == 1
+    assert result.insights.metrics["metrics"][0]["name"] == "Revenue"
+    # Narrative no longer contains the JSON fence.
+    assert "```" not in result.insights.summary_text
+    assert "Latest-quarter delta" in result.insights.summary_text
+
+
+@pytest.mark.asyncio
+async def test_generate_insights_persists_without_metrics_when_no_json(monkeypatch):
+    """When the LLM doesn't emit a JSON block, the row still persists
+    with metrics=None — the chart just won't appear on the FE."""
+    from app.services.documents import budget as budget_svc
+    from app.services.research import cross_quarter_analyze
+    from app.services.research.cross_quarter_analyze import generate_insights
+    from tests.conftest import test_session_factory
+
+    monkeypatch.setattr(budget_svc, "can_spend", _allow_budget())
+    async def _no_op_record(_db, *, provider, input_tokens, output_tokens):
+        pass
+    monkeypatch.setattr(budget_svc, "record_usage", _no_op_record)
+    monkeypatch.setattr(
+        cross_quarter_analyze, "get_provider_chain",
+        lambda: [_mock_llm_provider("## Latest-quarter delta\n\nNo JSON here.")]
+    )
+
+    await _seed_sec_auto_docs("NVDA", n=1)
+
+    async with test_session_factory() as db:
+        result = await generate_insights(
+            db, ticker="NVDA", triggered_by_email="op@finrlx.local"
+        )
+
+    assert result.insights.metrics is None
+    assert "No JSON here" in result.insights.summary_text
+
+
 @pytest.mark.asyncio
 async def test_generate_insights_raises_when_no_docs_ready():
     """Ticker with NO sec_auto docs → InsufficientFilingsError."""

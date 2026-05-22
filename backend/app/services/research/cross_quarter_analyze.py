@@ -26,7 +26,9 @@ zero tokens since it errors before generation.
 """
 from __future__ import annotations
 
+import json
 import logging
+import re
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -47,7 +49,12 @@ logger = logging.getLogger(__name__)
 # ~4 chars/token, 80K chars ≈ 20K input tokens — 6 filings fit
 # comfortably inside Gemini's 1M context and the monthly budget.
 _MAX_CHARS_PER_FILING = 80_000
-_MAX_OUTPUT_TOKENS = 4096
+# Raised from 4096 → 8192 after Phase 18.6.1 because production runs
+# truncated at ~160 output tokens before completing the four sections.
+# The model finished a markdown table HEADER then stopped (likely a
+# self-judged "complete" signal). With 8192 there's no realistic risk
+# of running out for a structured response.
+_MAX_OUTPUT_TOKENS = 8192
 
 
 SYSTEM_PROMPT = (
@@ -65,19 +72,120 @@ SYSTEM_PROMPT = (
     "- FINRLX is decision-support, not investment advice. Refuse trade "
     "instructions ('should I buy?', 'sell now?') and market-direction "
     "predictions.\n\n"
-    "Your output must have four sections, in this order:\n"
-    "**Headline metric trajectory** — identify 2–4 key metrics "
-    "(revenue, gross margin, operating margin, free cash flow, etc.) "
-    "and show their values per quarter in chronological order. Use a "
-    "small table or bullet list.\n\n"
-    "**Latest-quarter delta** — what changed in the most recent quarter "
-    "vs the prior period? What did management call out in the MD&A "
-    "narrative? Quote management's language briefly when relevant.\n\n"
-    "**Risk-factor changes** — any new, modified, or removed risk "
-    "factors vs the prior period? Be concise; only list material changes.\n\n"
-    "**What to watch** — one paragraph (3–5 sentences) on the headline "
-    "thing the user should monitor next quarter."
+    "Your output MUST have two parts, in this exact order:\n\n"
+    "PART 1 — A fenced JSON code block with the structured metrics. "
+    "The frontend renders this as a chart, so the schema is strict. "
+    "Use this exact shape, with no extra fields:\n"
+    "```json\n"
+    "{\n"
+    '  "metrics": [\n'
+    "    {\n"
+    '      "name": "Revenue",\n'
+    '      "unit": "USD millions",\n'
+    '      "quarters": [\n'
+    '        {"period_end": "2025-01-26", "label": "Q4 FY25", "value": 39331},\n'
+    '        {"period_end": "2025-04-27", "label": "Q1 FY26", "value": 44062}\n'
+    "      ]\n"
+    "    }\n"
+    "  ]\n"
+    "}\n"
+    "```\n"
+    "Rules for the JSON:\n"
+    "- Include 2–4 metrics. Prefer Revenue, Gross margin %, Operating "
+    "margin %, Free cash flow (in this priority order) when present.\n"
+    "- One entry per filing in `quarters`, in chronological order "
+    "(oldest first). Skip filings where the metric isn't reported.\n"
+    "- `value` MUST be a number, not a string. For percentages use the "
+    "raw percent (e.g. 75.4 not 0.754).\n"
+    "- `unit` is a short label the chart axis can show (e.g. \"USD "
+    "millions\", \"%\", \"USD billions\").\n"
+    "- `label` is a 6-12 character human label for the X-axis tick "
+    "(e.g. \"Q1 FY27\", not a long date).\n"
+    "- Do NOT add commentary inside the JSON block. The frontend parses "
+    "it programmatically.\n\n"
+    "PART 2 — A markdown narrative with THREE sections (do not repeat "
+    "the trajectory — the chart shows it). Each section is short:\n\n"
+    "## Latest-quarter delta\n"
+    "2–4 sentences: what changed in the most recent quarter vs the "
+    "prior period? What did management call out in the MD&A narrative? "
+    "Cite the accession number you read it from.\n\n"
+    "## Risk-factor changes\n"
+    "Bullet list of new, modified, or removed risk factors vs the prior "
+    "period. Material changes only. If nothing material changed, say "
+    "so in one line.\n\n"
+    "## What to watch\n"
+    "One paragraph (3–5 sentences) on the headline thing the user "
+    "should monitor next quarter, anchored in what the filings actually "
+    "said (don't invent forecasts)."
 )
+
+
+# Fenced-JSON extractor. The LLM is instructed to emit ```json … ```
+# but we tolerate the bare ``` variant too. Compiled once.
+_JSON_FENCE_RE = re.compile(
+    r"```(?:json)?\s*(\{.*?\})\s*```",
+    flags=re.DOTALL | re.IGNORECASE,
+)
+
+
+def _parse_metrics_block(text: str) -> dict | None:
+    """Extract the JSON metrics block from the LLM response.
+
+    Returns the parsed dict, or None if no valid block is found. The
+    caller falls back to "narrative-only" mode in that case — we still
+    persist the row and render the markdown; the chart just doesn't
+    appear. We never persist invalid JSON.
+    """
+    match = _JSON_FENCE_RE.search(text)
+    if not match:
+        return None
+    try:
+        payload = json.loads(match.group(1))
+    except (ValueError, TypeError) as e:
+        logger.warning("metrics JSON block did not parse: %s", e)
+        return None
+    if not isinstance(payload, dict) or "metrics" not in payload:
+        logger.warning("metrics block missing 'metrics' key")
+        return None
+    metrics = payload.get("metrics")
+    if not isinstance(metrics, list):
+        return None
+    # Light schema sanity. We don't reject the whole thing on a single
+    # bad metric — drop the bad ones and keep the rest.
+    cleaned: list[dict] = []
+    for m in metrics:
+        if not isinstance(m, dict):
+            continue
+        name = m.get("name")
+        quarters = m.get("quarters")
+        if not isinstance(name, str) or not isinstance(quarters, list):
+            continue
+        clean_quarters: list[dict] = []
+        for q in quarters:
+            if not isinstance(q, dict):
+                continue
+            value = q.get("value")
+            if not isinstance(value, (int, float)):
+                continue
+            clean_quarters.append({
+                "period_end": q.get("period_end") or "",
+                "label": q.get("label") or "",
+                "value": float(value),
+            })
+        if clean_quarters:
+            cleaned.append({
+                "name": name,
+                "unit": m.get("unit") or "",
+                "quarters": clean_quarters,
+            })
+    return {"metrics": cleaned} if cleaned else None
+
+
+def _strip_metrics_block(text: str) -> str:
+    """Remove the fenced JSON metrics block from the text so the
+    frontend doesn't render it twice (once as a chart, once as raw
+    JSON in the narrative)."""
+    return _JSON_FENCE_RE.sub("", text, count=1).strip()
 
 
 class InsufficientFilingsError(RuntimeError):
@@ -227,9 +335,17 @@ async def generate_insights(
     else:
         cost = None
 
+    # Phase 18.6.1: extract the structured metrics block so the FE
+    # can render a chart, then strip it from the markdown so it isn't
+    # re-rendered as raw JSON below the chart. If parsing fails the
+    # row still saves — chart just doesn't appear.
+    parsed_metrics = _parse_metrics_block(response.text)
+    narrative_text = _strip_metrics_block(response.text) if parsed_metrics else response.text
+
     row = TickerInsights(
         ticker=symbol,
-        summary_text=response.text,
+        summary_text=narrative_text,
+        metrics=parsed_metrics,
         quarters_covered=accessions,
         provider=response.provider,
         model=response.model,

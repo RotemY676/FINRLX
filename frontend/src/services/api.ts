@@ -2317,10 +2317,26 @@ export async function fetchBudgetUsage(): Promise<ApiResponse<BudgetUsageData>> 
 
 // ── Phase 18 — SEC EDGAR auto-ingest + cross-quarter insights ──────
 
+// Phase 18.6.1 — Structured metrics block parsed out of the LLM
+// response. The TrajectoryChart component renders this as a per-metric
+// line chart. Null when the LLM didn't emit a valid JSON block.
+export interface TickerInsightsMetricsData {
+  metrics: Array<{
+    name: string;
+    unit: string;
+    quarters: Array<{
+      period_end: string;
+      label: string;
+      value: number;
+    }>;
+  }>;
+}
+
 export interface TickerInsightsData {
   id: string;
   ticker: string;
   summary_text: string;
+  metrics: TickerInsightsMetricsData | null;
   quarters_covered: string[];
   provider: string;
   model: string;
