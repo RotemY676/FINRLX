@@ -92,17 +92,19 @@ export function DecisionCommandCenter() {
 
   return (
     <div className="space-y-gap max-w-[1280px]" data-page="home-command-center">
-      {/* Header */}
+      {/* Header — answers the four playbook questions in one read.
+          Typography uses the Phase 3 named tokens (page-title / body-sm)
+          instead of hand-rolled pixel sizes. */}
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-ink flex items-center gap-2">
+          <h1 className="text-page-title text-ink flex items-center gap-2">
             Decision Command Center
             <HelpLink anchor="getting-started/reading-the-dashboard" label="Read the dashboard — tutorial" />
           </h1>
-          <p className="text-[13px] text-ink-3 mt-1 max-w-xl leading-snug">
-            Hi, {view.greetingName}. This screen answers: what changed, what
-            needs review, what evidence supports it, and what is stale,
-            shadow-only, or blocked.
+          <p className="text-body-sm text-ink-2 mt-1 max-w-xl leading-snug">
+            Hi, {view.greetingName}. Below: what changed, what needs review,
+            what evidence supports it, and what is stale, shadow-only, or
+            blocked.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -122,7 +124,7 @@ export function DecisionCommandCenter() {
       {view.pipelineWarnings.length > 0 && (
         <div
           role="status"
-          className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink space-y-1"
+          className="rounded-lg border border-caution bg-caution-soft p-3 text-caption text-caution-soft-ink space-y-1"
         >
           {view.pipelineWarnings.map((w, i) => (
             <p key={i}>· {w}</p>
