@@ -125,9 +125,20 @@ interface SidebarProps {
   mobileOpen?: boolean;
   /** Called when the user navigates or otherwise dismisses the mobile drawer. */
   onMobileClose?: () => void;
+  /**
+   * Phase 15.3 — chrome height as a Tailwind top-N class.  v2 chrome
+   * = top-14 (56 px), v3 chrome = top-28 (112 px).  Used only on the
+   * mobile drawer overlay; desktop sidebar is in-flow.
+   */
+  chromeOffsetClass?: string;
 }
 
-export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: SidebarProps) {
+export function Sidebar({
+  collapsed,
+  mobileOpen = false,
+  onMobileClose,
+  chromeOffsetClass = "top-14",
+}: SidebarProps) {
   const pathname = usePathname() ?? "/";
   const [counts, setCounts] = useState<WorkspaceCountsData | null>(null);
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
@@ -261,8 +272,9 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
       aria-label="Primary navigation"
       className={[
         // mobile-first: fixed overlay, full-height under the topbar.
-        // Phase 14.1 — top-14 (56 px) tracks the new TopBar height.
-        "fixed inset-y-0 left-0 top-14 z-30 w-64 transform transition-transform",
+        // Phase 15.3 — chromeOffsetClass tracks v2 (top-14) vs v3
+        // (top-28) chrome heights via a className from AppShell.
+        `fixed inset-y-0 left-0 ${chromeOffsetClass} z-30 w-64 transform transition-transform`,
         mobileTransform,
         // md+: revert to in-flow column
         "md:static md:top-auto md:translate-x-0 md:transition-all",

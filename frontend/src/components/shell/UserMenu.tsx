@@ -43,6 +43,11 @@ import { Icon } from "@/components/icons/Icon";
 type Density = "default" | "compact" | "comfortable";
 const DENSITIES: ReadonlyArray<Density> = ["default", "compact", "comfortable"];
 
+// Phase 15.4 — shared key with AppShell so the v3-chrome opt-out can
+// be flipped from inside the avatar menu. Must match the value in
+// AppShell.tsx (`TOPBAR_FLAG_KEY`).
+const TOPBAR_FLAG_KEY = "finrlx-topbar-v3";
+
 function computeInitials(email: string): string {
   return (
     email
@@ -69,16 +74,40 @@ export function UserMenu() {
   const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [density, setDensity] = useState<Density>("default");
+  // Phase 15.4 — mirror the AppShell flag so the menu label matches
+  // what the chrome is actually rendering.  Default is true (v3 ON).
+  const [useV3, setUseV3] = useState(true);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   // Hydrate density from localStorage on mount so the menu's label
   // matches whatever the user picked previously via the TopBar control.
+  // Also hydrate the v3 opt-out flag for the chrome toggle label.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("finrlx-density") as Density | null;
     if (saved && DENSITIES.includes(saved)) setDensity(saved);
+    const flag = window.localStorage.getItem(TOPBAR_FLAG_KEY);
+    if (flag === "false") setUseV3(false);
   }, []);
+
+  const toggleChrome = useCallback(() => {
+    const next = !useV3;
+    setUseV3(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TOPBAR_FLAG_KEY, String(next));
+      // AppShell listens to the same key via a `storage` event
+      // listener, but `storage` only fires on OTHER tabs. Dispatch a
+      // synthetic event so the current tab also reacts without a
+      // page reload.
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: TOPBAR_FLAG_KEY,
+          newValue: String(next),
+        }),
+      );
+    }
+  }, [useV3]);
 
   const cycleDensity = useCallback(() => {
     const idx = DENSITIES.indexOf(density);
@@ -251,6 +280,20 @@ export function UserMenu() {
             >
               <span className="flex-1">Density</span>
               <span className="text-meta text-ink-4 font-mono">{densityLabel}</span>
+            </MenuButton>
+            {/* Phase 15.4 — chrome version toggle. Operator can flip
+                between the Phase 15 two-strip layout and the legacy
+                v2 single-strip without a page reload. */}
+            <MenuButton
+              icon="compare"
+              onClick={() => {
+                toggleChrome();
+              }}
+            >
+              <span className="flex-1">TopBar layout</span>
+              <span className="text-meta text-ink-4 font-mono">
+                {useV3 ? "New (v3)" : "Classic"}
+              </span>
             </MenuButton>
           </div>
 
