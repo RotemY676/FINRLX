@@ -102,8 +102,8 @@ def get_provider_status() -> ProviderStatus:
         configured=True,
         provider_name=name,
         detail=(
-            "Finnhub provider selected. NOTE: Phase 16.0 ships a shim that "
-            "returns the stub payload tagged source='finnhub'. Real HTTP "
-            "implementation lands in Phase 16.2."
+            "Finnhub provider live. Free tier 60 calls/min; in-memory "
+            "TTL cache (6h fundamentals / 24h peer list / 5min peer "
+            "quotes) absorbs the load. Tokens never logged."
         ),
     )

@@ -64,9 +64,11 @@ def test_router_status_finnhub_with_key(monkeypatch):
     s = get_provider_status()
     assert s.configured is True
     assert s.provider_name == "finnhub"
-    # Phase 16.0 ships a shim; tests pin that the detail acknowledges
-    # the shim so a future contributor doesn't think it's live yet.
-    assert "Phase 16.2" in s.detail or "shim" in s.detail.lower()
+    # Phase 16.2 — provider is live; detail mentions the cache budget so
+    # operators reading the status endpoint see at-a-glance which TTLs
+    # are in effect.
+    assert "live" in s.detail.lower()
+    assert "cache" in s.detail.lower()
 
 
 def test_router_unknown_provider_falls_back_to_stub(monkeypatch):

@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -61,10 +62,22 @@ class Settings(BaseSettings):
     # `fundamentals_provider` means the stub provider is used (endpoints
     # respond with a structurally-complete envelope tagged source="stub";
     # the frontend renders the "configure provider" empty state).
-    # Set fundamentals_provider="finnhub" + fundamentals_finnhub_api_key to
-    # activate the real surface (real HTTP impl lands in Phase 16.2).
+    # Set fundamentals_provider="finnhub" + the API key below to activate
+    # the real surface (real HTTP impl lands in Phase 16.2).
     fundamentals_provider: str = ""  # "" | "stub" | "finnhub"
-    fundamentals_finnhub_api_key: str = ""
+    # AliasChoices accepts both the conventional Finnhub-SDK env var
+    # name (FINNHUB_API_KEY) and the Pydantic-default field-derived name
+    # (FUNDAMENTALS_FINNHUB_API_KEY). Operators using either pattern see
+    # the key picked up. Documentation recommends FINNHUB_API_KEY for
+    # parity with the upstream Finnhub SDK conventions.
+    fundamentals_finnhub_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "FINNHUB_API_KEY",
+            "FUNDAMENTALS_FINNHUB_API_KEY",
+            "fundamentals_finnhub_api_key",
+        ),
+    )
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific
