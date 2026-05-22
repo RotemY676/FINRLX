@@ -19,10 +19,14 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import logging
+
 from app.services.documents import budget as budget_svc
-from app.services.llm import LLMMessage, get_provider
+from app.services.llm import LLMMessage, get_provider_chain
 from app.services.llm.router import get_provider_status
 from app.services.llm.provider import StubProviderError
+
+logger = logging.getLogger(__name__)
 
 
 # Hard cap on the input portion of the prompt we send to the LLM.
@@ -129,10 +133,13 @@ async def analyze_document(
     if not allowed:
         raise BudgetExceededError(status, projected_total)
 
-    # Only NOW look up the provider. Empty / stub providers raise so
-    # the endpoint can 503 with "configure LLM_PROVIDER + key".
-    provider = get_provider()
-    if provider is None:
+    # Only NOW look up the provider chain. Empty chain → the endpoint
+    # 503s with "configure LLM_PROVIDER + key". Phase 17.4 walks the
+    # chain in order, falling back on StubProviderError so a free
+    # provider (e.g. gemini) can be tried before the paid one
+    # (anthropic). The first provider that returns successfully wins.
+    chain = get_provider_chain()
+    if not chain:
         status_obj = get_provider_status()
         raise StubProviderError(
             f"LLM provider not configured. {status_obj.detail}"
@@ -151,12 +158,33 @@ async def analyze_document(
         ),
     ]
 
-    response = await provider.chat(messages, max_tokens=2048)
+    last_error: StubProviderError | None = None
+    for provider in chain:
+        try:
+            response = await provider.chat(messages, max_tokens=2048)
+        except StubProviderError as e:
+            # Log and try the next provider in the chain. The cause is
+            # preserved so it surfaces in the final error if all
+            # providers fail.
+            logger.warning(
+                "LLM provider %s failed (%s); trying next in chain",
+                provider.name,
+                e,
+            )
+            last_error = e
+            continue
+        return AnalysisResult(
+            response_text=response.text,
+            provider=response.provider,
+            model=response.model,
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+        )
 
-    return AnalysisResult(
-        response_text=response.text,
-        provider=response.provider,
-        model=response.model,
-        input_tokens=response.input_tokens,
-        output_tokens=response.output_tokens,
+    # Exhausted the chain. Re-raise the last error so the endpoint
+    # surfaces the most recent failure detail (typically the paid
+    # provider's reason, since it's last in a free-first chain).
+    raise StubProviderError(
+        "All configured LLM providers failed. "
+        f"Last error: {last_error}"
     )

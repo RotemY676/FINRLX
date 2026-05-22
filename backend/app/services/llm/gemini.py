@@ -1,0 +1,165 @@
+"""Google Gemini provider — Phase 17.4 free-tier fallback.
+
+Activation:
+  1. Get a free API key at https://aistudio.google.com/apikey
+  2. Set `LLM_GEMINI_API_KEY` env var.
+  3. Set `LLM_PROVIDER=gemini` (single-provider mode) OR add
+     `gemini` to `LLM_PROVIDER_CHAIN` (cascading mode).
+  4. Optionally set `LLM_MODEL` — defaults to gemini-1.5-flash, which
+     has a 1M-token context window (fits full 10-K filings in one
+     shot) and a generous free quota (~1.5M input tokens/day at the
+     time of writing).
+
+Why httpx instead of the google-generativeai SDK:
+  - One fewer dependency. httpx is already in requirements.txt for
+    the rest of the app.
+  - The REST contract is small and stable (one POST, one JSON body).
+    The SDK pulls in grpc / proto / auth machinery we don't need.
+  - Easier to mock in tests — we control the wire shape directly.
+
+Free-tier note: Google enforces the free quota at their end. When the
+caller exceeds it, the API returns 429; we translate that into a
+StubProviderError so the cascading router can fall back to the next
+provider. The budget tracker still records tokens against the gemini
+bucket (cost field is paid-tier price; on free tier real cost is $0,
+but we keep the worst-case estimate so the operator-visible dollar
+figure stays conservative).
+"""
+from __future__ import annotations
+
+import httpx
+
+from app.services.llm.provider import LLMProvider, StubProviderError
+from app.services.llm.types import LLMMessage, LLMResponse
+
+
+_DEFAULT_MODEL = "gemini-1.5-flash"
+_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+_REQUEST_TIMEOUT_SECONDS = 120.0
+
+
+class GeminiProvider(LLMProvider):
+    name = "gemini"
+
+    def __init__(self, api_key: str, model: str = _DEFAULT_MODEL) -> None:
+        self.api_key = api_key
+        self.model = model or _DEFAULT_MODEL
+
+    async def chat(
+        self,
+        messages: list[LLMMessage],
+        *,
+        max_tokens: int = 1024,
+        temperature: float = 0.2,
+    ) -> LLMResponse:
+        if not self.api_key:
+            raise StubProviderError(
+                "LLM_GEMINI_API_KEY is empty. Set it in the backend "
+                "environment to activate the Gemini provider."
+            )
+
+        # Gemini's REST shape: `contents` is the conversation turn list,
+        # `systemInstruction` is a separate top-level field (mirrors
+        # Anthropic's `system` kwarg). Roles are "user" or "model" — we
+        # translate "assistant" → "model" on the way out.
+        system_text = "\n\n".join(m.content for m in messages if m.role == "system")
+        contents = [
+            {
+                "role": "model" if m.role == "assistant" else "user",
+                "parts": [{"text": m.content}],
+            }
+            for m in messages
+            if m.role != "system"
+        ]
+        if not contents:
+            raise StubProviderError(
+                "Gemini call attempted with only system messages — "
+                "the API requires at least one user message."
+            )
+
+        body: dict = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+            },
+        }
+        if system_text:
+            body["systemInstruction"] = {"parts": [{"text": system_text}]}
+
+        url = f"{_API_BASE}/models/{self.model}:generateContent"
+        params = {"key": self.api_key}
+
+        try:
+            async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS) as client:
+                resp = await client.post(url, params=params, json=body)
+        except httpx.TimeoutException as e:
+            raise StubProviderError(
+                "Gemini request timed out. The document may be too "
+                "large for the model's context window."
+            ) from e
+        except httpx.HTTPError as e:
+            raise StubProviderError(
+                f"Gemini network error: {e}. The endpoint may be "
+                "unreachable from this backend instance."
+            ) from e
+
+        if resp.status_code == 401 or resp.status_code == 403:
+            raise StubProviderError(
+                "Gemini auth failed: invalid or expired LLM_GEMINI_API_KEY."
+            )
+        if resp.status_code == 429:
+            raise StubProviderError(
+                "Gemini rate-limit / free-tier quota hit. Retry later, "
+                "or fall back to a paid provider via LLM_PROVIDER_CHAIN."
+            )
+        if resp.status_code >= 500:
+            raise StubProviderError(
+                f"Gemini API returned status {resp.status_code}."
+            )
+        if resp.status_code >= 400:
+            # 400s carry a useful error message in the body; surface it
+            # without leaking the API key (which is in the query string,
+            # not the response).
+            try:
+                detail = resp.json().get("error", {}).get("message", "")
+            except ValueError:
+                detail = ""
+            raise StubProviderError(
+                f"Gemini API rejected the request ({resp.status_code}): {detail}"
+            )
+
+        try:
+            payload = resp.json()
+        except ValueError as e:
+            raise StubProviderError(
+                "Gemini returned a non-JSON response."
+            ) from e
+
+        candidates = payload.get("candidates") or []
+        if not candidates:
+            # Gemini withheld content (safety filter or empty generation).
+            # Surface honestly so the cascading router can fall back.
+            block_reason = (
+                payload.get("promptFeedback", {}).get("blockReason")
+                or "no candidates returned"
+            )
+            raise StubProviderError(
+                f"Gemini returned no candidates ({block_reason})."
+            )
+
+        parts = candidates[0].get("content", {}).get("parts") or []
+        text = "\n\n".join(p.get("text", "") for p in parts if "text" in p).strip()
+        if not text:
+            raise StubProviderError(
+                "Gemini returned an empty text response."
+            )
+
+        usage = payload.get("usageMetadata", {})
+        return LLMResponse(
+            text=text,
+            provider="gemini",
+            model=self.model,
+            input_tokens=usage.get("promptTokenCount"),
+            output_tokens=usage.get("candidatesTokenCount"),
+        )

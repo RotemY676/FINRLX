@@ -28,12 +28,17 @@ from app.models.document_analysis import LLMTokenUsage
 _PRICE_PER_M_INPUT_USD: dict[str, float] = {
     "anthropic": 3.0,    # Claude Sonnet 4.6 input price (placeholder)
     "openai": 0.15,      # GPT-4o-mini input price (placeholder)
+    "gemini": 0.075,     # Gemini 1.5 Flash paid-tier input price. Free
+                         # tier is $0, but we estimate against paid so
+                         # the operator-visible dollar figure is the
+                         # worst case if free quota is exceeded.
     "local": 0.0,        # Self-hosted Ollama
     "stub": 0.0,
 }
 _PRICE_PER_M_OUTPUT_USD: dict[str, float] = {
     "anthropic": 15.0,
     "openai": 0.60,
+    "gemini": 0.30,      # Gemini 1.5 Flash paid-tier output price.
     "local": 0.0,
     "stub": 0.0,
 }

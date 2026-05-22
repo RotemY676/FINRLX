@@ -48,14 +48,28 @@ class Settings(BaseSettings):
     feature_research_fundamentals_ui: bool = True
     feature_research_peers_ui: bool = True
 
-    # LLM provider abstraction (Phase O-5). All providers ship as STUBS today.
-    # Set llm_provider + the matching key to enable in-app assistant features.
-    # Empty llm_provider keeps every /api/v1/assistant/* endpoint at 503,
-    # which is the intended state for the zero-token operator-console phase.
-    llm_provider: str = ""  # "" | "anthropic" | "openai" | "local"
-    llm_model: str = ""     # provider picks a sensible default when empty
+    # LLM provider abstraction (Phase O-5 → 17.4). Two activation modes:
+    #
+    #   (a) Single provider: set `llm_provider` to one of
+    #       "anthropic" | "openai" | "gemini" | "local" and the
+    #       matching API key. Empty keeps every assistant endpoint
+    #       at 503 (intended state for the zero-token operator phase).
+    #
+    #   (b) Cascading chain (Phase 17.4): set `llm_provider_chain`
+    #       to a comma-separated list, e.g. "gemini,anthropic".
+    #       The analyze layer tries each in order, falling back to the
+    #       next on StubProviderError (auth failure, rate-limit, empty
+    #       response, etc.). Used to put a free provider in front of a
+    #       paid one so the paid budget is preserved for genuine
+    #       fallback cases.
+    #
+    # Either mode works; if both are set, `llm_provider_chain` wins.
+    llm_provider: str = ""        # "" | "anthropic" | "openai" | "gemini" | "local"
+    llm_provider_chain: str = ""  # comma-separated, e.g. "gemini,anthropic"
+    llm_model: str = ""           # provider picks a sensible default when empty
     llm_anthropic_api_key: str = ""
     llm_openai_api_key: str = ""
+    llm_gemini_api_key: str = ""
     llm_local_base_url: str = "http://localhost:11434"
 
     # Phase 17 — Research documents (PDF uploads + LLM analysis).
