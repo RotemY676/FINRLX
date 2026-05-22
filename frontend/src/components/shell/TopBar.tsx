@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScope } from "@/contexts/ScopeContext";
 import { UserMenu } from "@/components/shell/UserMenu";
+import { NotificationsPanel } from "@/components/shell/NotificationsPanel";
 
 const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
@@ -226,17 +227,10 @@ export function TopBar({
         <Icon name="help-circle" size={20} />
       </Link>
 
-      {/* Notifications — Phase 14.4 will wire this to NotificationsPanel.
-          The current button still does nothing functional; the red dot is
-          purely visual until 14.4 lands. */}
-      <button
-        className="hidden md:inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-surface-3 text-ink-2 transition-colors relative"
-        title="Notifications (coming in sub-phase 14.4)"
-        aria-label="Notifications"
-      >
-        <Icon name="bell" size={20} />
-        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-breach" />
-      </button>
+      {/* Notifications — Phase 14.4 — wired to NotificationsPanel which
+          composes from /api/v1/ops + /api/v1/overview. Read-state lives
+          in localStorage per user email. */}
+      <NotificationsPanel />
 
       {/* Context pane toggle. On mobile (<md) the pane opens as a bottom sheet;
           on desktop it docks as a right aside. Phase 14.1 — dropped the
