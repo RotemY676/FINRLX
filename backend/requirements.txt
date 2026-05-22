@@ -59,3 +59,10 @@ python-multipart==0.0.20
 # LLM_ANTHROPIC_API_KEY are both set; otherwise the surface stays
 # behind the stub (503).
 anthropic==0.42.0
+
+# Phase 18.2 — SEC 10-K/10-Q HTML extraction. BeautifulSoup with the
+# stdlib html.parser keeps the dependency surface minimal (no native
+# code). If parse latency becomes an issue on multi-MB filings, swap
+# the parser to "lxml" by adding lxml to requirements — the
+# extraction module is parser-agnostic.
+beautifulsoup4==4.12.3
