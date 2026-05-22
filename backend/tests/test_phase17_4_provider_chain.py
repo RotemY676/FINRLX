@@ -294,12 +294,57 @@ async def test_gemini_429_raises_rate_limit_error():
 
 
 @pytest.mark.asyncio
-async def test_gemini_5xx_raises_server_error():
+async def test_gemini_5xx_raises_server_error(monkeypatch):
+    """Persistent 5xx (every attempt fails) raises with a clear,
+    actionable message that mentions retry-count + Google's status
+    page so the operator knows it's an upstream issue, not a code bug."""
+    # Disable the backoff sleep so the test isn't slow.
+    import app.services.llm.gemini as gemini_mod
+    monkeypatch.setattr(gemini_mod, "_RETRY_BACKOFF_SECONDS", 0)
+
     with patch.object(httpx.AsyncClient, "post", _mock_post_returning(503, {})):
         provider = GeminiProvider(api_key="gem-key-xxx")
         with pytest.raises(StubProviderError) as exc_info:
             await provider.chat([LLMMessage(role="user", content="hi")])
-    assert "503" in str(exc_info.value)
+    msg = str(exc_info.value)
+    assert "503" in msg
+    assert "attempts" in msg or "retry" in msg.lower()
+
+
+@pytest.mark.asyncio
+async def test_gemini_retries_once_on_5xx_then_succeeds(monkeypatch):
+    """First attempt 503, second attempt 200 → call succeeds. This is
+    the production case we're protecting against: a transient Google
+    API hiccup that resolves in seconds."""
+    import app.services.llm.gemini as gemini_mod
+    monkeypatch.setattr(gemini_mod, "_RETRY_BACKOFF_SECONDS", 0)
+
+    happy_payload = {
+        "candidates": [
+            {"content": {"parts": [{"text": "ok"}], "role": "model"}}
+        ],
+        "usageMetadata": {"promptTokenCount": 5, "candidatesTokenCount": 1},
+    }
+
+    call_count = {"n": 0}
+
+    async def fake_post(self, url, params=None, json=None):
+        call_count["n"] += 1
+        response = AsyncMock(spec=httpx.Response)
+        if call_count["n"] == 1:
+            response.status_code = 503
+            response.json = lambda: {}
+        else:
+            response.status_code = 200
+            response.json = lambda: happy_payload
+        return response
+
+    with patch.object(httpx.AsyncClient, "post", fake_post):
+        provider = GeminiProvider(api_key="gem-key-xxx")
+        resp = await provider.chat([LLMMessage(role="user", content="hi")])
+
+    assert resp.text == "ok"
+    assert call_count["n"] == 2  # 1 retry happened
 
 
 @pytest.mark.asyncio

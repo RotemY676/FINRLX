@@ -36,15 +36,28 @@ figure stays conservative).
 """
 from __future__ import annotations
 
+import asyncio
+import logging
+
 import httpx
 
 from app.services.llm.provider import LLMProvider, StubProviderError
 from app.services.llm.types import LLMMessage, LLMResponse
 
+logger = logging.getLogger(__name__)
+
 
 _DEFAULT_MODEL = "gemini-2.5-flash"
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 _REQUEST_TIMEOUT_SECONDS = 120.0
+
+# Retry config for transient upstream errors (5xx, timeout). One
+# retry with a short backoff handles the common "Google API hiccup"
+# case without making the request hang noticeably longer when the
+# outage is real. Auth / rate-limit / 4xx errors are NOT retried —
+# they're not going to fix themselves on the next attempt.
+_MAX_RETRIES_ON_5XX = 1
+_RETRY_BACKOFF_SECONDS = 1.5
 
 
 class GeminiProvider(LLMProvider):
@@ -99,19 +112,52 @@ class GeminiProvider(LLMProvider):
         url = f"{_API_BASE}/models/{self.model}:generateContent"
         params = {"key": self.api_key}
 
-        try:
-            async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS) as client:
-                resp = await client.post(url, params=params, json=body)
-        except httpx.TimeoutException as e:
-            raise StubProviderError(
-                "Gemini request timed out. The document may be too "
-                "large for the model's context window."
-            ) from e
-        except httpx.HTTPError as e:
-            raise StubProviderError(
-                f"Gemini network error: {e}. The endpoint may be "
-                "unreachable from this backend instance."
-            ) from e
+        # Retry loop: 5xx (server error) and TimeoutException are
+        # transient and worth one retry. Auth / 4xx errors break out
+        # immediately — they won't fix themselves.
+        resp: httpx.Response | None = None
+        last_transient_reason: str | None = None
+        for attempt in range(_MAX_RETRIES_ON_5XX + 1):
+            try:
+                async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS) as client:
+                    resp = await client.post(url, params=params, json=body)
+            except httpx.TimeoutException as e:
+                last_transient_reason = f"timeout: {e}"
+                if attempt < _MAX_RETRIES_ON_5XX:
+                    logger.warning(
+                        "Gemini timed out (attempt %d/%d); retrying after %.1fs",
+                        attempt + 1, _MAX_RETRIES_ON_5XX + 1, _RETRY_BACKOFF_SECONDS,
+                    )
+                    await asyncio.sleep(_RETRY_BACKOFF_SECONDS)
+                    continue
+                raise StubProviderError(
+                    "Gemini request timed out after retry. Try again in a moment "
+                    "or check Google's status page (status.cloud.google.com)."
+                ) from e
+            except httpx.HTTPError as e:
+                # Network-level failure (DNS, connection refused, etc.).
+                # Not retried — usually a deploy-environment issue.
+                raise StubProviderError(
+                    f"Gemini network error: {e}. The endpoint may be "
+                    "unreachable from this backend instance."
+                ) from e
+
+            if resp.status_code < 500:
+                break  # 2xx/3xx/4xx — handled outside the loop
+            # 5xx → retry once, then fall through to the error
+            last_transient_reason = f"status {resp.status_code}"
+            if attempt < _MAX_RETRIES_ON_5XX:
+                logger.warning(
+                    "Gemini returned %d (attempt %d/%d); retrying after %.1fs",
+                    resp.status_code, attempt + 1, _MAX_RETRIES_ON_5XX + 1,
+                    _RETRY_BACKOFF_SECONDS,
+                )
+                await asyncio.sleep(_RETRY_BACKOFF_SECONDS)
+                continue
+
+        # `resp` is guaranteed set here — every loop branch either
+        # returns or assigns it.
+        assert resp is not None
 
         if resp.status_code == 401 or resp.status_code == 403:
             raise StubProviderError(
@@ -123,8 +169,15 @@ class GeminiProvider(LLMProvider):
                 "or fall back to a paid provider via LLM_PROVIDER_CHAIN."
             )
         if resp.status_code >= 500:
+            # Persistent 5xx after retry = real upstream outage. Make
+            # the message actionable so the operator knows where to look.
             raise StubProviderError(
-                f"Gemini API returned status {resp.status_code}."
+                f"Gemini API returned status {resp.status_code} after "
+                f"{_MAX_RETRIES_ON_5XX + 1} attempts (last: {last_transient_reason}). "
+                "Likely a transient Google API outage — retry in 1–2 minutes, "
+                "or check https://status.cloud.google.com. To avoid single-"
+                "provider outages taking the pipeline down, configure a paid "
+                "fallback (LLM_PROVIDER_CHAIN=gemini,anthropic)."
             )
         if resp.status_code >= 400:
             # 400s carry a useful error message in the body; surface it
