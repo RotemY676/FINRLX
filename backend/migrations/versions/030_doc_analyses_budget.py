@@ -9,7 +9,14 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "030_document_analyses_and_token_usage"
+# NOTE: Postgres' `alembic_version.version_num` column is VARCHAR(32).
+# Revision strings MUST be ≤ 32 characters or the UPDATE at the end of
+# the migration raises StringDataRightTruncationError and rolls the
+# whole transaction back. The original revision string here was
+# "030_document_analyses_and_token_usage" (37 chars) — broke the
+# production deploy until this rename landed. Keep new revisions
+# concise.
+revision: str = "030_doc_analyses_budget"
 down_revision: Union[str, None] = "029_research_documents"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
