@@ -20,6 +20,7 @@ from app.models.modeling import (
 )
 from app.models.document import ResearchDocument
 from app.models.document_analysis import DocumentAnalysis, LLMTokenUsage
+from app.models.ticker_insights import TickerInsights
 from app.models.notification import Notification
 from app.models.operator import OperatorAnalysis
 from app.models.ops import (
@@ -93,4 +94,5 @@ __all__ = [
     "ResearchDocument",
     "DocumentAnalysis",
     "LLMTokenUsage",
+    "TickerInsights",
 ]
