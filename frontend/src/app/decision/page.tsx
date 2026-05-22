@@ -117,12 +117,21 @@ export default function DecisionPage() {
             {actionMsg && (
               <span className="text-[11px] text-pos font-medium md:animate-pulse" role="status" aria-live="polite">{actionMsg}</span>
             )}
-            {/* Secondary affordances — hidden below md until they get real handlers + a proper "More" menu (deferred to a later UX phase). */}
-            <button type="button" aria-label="Bookmark" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="bookmark" size={12} /></button>
-            <button type="button" aria-label="Share" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="share" size={12} /></button>
-            <button type="button" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="compare" size={12} /> Compare</button>
-            <button type="button" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="replay" size={12} /> Replay</button>
-            <button type="button" aria-label="More" className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-[12px] hover:bg-surface-3 transition-colors"><Icon name="dots" size={12} /></button>
+            {/* Phase 7: dead Bookmark / Share / More buttons removed.
+                Compare / Replay become real <a> links because those
+                routes exist. No phantom affordances. */}
+            <a
+              href="/comparison"
+              className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-caption hover:bg-surface-3 transition-colors"
+            >
+              <Icon name="compare" size={12} /> Compare
+            </a>
+            <a
+              href="/replay"
+              className="hidden md:inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-md text-ink-3 text-caption hover:bg-surface-3 transition-colors"
+            >
+              <Icon name="replay" size={12} /> Replay
+            </a>
           </div>
         </div>
       </section>
@@ -210,39 +219,49 @@ export default function DecisionPage() {
       <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <Icon name="risk" size={14} className="text-caution" />
-          <h3 className="text-[13px] font-semibold text-ink">Risk constraints</h3>
+          <h3 className="text-card-title text-ink">Risk constraints</h3>
         </div>
         {stages?.risk_overlay ? (
           <div className="space-y-3">
-            <p className="text-[12.5px] text-ink-2">{stages.risk_overlay.rationale}</p>
-            {/* Risk gauge bars — stacked label-above-bar on mobile so the bar
-                gets the full row width; horizontal label-beside-bar on md+. */}
-            <div className="space-y-3 md:space-y-2">
-              {[
-                { name: "Portfolio weight", value: 42, limit: 60, status: "ok" },
-                { name: "Sector concentration", value: 81, limit: 75, status: "caution" },
-                { name: "Single-name drawdown", value: 35, limit: 60, status: "ok" },
-                { name: "Correlation to top 5", value: 68, limit: 65, status: "caution" },
-                { name: "Realized vol (30d)", value: 42, limit: 50, status: "ok" },
-              ].map((r) => (
-                <div key={r.name} className="text-[12px] md:flex md:items-center md:gap-3">
-                  {/* Mobile: label + value on first line, bar on second.
-                      Desktop: label | bar | value all in one row. */}
-                  <div className="flex items-center justify-between md:contents">
-                    <span className="text-ink-2 md:w-40 md:shrink-0">{r.name}</span>
-                    <span className={`font-mono md:w-8 md:text-right md:order-last ${r.status === "ok" ? "text-pos" : "text-caution"}`}>{r.value}%</span>
-                  </div>
-                  <div className="mt-1 md:mt-0 h-2 bg-surface-3 rounded-full overflow-hidden relative md:flex-1">
-                    <div className={`h-full rounded-full ${r.status === "ok" ? "bg-pos" : "bg-caution"}`} style={{ width: `${r.value}%` }} />
-                    <div className="absolute top-0 h-full w-0.5 bg-ink-4" style={{ left: `${r.limit}%` }} title={`Limit: ${r.limit}%`} aria-label={`Limit ${r.limit}%`} />
+            {stages.risk_overlay.rationale && (
+              <p className="text-caption text-ink-2">{stages.risk_overlay.rationale}</p>
+            )}
+            {/* Phase 7: hardcoded gauge values removed. Backend's
+                `RiskOverlayView` carries `portfolio_risk_score`,
+                `constraints_applied`, and `adjustments` — show those
+                instead of inventing numbers. If a future phase adds
+                per-constraint utilisation to the backend, the gauges
+                can come back. */}
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              {stages.risk_overlay.portfolio_risk_score != null && (
+                <div>
+                  <p className="text-meta text-ink-4">Portfolio risk score</p>
+                  <p className="text-section-title font-display text-ink font-mono">
+                    {stages.risk_overlay.portfolio_risk_score.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              {stages.risk_overlay.constraints_applied.length > 0 && (
+                <div className="flex-1 min-w-[200px]">
+                  <p className="text-meta text-ink-4 mb-1">Constraints applied</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {stages.risk_overlay.constraints_applied.map((c) => (
+                      <span
+                        key={c}
+                        className="text-meta font-mono bg-surface-3 text-ink-2 px-1.5 py-0.5 rounded-sm"
+                      >
+                        {c}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
             {stages.risk_overlay.adjustments.length > 0 && (
               <div className="pt-2 border-t border-line space-y-1">
+                <p className="text-meta text-ink-4 uppercase tracking-wider">Per-position adjustments</p>
                 {stages.risk_overlay.adjustments.map((a, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[12.5px]">
+                  <div key={i} className="flex items-center gap-2 text-caption">
                     <Icon name="alert-triangle" size={12} className="text-caution" />
                     <span className="font-mono text-ink">{a.ticker}</span>
                     <span className={`font-mono ${a.delta < 0 ? "text-breach" : "text-pos"}`}>{a.delta > 0 ? "+" : ""}{(a.delta * 100).toFixed(1)}%</span>
@@ -251,8 +270,18 @@ export default function DecisionPage() {
                 ))}
               </div>
             )}
+            {stages.risk_overlay.portfolio_risk_score == null &&
+              stages.risk_overlay.constraints_applied.length === 0 &&
+              stages.risk_overlay.adjustments.length === 0 && (
+                <p className="text-caption text-ink-3">
+                  Risk overlay ran but reported no constraints, score, or
+                  adjustments for this recommendation.
+                </p>
+              )}
           </div>
-        ) : <p className="text-[12.5px] text-ink-3">Risk data not available.</p>}
+        ) : (
+          <p className="text-caption text-ink-3">Risk data not available for this recommendation.</p>
+        )}
       </section>
 
       {/* ── Scenario controls — interactive ── */}
@@ -260,7 +289,7 @@ export default function DecisionPage() {
 
       {/* ── Pipeline stages ── */}
       <div>
-        <h2 className="text-[15px] font-semibold text-ink mb-gap">Decision Pipeline</h2>
+        <h2 className="text-section-title text-ink mb-gap">Decision Pipeline</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-gap">
           <SelectionStage data={stages?.selection ?? null} />
           <AllocationStage data={stages?.allocation ?? null} />
