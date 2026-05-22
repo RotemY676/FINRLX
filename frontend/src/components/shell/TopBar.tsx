@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useScope } from "@/contexts/ScopeContext";
 import { UserMenu } from "@/components/shell/UserMenu";
 import { NotificationsPanel } from "@/components/shell/NotificationsPanel";
+import { BrandMark } from "@/components/shell/BrandMark";
 
 const DENSITIES = ["default", "compact", "comfortable"] as const;
 type Density = typeof DENSITIES[number];
@@ -110,11 +111,23 @@ export function TopBar({
       // tap targets via min-h-11 on each interactive child.
       className="h-14 shrink-0 flex items-center gap-3 px-4 border-b border-line bg-surface"
     >
-      {/* Brand */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-6 h-6 rounded-md bg-primary" aria-hidden="true" />
-        <span className="font-semibold text-ink text-card-title">FINRLX</span>
-      </div>
+      {/* Brand — Phase 15.0 identity uplift.
+          - Mark: distinctive SVG glyph (BrandMark) replaces the prior
+            flat-color square. The mark uses currentColor for the bars
+            so it inherits the wordmark hue.
+          - Wordmark: Fraunces display face (already loaded via
+            globals.css) for institutional gravitas. Tightened tracking
+            (-0.01em). */}
+      <Link
+        href="/"
+        aria-label="FINRLX — go to home"
+        className="flex items-center gap-2 shrink-0 text-primary hover:opacity-90 transition-opacity"
+      >
+        <BrandMark size={26} />
+        <span className="font-display font-semibold text-card-title text-ink tracking-[-0.01em]">
+          FINRLX
+        </span>
+      </Link>
 
       {/* Nav toggle — opens the mobile drawer below md, collapses the column above md */}
       <button
