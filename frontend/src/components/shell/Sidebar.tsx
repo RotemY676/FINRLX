@@ -17,6 +17,8 @@ interface NavEntry {
   icon: string;
   countKey?: "overview" | "decisions" | "risk" | "ops";
   flagKey?: FlagKey;
+  /** Phase 14.6 — when true, the entry is only rendered for signed-in users. */
+  requiresAuth?: boolean;
 }
 
 interface NavArea {
@@ -27,6 +29,8 @@ interface NavArea {
   /** Routes whose presence should light up this area's section in the active state. */
   paths: ReadonlyArray<string>;
   entries: ReadonlyArray<NavEntry>;
+  /** Phase 14.6 — when true, the section is only rendered for signed-in users. */
+  requiresAuth?: boolean;
 }
 
 // Phase 4 information architecture: the seven product areas from
@@ -91,16 +95,21 @@ const AREAS: ReadonlyArray<NavArea> = [
       { key: "integrations", href: "/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
       // Desktop-only research lab. Sidebar entry survives so operators can find it; the page itself shows a desktop-only gate on mobile.
       { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
-      { key: "operator", href: "/operator", label: "Operator console", icon: "user", flagKey: "operator_console" },
+      { key: "operator", href: "/operator", label: "Operator console", icon: "user", flagKey: "operator_console", requiresAuth: true },
     ],
   },
   {
     key: "settings",
     label: "Settings",
     paths: ["/profile", "/feedback"],
+    // Phase 14.6 — both Settings entries require auth (profile loads
+    // POST /api/v1/profile; feedback POSTs as an authenticated user).
+    // Surfacing them to anonymous users is a phantom affordance — clicks
+    // would redirect to /login anyway. Hide the whole section instead.
+    requiresAuth: true,
     entries: [
-      { key: "profile", href: "/profile", label: "My profile", icon: "user" },
-      { key: "feedback", href: "/feedback", label: "Send feedback", icon: "message" },
+      { key: "profile", href: "/profile", label: "My profile", icon: "user", requiresAuth: true },
+      { key: "feedback", href: "/feedback", label: "Send feedback", icon: "message", requiresAuth: true },
     ],
   },
 ];
@@ -168,8 +177,16 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
     return flags[flagKey];
   };
 
+  // Phase 14.6 — auth gate. Entries / sections that need a signed-in
+  // user disappear from the nav for anonymous visitors.
+  const isAuthVisible = (requiresAuth?: boolean) => {
+    if (!requiresAuth) return true;
+    return isSignedIn;
+  };
+
   const renderNavItem = (item: NavEntry) => {
     if (!isGatedVisible(item.flagKey)) return null;
+    if (!isAuthVisible(item.requiresAuth)) return null;
     const active = isActive(item.href);
     const badge = getBadge(item.countKey);
     return (
@@ -205,9 +222,12 @@ export function Sidebar({ collapsed, mobileOpen = false, onMobileClose }: Sideba
     );
   };
 
-  /** Render one product-area section. Hides the section entirely when every entry it contains is flag-gated off, so the divider doesn't show a phantom heading. */
+  /** Render one product-area section. Hides the section entirely when every entry it contains is flag-gated off OR auth-gated off, so the divider doesn't show a phantom heading. */
   const renderArea = (area: NavArea, withDivider: boolean) => {
-    const visibleEntries = area.entries.filter((entry) => isGatedVisible(entry.flagKey));
+    if (!isAuthVisible(area.requiresAuth)) return null;
+    const visibleEntries = area.entries.filter(
+      (entry) => isGatedVisible(entry.flagKey) && isAuthVisible(entry.requiresAuth),
+    );
     if (visibleEntries.length === 0) return null;
     const headingId = `nav-area-${area.key}`;
     return (

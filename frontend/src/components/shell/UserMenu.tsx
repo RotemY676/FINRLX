@@ -126,7 +126,29 @@ export function UserMenu() {
     };
   }, [open, close]);
 
-  if (!user) return null;
+  // Phase 14.6 — when signed out, render a Gmail-style "Sign in" CTA in
+  // the TopBar's account slot instead of nothing. This is the only
+  // sign-in / sign-up entry point in the shell (sidebar hides auth-
+  // required entries for anonymous users).
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link
+          href="/signup"
+          className="hidden sm:inline-flex items-center justify-center min-h-10 px-3 rounded-md text-ink-2 hover:bg-surface-3 text-body-sm font-medium transition-colors"
+        >
+          Create account
+        </Link>
+        <Link
+          href="/login"
+          className="inline-flex items-center justify-center gap-1.5 min-h-10 px-4 rounded-md bg-primary text-primary-ink text-body-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary transition-opacity"
+        >
+          <Icon name="user" size={16} />
+          Sign in
+        </Link>
+      </div>
+    );
+  }
 
   const initials = computeInitials(user.email);
   const displayName = computeDisplayName(user.email);
