@@ -84,9 +84,12 @@ Universes are point-in-time. On any historical date, the engine sees the names t
 
 It means the system could not compute the freshness — not "all clear." Open [Ops → Data feeds](/help/reference/pages/ops); a silent feed is the most likely cause. See [Status chips](/help/reference/status-chips).
 
-### The Research assistant prompts don't do anything.
+### The Research assistant prompts on the home page don't do anything.
 
-The Research assistant is currently in preview. The prompt buttons are inert until the assistant ships in a later phase. The panel reserves the layout slot so you know the feature is coming.
+The panel on the home dashboard is a placeholder. The actual research assistant ships on the **per-ticker workspace** at [`/research/[ticker]`](/help/reference/pages/research-ticker) — open any ticker to use it. There you'll find:
+
+- **Auto-generated insights** synthesized from the ticker's last 6 SEC quarterly filings (for US-listed names). See [Read cross-quarter insights](/help/guides/read-cross-quarter-insights).
+- **Manual document upload + Q&A** — upload a PDF and ask grounded questions about it. See [Upload a document](/help/guides/upload-a-document).
 
 ### Where do I report a bug or request a feature?
 

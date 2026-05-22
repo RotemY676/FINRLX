@@ -19,7 +19,7 @@ The home page is the **Decision Command Center**. It is the only screen designed
     { x: 44, y: 4, n: 2, label: "Data freshness chip — UNAVAILABLE here means the upstream feed has not reported. Open Ops → Data feeds to investigate." },
     { x: 70, y: 4, n: 3, label: "Current recommendation chip — green OK with an 'as of' timestamp shows the most recent published cycle." },
     { x: 12, y: 13, n: 4, label: "Regime stat card — the classifier's current label plus its confidence color. See Concepts → Regimes and turbulence." },
-    { x: 88, y: 30, n: 5, label: "Research assistant panel — currently labeled 'Preview only — ships in a later phase.' The prompt buttons are inert until the assistant lands." },
+    { x: 88, y: 30, n: 5, label: "Research assistant panel — a layout slot on the home dashboard. The fully-functional assistant ships as part of the per-ticker workspace at /research/[ticker] (DocumentsPanel + InsightsPanel)." },
   ]}
   caption="The home dashboard as rendered on the live workspace. Numbers map to the legend below."
 />
@@ -44,7 +44,7 @@ Recent material events on names in your universe (earnings, corporate actions, e
 
 ### Research assistant
 
-Currently in preview — the prompt buttons are inert and labeled "Preview only — assistant ships in a later phase." When live, this will provide natural-language Q&A over the audit trail and recommendations. For now, the panel exists to reserve the layout slot.
+The panel on the home dashboard is a placeholder slot for future natural-language Q&A over the recommendation history. The **fully-functional research assistant has shipped on the per-ticker workspace** at [`/research/[ticker]`](/help/reference/pages/research-ticker) — both auto-generated cross-quarter insights and ad-hoc Q&A over uploaded documents are available there today. See [Read cross-quarter insights](/help/guides/read-cross-quarter-insights) and [Upload a document](/help/guides/upload-a-document).
 
 ### Governance
 

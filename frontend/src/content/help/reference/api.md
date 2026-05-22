@@ -158,6 +158,64 @@ Returns sidebar badge counts (active breaches, queued decisions, etc.).
 
 Returns the user's saved comparison views and dashboard layouts.
 
+## Research documents (Phase 17)
+
+### `POST /api/v1/research/documents`
+
+Upload a PDF against a ticker. `multipart/form-data` body with `ticker` and `file` parts. Returns the persisted document with extracted-text metadata.
+
+### `GET /api/v1/research/documents?ticker=NVDA`
+
+List documents for a ticker (newest first). Shared by ticker — any signed-in user can read.
+
+### `GET /api/v1/research/documents/{id}`
+
+Single document with full extracted text body.
+
+### `POST /api/v1/research/documents/{id}/analyze`
+
+Ask an LLM question grounded in the document. JSON body: `{"prompt": "..."}`. Returns the answer with provider/model/token provenance. 503 when no LLM provider is configured or the monthly budget would be exceeded.
+
+### `GET /api/v1/research/documents/_usage`
+
+Monthly LLM token-budget status: used / cap / remaining + per-provider breakdown.
+
+## Research insights + SEC EDGAR (Phase 18)
+
+### `POST /api/v1/research/{ticker}/auto-ingest`
+
+Fetch the last 6 quarterly filings (10-Q + 10-K) from SEC EDGAR, download, extract text, and persist as `research_documents` rows with `source="sec_auto"`. Idempotent — re-running for the same ticker dedups via the `(ticker, sec_accession_no)` unique index. Returns counts:
+
+```jsonc
+{
+  "ticker": "NVDA",
+  "cik": "0001045810",
+  "ingested": 2,
+  "skipped_existing": 4,
+  "failed": 0,
+  "failures": [],
+  "document_ids": [ "...", "..." ]
+}
+```
+
+- `404` when the ticker is not in SEC's table (non-US listing).
+- `503` when `SEC_USER_AGENT` env var is empty or SEC is unreachable.
+
+### `POST /api/v1/research/{ticker}/insights`
+
+Synthesize cross-quarter insights across the ticker's sec_auto documents. Returns the persisted `TickerInsights` row with `summary_text` (markdown), `quarters_covered` (list of accession numbers), provider/model/token provenance.
+
+- `409` when no sec_auto documents are ready (call `/auto-ingest` first).
+- `503` when the LLM provider chain is exhausted or the monthly token budget would be exceeded.
+
+### `GET /api/v1/research/{ticker}/insights`
+
+Most recent `TickerInsights` row for the ticker, or `data: null` if none generated yet. The FE checks `generated_at` against a 7-day TTL to decide whether to offer a refresh.
+
+### `GET /api/v1/research/edgar/probe?ticker=NVDA&limit=6`
+
+Diagnostic endpoint: resolve a ticker to a CIK and list its recent quarterly filings without persisting anything. Useful for verifying `SEC_USER_AGENT` is correctly set on a new deploy.
+
 ## Errors
 
 All endpoints use standard HTTP status codes and a uniform error body:
