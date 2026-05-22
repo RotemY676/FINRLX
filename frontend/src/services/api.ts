@@ -2186,3 +2186,131 @@ export async function fetchFundamentals(
 export async function fetchPeers(ticker: string): Promise<ApiResponse<PeersData>> {
   return apiFetch<PeersData>(`/api/v1/research/peers/${encodeURIComponent(ticker)}`);
 }
+
+// ── Phase 17 — Research documents (PDF uploads + LLM analysis) ──────
+// Backend contract: app/api/v1/research_documents.py.  Auth required
+// on every endpoint (the frontend injects Bearer via getAccessToken()).
+
+export interface DocumentSummaryData {
+  id: string;
+  ticker: string;
+  filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  extracted_text_tokens_estimate: number | null;
+  extraction_status: "pending" | "extracting" | "ready" | "failed" | string;
+  extraction_error: string | null;
+  uploaded_by_email: string;
+  uploaded_at: string;
+}
+
+export interface DocumentDetailData extends DocumentSummaryData {
+  extracted_text: string | null;
+}
+
+export interface DocumentListData {
+  ticker: string;
+  documents: DocumentSummaryData[];
+  total: number;
+}
+
+export interface DocumentAnalysisData {
+  id: string;
+  document_id: string;
+  prompt: string;
+  response: string;
+  created_by_email: string;
+  provider: string;
+  model: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_estimate_usd: number | null;
+  created_at: string;
+}
+
+export interface BudgetUsageData {
+  year: number;
+  month: number;
+  cap_tokens: number;
+  used_tokens: number;
+  remaining_tokens: number;
+  cost_estimate_usd: number;
+  over_budget: boolean;
+  per_provider: Record<string, { input_tokens: number; output_tokens: number; cost_estimate_usd: number }>;
+}
+
+function _docsAuthHeaders(extra?: Record<string, string>): Record<string, string> {
+  const t = getAccessToken();
+  return { ...(t ? { Authorization: `Bearer ${t}` } : {}), ...(extra ?? {}) };
+}
+
+export async function fetchDocuments(ticker: string): Promise<ApiResponse<DocumentListData>> {
+  return apiFetch<DocumentListData>(
+    `/api/v1/research/documents?ticker=${encodeURIComponent(ticker)}`,
+    { headers: _docsAuthHeaders() },
+  );
+}
+
+export async function fetchDocument(documentId: string): Promise<ApiResponse<DocumentDetailData>> {
+  return apiFetch<DocumentDetailData>(
+    `/api/v1/research/documents/${encodeURIComponent(documentId)}`,
+    { headers: _docsAuthHeaders() },
+  );
+}
+
+export async function uploadDocument(
+  ticker: string,
+  file: File,
+): Promise<ApiResponse<DocumentDetailData>> {
+  const form = new FormData();
+  form.set("ticker", ticker);
+  form.set("file", file);
+  return apiFetch<DocumentDetailData>("/api/v1/research/documents", {
+    method: "POST",
+    body: form,
+    // Do NOT set Content-Type explicitly — the browser fills in the
+    // multipart boundary. Only inject the auth header.
+    headers: _docsAuthHeaders(),
+  });
+}
+
+export async function deleteDocument(
+  documentId: string,
+): Promise<ApiResponse<{ id: string; deleted: boolean }>> {
+  return apiFetch<{ id: string; deleted: boolean }>(
+    `/api/v1/research/documents/${encodeURIComponent(documentId)}`,
+    {
+      method: "DELETE",
+      headers: _docsAuthHeaders(),
+    },
+  );
+}
+
+export async function fetchAnalyses(
+  documentId: string,
+): Promise<ApiResponse<DocumentAnalysisData[]>> {
+  return apiFetch<DocumentAnalysisData[]>(
+    `/api/v1/research/documents/${encodeURIComponent(documentId)}/analyses`,
+    { headers: _docsAuthHeaders() },
+  );
+}
+
+export async function analyzeDocument(
+  documentId: string,
+  prompt: string,
+): Promise<ApiResponse<DocumentAnalysisData>> {
+  return apiFetch<DocumentAnalysisData>(
+    `/api/v1/research/documents/${encodeURIComponent(documentId)}/analyze`,
+    {
+      method: "POST",
+      headers: _docsAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ prompt }),
+    },
+  );
+}
+
+export async function fetchBudgetUsage(): Promise<ApiResponse<BudgetUsageData>> {
+  return apiFetch<BudgetUsageData>("/api/v1/research/documents/_usage", {
+    headers: _docsAuthHeaders(),
+  });
+}

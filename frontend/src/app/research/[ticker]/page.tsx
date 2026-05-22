@@ -26,6 +26,7 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { Icon } from "@/components/icons/Icon";
 import { FundamentalsPanel } from "@/components/research/FundamentalsPanel";
 import { PeersPanel } from "@/components/research/PeersPanel";
+import { DocumentsPanel } from "@/components/research/DocumentsPanel";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 
 interface PageProps {
@@ -168,6 +169,12 @@ export default function ResearchTickerPage({ params }: PageProps) {
         {flags.research_fundamentals_ui && <FundamentalsPanel ticker={ticker} />}
         {flags.research_peers_ui && <PeersPanel ticker={ticker} />}
       </div>
+
+      {/* Phase 17.3 — Document upload + LLM analysis. The panel handles
+          its own auth gating (sign-in prompt when no user) and surfaces
+          the backend's honest 503 states (no LLM provider configured,
+          monthly budget exceeded, document not ready) verbatim. */}
+      <DocumentsPanel ticker={ticker} />
     </div>
   );
 }
