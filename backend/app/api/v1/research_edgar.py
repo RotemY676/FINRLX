@@ -34,9 +34,16 @@ from app.services.edgar import (
     fetch_recent_quarterly_filings,
     resolve_ticker,
 )
+from app.services.documents.analyze import BudgetExceededError
+from app.services.llm.provider import StubProviderError
 from app.services.research.auto_ingest import (
     TickerNotCoveredError,
     auto_ingest_filings,
+)
+from app.services.research.cross_quarter_analyze import (
+    InsufficientFilingsError,
+    generate_insights,
+    get_latest_insights,
 )
 
 router = APIRouter()
@@ -217,4 +224,109 @@ async def auto_ingest(
             ],
             "document_ids": result.document_ids,
         },
+    )
+
+
+def _insights_to_dict(row) -> dict:
+    """Shared serialization for both POST + GET insights endpoints."""
+    return {
+        "id": row.id,
+        "ticker": row.ticker,
+        "summary_text": row.summary_text,
+        "quarters_covered": list(row.quarters_covered or []),
+        "provider": row.provider,
+        "model": row.model,
+        "input_tokens": row.input_tokens,
+        "output_tokens": row.output_tokens,
+        "cost_estimate_usd": row.cost_estimate_usd,
+        "generated_at": row.generated_at.isoformat(),
+        "generated_by_email": row.generated_by_email,
+    }
+
+
+@router.post(
+    "/research/{ticker}/insights",
+    response_model=ApiResponse[dict],
+    summary="Generate cross-quarter LLM insights for a ticker",
+)
+async def post_insights(
+    ticker: str = Path(..., min_length=1, max_length=12),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[dict]:
+    """Synthesize trajectory + latest-quarter-delta insights across
+    the ticker's sec_auto documents. Persists a new TickerInsights row
+    (history-preserving — does NOT overwrite previous insights).
+
+    Pre-requisite: at least one sec_auto document with
+    extraction_status='ready' must exist for the ticker. Call
+    POST /research/{ticker}/auto-ingest first if needed.
+
+    Status codes:
+      - 200: insights generated + persisted.
+      - 400: ticker doesn't match the canonical regex.
+      - 409: no sec_auto documents ready for this ticker (run
+        auto-ingest first).
+      - 503: LLM provider chain exhausted, or monthly token budget
+        would be exceeded.
+
+    Wall time: typically 10–30s (one LLM call against the full
+    cross-quarter prompt; ~80K tokens input on Gemini 2.5 Flash).
+    """
+    symbol = _validate_ticker(ticker)
+
+    try:
+        result = await generate_insights(
+            db, ticker=symbol, triggered_by_email=user.email
+        )
+    except InsufficientFilingsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)
+        )
+    except BudgetExceededError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                f"Monthly LLM token budget would be exceeded "
+                f"({e.status.used_tokens} used + {e.projected_tokens} projected > "
+                f"{e.status.cap_tokens} cap). Wait for next month or raise "
+                "MAX_MONTHLY_LLM_TOKENS."
+            ),
+        )
+    except StubProviderError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)
+        )
+
+    return ApiResponse(
+        meta=make_meta(),
+        data=_insights_to_dict(result.insights),
+    )
+
+
+@router.get(
+    "/research/{ticker}/insights",
+    response_model=ApiResponse[dict | None],
+    summary="Get the most recent insights for a ticker (null if none generated)",
+)
+async def get_insights(
+    ticker: str = Path(..., min_length=1, max_length=12),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[dict | None]:
+    """Return the most recent TickerInsights row for the ticker, or
+    null if generation has never run. The FE checks `generated_at`
+    against the 7-day TTL to decide whether to show "Stale, refresh?".
+
+    Status codes:
+      - 200: returns the insights row, or `data: null` if none exist.
+      - 400: ticker doesn't match the canonical regex.
+    """
+    _ = user
+    symbol = _validate_ticker(ticker)
+
+    row = await get_latest_insights(db, ticker=symbol)
+    return ApiResponse(
+        meta=make_meta(),
+        data=_insights_to_dict(row) if row is not None else None,
     )

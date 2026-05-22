@@ -9,9 +9,19 @@ from app.services.research.auto_ingest import (
     AutoIngestFailure,
     auto_ingest_filings,
 )
+from app.services.research.cross_quarter_analyze import (
+    InsightsGenerationResult,
+    InsufficientFilingsError,
+    generate_insights,
+    get_latest_insights,
+)
 
 __all__ = [
     "AutoIngestResult",
     "AutoIngestFailure",
     "auto_ingest_filings",
+    "InsightsGenerationResult",
+    "InsufficientFilingsError",
+    "generate_insights",
+    "get_latest_insights",
 ]
