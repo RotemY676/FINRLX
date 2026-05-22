@@ -1,7 +1,7 @@
 ---
 name: recommendation-object-provenance
 description: Enforce that every Recommendation emitted by the FINRLX pipeline is tamper-evident and replayable. Use when modifying pipeline.py, decision_pipeline models, the engines layer, or when adding any new code path that mutates a Recommendation prior to publication.
-source: project
+type: project
 ---
 
 # FINRLX — Recommendation Object Provenance

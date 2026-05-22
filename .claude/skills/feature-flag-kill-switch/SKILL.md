@@ -1,7 +1,7 @@
 ---
 name: feature-flag-kill-switch
 description: Wrap every user-facing surface (research-lane, paper-trading, backtests, replay) behind a feature flag that can be flipped via env var without redeploy. Use when adding any new surface area, when an outage requires emergency hiding of a feature, or when scoping what beta testers see.
-source: project
+type: project
 ---
 
 # FINRLX — Feature-Flag Kill-Switch
