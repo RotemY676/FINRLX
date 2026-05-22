@@ -113,6 +113,19 @@ class Settings(BaseSettings):
         ),
     )
 
+    # Phase 18 — SEC EDGAR auto-ingest of quarterly filings.
+    # SEC requires a User-Agent header on every API request, formatted
+    # "AppName operator@example.com" (their fair-access policy). Missing
+    # or generic User-Agent strings get throttled or blocked. The
+    # resolver and downstream EDGAR services refuse to make the network
+    # call when this is empty so operators don't accidentally trigger
+    # an SEC block.
+    sec_user_agent: str = ""
+    # In-process cache TTL for SEC's ticker-to-CIK table. The table
+    # changes very rarely (new IPOs, ticker changes), so a weekly
+    # refresh is plenty and keeps SEC traffic minimal.
+    sec_ticker_cache_ttl_seconds: int = 7 * 24 * 60 * 60  # 7 days
+
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific
     # decorators tighten the cost on auth + write-heavy paths. Tests disable
