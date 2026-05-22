@@ -175,7 +175,12 @@ export function UserMenu() {
           ref={dialogRef}
           role="dialog"
           aria-labelledby="user-menu-heading"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-80 max-w-[calc(100vw-1rem)] bg-surface border border-line rounded-xl shadow-lg overflow-hidden"
+          // Phase 14.7 fix — `overflow-hidden` clipped the bottom of the
+          // menu (sign-out / theme / density / footer) on short viewports
+          // because the content can be ~520 px tall. Cap height to viewport
+          // minus the TopBar+gutter (5 rem ≈ 80 px) and scroll inside the
+          // rounded container.
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-80 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-5rem)] bg-surface border border-line rounded-xl shadow-lg overflow-y-auto"
         >
           {/* Header card — large avatar + name + email */}
           <div className="px-4 pt-5 pb-4 flex flex-col items-center text-center border-b border-line bg-surface-2">
