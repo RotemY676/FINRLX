@@ -172,6 +172,9 @@ export function buildReplayContext(args: {
 
 export function buildNewsContext(args: {
   bundle: NewsBundle | null;
+  /** Optional cap for very large bundles. Default is "no cap" so the
+      LLM sees every headline counted in the aggregate — closing the
+      evidence-completeness gap (auditor finding #3, May 2026). */
   maxItems?: number;
 }): LLMContextBundle {
   const lines: string[] = [];
@@ -179,7 +182,6 @@ export function buildNewsContext(args: {
   lines.push("--- FINRLX context: news intelligence ---", "");
 
   const b = args.bundle;
-  const cap = args.maxItems ?? 30;
   if (!b || !b.items || b.items.length === 0) {
     lines.push("No news items available right now.");
     return {
@@ -189,15 +191,70 @@ export function buildNewsContext(args: {
       text: lines.join("\n"),
     };
   }
+  const items = b.items;
+  const cap = args.maxItems ?? items.length; // default: show every item
+  const shown = items.slice(0, cap);
   const s = b.summary;
+
   lines.push(
     `Aggregate sentiment over ${s.total} headlines: positive=${s.positive}, neutral=${s.neutral}, negative=${s.negative}, mean compound=${fmtNum(s.mean_compound, 3)}.`,
   );
+  // Reconcile the aggregate count vs the listed evidence so an auditor
+  // can verify completeness. (Closes the auditor's "60-claimed-30-shown"
+  // gap by either showing all or being explicit about the gap.)
+  if (items.length !== s.total) {
+    lines.push(
+      `NOTE: aggregate covers ${s.total} headlines but only ${items.length} are listed below — the feed deduplicated or paginated. Treat the aggregate as a sample, not a census.`,
+    );
+  }
+  if (cap < items.length) {
+    lines.push(
+      `NOTE: only the first ${cap} of ${items.length} headlines are listed below for compactness. Aggregate counts above cover all ${items.length}.`,
+    );
+  }
+
+  // VADER limitations — concrete failure modes the LLM should apply
+  // skepticism for, not just a one-line caveat. This is the most-
+  // misread section of the news context per a 2026-05-22 audit.
   lines.push(
-    "Sentiment is computed by VADER (rule-based). It does not understand financial jargon, ticker slang, or sarcasm — treat scores as a rough orientation.",
+    "",
+    "VADER LIMITATIONS (read before trusting any sentiment label below):",
+    "- VADER is a lexicon-based scorer designed for general / social-media text. It does NOT understand financial jargon, hawkish-vs-dovish framing, sarcasm, or listicle / advertorial tone.",
+    "- Specific failure modes you will see in this data:",
+    "  • 'Fed signals support for rate hikes' → VADER scores POSITIVE because of 'support'. Economically this is HAWKISH and typically risk-off.",
+    "  • 'Wave of volatility building' → VADER scores NEUTRAL because the lexical sentiment is flat. Economically this is a RISK signal.",
+    "  • Listicle / personality headlines ('X likes Y', 'Buffett indicator hits …') tend to score POSITIVE because they read like recommendations, but they are advertorial, not analysis.",
+    "- Do not draw policy or position conclusions from a positive aggregate score alone. Read the actual headlines and apply your own financial-domain judgment over the lexical score.",
   );
-  lines.push("", `Headlines (${Math.min(cap, b.items.length)}):`);
-  for (const item of b.items.slice(0, cap)) {
+
+  // Per-source breakdown — surfaces source-mix bias before the LLM
+  // averages over the lot. (Auditor finding #4: 25/30 Yahoo at +0.142
+  // vs 5/30 MarketWatch at −0.150 → aggregate dominated by source mix.)
+  const bySource = new Map<string, { count: number; sum: number; pos: number; neg: number }>();
+  for (const it of items) {
+    const cur = bySource.get(it.source) ?? { count: 0, sum: 0, pos: 0, neg: 0 };
+    cur.count++;
+    cur.sum += it.sentiment_compound;
+    if (it.sentiment_label === "positive") cur.pos++;
+    if (it.sentiment_label === "negative") cur.neg++;
+    bySource.set(it.source, cur);
+  }
+  const sourceLines = Array.from(bySource.entries())
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([src, agg]) => {
+      const mean = agg.sum / agg.count;
+      const share = ((agg.count / items.length) * 100).toFixed(0);
+      return `- ${src}: ${agg.count} headlines (${share}% of sample), mean compound=${fmtNum(mean, 3)}, +${agg.pos}/−${agg.neg}`;
+    });
+  lines.push(
+    "",
+    "Per-source breakdown (use this to spot source-mix bias before reading the aggregate):",
+    ...sourceLines,
+  );
+
+  // Listed evidence
+  lines.push("", `Headlines (${shown.length} of ${items.length} listed):`);
+  for (const item of shown) {
     const sentiment = `${item.sentiment_label} ${fmtNum(item.sentiment_compound, 3)}`;
     const date = item.published ? ` · ${item.published}` : "";
     lines.push(`- [${sentiment}] (${item.source}${date}) ${item.title}`);
