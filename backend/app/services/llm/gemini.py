@@ -104,6 +104,15 @@ class GeminiProvider(LLMProvider):
             "generationConfig": {
                 "temperature": temperature,
                 "maxOutputTokens": max_tokens,
+                # Gemini 2.5-* models enable "thinking mode" by default
+                # and the thinking tokens come out of maxOutputTokens.
+                # For our structured outputs (JSON metrics + narrative
+                # markdown) the rigid output shape doesn't benefit from
+                # chain-of-thought, and thinking can eat ~half the budget
+                # — leaving the actual response truncated mid-sentence.
+                # Setting thinkingBudget=0 disables thinking on 2.5
+                # models; harmless no-op on 1.5 and earlier.
+                "thinkingConfig": {"thinkingBudget": 0},
             },
         }
         if system_text:
@@ -208,6 +217,24 @@ class GeminiProvider(LLMProvider):
             )
             raise StubProviderError(
                 f"Gemini returned no candidates ({block_reason})."
+            )
+
+        # Detect truncated responses. `finishReason` values from Gemini
+        # we care about:
+        #   STOP         — completed normally, response is whole
+        #   MAX_TOKENS   — ran out of budget mid-generation; response
+        #                  is incomplete and probably invalid JSON
+        #   SAFETY       — model self-redacted; partial response
+        #   RECITATION   — model declined to reproduce copyrighted text
+        # We treat anything other than STOP as a failure so the
+        # cascading router can fall back to the next provider rather
+        # than persisting a half-baked answer.
+        finish_reason = candidates[0].get("finishReason", "")
+        if finish_reason and finish_reason != "STOP":
+            raise StubProviderError(
+                f"Gemini stopped mid-response (finishReason={finish_reason}). "
+                "Likely the output exceeded maxOutputTokens — try a shorter "
+                "prompt or raise the token budget."
             )
 
         parts = candidates[0].get("content", {}).get("parts") or []

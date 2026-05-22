@@ -363,6 +363,29 @@ async def test_gemini_empty_candidates_raises():
 
 
 @pytest.mark.asyncio
+async def test_gemini_max_tokens_finish_reason_raises():
+    """When the model stops because it hit maxOutputTokens (finishReason
+    = MAX_TOKENS), the response is incomplete and probably has
+    invalid JSON / a half-written sentence. Raise so the chain can
+    fall back rather than persist a truncated answer."""
+    payload = {
+        "candidates": [
+            {
+                "content": {"parts": [{"text": "partial response..."}], "role": "model"},
+                "finishReason": "MAX_TOKENS",
+            }
+        ],
+        "usageMetadata": {"promptTokenCount": 100, "candidatesTokenCount": 8192},
+    }
+    with patch.object(httpx.AsyncClient, "post", _mock_post_returning(200, payload)):
+        provider = GeminiProvider(api_key="gem-key-xxx")
+        with pytest.raises(StubProviderError) as exc_info:
+            await provider.chat([LLMMessage(role="user", content="hi")])
+    msg = str(exc_info.value).lower()
+    assert "mid-response" in msg or "max_tokens" in msg or "truncated" in msg
+
+
+@pytest.mark.asyncio
 async def test_gemini_empty_api_key_raises_before_network():
     """A missing key must raise BEFORE making a network call. We
     confirm by patching post to assert-not-called — but the simpler
