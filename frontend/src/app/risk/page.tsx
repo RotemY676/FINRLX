@@ -57,8 +57,11 @@ export default function RiskPage() {
   return (
     <div className="space-y-gap max-w-[1200px]">
       <div>
-        <h1 className="text-[20px] font-semibold text-ink flex items-center gap-2">Risk workspace <HelpLink anchor="reference/pages/risk" label="Open Risk help" /></h1>
-        <p className="text-[12px] text-ink-3 mt-0.5">
+        <h1 className="text-page-title text-ink flex items-center gap-2">
+          Risk workspace
+          <HelpLink anchor="reference/pages/risk" label="Open Risk help" />
+        </h1>
+        <p className="text-body-sm text-ink-2 mt-0.5">
           {r.portfolio_name} · {r.snapshot_count} daily snapshots
         </p>
       </div>

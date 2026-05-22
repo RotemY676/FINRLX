@@ -53,10 +53,12 @@ export default function PaperPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[20px] font-semibold text-ink">Paper Portfolio</h1>
-          <p className="text-[11px] text-ink-4 mt-1">{data.name}</p>
+          <h1 className="text-page-title text-ink">Paper Portfolio</h1>
+          <p className="text-body-sm text-ink-2 mt-1">{data.name}</p>
           {data.source_recommendation_id && (
-            <p className="text-[10px] text-ink-4 font-mono mt-0.5">Source: {data.source_recommendation_id.slice(0, 8)}...</p>
+            <p className="text-meta text-ink-4 font-mono mt-0.5">
+              Source: {data.source_recommendation_id.slice(0, 8)}…
+            </p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -67,12 +69,12 @@ export default function PaperPage() {
 
       {/* Test paper warning */}
       {data.source_type === "test_paper" && (
-        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-caption text-caution-soft-ink">
           This is a test paper portfolio created from an unpublished recommendation (allow_unpublished=true). Treat as experimental.
         </div>
       )}
       {data.is_demo && (
-        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-[12.5px] text-caution-soft-ink">
+        <div className="rounded-lg border border-caution bg-caution-soft p-3 text-caption text-caution-soft-ink">
           This portfolio is from seeded/demo data and may not reflect real market conditions.
         </div>
       )}
