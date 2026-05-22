@@ -1,0 +1,30 @@
+current_path,target_area,target_path,disposition,redirect_mechanism,owning_phase_for_redesign,feature_flag,auth,notes
+/,Home,/,keep,none,5,none,public,Decision Command Center stays at root.
+/decision,Decisions,/decision,keep,server-side redirect to latest /decision/[id],7,none,public,Phase 7 introduces /decision/[id] alongside.
+,Decisions,/decision/[id],new,n/a,7,none,public,New deep-linkable per-recommendation route.
+/comparison,Decisions,/decision/[id]/compare,move,"308 redirect /comparison -> /decision (current id) /compare",7,none,public,Becomes in-page tab on Decision workspace.
+/replay,Decisions,/decision/[id]/replay,move,308 redirect with id query preserved,7,replay,public,May also keep /decisions/replay as legacy list view.
+/templates,Decisions,/templates,keep,none,7,none,authenticated,Templates surface under Decisions sub-nav.
+/backtests,Research,/research/backtests,move,308 redirect,6,backtests,public,Move to Research; relevant for research/validation workflows.
+/universe,Research,/research/universe,move,308 redirect,6,universe_ui,public,Universe coverage is research data.
+,Research,/research,new,n/a,6,none,public,New top-level Research hub. Search + landing.
+,Research,/research/[ticker],new,n/a,6,none,public,New per-ticker workspace.
+/paper,Portfolio & Risk,/portfolio/paper,move,308 redirect,8,paper_trading,public,Paper portfolio under Portfolio & Risk.
+/risk,Portfolio & Risk,/portfolio/risk,move,308 redirect,8,risk_ui,public,Risk workspace under Portfolio & Risk.
+,Portfolio & Risk,/portfolio,new,n/a,8,none,public,Tabbed landing for Paper / Risk / Scenario.
+/news,Insights,/insights,rename,308 redirect /news -> /insights,9,news_ui,public,Generic news becomes decision-linked Insights.
+/ops,Ops & Governance,/ops,keep,none,10,ops_ui,public,Ops command stays at /ops as the area landing.
+/policies,Ops & Governance,/ops/policies,move,308 redirect,10,policy_ui,authenticated,Policies sub-route.
+/integrations,Ops & Governance,/ops/integrations,move,308 redirect,10,integrations_ui,public,Integrations sub-route.
+/admin,Ops & Governance,/ops/lab,rename,308 redirect /admin -> /ops/lab,10,research_lane,public,Desktop-only gate preserved. Rename clarifies it is the research lab.
+/operator,Ops & Governance,/ops/operator,move,308 redirect,10/11,operator_console,authenticated,Operator console becomes Ops sub-route. Deep links from Decision/Replay/Insights continue to work via redirect.
+/profile,Settings,/settings/profile,move,308 redirect,4,none,authenticated,Profile belongs to Settings.
+/help,Settings,/settings/help,move,308 redirect (TopBar shortcut preserved),4,none,public,Help center moves under Settings; TopBar shortcut still points at /help via redirect.
+/feedback,Settings,/settings/feedback,move,308 redirect (re-evaluated in Phase 4),4,none,authenticated,Phase 4 may keep /feedback at root for beta-tester clarity; decision locked there.
+/onboarding,(top-level),/onboarding,keep,none,4,none,authenticated,Auth flow lives outside the seven product areas.
+/login,(top-level),/login,keep,none,4,none,public,Auth surface.
+/login/google-finish,(top-level),/login/google-finish,keep,none,4,none,public,OAuth callback.
+/signup,(top-level),/signup,keep,none,4,none,public,Auth surface.
+/disclaimer,(top-level),/disclaimer,keep,none,4,none,public,Legal stays at root for direct linking.
+/terms,(top-level),/terms,keep,none,4,none,public,Legal stays at root.
+/privacy,(top-level),/privacy,keep,none,4,none,public,Legal stays at root.
