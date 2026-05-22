@@ -13,13 +13,15 @@ one-file change.
 Status at this report:
 
 - **16.0 + 16.1 SHIPPED** — provider abstraction, stub provider,
-  Finnhub shim, endpoints, frontend panels. Endpoints return 200
-  with a structurally-complete stub envelope until a real provider
-  is configured.
-- **16.2 PENDING** — real Finnhub HTTP calls (needs API key for
-  local validation; operator is signing up).
-- **16.3 PENDING** — Railway env var deploy.
-- **16.4 = THIS REPORT (partial; updated when 16.2 + 16.3 land).**
+  Finnhub shim, endpoints, frontend panels.
+- **16.2 SHIPPED** — real Finnhub HTTP calls + module-level TTL
+  cache (6h fundamentals / 24h peer list / 5min peer quotes) +
+  env-var alias fix (FINNHUB_API_KEY now picked up directly).
+- **16.3 LIVE** — Railway backend deployment `98e19616` SUCCESS
+  on 2026-05-22 15:18 IST. Status endpoint reports
+  `configured: true, provider: "finnhub"`. Real fundamentals + peers
+  flowing for US equities.
+- **16.4 = THIS REPORT (final).**
 
 ## B. Skills used
 
@@ -165,6 +167,144 @@ Not captured locally (Windows `next start` flakiness carried from Phase 3). Will
 
 If you'd rather hold off on the key, the surface is already live in stub mode. Both panels show the "configure provider" empty state honestly; nothing is broken.
 
-## M. Production verification
+## M. Production verification (16.2 + 16.3)
 
-To be filled in once 16.0 + 16.1 deploy SHA is captured.
+### Deploy SHAs
+
+| Sub-phase | Frontend commit | Backend commit | Railway backend deployment |
+|---|---|---|---|
+| 16.0 + 16.1 | `94d922f` | `94d922f` | first deploy bundling endpoints + stub provider |
+| 16.2 alias-fix + real impl + cache + tests | (none) | `4fa8045` | `98e19616-2fe7-46bb-a64c-8352c421dc02` SUCCESS at 2026-05-22 15:18 IST |
+| 16.3 forward_pe parsing fix | (none) | `(this commit)` | next deploy |
+
+### Status endpoint after 16.2 deploy
+
+```
+$ curl https://backend-production-aab8.up.railway.app/api/v1/research/fundamentals/_status
+
+{
+  "data": {
+    "configured": true,
+    "provider": "finnhub",
+    "detail": "Finnhub provider live. Free tier 60 calls/min;
+               in-memory TTL cache (6h fundamentals / 24h peer
+               list / 5min peer quotes) absorbs the load.
+               Tokens never logged."
+  }
+}
+```
+
+### Real-data smoke (NVDA)
+
+```
+$ curl .../api/v1/research/fundamentals/NVDA
+
+ticker:               "NVDA"
+company_name:         "NVIDIA Corp"
+sector:               "Semiconductors"
+market_cap_usd:       5,312,141,867,065 ($5.31T)
+pe_ratio_ttm:         33.98
+price_to_book:        28.81
+gross_margin_ttm:     0.7415 (74.15%)
+operating_margin_ttm: 0.6402 (64.02%)
+net_margin_ttm:       0.6297 (62.97%)
+revenue_ttm_usd:      $251.7B
+revenue_growth_yoy:   +70.68%
+eps_ttm:              6.53
+52w_high:             236.54
+52w_low:              129.16
+source:               "finnhub"
+```
+
+Peers NVDA returned `AVGO, MU, AMD, …` (Broadcom, Micron, AMD) with
+real prices + 1-day change percentages. All values match what
+public sources show for the same trading day. ✓
+
+### Bug found + fixed in production verification
+
+Initial `forward_pe` for NVDA came through as **274×** — clearly
+wrong. Root cause: I had fallen back to Finnhub's
+`peExclExtraAnnual` (annual P/E excluding extraordinary items)
+when `forwardPE` was absent. That metric is NOT a forward metric
+— it's a backward-looking annual P/E that diverges wildly from
+the trailing TTM when extraordinary items dominate net income (as
+they do at NVDA right now).
+
+Fix: removed the fallback. `forward_pe` is now `None` when
+Finnhub's free tier doesn't expose `forwardPE` (it doesn't for
+most tickers — real forward P/E needs analyst consensus EPS,
+which is a paid feature). The Forward P/E tile collapses
+honestly when the data isn't available. Better than a misleading
+274× headline number.
+
+### Env-var alias bug (and the fix)
+
+The first deploy attempt showed `configured: false` even after
+the operator added `FINNHUB_API_KEY` to Railway. Root cause: my
+Pydantic field `fundamentals_finnhub_api_key` defaulted to
+reading the env var `FUNDAMENTALS_FINNHUB_API_KEY` (the Pydantic
+field-name convention), but my documentation said to set
+`FINNHUB_API_KEY`.
+
+Fix: added `pydantic.Field(validation_alias=AliasChoices(
+"FINNHUB_API_KEY", "FUNDAMENTALS_FINNHUB_API_KEY",
+"fundamentals_finnhub_api_key"))` so the field accepts both
+spellings. Documentation and code now agree. The operator's
+existing Railway variable works without any change on their
+side.
+
+### Frontend status
+
+The frontend was already shipping the FundamentalsPanel and
+PeersPanel components from Phase 16.1. With the backend now
+returning real data, the panels light up automatically — no
+frontend redeploy needed. Visiting
+https://frontend-production-7e8b1.up.railway.app/research/NVDA
+shows real fundamentals + real sector peers in production.
+
+## N. Honest residuals (post-16.3)
+
+1. **Forward P/E is empty for most tickers** — Finnhub's free tier
+   doesn't include analyst consensus EPS. The tile simply collapses.
+   If you upgrade Finnhub or add a second provider, this fills in.
+2. **`as_of` is always null** — Finnhub's `metric=all` envelope
+   doesn't carry a per-metric as-of date. The frontend shows
+   `cached_at` instead (when WE fetched, not when Finnhub
+   computed). Honest about the difference.
+3. **API key is now in this conversation's context** because it
+   surfaced via `railway variables --kv` during diagnosis.
+   **Recommend rotating the Finnhub key**: log into
+   finnhub.io/dashboard → reset the API key → update the Railway
+   variable with the new value. The current key keeps working in
+   the meantime; rotation is hygienic.
+4. **Per-process cache** — Railway scales horizontally; if you
+   ever run more than one backend instance, each instance caches
+   independently. Switch to Redis at that point.
+5. **No analyst consensus** — Finnhub's recommendation-trends
+   endpoint is paid-tier only. Phase 16 explicitly does not promise
+   it.
+6. **International ticker coverage is uneven** — symbols outside
+   US equities may come back with empty fundamentals + empty peer
+   lists. Both panels surface this honestly with `coverage_note`.
+7. **No screenshot evidence in this report.** Carried from earlier
+   phases. The status endpoint output + the live `/research/NVDA`
+   page on Railway are the verification surface.
+
+## O. Closing
+
+Phase 16 took the two "coming later" placeholder cards from Phase
+6 to real, live, source-grounded data in production in four
+sub-phase commits. The provider abstraction layer means swapping
+Finnhub for FMP / Polygon / paid-tier Finnhub is a single-file
+change in `finnhub_provider.py`. Both panels respect the
+`finrlx-fintech-dashboard-patterns` provenance contract; both
+deep-link safely; no forbidden language anywhere.
+
+Next recommended step (operator-driven, not Phase 17):
+
+- **Rotate the Finnhub API key** (one-minute hygiene step).
+- **Live with the new panels** for a session. If forward_pe
+  showing as empty is annoying, that's the trigger for either
+  a paid-tier upgrade or a second provider.
+- **Phase 15.6** (delete legacy v2 TopBar) still queued and waiting
+  on your validation of v3.

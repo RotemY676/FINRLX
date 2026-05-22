@@ -206,10 +206,15 @@ class FinnhubFundamentalsProvider(FundamentalsProvider):
             description=None,
             market_cap_usd=market_cap_usd,
             pe_ratio_ttm=_safe_float(metrics, "peTTM"),
-            forward_pe=(
-                _safe_float(metrics, "peExclExtraAnnual")
-                or _safe_float(metrics, "forwardPE")
-            ),
+            # Forward P/E: Finnhub free tier does NOT expose a real
+            # forward P/E (which needs analyst consensus EPS). Earlier
+            # this fell back to `peExclExtraAnnual` (annual P/E ex-
+            # extraordinary items), which is NOT a forward metric and
+            # produced misleading values like 274× for NVDA. Leaving
+            # this None until either (a) we upgrade to a Finnhub plan
+            # that exposes consensus EPS, or (b) we add a second
+            # provider that does.
+            forward_pe=_safe_float(metrics, "forwardPE"),
             price_to_book=_safe_float(metrics, "pbAnnual"),
             price_to_sales_ttm=_safe_float(metrics, "psTTM"),
             ev_to_ebitda=_safe_float(metrics, "currentEv/freeCashFlowTTM"),
