@@ -24,6 +24,9 @@ import { fetchNews, NewsItem } from "@/services/api";
 import { PriceChartCard } from "@/components/charts/PriceChartCard";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { Icon } from "@/components/icons/Icon";
+import { FundamentalsPanel } from "@/components/research/FundamentalsPanel";
+import { PeersPanel } from "@/components/research/PeersPanel";
+import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 
 interface PageProps {
   params: Promise<{ ticker: string }>;
@@ -48,6 +51,7 @@ function filterNewsForTicker(items: NewsItem[], ticker: string): NewsItem[] {
 export default function ResearchTickerPage({ params }: PageProps) {
   const { ticker: rawTicker } = use(params);
   const ticker = rawTicker.toUpperCase();
+  const { flags } = useFeatureFlags();
   const [news, setNews] = useState<NewsItem[] | null>(null);
   const [newsError, setNewsError] = useState<string | null>(null);
 
@@ -156,34 +160,14 @@ export default function ResearchTickerPage({ params }: PageProps) {
         )}
       </section>
 
-      {/* Honest placeholders for the panels we can't yet ship */}
+      {/* Phase 16.1 — Fundamentals and sector Peers shipped.  Each
+          panel hides entirely when its feature flag is off, and renders
+          an honest "configure provider" empty state when no provider
+          is wired (default Phase 16.0 behaviour). */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <ComingLater
-          icon="layers"
-          title="Fundamentals"
-          body="Revenue, margin, valuation multiples, and analyst consensus require a fundamentals feed that isn't wired into FINRLX yet. Scheduled for a later phase."
-        />
-        <ComingLater
-          icon="compare"
-          title="Peers"
-          body="Peer comparison needs a sector-membership feed and a per-peer pricing snapshot. Not wired yet."
-        />
+        {flags.research_fundamentals_ui && <FundamentalsPanel ticker={ticker} />}
+        {flags.research_peers_ui && <PeersPanel ticker={ticker} />}
       </div>
-    </div>
-  );
-}
-
-function ComingLater({ icon, title, body }: { icon: string; title: string; body: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-line bg-surface-2 p-pad">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon name={icon} size={14} className="text-ink-4" />
-        <h3 className="text-card-title text-ink-2">{title}</h3>
-        <span className="text-meta font-mono uppercase tracking-wider text-ink-4 ml-auto">
-          coming later
-        </span>
-      </div>
-      <p className="text-body-sm text-ink-3 leading-snug">{body}</p>
     </div>
   );
 }

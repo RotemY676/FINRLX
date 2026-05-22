@@ -33,6 +33,7 @@ from app.api.v1.publication import router as publication_router
 from app.api.v1.recommendations import router as recommendations_router
 from app.api.v1.regime import router as regime_router
 from app.api.v1.replay import router as replay_router
+from app.api.v1.research_fundamentals import router as research_fundamentals_router
 from app.api.v1.risk import router as risk_router
 from app.api.v1.rl import router as rl_router
 from app.api.v1.rl_benchmark import router as rl_benchmark_router
@@ -78,6 +79,7 @@ api_router.include_router(news_router, tags=["news"])
 api_router.include_router(operator_router, tags=["operator"])
 api_router.include_router(assistant_router, tags=["assistant"])
 api_router.include_router(saved_views_router, tags=["saved-views"])
+api_router.include_router(research_fundamentals_router, tags=["research-fundamentals"])
 api_router.include_router(templates_router, tags=["templates"])
 api_router.include_router(rl_router, tags=["rl"])
 api_router.include_router(rl_training_router, tags=["rl-training"])

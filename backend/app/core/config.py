@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     feature_risk_ui: bool = True          # Risk workspace surface (Phase B1)
     feature_news_ui: bool = True          # News intelligence surface (Phase B2)
     feature_operator_console: bool = False  # Phase O-0: single-operator LLM workbench. OFF by default; opt-in per env.
+    # Phase 16: research fundamentals + peers. Independent flags because the
+    # operator may want to gate them separately (fundamentals could ship live
+    # while peers wait on a paid-tier upgrade).
+    feature_research_fundamentals_ui: bool = True
+    feature_research_peers_ui: bool = True
 
     # LLM provider abstraction (Phase O-5). All providers ship as STUBS today.
     # Set llm_provider + the matching key to enable in-app assistant features.
@@ -51,6 +56,15 @@ class Settings(BaseSettings):
     llm_anthropic_api_key: str = ""
     llm_openai_api_key: str = ""
     llm_local_base_url: str = "http://localhost:11434"
+
+    # Phase 16 — Fundamentals + Peers provider abstraction. Empty
+    # `fundamentals_provider` means the stub provider is used (endpoints
+    # respond with a structurally-complete envelope tagged source="stub";
+    # the frontend renders the "configure provider" empty state).
+    # Set fundamentals_provider="finnhub" + fundamentals_finnhub_api_key to
+    # activate the real surface (real HTTP impl lands in Phase 16.2).
+    fundamentals_provider: str = ""  # "" | "stub" | "finnhub"
+    fundamentals_finnhub_api_key: str = ""
 
     # Rate limiting (Phase MVP-5) — slowapi token-bucket per remote IP.
     # The global default is generous (covers normal browsing); endpoint-specific

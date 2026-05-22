@@ -2119,3 +2119,70 @@ export async function deleteSavedView(id: string): Promise<ApiResponse<{ id: str
     headers: _savedViewsAuthHeaders(),
   });
 }
+
+// ── Phase 16 — Research fundamentals + peers ────────────────────────
+// Backend contract: app/api/v1/research_fundamentals.py.  Endpoints
+// always return 200 with a structurally-complete envelope; when no
+// provider is configured the envelope is tagged source="stub" and
+// carries a coverage_note.  Frontend never has to handle a 503 here.
+
+export interface FundamentalsData {
+  ticker: string;
+  company_name: string | null;
+  sector: string | null;
+  industry: string | null;
+  description: string | null;
+  market_cap_usd: number | null;
+  pe_ratio_ttm: number | null;
+  forward_pe: number | null;
+  price_to_book: number | null;
+  price_to_sales_ttm: number | null;
+  ev_to_ebitda: number | null;
+  gross_margin_ttm: number | null;
+  operating_margin_ttm: number | null;
+  net_margin_ttm: number | null;
+  revenue_ttm_usd: number | null;
+  revenue_growth_yoy: number | null;
+  eps_ttm: number | null;
+  dividend_yield: number | null;
+  "52w_high"?: number | null;
+  "52w_low"?: number | null;
+  as_of: string | null;
+  source: string;
+  cached_at: string | null;
+  coverage_note: string | null;
+}
+
+export interface PeerEntryData {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  industry: string | null;
+  market_cap_usd: number | null;
+  last_close_usd: number | null;
+  change_pct_1d: number | null;
+  change_pct_ytd: number | null;
+}
+
+export interface PeersData {
+  target_ticker: string;
+  target_sector: string | null;
+  target_industry: string | null;
+  peers: PeerEntryData[];
+  as_of: string | null;
+  source: string;
+  cached_at: string | null;
+  coverage_note: string | null;
+}
+
+export async function fetchFundamentals(
+  ticker: string,
+): Promise<ApiResponse<FundamentalsData>> {
+  return apiFetch<FundamentalsData>(
+    `/api/v1/research/fundamentals/${encodeURIComponent(ticker)}`,
+  );
+}
+
+export async function fetchPeers(ticker: string): Promise<ApiResponse<PeersData>> {
+  return apiFetch<PeersData>(`/api/v1/research/peers/${encodeURIComponent(ticker)}`);
+}

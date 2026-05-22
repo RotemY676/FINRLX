@@ -34,6 +34,9 @@ export interface FeatureFlags {
   risk_ui: boolean;
   news_ui: boolean;
   operator_console: boolean;
+  // Phase 16 — research fundamentals + peers panels on /research/[ticker]
+  research_fundamentals_ui: boolean;
+  research_peers_ui: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -53,6 +56,8 @@ const FAIL_CLOSED: FeatureFlags = {
   risk_ui: false,
   news_ui: false,
   operator_console: false,
+  research_fundamentals_ui: false,
+  research_peers_ui: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -85,6 +90,8 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             risk_ui: Boolean(data.risk_ui),
             news_ui: Boolean(data.news_ui),
             operator_console: Boolean(data.operator_console),
+            research_fundamentals_ui: Boolean(data.research_fundamentals_ui),
+            research_peers_ui: Boolean(data.research_peers_ui),
           });
         }
       })

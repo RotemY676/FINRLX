@@ -34,5 +34,8 @@ async def flags() -> ApiResponse[dict]:
             "risk_ui": settings.feature_risk_ui,
             "news_ui": settings.feature_news_ui,
             "operator_console": settings.feature_operator_console,
+            # Phase 16 — research fundamentals + peers UI gates.
+            "research_fundamentals_ui": settings.feature_research_fundamentals_ui,
+            "research_peers_ui": settings.feature_research_peers_ui,
         },
     )
