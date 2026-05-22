@@ -20,12 +20,15 @@ function fmtCompound(c: number): string {
   return (c >= 0 ? "+" : "") + c.toFixed(2);
 }
 
+type SentimentFilter = "all" | "positive" | "neutral" | "negative";
+
 export default function NewsPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
   const [data, setData] = useState<NewsBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<SentimentFilter>("all");
 
   const load = (force = false) => {
     if (flagsLoading || !flags.news_ui) return;
@@ -63,13 +66,24 @@ export default function NewsPage() {
   }
 
   const s = data.summary;
+  const filtered =
+    filter === "all"
+      ? data.items
+      : data.items.filter((item) => item.sentiment_label === filter);
+
+  const filterChips: ReadonlyArray<{ key: SentimentFilter; label: string; count: number }> = [
+    { key: "all", label: "All", count: data.items.length },
+    { key: "positive", label: "Positive", count: s.positive },
+    { key: "neutral", label: "Neutral", count: data.items.length - s.positive - s.negative },
+    { key: "negative", label: "Negative", count: s.negative },
+  ];
 
   return (
     <div className="space-y-gap max-w-[1200px]">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-semibold text-ink">News intelligence</h1>
-          <p className="text-[12px] text-ink-3 mt-0.5">
+          <h1 className="text-page-title text-ink">News intelligence</h1>
+          <p className="text-body-sm text-ink-2 mt-0.5">
             {s.total} headlines · VADER sentiment · RSS sources (cached 5 min)
           </p>
         </div>
@@ -79,7 +93,7 @@ export default function NewsPage() {
             type="button"
             onClick={() => load(true)}
             disabled={refreshing}
-            className="inline-flex items-center justify-center min-h-11 md:min-h-0 md:h-9 px-3 rounded-md bg-surface-3 text-ink-2 text-[12.5px] font-medium hover:bg-line transition-colors disabled:opacity-50"
+            className="inline-flex items-center justify-center min-h-11 md:min-h-0 md:h-9 px-3 rounded-md bg-surface-3 text-ink-2 text-body-sm font-medium hover:bg-line transition-colors disabled:opacity-50"
           >
             {refreshing ? "Refreshing…" : "Refresh"}
           </button>
@@ -89,56 +103,90 @@ export default function NewsPage() {
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-gap">
         <div className="rounded-lg border border-line bg-surface p-3 shadow-sm">
-          <p className="text-[11px] text-ink-4">Total</p>
-          <p className="text-[20px] font-display font-semibold text-ink mt-0.5">{s.total}</p>
+          <p className="text-meta text-ink-4">Total</p>
+          <p className="text-section-title font-display text-ink mt-0.5">{s.total}</p>
         </div>
         <div className="rounded-lg border border-line bg-surface p-3 shadow-sm">
-          <p className="text-[11px] text-ink-4">Positive</p>
-          <p className="text-[20px] font-display font-semibold text-pos mt-0.5">{s.positive}</p>
+          <p className="text-meta text-ink-4">Positive</p>
+          <p className="text-section-title font-display text-pos mt-0.5">{s.positive}</p>
         </div>
         <div className="rounded-lg border border-line bg-surface p-3 shadow-sm">
-          <p className="text-[11px] text-ink-4">Negative</p>
-          <p className="text-[20px] font-display font-semibold text-breach mt-0.5">{s.negative}</p>
+          <p className="text-meta text-ink-4">Negative</p>
+          <p className="text-section-title font-display text-breach mt-0.5">{s.negative}</p>
         </div>
         <div className="rounded-lg border border-line bg-surface p-3 shadow-sm">
-          <p className="text-[11px] text-ink-4">Mean compound</p>
-          <p className={`text-[20px] font-display font-semibold mt-0.5 ${s.mean_compound > 0.05 ? "text-pos" : s.mean_compound < -0.05 ? "text-breach" : "text-ink"}`}>
+          <p className="text-meta text-ink-4">Mean compound</p>
+          <p className={`text-section-title font-display mt-0.5 ${s.mean_compound > 0.05 ? "text-pos" : s.mean_compound < -0.05 ? "text-breach" : "text-ink"}`}>
             {fmtCompound(s.mean_compound)}
           </p>
         </div>
       </div>
 
-      {/* Items */}
-      <ul className="space-y-2" role="list">
-        {data.items.map((item, i) => (
-          <li key={i} className="rounded-lg border border-line bg-surface p-pad shadow-sm">
-            <div className="flex items-baseline justify-between flex-wrap gap-2">
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[14px] font-semibold text-ink hover:text-primary underline decoration-transparent hover:decoration-current"
-              >
-                {item.title}
-              </a>
-              <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${SENTIMENT_STYLE[item.sentiment_label] ?? SENTIMENT_STYLE.neutral}`}>
-                {item.sentiment_label} {fmtCompound(item.sentiment_compound)}
+      {/* Phase 9: sentiment filter chip strip. Frontend-only filter — the
+          backend doesn't yet support a sentiment query parameter. */}
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by sentiment">
+        {filterChips.map((chip) => {
+          const active = chip.key === filter;
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setFilter(chip.key)}
+              className={`inline-flex items-center gap-1.5 min-h-11 md:min-h-0 md:py-1.5 px-3 rounded-md text-body-sm transition-colors ${
+                active
+                  ? "bg-primary-soft text-primary-soft-ink font-medium"
+                  : "bg-surface-2 text-ink-2 hover:bg-surface-3"
+              }`}
+            >
+              {chip.label}
+              <span className={`text-meta font-mono ${active ? "text-primary-soft-ink/70" : "text-ink-4"}`}>
+                {chip.count}
               </span>
-            </div>
-            {item.summary && (
-              <p className="text-[12.5px] text-ink-2 mt-1.5 break-words">{item.summary}</p>
-            )}
-            <p className="text-[11px] text-ink-4 mt-2">
-              {item.source}
-              {item.published && ` · ${item.published}`}
-            </p>
-          </li>
-        ))}
-      </ul>
+            </button>
+          );
+        })}
+      </div>
 
-      <p className="text-[11px] text-ink-4">
-        Sentiment scored with VADER (rule-based, no external API). Compound range [-1, 1]:
-        positive ≥ 0.05, negative ≤ -0.05, neutral otherwise.
+      {/* Items */}
+      {filtered.length === 0 ? (
+        <p className="text-body-sm text-ink-3 rounded-lg border border-line bg-surface-2 p-pad">
+          No {filter === "all" ? "" : filter} headlines in the current feed.
+          Try &ldquo;All&rdquo; or refresh.
+        </p>
+      ) : (
+        <ul className="space-y-2" role="list">
+          {filtered.map((item, i) => (
+            <li key={i} className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+              <div className="flex items-baseline justify-between flex-wrap gap-2">
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-card-title text-ink hover:text-primary underline decoration-transparent hover:decoration-current"
+                >
+                  {item.title}
+                </a>
+                <span className={`px-2 py-0.5 rounded-md text-meta font-medium ${SENTIMENT_STYLE[item.sentiment_label] ?? SENTIMENT_STYLE.neutral}`}>
+                  {item.sentiment_label} {fmtCompound(item.sentiment_compound)}
+                </span>
+              </div>
+              {item.summary && (
+                <p className="text-caption text-ink-2 mt-1.5 break-words">{item.summary}</p>
+              )}
+              <p className="text-meta text-ink-4 mt-2">
+                {item.source}
+                {item.published && ` · ${item.published}`}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="text-meta text-ink-4">
+        Sentiment scored with VADER (rule-based, no external API). Compound
+        range [−1, 1]: positive ≥ 0.05, negative ≤ −0.05, neutral otherwise.
       </p>
     </div>
   );
