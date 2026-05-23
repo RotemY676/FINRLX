@@ -15,7 +15,7 @@ export function ComparisonBarChart({ rows }: { rows: ComparisonWeightRow[] }) {
   return (
     <div role="img" aria-label={ariaSummary} className="h-64">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
+        <BarChart accessibilityLayer data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
           <XAxis dataKey="ticker" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.42 0.012 250)" }} tickLine={false} axisLine={{ stroke: "oklch(0.92 0.008 240)" }} />
           <YAxis tick={{ fontSize: 11, fill: "oklch(0.58 0.01 250)" }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} width={36} />
           <Tooltip formatter={(value: number, name: string) => [`${value}%`, name === "recommendation" ? "Recommendation" : "Benchmark"]}

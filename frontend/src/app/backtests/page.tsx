@@ -89,7 +89,7 @@ export default function BacktestsPage() {
                   aria-label={`${item.name} — open backtest detail`}
                   className={`w-full flex flex-col md:flex-row md:items-center md:justify-between gap-1.5 md:gap-3 p-3 min-h-11 rounded-lg text-left transition-colors ${
                     isSelected
-                      ? "bg-surface-2 border-2 border-primary"
+                      ? "bg-surface border-2 border-primary"
                       : "border-2 border-transparent hover:bg-surface-3 focus-visible:bg-surface-3"
                   }`}
                 >

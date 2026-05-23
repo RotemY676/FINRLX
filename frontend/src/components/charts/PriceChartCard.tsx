@@ -55,7 +55,7 @@ export function PriceChartCard({ ticker = "NVDA" }: { ticker?: string }) {
         className="h-56"
       >
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+          <LineChart accessibilityLayer data={points} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
             <CartesianGrid stroke="oklch(0.94 0.005 240)" strokeDasharray="3 3" vertical={false} />
 
             {/* Confidence band (area between upper and lower) */}

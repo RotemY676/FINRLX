@@ -47,7 +47,7 @@ export function AlignmentChart({ engines, synthesisStance, synthesisConfidence }
   return (
     <div role="img" aria-label={ariaSummary} className="h-72 relative">
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 16, right: 24, bottom: 32, left: 16 }}>
+        <ScatterChart accessibilityLayer margin={{ top: 16, right: 24, bottom: 32, left: 16 }}>
           {/* Grid reference lines */}
           <ReferenceLine y={25} stroke="oklch(0.92 0.008 240)" strokeDasharray="3 3" />
           <ReferenceLine y={50} stroke="oklch(0.92 0.008 240)" strokeDasharray="3 3" />
