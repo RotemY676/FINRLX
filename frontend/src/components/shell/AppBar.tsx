@@ -76,7 +76,7 @@ export function AppBar({ onOpenPalette }: AppBarProps) {
           <span className="hidden md:inline">Search FINRLX — tickers, decisions, ops, notes</span>
           <span className="md:hidden">Search…</span>
         </span>
-        <kbd className="hidden md:inline-flex items-center text-meta font-mono text-ink-4 bg-surface-3 group-hover:bg-surface border border-line px-1.5 py-0.5 rounded shrink-0">
+        <kbd className="hidden md:inline-flex items-center text-meta font-mono text-ink-2 bg-surface-3 group-hover:bg-surface border border-line px-1.5 py-0.5 rounded shrink-0">
           ⌘K
         </kbd>
       </button>

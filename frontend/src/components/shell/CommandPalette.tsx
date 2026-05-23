@@ -236,7 +236,7 @@ export function CommandPalette({ open, onClose }: Props) {
             placeholder="Search routes, tickers, operator notes…"
             className="flex-1 bg-transparent border-0 outline-none text-body text-ink placeholder:text-ink-4"
           />
-          <kbd className="hidden sm:inline-flex items-center text-meta font-mono text-ink-4 bg-surface-3 px-1.5 py-0.5 rounded">
+          <kbd className="hidden sm:inline-flex items-center text-meta font-mono text-ink-2 bg-surface-3 px-1.5 py-0.5 rounded">
             Esc
           </kbd>
         </div>
