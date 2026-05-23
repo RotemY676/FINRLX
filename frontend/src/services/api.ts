@@ -242,6 +242,7 @@ export interface BacktestResultSummary {
   annualized_return: number | null;
   max_drawdown: number | null;
   sharpe_ratio: number | null;
+  calmar_ratio: number | null;
   volatility: number | null;
   total_trades: number | null;
   avg_turnover: number | null;

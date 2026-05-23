@@ -12,6 +12,7 @@ class BacktestResultSummary(BaseModel):
     annualized_return: float | None = None
     max_drawdown: float | None = None
     sharpe_ratio: float | None = None
+    calmar_ratio: float | None = None
     volatility: float | None = None
     total_trades: int | None = None
     avg_turnover: float | None = None

@@ -164,6 +164,7 @@ export default function BacktestsPage() {
             <MetricCard label="Annualized Return" value={pct(detail.results.annualized_return)} />
             <MetricCard label="Max Drawdown" value={pct(detail.results.max_drawdown)} />
             <MetricCard label="Sharpe Ratio" value={detail.results.sharpe_ratio?.toFixed(2) ?? "—"} />
+            <MetricCard label="Calmar Ratio" value={detail.results.calmar_ratio?.toFixed(2) ?? "—"} />
             <MetricCard label="Volatility" value={pct(detail.results.volatility)} />
             <MetricCard label="Total Trades" value={String(detail.results.total_trades ?? "—")} />
             <MetricCard label="Avg Turnover" value={pct(detail.results.avg_turnover)} />

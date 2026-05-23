@@ -28,6 +28,21 @@ from app.services.features import FeatureService
 from app.services.pipeline import DecisionPipelineService
 
 DEFAULT_COST_BPS = 10  # 10 bps per trade
+
+
+def _calc_calmar(annualized_return: float | None, max_drawdown: float | None) -> float | None:
+    """Calmar ratio = annualized return / |max drawdown|.
+
+    Conventions match the rest of this service: `max_drawdown` is stored as a
+    negative number (e.g. -0.21 for a 21% drawdown). A zero drawdown returns
+    None (undefined ratio) rather than +inf. Any None input returns None.
+    """
+    if annualized_return is None or max_drawdown is None:
+        return None
+    denom = abs(max_drawdown)
+    if denom == 0:
+        return None
+    return round(annualized_return / denom, 2)
 REBALANCE_WEEKLY = "weekly"
 REBALANCE_MONTHLY = "monthly"
 
@@ -275,11 +290,14 @@ class BacktestService:
                     sig_run_ids.update(r.source_signal_run_ids)
 
         bt.status = "completed"
+        max_drawdown_signed = round(-max_drawdown, 4)
+        calmar = _calc_calmar(annualized_return, max_drawdown_signed)
         bt.results_summary = {
             "total_return": round(total_return, 4),
             "annualized_return": annualized_return,
-            "max_drawdown": round(-max_drawdown, 4),
+            "max_drawdown": max_drawdown_signed,
             "sharpe_ratio": sharpe,
+            "calmar_ratio": calmar,
             "volatility": vol,
             "total_trades": trade_count,
             "avg_turnover": avg_turnover,
