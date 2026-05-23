@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.actions import router as actions_router
+from app.api.v1.assets import router as assets_router
 from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.backtests import router as backtests_router
@@ -76,6 +77,7 @@ api_router.include_router(policies_router, tags=["policies"])
 api_router.include_router(profile_router, tags=["profile"])
 api_router.include_router(integrations_router, tags=["integrations"])
 api_router.include_router(universe_router, tags=["universes"])
+api_router.include_router(assets_router, tags=["assets"])
 api_router.include_router(risk_router, tags=["risk"])
 api_router.include_router(news_router, tags=["news"])
 api_router.include_router(operator_router, tags=["operator"])
