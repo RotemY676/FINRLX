@@ -27,10 +27,10 @@ export function UniverseList({ universes, selectedId, onSelect }: UniverseListPr
               key={u.universe_id}
               type="button"
               onClick={() => onSelect(u.universe_id)}
-              className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+              className={`w-full text-left px-3 py-2 rounded-md transition-colors border-l-2 ${
                 isSelected
-                  ? "bg-primary-soft text-primary-soft-ink"
-                  : "text-ink-2 hover:bg-surface-3"
+                  ? "bg-surface-2 border-primary text-ink"
+                  : "border-transparent text-ink-2 hover:bg-surface-3"
               }`}
               aria-pressed={isSelected}
             >
@@ -38,10 +38,10 @@ export function UniverseList({ universes, selectedId, onSelect }: UniverseListPr
                 <span className={`text-[13px] truncate ${isSelected ? "font-medium" : ""}`}>
                   {u.name}
                 </span>
-                <span className="text-[11px] font-mono text-ink-4">{u.asset_count}</span>
+                <span className="text-[11px] font-mono text-ink-3">{u.asset_count}</span>
               </div>
               {u.description && (
-                <p className="text-[11px] text-ink-4 mt-0.5 truncate">{u.description}</p>
+                <p className="text-[11px] text-ink-3 mt-0.5 truncate">{u.description}</p>
               )}
             </button>
           );

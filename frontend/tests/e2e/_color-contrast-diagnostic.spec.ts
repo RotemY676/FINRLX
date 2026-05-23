@@ -14,7 +14,7 @@ import path from "node:path";
 const ENABLED = process.env.RUN_COLOR_DIAG === "1" && !!process.env.PLAYWRIGHT_BASE_URL;
 
 // Use the routes with the most color-contrast violations from PHASE_18J sweep.
-const SAMPLE_ROUTES = ["/", "/decision", "/ops", "/research", "/help"];
+const SAMPLE_ROUTES = ["/", "/decision", "/ops", "/research", "/help", "/backtests", "/policies", "/universe"];
 const OUT = path.resolve(__dirname, "../../../DOCS/handoff/_phase19b_diag");
 
 async function captureForRoute(page: Page, route: string, viewport: string) {

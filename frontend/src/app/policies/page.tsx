@@ -112,7 +112,7 @@ export default function PoliciesPage() {
               <li key={i} className="text-[12.5px] text-caution-soft-ink flex items-center flex-wrap gap-2">
                 <span className="font-medium">{b.label}</span>
                 <span className="font-mono text-[11px]">{(b.utilization * 100).toFixed(0)}% · {b.trend}</span>
-                {b.related && <span className="font-mono text-[11px] opacity-80">· {b.related}</span>}
+                {b.related && <span className="font-mono text-[11px]">· {b.related}</span>}
               </li>
             ))}
           </ul>
