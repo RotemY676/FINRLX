@@ -1905,6 +1905,78 @@ export async function fetchUniverseReadiness(universeId: string): Promise<ApiRes
   return apiFetch<UniverseReadiness>(`/api/v1/universes/${universeId}/readiness`);
 }
 
+// ── Phase 20 — Universe CRUD ──
+
+export async function createUniverse(
+  name: string,
+  description?: string | null,
+): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>("/api/v1/universes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description: description ?? null }),
+  });
+}
+
+export async function updateUniverse(
+  universeId: string,
+  patch: { name?: string; description?: string | null; is_active?: boolean },
+): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>(`/api/v1/universes/${universeId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function deactivateUniverse(
+  universeId: string,
+): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>(`/api/v1/universes/${universeId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function addAssetToUniverse(
+  universeId: string,
+  ticker: string,
+): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>(`/api/v1/universes/${universeId}/assets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ticker }),
+  });
+}
+
+export async function removeAssetFromUniverse(
+  universeId: string,
+  assetId: string,
+): Promise<ApiResponse<UniverseDetail>> {
+  return apiFetch<UniverseDetail>(
+    `/api/v1/universes/${universeId}/assets/${assetId}`,
+    { method: "DELETE" },
+  );
+}
+
+// Phase 20.3 — asset autocomplete for the universe Add-asset modal
+export interface AssetSearchResult {
+  asset_id: string;
+  ticker: string;
+  name: string;
+  sector: string | null;
+  is_active: boolean;
+}
+
+export async function searchAssets(
+  q: string = "",
+  limit: number = 20,
+): Promise<ApiResponse<AssetSearchResult[]>> {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  params.set("limit", String(limit));
+  return apiFetch<AssetSearchResult[]>(`/api/v1/assets?${params.toString()}`);
+}
+
 // Phase A2 ops types + fetchers are already declared above (OpsData,
 // fetchOps, approveQueueItem, deferQueueItem, challengeQueueItem,
 // QueueActionResult). The /ops page consumes those directly.
