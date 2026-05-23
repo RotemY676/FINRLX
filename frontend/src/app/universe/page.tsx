@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  addAssetToUniverse,
   createUniverse,
   deactivateUniverse,
   fetchUniverses,
   fetchUniverseDetail,
   fetchUniverseCoverage,
   fetchUniverseReadiness,
+  removeAssetFromUniverse,
   updateUniverse,
   UniverseListItem,
   UniverseDetail,
@@ -22,6 +24,7 @@ import { CoveragePanel } from "@/components/universe/CoveragePanel";
 import { ReadinessPanel } from "@/components/universe/ReadinessPanel";
 import { SectorBreakdown } from "@/components/universe/SectorBreakdown";
 import { UniverseDialog } from "@/components/universe/UniverseDialog";
+import { AddAssetDialog } from "@/components/universe/AddAssetDialog";
 import { HelpLink } from "@/components/help/HelpLink";
 
 type DialogState =
@@ -45,6 +48,60 @@ export default function UniversePage() {
   const [dialogBusy, setDialogBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Phase 20.5 membership state
+  const [addAssetOpen, setAddAssetOpen] = useState(false);
+  const [addAssetBusy, setAddAssetBusy] = useState(false);
+  const [addAssetError, setAddAssetError] = useState<string | null>(null);
+
+  const refreshDetail = useCallback(async (universeId: string) => {
+    const [d, c, r] = await Promise.all([
+      fetchUniverseDetail(universeId),
+      fetchUniverseCoverage(universeId),
+      fetchUniverseReadiness(universeId),
+    ]);
+    setDetail(d.data);
+    setCoverage(c.data);
+    setReadiness(r.data);
+  }, []);
+
+  const handleAddAsset = useCallback(async (ticker: string) => {
+    if (!detail) return;
+    setAddAssetBusy(true);
+    setAddAssetError(null);
+    try {
+      const res = await addAssetToUniverse(detail.universe_id, ticker);
+      setDetail(res.data);
+      // Coverage / readiness depend on membership; refresh those too.
+      await refreshDetail(detail.universe_id);
+      // Asset count on the list item also changes.
+      const list = await fetchUniverses();
+      setUniverses(list.data);
+      setAddAssetOpen(false);
+    } catch (e) {
+      setAddAssetError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setAddAssetBusy(false);
+    }
+  }, [detail, refreshDetail]);
+
+  const handleRemoveAsset = useCallback(async (assetId: string, ticker: string) => {
+    if (!detail) return;
+    const confirmed = window.confirm(
+      `Remove ${ticker} from "${detail.name}"? It will drop out of the picker; backtests covering past dates still see it via the membership history.`
+    );
+    if (!confirmed) return;
+    setActionError(null);
+    try {
+      const res = await removeAssetFromUniverse(detail.universe_id, assetId);
+      setDetail(res.data);
+      await refreshDetail(detail.universe_id);
+      const list = await fetchUniverses();
+      setUniverses(list.data);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Unknown error");
+    }
+  }, [detail, refreshDetail]);
 
   const reloadList = useCallback(async (preferredSelectedId?: string | null) => {
     const res = await fetchUniverses();
@@ -215,18 +272,41 @@ export default function UniversePage() {
               {detail.description && (
                 <p className="text-[12.5px] text-ink-3 mb-3">{detail.description}</p>
               )}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-[11px] uppercase tracking-wider text-ink-4">Members</span>
+                <button
+                  type="button"
+                  onClick={() => { setAddAssetError(null); setAddAssetOpen(true); }}
+                  className="px-2 py-1 rounded-md bg-surface-2 border border-line text-[11px] text-ink-2 hover:bg-surface-3"
+                >
+                  + Add asset
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
-                {detail.tickers.slice(0, 40).map((t) => (
+                {detail.assets.slice(0, 40).map((a) => (
                   <span
-                    key={t}
-                    className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-3 text-ink-2"
+                    key={a.asset_id}
+                    className="group inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-3 text-ink-2"
                   >
-                    {t}
+                    {a.ticker}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAsset(a.asset_id, a.ticker)}
+                      aria-label={`Remove ${a.ticker} from ${detail.name}`}
+                      className="ml-0.5 px-1 rounded text-ink-4 hover:text-breach hover:bg-breach-soft opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
-                {detail.tickers.length > 40 && (
+                {detail.assets.length > 40 && (
                   <span className="text-[11px] text-ink-4">
-                    +{detail.tickers.length - 40} more
+                    +{detail.assets.length - 40} more
+                  </span>
+                )}
+                {detail.assets.length === 0 && (
+                  <span className="text-[11.5px] text-ink-4 italic">
+                    Empty universe — add your first asset.
                   </span>
                 )}
               </div>
@@ -247,6 +327,15 @@ export default function UniversePage() {
         error={dialogError}
         onSubmit={handleSubmit}
         onClose={() => setDialog({ mode: "closed" })}
+      />
+
+      <AddAssetDialog
+        open={addAssetOpen}
+        busy={addAssetBusy}
+        error={addAssetError}
+        excludeTickers={detail?.tickers ?? []}
+        onSubmit={handleAddAsset}
+        onClose={() => setAddAssetOpen(false)}
       />
     </div>
   );
