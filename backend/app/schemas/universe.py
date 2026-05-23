@@ -24,3 +24,12 @@ class UniverseUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     description: str | None = Field(default=None, max_length=1024)
     is_active: bool | None = None
+
+
+class UniverseAddAssetRequest(BaseModel):
+    """Body for POST /universes/{id}/assets. Ticker is uppercased and looked
+    up in the existing `assets` table — Phase 20 does NOT support creating
+    new assets from this endpoint. If the ticker isn't already in the
+    assets table the service returns a 409."""
+
+    ticker: str = Field(min_length=1, max_length=20)

@@ -142,6 +142,7 @@ class FeatureService:
                 select(Asset.id, Asset.ticker)
                 .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
                 .where(UniverseMembership.universe_id == universe_id)
+                .where(UniverseMembership.removed_at.is_(None))
             )
         else:
             stmt = select(Asset.id, Asset.ticker)

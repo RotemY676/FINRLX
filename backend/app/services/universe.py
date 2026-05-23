@@ -109,6 +109,102 @@ class UniverseService:
         as update_universe(is_active=False)."""
         return await self.update_universe(universe_id, is_active=False)
 
+    # ── Phase 20.2 membership CRUD ───────────────────────────────────────
+
+    async def add_asset_to_universe(self, universe_id: str, ticker: str) -> dict:
+        """Add an existing asset (looked up by ticker) to a universe.
+
+        Three cases:
+          1. No row → INSERT a fresh membership
+          2. Row with removed_at=NULL → already a current member, 409
+          3. Row with removed_at!=NULL → clear removed_at (re-add)
+
+        Re-adding via case 3 preserves the original `added_at` so the
+        provenance trail reads correctly: "asset was a member from X to Y,
+        then again from now onwards". If we wanted distinct re-add events
+        we'd need a history table; not in 20.2 scope.
+        """
+        # Verify universe exists
+        u = (await self.db.execute(
+            select(Universe).where(Universe.id == universe_id)
+        )).scalar_one_or_none()
+        if u is None:
+            raise UniverseNotFoundError(universe_id)
+
+        # Look up the asset by ticker (case-insensitive uppercase normalization)
+        ticker_norm = ticker.strip().upper()
+        asset = (await self.db.execute(
+            select(Asset).where(func.upper(Asset.ticker) == ticker_norm)
+        )).scalar_one_or_none()
+        if asset is None:
+            raise UniverseConflictError(
+                f"Asset with ticker '{ticker_norm}' not found in the assets table."
+            )
+
+        existing = (await self.db.execute(
+            select(UniverseMembership).where(
+                UniverseMembership.universe_id == universe_id,
+                UniverseMembership.asset_id == asset.id,
+            )
+        )).scalar_one_or_none()
+
+        if existing is not None and existing.removed_at is None:
+            raise UniverseConflictError(
+                f"Asset '{ticker_norm}' is already a current member of this universe."
+            )
+
+        if existing is not None:
+            # Re-add: clear removed_at; preserve original added_at.
+            existing.removed_at = None
+        else:
+            self.db.add(UniverseMembership(
+                universe_id=universe_id,
+                asset_id=asset.id,
+            ))
+        await self.db.commit()
+
+        detail = await self.get_universe_detail(universe_id)
+        assert detail is not None
+        return detail
+
+    async def remove_asset_from_universe(self, universe_id: str, asset_id: str) -> dict:
+        """Soft-remove an asset from a universe — sets removed_at = now().
+
+        Returns the updated universe detail. 404 when either the universe
+        doesn't exist or the asset isn't currently a member. Removing a
+        membership that's already removed is a 409 (idempotent re-removal
+        is silent in the DB but would be confusing in the UI).
+        """
+        from datetime import UTC, datetime
+
+        u = (await self.db.execute(
+            select(Universe).where(Universe.id == universe_id)
+        )).scalar_one_or_none()
+        if u is None:
+            raise UniverseNotFoundError(universe_id)
+
+        membership = (await self.db.execute(
+            select(UniverseMembership).where(
+                UniverseMembership.universe_id == universe_id,
+                UniverseMembership.asset_id == asset_id,
+            )
+        )).scalar_one_or_none()
+        if membership is None:
+            raise UniverseConflictError(
+                f"Asset {asset_id} is not a member of universe {universe_id}."
+            )
+        if membership.removed_at is not None:
+            raise UniverseConflictError(
+                f"Asset {asset_id} was already removed from this universe."
+            )
+
+        membership.removed_at = datetime.now(UTC)
+        await self.db.commit()
+
+        detail = await self.get_universe_detail(universe_id)
+        assert detail is not None
+        return detail
+
     # ── Existing read-only methods ───────────────────────────────────────
 
     async def get_universes(self) -> list[dict]:
@@ -120,6 +216,7 @@ class UniverseService:
             count = (await self.db.execute(
                 select(func.count()).select_from(UniverseMembership)
                 .where(UniverseMembership.universe_id == u.id)
+                .where(UniverseMembership.removed_at.is_(None))
             )).scalar() or 0
             results.append({
                 "universe_id": u.id,
@@ -154,6 +251,7 @@ class UniverseService:
             select(Asset.id, Asset.ticker, Asset.name, Asset.sector, Asset.is_active)
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
+            .where(UniverseMembership.removed_at.is_(None))
         )).all()
 
         tickers = [m.ticker for m in members]
@@ -175,6 +273,7 @@ class UniverseService:
             select(Asset.id, Asset.ticker)
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
+            .where(UniverseMembership.removed_at.is_(None))
         )).all()
         asset_ids = [m.id for m in members]
         total = len(asset_ids)

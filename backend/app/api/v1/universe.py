@@ -15,7 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import make_meta
 from app.core.database import get_db
 from app.schemas.common import ApiResponse
-from app.schemas.universe import UniverseCreateRequest, UniverseUpdateRequest
+from app.schemas.universe import (
+    UniverseAddAssetRequest,
+    UniverseCreateRequest,
+    UniverseUpdateRequest,
+)
 from app.services.universe import (
     UniverseConflictError,
     UniverseNotFoundError,
@@ -98,6 +102,48 @@ async def get_universe(universe_id: str, db: AsyncSession = Depends(get_db)):
     data = await svc.get_universe_detail(universe_id)
     if not data:
         raise HTTPException(status_code=404, detail="Universe not found")
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.post("/universes/{universe_id}/assets", response_model=ApiResponse[dict])
+async def add_asset_to_universe(
+    universe_id: str,
+    body: UniverseAddAssetRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Phase 20.2 — add an existing asset (by ticker) to a universe. The
+    ticker must already exist in the `assets` table; this endpoint does
+    NOT create new assets. Re-adding a previously-removed asset clears
+    its `removed_at` instead of inserting a duplicate."""
+    svc = UniverseService(db)
+    try:
+        data = await svc.add_asset_to_universe(universe_id, body.ticker)
+    except UniverseNotFoundError:
+        raise HTTPException(status_code=404, detail="Universe not found")
+    except UniverseConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return ApiResponse(meta=make_meta(), data=data)
+
+
+@router.delete(
+    "/universes/{universe_id}/assets/{asset_id}",
+    response_model=ApiResponse[dict],
+)
+async def remove_asset_from_universe(
+    universe_id: str,
+    asset_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Phase 20.2 — soft-remove an asset from a universe (sets
+    `removed_at = now()`). The membership row is preserved so historical
+    recommendations remain replayable."""
+    svc = UniverseService(db)
+    try:
+        data = await svc.remove_asset_from_universe(universe_id, asset_id)
+    except UniverseNotFoundError:
+        raise HTTPException(status_code=404, detail="Universe not found")
+    except UniverseConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     return ApiResponse(meta=make_meta(), data=data)
 
 

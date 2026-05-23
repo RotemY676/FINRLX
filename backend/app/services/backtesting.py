@@ -78,6 +78,7 @@ class BacktestService:
             select(Asset.id, Asset.ticker)
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
+            .where(UniverseMembership.removed_at.is_(None))
         )).all()
         return [(r.id, r.ticker) for r in rows]
 

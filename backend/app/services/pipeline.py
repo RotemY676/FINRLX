@@ -96,6 +96,7 @@ class DecisionPipelineService:
             select(Asset.id, Asset.ticker)
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
+            .where(UniverseMembership.removed_at.is_(None))
         )).all()
         universe_assets = [(r.id, r.ticker) for r in rows]
         if profile_overrides is not None:

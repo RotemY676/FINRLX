@@ -41,6 +41,13 @@ class UniverseMembership(Base):
     added_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # Phase 20.2 — soft-delete column. NULL = currently a member;
+    # not-NULL = removed at that timestamp. Re-adding the same (universe,
+    # asset) pair clears this back to NULL instead of inserting a duplicate
+    # row (which would violate the composite PK).
+    removed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class Benchmark(Base, TimestampMixin):

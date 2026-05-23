@@ -137,6 +137,7 @@ class RLEnvironmentService:
             select(Asset.id, Asset.ticker)
             .join(UniverseMembership, UniverseMembership.asset_id == Asset.id)
             .where(UniverseMembership.universe_id == universe_id)
+            .where(UniverseMembership.removed_at.is_(None))
         )).all() if universe_id else []
 
         assets = []
@@ -434,6 +435,7 @@ class RLEnvironmentService:
             count = (await self.db.execute(
                 select(func.count()).select_from(UniverseMembership)
                 .where(UniverseMembership.universe_id == env.universe_id)
+                .where(UniverseMembership.removed_at.is_(None))
             )).scalar() or 0
             if count == 0:
                 errors.append("Universe has no assets")
