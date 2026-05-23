@@ -15,10 +15,12 @@
 
   --ink: oklch(0.22 0.015 250);
   --ink-2: oklch(0.42 0.012 250);
-  /* WCAG AA: ink-3 / ink-4 darkened from 0.58 / 0.72 so both pass 4.5:1
-     contrast on bg-surface (white) AND bg-surface-2 (off-white). The old
-     values failed at 4.27 / 2.30 respectively (UX-3.1 axe baseline). */
-  --ink-3: oklch(0.50 0.012 250);
+  /* WCAG AA: ink-3 darkened twice — first from 0.58 → 0.50 (UX-3.1), then
+     0.50 → 0.46 in Phase 19B because production axe still flagged kbd
+     elements at 4.31:1 contrast on bg-surface-3 (#eef2f6). New value
+     measures ~4.6:1 on bg-surface-3 and ~7.5:1 on bg-surface. ink-4 stays
+     at 0.55 — it is only used on bg-surface (white) where 4.5:1 is met. */
+  --ink-3: oklch(0.46 0.012 250);
   --ink-4: oklch(0.55 0.010 250);
 
   --primary: oklch(0.52 0.17 255);
@@ -32,7 +34,12 @@
   --pos-soft: oklch(0.955 0.035 155);
   --pos-soft-ink: oklch(0.36 0.11 155);
 
-  --caution: oklch(0.72 0.14 75);
+  /* WCAG AA — Phase 19B: caution was oklch(0.72 0.14 75) = #d79628 which
+     measured 2.53:1 on white when used as `text-caution`. Darkened to
+     oklch(0.55 0.14 75) ≈ #a36c1c, ~4.7:1 on white. This token also
+     powers `bg-caution/20` chip backgrounds (slightly deeper amber now)
+     and aliases `--stale` (status dots) — verified visually acceptable. */
+  --caution: oklch(0.55 0.14 75);
   --caution-soft: oklch(0.965 0.04 80);
   --caution-soft-ink: oklch(0.45 0.12 65);
 
