@@ -18,6 +18,7 @@ import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton
 import { AnalystNotesPanel } from "@/components/operator/AnalystNotesPanel";
 import { buildReplayContext } from "@/lib/operator/contextBuilder";
 import { track } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
 
 function StageSnapshotCard({ stage, data, capturedAt }: {
   stage: string;
@@ -51,12 +52,19 @@ function StageSnapshotCard({ stage, data, capturedAt }: {
 }
 
 export default function ReplayPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [list, setList] = useState<ReplayListData | null>(null);
   const [detail, setDetail] = useState<ReplayDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Phase 19A.3: skip the authenticated fetch for unauthenticated visitors.
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     void track("replay_open");
     fetchReplayList()
       .then(async (res) => {
@@ -69,9 +77,10 @@ export default function ReplayPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) return <PageLoading label="Loading replay..." />;
+  if (authLoading || loading) return <PageLoading label="Loading replay..." />;
+  if (!user) return <PageEmpty title="Sign in required" message="Sign in to view replay data." />;
   if (error) return <PageError title="Replay Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!list || list.total === 0) return <PageEmpty title="No Replay Data" message="No replay snapshots available. Run the seed script to create demo replay data." />;
 

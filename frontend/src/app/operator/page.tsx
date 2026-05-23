@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons/Icon";
 import { PageError } from "@/components/feedback/PageError";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   createOperatorAnalysis,
   deleteOperatorAnalysis,
@@ -31,6 +32,7 @@ export default function OperatorConsolePage() {
 
 function OperatorConsoleInner() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const params = useSearchParams();
   const recParam = params?.get("rec") ?? null;
   const surfaceParam = (params?.get("surface") as OperatorAnalysisSurface) ?? "decision";
@@ -70,10 +72,17 @@ function OperatorConsoleInner() {
   }, []);
 
   useEffect(() => {
-    if (!flagsLoading && flags.operator_console) {
+    // Phase 19A.3: also gate on auth — listOperatorAnalyses 401s for visitors
+    // and pollutes the console even when the feature flag is on.
+    if (authLoading || flagsLoading) return;
+    if (!user) {
+      setAnalysesLoading(false);
+      return;
+    }
+    if (flags.operator_console) {
       void reload();
     }
-  }, [flagsLoading, flags.operator_console, reload]);
+  }, [authLoading, user, flagsLoading, flags.operator_console, reload]);
 
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {

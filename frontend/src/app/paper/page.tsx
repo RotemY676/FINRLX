@@ -12,6 +12,7 @@ import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
 import { track } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
 import CurrencyValuation from "@/features/wizard/CurrencyValuation";
 
 function driftColor(d: number): string {
@@ -20,6 +21,7 @@ function driftColor(d: number): string {
 }
 
 export default function PaperPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<PaperPortfolioData | null>(null);
   const [perf, setPerf] = useState<PaperPerformanceSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,13 @@ export default function PaperPage() {
   const { openPane } = usePaneContext();
 
   useEffect(() => {
+    // Phase 19A.3: don't fire the authenticated fetch when the visitor has
+    // no session — it just produces a console 401 and an unhelpful error UI.
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     void track("paper_trade", { view: "portfolio_summary" });
     fetchCurrentPaper()
       .then(async (res) => {
@@ -40,9 +49,10 @@ export default function PaperPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) return <PageLoading label="Loading paper portfolio..." />;
+  if (authLoading || loading) return <PageLoading label="Loading paper portfolio..." />;
+  if (!user) return <PageEmpty title="Sign in required" message="Sign in to view your paper portfolio." />;
   if (error) return <PageError title="Paper Portfolio Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!data) return <PageEmpty title="No Paper Portfolio" message="No active paper portfolio found. Run the seed script to create one." />;
 
