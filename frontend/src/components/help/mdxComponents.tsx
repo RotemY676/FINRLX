@@ -10,6 +10,12 @@ const HEADING_BASE = "scroll-mt-24 font-display text-ink";
 
 type AnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement>;
 
+// WCAG 1.4.1: inline links must be distinguishable from surrounding prose by
+// something other than colour alone. We underline by default with a soft
+// 2px offset so the line doesn't crowd descenders, then darken on hover.
+const MDX_LINK_CLASS =
+  "text-primary underline underline-offset-2 decoration-1 hover:decoration-2 hover:opacity-90";
+
 function MDXLink({ href = "", children, ...rest }: AnchorProps) {
   const isExternal = /^https?:\/\//.test(href);
   if (isExternal) {
@@ -18,7 +24,7 @@ function MDXLink({ href = "", children, ...rest }: AnchorProps) {
         href={href}
         target="_blank"
         rel="noreferrer noopener"
-        className="text-primary hover:underline"
+        className={MDX_LINK_CLASS}
         {...rest}
       >
         {children}
@@ -26,7 +32,7 @@ function MDXLink({ href = "", children, ...rest }: AnchorProps) {
     );
   }
   return (
-    <Link href={href} className="text-primary hover:underline">
+    <Link href={href} className={MDX_LINK_CLASS}>
       {children}
     </Link>
   );
