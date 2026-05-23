@@ -151,17 +151,28 @@ async function sweepRoute(page: Page, route: string, viewportName: string) {
   fs.writeFileSync(findingPath, JSON.stringify(finding, null, 2));
 }
 
-for (const vp of VIEWPORTS) {
-  for (const route of ALL_ROUTES) {
-    test(`sweep @ ${vp.name} :: ${route}`, async ({ browser }) => {
-      const ctx = await browser.newContext({ ...vp.config });
-      const page = await ctx.newPage();
-      try {
-        await sweepRoute(page, route, vp.name);
-      } finally {
-        await ctx.close();
-      }
-    });
+// Gate: only register tests when the operator opted in (set RUN_SITE_SWEEP=1
+// or PLAYWRIGHT_BASE_URL to a non-default URL). In CI we want this file to be
+// a no-op so the build isn't dragged by 100 unmocked navigations against the
+// CI-spawned localhost server. Phase 19.0.
+const SWEEP_ENABLED =
+  process.env.RUN_SITE_SWEEP === "1" ||
+  (!!process.env.PLAYWRIGHT_BASE_URL &&
+    !process.env.PLAYWRIGHT_BASE_URL.includes("127.0.0.1"));
+
+if (SWEEP_ENABLED) {
+  for (const vp of VIEWPORTS) {
+    for (const route of ALL_ROUTES) {
+      test(`sweep @ ${vp.name} :: ${route}`, async ({ browser }) => {
+        const ctx = await browser.newContext({ ...vp.config });
+        const page = await ctx.newPage();
+        try {
+          await sweepRoute(page, route, vp.name);
+        } finally {
+          await ctx.close();
+        }
+      });
+    }
   }
 }
 
