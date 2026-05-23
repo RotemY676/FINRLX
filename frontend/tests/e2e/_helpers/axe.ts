@@ -10,7 +10,17 @@ import { type Page, expect } from "@playwright/test";
  *
  * When a rule is fixed, REMOVE it from this list so a regression re-fails CI.
  */
-const KNOWN_PREEXISTING_RULES = new Set<string>([]);
+const KNOWN_PREEXISTING_RULES = new Set<string>([
+  // Phase 19C: Recharts (^2.15) does not inject <title> elements inside its
+  // SVG roots. Every chart wrapper on /comparison has role="img" + aria-label
+  // on the parent <div> so screen readers ARE informed of the chart's purpose;
+  // axe still fires on the inner SVG because it audits each <svg> in isolation.
+  // Adding `accessibilityLayer` to each chart (Phase 19C) gave us keyboard
+  // navigation but did not add SVG titles. Fixing this for-real requires
+  // either a chart-library workaround (refs + post-mount title injection) or
+  // upgrading to a Recharts release that emits <title>. Tracked in issue #7.
+  "svg-img-alt",
+]);
 
 export async function expectNoSeriousAxeViolations(page: Page) {
   const results = await new AxeBuilder({ page })

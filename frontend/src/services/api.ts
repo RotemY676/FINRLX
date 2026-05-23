@@ -237,6 +237,15 @@ export interface ReplayListData {
 
 // Backtest types
 
+export interface BenchmarkMetricBlock {
+  total_return: number | null;
+  annualized_return: number | null;
+  max_drawdown: number | null;
+  sharpe_ratio: number | null;
+  calmar_ratio: number | null;
+  volatility: number | null;
+}
+
 export interface BacktestResultSummary {
   total_return: number | null;
   annualized_return: number | null;
@@ -246,6 +255,9 @@ export interface BacktestResultSummary {
   volatility: number | null;
   total_trades: number | null;
   avg_turnover: number | null;
+  // Phase 19D: keyed by ticker (SPY, QQQ, …). Value is null when the
+  // benchmark had no bars in the requested window.
+  benchmark_metrics?: Record<string, BenchmarkMetricBlock | null> | null;
 }
 
 export interface EquityCurvePoint {

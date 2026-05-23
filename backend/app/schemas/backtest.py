@@ -7,6 +7,20 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class BenchmarkMetricBlock(BaseModel):
+    """Phase 19D: passive-benchmark equivalent of the strategy metrics. All
+    keys mirror BacktestResultSummary so the UI can render a single multi-
+    column table. Computed via BacktestService._compute_benchmark_metrics
+    over the same rebalance grid as the strategy."""
+
+    total_return: float | None = None
+    annualized_return: float | None = None
+    max_drawdown: float | None = None
+    sharpe_ratio: float | None = None
+    calmar_ratio: float | None = None
+    volatility: float | None = None
+
+
 class BacktestResultSummary(BaseModel):
     total_return: float | None = None
     annualized_return: float | None = None
@@ -16,6 +30,9 @@ class BacktestResultSummary(BaseModel):
     volatility: float | None = None
     total_trades: int | None = None
     avg_turnover: float | None = None
+    # Phase 19D — keyed by ticker symbol (SPY, QQQ, …). Value is None when the
+    # benchmark ticker had no bars in the requested window.
+    benchmark_metrics: dict[str, BenchmarkMetricBlock | None] | None = None
 
 
 class EquityCurvePoint(BaseModel):

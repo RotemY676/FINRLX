@@ -43,6 +43,15 @@ def _calc_calmar(annualized_return: float | None, max_drawdown: float | None) ->
     if denom == 0:
         return None
     return round(annualized_return / denom, 2)
+
+
+# Phase 19D: tickers that backtests are compared against as passive benchmarks.
+# Tickers must exist as MarketBar rows (queried by ticker, not asset_id) for
+# the comparison to be computed; if a ticker has no bars in the requested
+# window we return None for that benchmark rather than failing the backtest.
+DEFAULT_BENCHMARK_TICKERS = ("SPY", "QQQ")
+
+
 REBALANCE_WEEKLY = "weekly"
 REBALANCE_MONTHLY = "monthly"
 
@@ -79,6 +88,107 @@ class BacktestService:
             if row is not None:
                 prices[aid] = row
         return prices
+
+    async def _compute_benchmark_metrics(
+        self,
+        ticker: str,
+        rebalance_dates: list[date],
+        end_date: date,
+        periods_per_year: int,
+    ) -> dict | None:
+        """Compute buy-and-hold metrics for a benchmark ticker over the same
+        rebalance grid as the strategy. Returns None when the ticker has no
+        bars in the requested window so the UI can render "N/A" instead of
+        a fabricated zero.
+
+        Periodic returns are sampled at each rebalance date plus end_date,
+        which makes Sharpe / vol directly comparable to the strategy (same
+        sampling frequency, no leakage). max_drawdown tracks the running
+        peak of the buy-and-hold equity series, signed negative to match
+        the rest of this service.
+        """
+        if len(rebalance_dates) < 2:
+            return None
+
+        # Pull all bars for this ticker once; query by ticker (not asset_id)
+        # so the helper works whether or not the benchmark is in any Universe.
+        rows = (await self.db.execute(
+            select(MarketBar.bar_date, MarketBar.close)
+            .where(MarketBar.ticker == ticker)
+            .where(MarketBar.bar_date >= rebalance_dates[0])
+            .where(MarketBar.bar_date <= end_date)
+            .order_by(MarketBar.bar_date.asc())
+        )).all()
+        if not rows:
+            return None
+        # Map dates → close to allow "most recent close on or before D" lookups.
+        by_date: dict[date, float] = {r.bar_date: float(r.close) for r in rows}
+        sorted_dates = sorted(by_date.keys())
+
+        def close_at(target: date) -> float | None:
+            # Find the most recent bar on or before `target`.
+            lo, hi = 0, len(sorted_dates) - 1
+            best = None
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                if sorted_dates[mid] <= target:
+                    best = sorted_dates[mid]
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+            return by_date[best] if best is not None else None
+
+        # Sample equity curve at each rebalance date + end_date.
+        sample_dates = list(rebalance_dates) + [end_date]
+        prices = [close_at(d) for d in sample_dates]
+        # Filter out None head/tail caused by ticker coming online late.
+        first_idx = next((i for i, p in enumerate(prices) if p is not None), None)
+        if first_idx is None:
+            return None
+        prices = prices[first_idx:]
+        if any(p is None for p in prices) or len(prices) < 2:
+            return None
+
+        # Normalize equity to base 100 to match the strategy's curve.
+        base = prices[0]
+        equity = [round(100.0 * p / base, 2) for p in prices]
+        # Periodic returns between consecutive samples.
+        period_returns: list[float] = []
+        peak = equity[0]
+        max_dd = 0.0
+        for i in range(1, len(equity)):
+            period_returns.append(equity[i] / equity[i - 1] - 1)
+            if equity[i] > peak:
+                peak = equity[i]
+            dd = (peak - equity[i]) / peak if peak > 0 else 0.0
+            if dd > max_dd:
+                max_dd = dd
+
+        total_return = equity[-1] / equity[0] - 1
+        days = (end_date - sample_dates[first_idx]).days
+        annualized_return = None
+        if days > 30:
+            annualized_return = round((1 + total_return) ** (365 / max(days, 1)) - 1, 4)
+
+        vol = None
+        sharpe = None
+        if len(period_returns) >= 2:
+            mean_r = sum(period_returns) / len(period_returns)
+            var = sum((r - mean_r) ** 2 for r in period_returns) / len(period_returns)
+            period_std = math.sqrt(var)
+            vol = round(period_std * math.sqrt(periods_per_year), 4)
+            if vol > 0:
+                sharpe = round((mean_r * periods_per_year) / vol, 2)
+
+        max_dd_signed = round(-max_dd, 4)
+        return {
+            "total_return": round(total_return, 4),
+            "annualized_return": annualized_return,
+            "max_drawdown": max_dd_signed,
+            "sharpe_ratio": sharpe,
+            "calmar_ratio": _calc_calmar(annualized_return, max_dd_signed),
+            "volatility": vol,
+        }
 
     def _generate_rebalance_dates(self, start: date, end: date, frequency: str) -> list[date]:
         """Generate rebalance dates between start and end."""
@@ -292,6 +402,23 @@ class BacktestService:
         bt.status = "completed"
         max_drawdown_signed = round(-max_drawdown, 4)
         calmar = _calc_calmar(annualized_return, max_drawdown_signed)
+        # Phase 19D: passive-benchmark comparison. Same rebalance grid and
+        # periods_per_year scaling as the strategy, so Sharpe / vol / Calmar
+        # are apples-to-apples. Each ticker is queried independently;
+        # tickers without bars in the window simply yield None.
+        periods_per_year_for_benchmark = 52 if rebalance_frequency == REBALANCE_WEEKLY else 12
+        benchmark_metrics: dict[str, dict | None] = {}
+        for bench_ticker in DEFAULT_BENCHMARK_TICKERS:
+            try:
+                benchmark_metrics[bench_ticker] = await self._compute_benchmark_metrics(
+                    ticker=bench_ticker,
+                    rebalance_dates=rebalance_dates,
+                    end_date=end_date,
+                    periods_per_year=periods_per_year_for_benchmark,
+                )
+            except Exception as e:  # noqa: BLE001 — benchmark failure must never fail the backtest
+                warnings.append(f"Benchmark {bench_ticker} failed: {str(e)[:100]}")
+                benchmark_metrics[bench_ticker] = None
         bt.results_summary = {
             "total_return": round(total_return, 4),
             "annualized_return": annualized_return,
@@ -305,6 +432,7 @@ class BacktestService:
             "rebalance_count": len(rebalance_dates),
             "equity_curve": equity_curve,
             "decision_points": decision_points,
+            "benchmark_metrics": benchmark_metrics,
             "warnings": warnings,
             # Provenance
             "source_type": "pipeline_backtest",

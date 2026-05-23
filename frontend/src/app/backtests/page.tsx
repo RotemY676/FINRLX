@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   fetchBacktestList, fetchBacktest,
   BacktestListData, BacktestDetail,
+  BacktestResultSummary, BenchmarkMetricBlock,
 } from "@/services/api";
 import { StatusBadge } from "@/components/recommendation/StatusBadge";
 import { EquityCurveChart } from "@/components/charts/EquityCurveChart";
@@ -169,6 +170,51 @@ export default function BacktestsPage() {
             <MetricCard label="Total Trades" value={String(detail.results.total_trades ?? "—")} />
             <MetricCard label="Avg Turnover" value={pct(detail.results.avg_turnover)} />
           </div>
+
+          {/* Phase 19D: benchmark comparison table. Hidden when neither
+              benchmark has data (legacy backtests with null benchmark_metrics). */}
+          {detail.results.benchmark_metrics &&
+            Object.values(detail.results.benchmark_metrics).some((v) => v != null) && (
+              <div className="bg-surface border border-line rounded-lg shadow-sm p-pad overflow-x-auto">
+                <h3 className="text-[13px] font-semibold text-ink mb-3">
+                  Strategy vs benchmarks
+                </h3>
+                <table className="w-full text-[13px] border-collapse min-w-[480px]">
+                  <thead>
+                    <tr className="text-left text-ink-3 border-b border-line">
+                      <th className="py-2 pr-3 font-medium">Metric</th>
+                      <th className="py-2 px-3 font-medium">Strategy</th>
+                      {Object.keys(detail.results.benchmark_metrics).map((sym) => (
+                        <th key={sym} className="py-2 px-3 font-medium">{sym}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono">
+                    {((): React.ReactNode => {
+                      const rows: { label: string; key: keyof BacktestResultSummary & keyof BenchmarkMetricBlock; fmt: (v: number | null | undefined) => string }[] = [
+                        { label: "Total Return", key: "total_return", fmt: (v) => pct(v ?? null) },
+                        { label: "Annualized Return", key: "annualized_return", fmt: (v) => pct(v ?? null) },
+                        { label: "Max Drawdown", key: "max_drawdown", fmt: (v) => pct(v ?? null) },
+                        { label: "Sharpe Ratio", key: "sharpe_ratio", fmt: (v) => v?.toFixed(2) ?? "—" },
+                        { label: "Calmar Ratio", key: "calmar_ratio", fmt: (v) => v?.toFixed(2) ?? "—" },
+                        { label: "Volatility", key: "volatility", fmt: (v) => pct(v ?? null) },
+                      ];
+                      return rows.map(({ label, key, fmt }) => (
+                        <tr key={key} className="border-b border-line/60 last:border-0">
+                          <td className="py-2 pr-3 text-ink-2 font-sans">{label}</td>
+                          <td className="py-2 px-3 text-ink">{fmt(detail.results[key])}</td>
+                          {Object.entries(detail.results.benchmark_metrics ?? {}).map(([sym, block]) => (
+                            <td key={sym} className="py-2 px-3 text-ink-2">
+                              {block ? fmt(block[key]) : "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
           {/* Equity curve */}
           <div className="bg-surface border border-line rounded-lg shadow-sm p-pad">
