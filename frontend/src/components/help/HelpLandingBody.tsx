@@ -60,9 +60,9 @@ export function HelpLandingBody({ pages }: { pages: HelpPage[] }) {
         </h2>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 text-[13.5px] text-ink-2">
           <li>Click the <strong className="text-ink">?</strong> icon next to any control inside the app to jump here in context.</li>
-          <li>The <Link href="/help/glossary" className="text-primary hover:underline">glossary</Link> defines every jargon term in one page.</li>
-          <li>Have you completed the <Link href="/onboarding" className="text-primary hover:underline">welcome wizard</Link>? Most defaults come from there.</li>
-          <li>Found a problem? Use <Link href="/feedback" className="text-primary hover:underline">Send feedback</Link> — the form is connected to the team.</li>
+          <li>The <Link href="/help/glossary" className="text-primary underline underline-offset-2 decoration-1 hover:decoration-2">glossary</Link> defines every jargon term in one page.</li>
+          <li>Have you completed the <Link href="/onboarding" className="text-primary underline underline-offset-2 decoration-1 hover:decoration-2">welcome wizard</Link>? Most defaults come from there.</li>
+          <li>Found a problem? Use <Link href="/feedback" className="text-primary underline underline-offset-2 decoration-1 hover:decoration-2">Send feedback</Link> — the form is connected to the team.</li>
         </ul>
       </section>
     </div>
