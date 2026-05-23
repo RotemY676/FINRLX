@@ -63,7 +63,14 @@ class BacktestService:
 
     async def _get_universe_assets(self, universe_id: str | None) -> list[tuple[str, str]]:
         if not universe_id:
-            uni = (await self.db.execute(select(Universe.id).limit(1))).scalar()
+            # Phase 20.1 — deterministic + active-only default pick (same
+            # rationale as pipeline.py and universe.get_default_universe).
+            uni = (await self.db.execute(
+                select(Universe.id)
+                .where(Universe.is_active.is_(True))
+                .order_by(Universe.created_at.asc())
+                .limit(1)
+            )).scalar()
             universe_id = uni
         if not universe_id:
             return []

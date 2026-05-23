@@ -70,8 +70,13 @@ class RLEnvironmentService:
 
     async def ensure_default_rl_environment(self) -> int:
         inserted = 0
-        # Get default universe
-        uni = (await self.db.execute(select(Universe.id).limit(1))).scalar()
+        # Phase 20.1 — deterministic + active-only default-universe pick.
+        uni = (await self.db.execute(
+            select(Universe.id)
+            .where(Universe.is_active.is_(True))
+            .order_by(Universe.created_at.asc())
+            .limit(1)
+        )).scalar()
         for defn in DEFAULT_ENVIRONMENTS:
             existing = (await self.db.execute(
                 select(RLEnvironmentDefinition.id).where(RLEnvironmentDefinition.key == defn["key"])
@@ -119,7 +124,13 @@ class RLEnvironmentService:
     async def build_state(self, as_of_date: date, universe_id: str | None = None) -> dict:
         """Build environment state for a given date."""
         if not universe_id:
-            universe_id = (await self.db.execute(select(Universe.id).limit(1))).scalar()
+            # Phase 20.1 — deterministic + active-only default-universe pick.
+            universe_id = (await self.db.execute(
+                select(Universe.id)
+                .where(Universe.is_active.is_(True))
+                .order_by(Universe.created_at.asc())
+                .limit(1)
+            )).scalar()
 
         # Universe assets
         members = (await self.db.execute(

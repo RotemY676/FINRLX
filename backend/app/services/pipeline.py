@@ -77,7 +77,18 @@ class DecisionPipelineService:
         lists, the resulting asset list is filtered to honor them.
         """
         if not universe_id:
-            uni = (await self.db.execute(select(Universe.id).limit(1))).scalar()
+            # Phase 20.1 — default-universe lookup must be deterministic AND
+            # filter out deactivated universes. Without ORDER BY, SQLite
+            # returns rows in implementation-defined order, so once Phase 20
+            # introduced the ability to create multiple universes, the
+            # pipeline started occasionally picking an empty or inactive one
+            # and silently failing the run.
+            uni = (await self.db.execute(
+                select(Universe.id)
+                .where(Universe.is_active.is_(True))
+                .order_by(Universe.created_at.asc())
+                .limit(1)
+            )).scalar()
             universe_id = uni
         if not universe_id:
             return None, []

@@ -1,10 +1,16 @@
 """Universe management service.
 
 Phase 6F: read-only universe inspection with coverage/readiness data.
+Phase 20: + CRUD operations (create / rename / deactivate). Deactivation
+is "soft" — the row stays for replay of past recommendations, just flagged
+is_active=false so it falls out of the live picker. Hard deletes would
+strand UniverseMembership and Recommendation foreign keys.
 """
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.base import gen_uuid
 from app.models.feature import FeatureSet, FeatureValue
 from app.models.ingestion import MarketBar
 from app.models.modeling import ModelPrediction
@@ -12,14 +18,102 @@ from app.models.reference import Asset, Universe, UniverseMembership
 from app.models.signal import SignalOutput
 
 
+class UniverseConflictError(Exception):
+    """Raised when a CRUD action would violate a business rule (duplicate
+    name, deactivating the last active universe, …). The endpoint layer
+    translates this into a 409 Conflict."""
+
+
+class UniverseNotFoundError(Exception):
+    """Raised when a CRUD action targets a non-existent universe id. The
+    endpoint layer translates this into a 404."""
+
+
 class UniverseService:
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    # ── Phase 20 CRUD ────────────────────────────────────────────────────
+
+    async def create_universe(self, name: str, description: str | None) -> dict:
+        """Create a new universe. Raises UniverseConflictError on duplicate
+        name (which already maps to a 409 in the endpoint layer)."""
+        u = Universe(id=gen_uuid(), name=name, description=description, is_active=True)
+        self.db.add(u)
+        try:
+            await self.db.commit()
+        except IntegrityError:
+            await self.db.rollback()
+            raise UniverseConflictError(f"Universe name '{name}' already exists.")
+        await self.db.refresh(u)
+        detail = await self.get_universe_detail(u.id)
+        assert detail is not None
+        return detail
+
+    async def update_universe(
+        self,
+        universe_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        is_active: bool | None = None,
+    ) -> dict:
+        """PATCH semantics — only the keys explicitly passed are touched.
+
+        Guardrails:
+          - rename to a name owned by a different universe → 409
+          - deactivating the only currently-active universe → 409
+            (the picker would be empty and decision/backtest would 500)
+        """
+        u = (await self.db.execute(
+            select(Universe).where(Universe.id == universe_id)
+        )).scalar_one_or_none()
+        if u is None:
+            raise UniverseNotFoundError(universe_id)
+
+        if name is not None and name != u.name:
+            clash = (await self.db.execute(
+                select(Universe.id).where(Universe.name == name)
+            )).scalar_one_or_none()
+            if clash is not None and clash != universe_id:
+                raise UniverseConflictError(
+                    f"Universe name '{name}' already exists."
+                )
+            u.name = name
+        if description is not None:
+            u.description = description
+        if is_active is not None and is_active != u.is_active:
+            if not is_active:
+                # Refuse to deactivate the last active universe — leaves the
+                # rest of the product (decision, backtests) without a target.
+                active_count = (await self.db.execute(
+                    select(func.count())
+                    .select_from(Universe)
+                    .where(Universe.is_active.is_(True))
+                )).scalar() or 0
+                if active_count <= 1:
+                    raise UniverseConflictError(
+                        "Cannot deactivate the only active universe."
+                    )
+            u.is_active = is_active
+
+        await self.db.commit()
+        await self.db.refresh(u)
+        detail = await self.get_universe_detail(u.id)
+        assert detail is not None
+        return detail
+
+    async def deactivate_universe(self, universe_id: str) -> dict:
+        """Convenience wrapper for the DELETE endpoint — same guardrails
+        as update_universe(is_active=False)."""
+        return await self.update_universe(universe_id, is_active=False)
+
+    # ── Existing read-only methods ───────────────────────────────────────
+
     async def get_universes(self) -> list[dict]:
         universes = (await self.db.execute(
-            select(Universe).order_by(Universe.name)
+            select(Universe).where(Universe.is_active.is_(True)).order_by(Universe.name)
         )).scalars().all()
         results = []
         for u in universes:
@@ -36,7 +130,15 @@ class UniverseService:
         return results
 
     async def get_default_universe(self) -> dict | None:
-        u = (await self.db.execute(select(Universe).limit(1))).scalar_one_or_none()
+        # Phase 20.1 — pick the oldest still-active universe so the "default"
+        # is deterministic. Previously this was `LIMIT 1` with no ORDER BY,
+        # which worked by accident when there was only one universe.
+        u = (await self.db.execute(
+            select(Universe)
+            .where(Universe.is_active.is_(True))
+            .order_by(Universe.created_at.asc())
+            .limit(1)
+        )).scalar_one_or_none()
         if not u:
             return None
         return await self.get_universe_detail(u.id)
