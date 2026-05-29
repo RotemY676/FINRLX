@@ -706,6 +706,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FINRLX Analysis · [[TICKER]]</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
@@ -789,6 +790,115 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
   .category-tag { color: var(--muted); font-size: 11px; }
   .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 6px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+  /* ============================================================
+     RESPONSIVE — additive. Desktop above 900px is unchanged.
+     Two breakpoints: 900px (tablet/landscape), 640px (phone).
+     ============================================================ */
+
+  @media (max-width: 900px) {
+    .wrap { padding: 20px 16px 60px; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    header { padding: 22px; gap: 16px; }
+    header h1 { font-size: 24px; }
+    .verdict-line { gap: 20px; }
+    .verdict-line .num { font-size: 24px; }
+    canvas { max-height: 280px; }
+    canvas.tall { max-height: 340px; }
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 14px 12px 48px; }
+
+    /* Header: stack vertically, shrink type, tap-friendly stance pill */
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 18px 16px;
+      gap: 10px;
+      margin-bottom: 22px;
+      border-radius: 12px;
+    }
+    header h1 { font-size: 20px; line-height: 1.25; }
+    header .meta { font-size: 12px; }
+    .stance {
+      padding: 10px 18px; font-size: 13px; min-height: 44px;
+      display: inline-flex; align-items: center;
+    }
+    .verdict-line { gap: 14px 20px; margin-top: 8px; }
+    .verdict-line .num { font-size: 20px; }
+    .verdict-line .label { font-size: 11px; }
+
+    /* Section titles + cards */
+    .section-title { font-size: 12px; margin: 24px 0 10px; }
+    .grid, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
+    .card { padding: 14px; border-radius: 10px; }
+    .card h2 { font-size: 13px; margin-bottom: 12px; }
+    .card h2 .sub { display: block; margin-top: 2px; font-size: 11px; }
+
+    /* Chart heights — Chart.js handles width, we cap height per device */
+    canvas { max-height: 240px !important; }
+    canvas.mini { max-height: 140px !important; }
+    canvas.tall { max-height: 280px !important; }
+
+    /* Wide tables (strategy comparison, threshold sweep, monthly heatmap):
+       turn the <table> itself into a horizontal-scroll container with a
+       sticky first column so the row identity stays in view as you swipe. */
+    .card.full > table.compare-table,
+    .card > table.heatmap {
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .compare-table th, .compare-table td { padding: 10px 8px; font-size: 12px; }
+    .compare-table th:first-child,
+    .compare-table td:first-child {
+      position: sticky; left: 0; z-index: 2;
+      background: var(--panel);
+      box-shadow: 1px 0 0 var(--border);
+      min-width: 140px;
+    }
+    /* Don't let the row-state colour bleed onto the sticky first cell */
+    .compare-table tr.best td:first-child,
+    .compare-table tr.bh   td:first-child { background: var(--panel); }
+
+    .heatmap { font-size: 11px; }
+    .heatmap th, .heatmap td { padding: 6px 3px; min-width: 38px; }
+    .heatmap th:first-child,
+    .heatmap td:first-child {
+      position: sticky; left: 0; z-index: 2;
+      background: var(--panel);
+      box-shadow: 1px 0 0 var(--border);
+    }
+
+    /* Features table (snapshot, 3 cols) doesn't need scroll, just tighter cells */
+    .card table { font-size: 12px; }
+    .card table th, .card table td { padding: 8px 4px; }
+
+    /* News list: ≥44px tap targets per Apple HIG */
+    .news-item { padding: 14px 0; font-size: 13px; }
+    .news-item .title { font-size: 14px; line-height: 1.35; margin-bottom: 6px; }
+    .news-item .title a { display: inline-block; min-height: 44px; padding: 2px 0;
+                          overflow-wrap: break-word; word-break: break-word; }
+    .news-item .src { font-size: 11px; }
+    .pill { padding: 4px 10px; font-size: 11px; }
+
+    /* Footnote, composite bar, legend */
+    .footnote { font-size: 11px; padding: 14px; line-height: 1.5; }
+    .composite-bar { height: 20px; }
+    .scale { font-size: 10px; }
+    .legend-grid { grid-template-columns: 1fr 1fr; font-size: 11px; }
+  }
+
+  /* iPhone SE / Pixel 4a class (≤380px) */
+  @media (max-width: 380px) {
+    header h1 { font-size: 18px; }
+    .verdict-line .num { font-size: 18px; }
+    .wrap { padding: 12px 10px 40px; }
+  }
 </style>
 </head>
 <body>
