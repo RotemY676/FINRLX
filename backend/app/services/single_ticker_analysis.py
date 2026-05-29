@@ -14,15 +14,40 @@ yfinance + VADER + the existing engine functions in app.services.engines.
 from __future__ import annotations
 
 import json
+import logging
 import math
 from dataclasses import dataclass, field, asdict
 from datetime import UTC, date, datetime, timedelta
 from html import escape as h
+from pathlib import Path
 
 import yfinance as yf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from app.services.engines import ENGINE_FUNCTIONS
+
+_log = logging.getLogger(__name__)
+
+# Chart.js is vendored alongside this module so the generated HTML is
+# truly self-contained — opens correctly offline, inside WhatsApp /
+# Gmail in-app viewers (which often block third-party scripts), and on
+# mobile browsers in file:// origin. If the vendored file is missing
+# we fall back to the CDN reference and log a warning, so the report
+# still renders when there's an internet connection.
+_CHARTJS_PATH = Path(__file__).parent / "_chartjs.min.js"
+try:
+    _CHARTJS_SCRIPT_TAG = f"<script>{_CHARTJS_PATH.read_text(encoding='utf-8')}</script>"
+    _log.info("loaded vendored Chart.js (%d bytes)", _CHARTJS_PATH.stat().st_size)
+except (FileNotFoundError, OSError) as e:
+    _log.warning(
+        "vendored Chart.js missing at %s (%s); falling back to CDN — "
+        "reports will require internet to render charts",
+        _CHARTJS_PATH, e,
+    )
+    _CHARTJS_SCRIPT_TAG = (
+        '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/'
+        'dist/chart.umd.min.js"></script>'
+    )
 
 
 # ── Feature computation (mirrors backend/app/services/features.py) ───────────
@@ -708,7 +733,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FINRLX Analysis · [[TICKER]]</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+[[CHARTJS_SCRIPT]]
 <style>
   :root {
     --bg: #0f172a; --panel: #1e293b; --panel2: #0b1224; --text: #e2e8f0;
@@ -1566,6 +1591,7 @@ def build_html_report(
 
     html = _HTML_TEMPLATE
     replacements = {
+        "[[CHARTJS_SCRIPT]]": _CHARTJS_SCRIPT_TAG,
         "[[TICKER]]": h(ticker),
         "[[AS_OF]]": h(str(bars.latest_date)),
         "[[LAST_CLOSE]]": _fmt_num_html(bars.latest_close, 2),
