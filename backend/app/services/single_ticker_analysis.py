@@ -924,6 +924,53 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
     .verdict-line .num { font-size: 18px; }
     .wrap { padding: 12px 10px 40px; }
   }
+
+  /* ============================================================
+     OVERFLOW CONTAINMENT — stops Chart.js canvases from
+     escaping their cards on mobile. The `min-width: 0` rules on
+     grids/cards are the critical part: CSS grid items default
+     to `min-width: auto` (= content size), so a wide canvas
+     would force the grid track to grow and blow out the page
+     horizontally. Setting min-width:0 lets cards shrink.
+     ============================================================ */
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .wrap { overflow-x: hidden; }
+  .grid, .grid-3, .grid-4 { min-width: 0; }
+  .card { min-width: 0; overflow: hidden; }
+  canvas { max-width: 100%; height: auto; display: block; touch-action: pan-y; }
+
+  /* Sentiment donut needs a square container — wrapping a square
+     parent keeps it round when maintainAspectRatio is off. */
+  .donut-wrap { position: relative; width: 100%; max-width: 260px;
+    aspect-ratio: 1 / 1; margin: 0 auto; }
+  .donut-wrap canvas { max-height: none; }
+
+  /* Sparse-data empty state for mini feature-evolution charts.
+     Diagonal hatch reads as "intentionally empty" rather than
+     "broken / loading". Used when a series is >70% null. */
+  .mini-empty { display: flex; flex-direction: column; justify-content: center;
+    align-items: flex-start; min-height: 140px; padding: 14px;
+    border-radius: 10px;
+    background: repeating-linear-gradient(45deg,
+      rgba(148,163,184,.04) 0 6px, transparent 6px 12px);
+    border: 1px dashed rgba(148,163,184,.25); }
+  .mini-empty__icon { width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(251,191,36,.18); color: #fbbf24; font-weight: 700;
+    display: grid; place-items: center; font-size: 13px; margin-bottom: 6px; }
+  .mini-empty__title { font-size: 12px; font-weight: 600; color: var(--text); }
+  .mini-empty__body { font-size: 11px; line-height: 1.4; color: var(--muted);
+    margin-top: 4px; }
+  .mini-empty__meta { font-size: 10px; color: var(--muted); opacity: .7;
+    margin-top: 6px; }
+  .chart-note { font-size: 11px; color: var(--muted); margin-top: 8px;
+    line-height: 1.4; font-style: italic; }
+
+  /* On phones, bump decision-trace + equity .tall a touch and constrain
+     the legend so it doesn't squeeze the plot area to zero. */
+  @media (max-width: 640px) {
+    canvas.tall { max-height: 320px !important; }
+  }
 </style>
 </head>
 <body>
@@ -969,7 +1016,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="card">
       <h2>News sentiment <span class="sub">last 7 days</span></h2>
-      <canvas id="sentimentDonut"></canvas>
+      <div class="donut-wrap"><canvas id="sentimentDonut"></canvas></div>
     </div>
   </div>
 
@@ -1102,6 +1149,12 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
     date. Past performance does not predict future returns. This is single-ticker analysis only —
     portfolio-level allocation, profile overrides, and risk overlays are applied later by
     DecisionPipelineService.
+    <br><br>
+    <strong>News-history limitation:</strong> historical news sentiment is reconstructable only for
+    the most recent rebalances — yfinance exposes roughly the last 7-30 days of headlines, so
+    past-week sentiment for older rebalances simply isn't available. Strategies that depend solely
+    on this signal correspondingly show sparse rolling-window metrics. This is a data-source
+    limitation, not a computation error.
   </div>
 </div>
 
@@ -1112,6 +1165,12 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
   Chart.defaults.color = text;
   Chart.defaults.borderColor = border;
   Chart.defaults.font.family = '-apple-system, "Segoe UI", Roboto, sans-serif';
+  // Mobile fix: turning OFF maintainAspectRatio means each canvas fills its
+  // parent's width and respects the CSS-set max-height — the cause of the
+  // "graphs overflow the screen" symptom on iPhone. Capping devicePixelRatio
+  // at 2 prevents 9 MB backing buffers on 3x iPhone Pro displays.
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
   // ─── Engine ensemble (horizontal bars) ───
   const engKeys = Object.keys(DATA.engines);
@@ -1223,24 +1282,38 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
   });
 
   // ─── Rolling Sharpe ───
+  // Drop strategies whose interior rolling Sharpe is >70% null — they're
+  // cash most of the time, so rolling std-dev is zero and the line becomes
+  // a dashed scribble that doesn't help the comparison. A note below the
+  // chart names them so the reader knows nothing was hidden silently.
+  const SPARSE_SHARPE_NULL_THRESHOLD = 0.70;
+  function rsNullFractionInterior(s) {
+    const interior = s.rolling_sharpe.slice(4);  // skip the 4-week warm-up
+    if (!interior.length) return 1;
+    let n = 0;
+    for (const p of interior) if (p.value === null || p.value === undefined) n++;
+    return n / interior.length;
+  }
+  const rsKept = [], rsDropped = [];
+  for (const s of DATA.strategies) {
+    if (s.key === 'buy_hold') { rsKept.push(s); continue; }
+    if (rsNullFractionInterior(s) > SPARSE_SHARPE_NULL_THRESHOLD) rsDropped.push(s);
+    else rsKept.push(s);
+  }
   new Chart(document.getElementById('rollingSharpeChart'), {
     type: 'line',
     data: {
       labels: DATA.strategies[0].rolling_sharpe.map(p => p.date),
-      datasets: DATA.strategies.filter(s => s.key !== 'buy_hold').map(s => ({
+      datasets: rsKept.map(s => ({
         label: s.name,
         data: s.rolling_sharpe.map(p => p.value),
-        borderColor: s.color, backgroundColor: 'transparent',
+        borderColor: s.color,
+        borderDash: s.key === 'buy_hold' ? [5, 5] : undefined,
+        backgroundColor: 'transparent',
         tension: 0.1, pointRadius: 0, borderWidth: 2, spanGaps: false,
-      })).concat([{
-        label: 'Buy & Hold',
-        data: (DATA.strategies.find(s => s.key === 'buy_hold') || {rolling_sharpe: []}).rolling_sharpe.map(p => p.value),
-        borderColor: '#94a3b8', borderDash: [5, 5],
-        backgroundColor: 'transparent', tension: 0.1, pointRadius: 0, borderWidth: 2,
-      }])
+      }))
     },
     options: {
-      responsive: true,
       interaction: { intersect: false, mode: 'index' },
       scales: {
         x: { ticks: { maxTicksLimit: 10 } },
@@ -1249,6 +1322,14 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
       plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } }
     }
   });
+  if (rsDropped.length) {
+    const note = document.createElement('div');
+    note.className = 'chart-note';
+    note.textContent = 'Omitted: ' + rsDropped.map(s => s.name).join(', ')
+      + ' — these strategies hold cash most weeks, so rolling std-dev is undefined.'
+      + ' See the equity-curve chart above for their performance.';
+    document.getElementById('rollingSharpeChart').after(note);
+  }
 
   // ─── Returns histogram ───
   const compStrat = DATA.strategies.find(s => s.key === 'composite_010') || DATA.strategies[0];
@@ -1272,9 +1353,9 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
       ]
     },
     options: {
-      responsive: true,
       scales: {
-        x: { title: { display: true, text: 'Weekly return bucket' } },
+        x: { title: { display: true, text: 'Weekly return bucket' },
+             ticks: { maxRotation: 60, minRotation: 45, font: { size: 10 } } },
         y: { title: { display: true, text: 'count of weeks' } }
       },
       plugins: { legend: { position: 'bottom' } }
@@ -1311,24 +1392,50 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
         yPrice: { type: 'linear', position: 'right', title: { display: true, text: 'price' },
           grid: { drawOnChartArea: false } }
       },
-      plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } }
+      plugins: { legend: { position: 'bottom', maxHeight: 60,
+        labels: { padding: 10, font: { size: 11 }, boxWidth: 14 } } }
     }
   });
 
-  // ─── Feature evolution: 4 small line charts ───
-  function miniLine(canvasId, label, data, color) {
-    new Chart(document.getElementById(canvasId), {
+  // ─── Feature evolution: 4 small line charts with sparse-data guard ───
+  // When a series is >70% null (e.g. news_sentiment for tickers whose
+  // historical headlines aren't on yfinance), drawing it as a sparse
+  // line on a phone looks broken. We swap the canvas for a clearly-
+  // labeled "limited history" card so users understand the data gap.
+
+  function nullFraction(arr) {
+    if (!arr || !arr.length) return 1;
+    let n = 0;
+    for (const v of arr) if (v === null || v === undefined) n++;
+    return n / arr.length;
+  }
+
+  function renderMini(canvasId, label, data, color, emptyTitle, emptyBody) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    if (nullFraction(data) >= 0.70) {
+      const nonNull = data.filter(v => v !== null && v !== undefined).length;
+      const card = document.createElement('div');
+      card.className = 'mini-empty';
+      card.innerHTML =
+        '<div class="mini-empty__icon" aria-hidden="true">!</div>' +
+        '<div class="mini-empty__title">' + emptyTitle + '</div>' +
+        '<div class="mini-empty__body">' + emptyBody + '</div>' +
+        '<div class="mini-empty__meta">' + nonNull + ' of ' + data.length + ' weeks have data</div>';
+      canvas.replaceWith(card);
+      return;
+    }
+    new Chart(canvas, {
       type: 'line',
       data: {
         labels: DATA.feature_evolution.dates,
         datasets: [{
           label: label, data: data, borderColor: color,
           backgroundColor: color + '22', fill: true,
-          tension: 0.2, pointRadius: 0, borderWidth: 2
+          tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false,
         }]
       },
       options: {
-        responsive: true,
         scales: { x: { ticks: { maxTicksLimit: 5, font: { size: 10 } } },
                   y: { ticks: { font: { size: 10 } } } },
         plugins: { legend: { display: false } }
@@ -1336,10 +1443,22 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
     });
   }
   const fe = DATA.feature_evolution;
-  miniLine('featRet20', '20d return', fe.return_20d.map(v => v === null ? null : v * 100), '#22c55e');
-  miniLine('featVol20', '20d vol', fe.volatility_20d.map(v => v === null ? null : v * 100), '#fb923c');
-  miniLine('featSent', 'news sentiment', fe.news_sentiment_7d, '#fbbf24');
-  miniLine('featComposite', 'composite', fe.composite_score, '#38bdf8');
+  renderMini('featRet20', '20d return',
+    fe.return_20d.map(v => v === null ? null : v * 100), '#22c55e',
+    '20d return — insufficient history',
+    'Need at least 20 trading days of bars before the metric is defined.');
+  renderMini('featVol20', '20d volatility',
+    fe.volatility_20d.map(v => v === null ? null : v * 100), '#fb923c',
+    '20d volatility — insufficient history',
+    'Need at least 20 trading days of bars before annualized vol is defined.');
+  renderMini('featSent', 'news sentiment',
+    fe.news_sentiment_7d, '#fbbf24',
+    'News sentiment — limited history',
+    'yfinance only exposes the last ~7-30 days of headlines, so past-week sentiment cannot be reconstructed. Current-week sentiment is shown in the engine panel above.');
+  renderMini('featComposite', 'composite',
+    fe.composite_score, '#38bdf8',
+    'Composite — insufficient history',
+    'Composite needs at least one engine with usable data per week.');
 </script>
 </body></html>
 """
