@@ -21,14 +21,16 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 - IA consolidation + /news→/insights: DEFERRED → S7 (as /pro migration)
 - News "why this matters" + assistant: STUB → S9
 - Authenticated a11y sweep: NEVER RUN → F3
-- Trading calendar: ABSENT → F2
-- Price provider chain: yfinance-only → F1
+- Trading calendar: LANDED (watchdog integrated; 2 call-sites pending)
+- Price provider chain: LANDED backend (yfinance→stooq→cache, provenance, quality flags, watchdog); UI pending
 
 ## LEAP phase ledger
 | Phase | Status | PR | Report |
 |---|---|---|---|
-| F0 bootstrap | IN PROGRESS (this branch) | leap/F0-bootstrap | PHASE_LEAP_F0_REPORT.md |
-| F1–F3, S1–S9, C1 | NOT STARTED | — | — |
+| F0 bootstrap | DONE | leap/F0-bootstrap | PHASE_LEAP_F0_REPORT.md |
+| F1 provider chain | BACKEND DONE (UI badges + flag flip in RESUME.md) | leap/F0-bootstrap | PHASE_LEAP_F1_REPORT_PARTIAL.md |
+| F2 trading calendar | CORE DONE (ingest+backtest call-sites in RESUME.md) | leap/F0-bootstrap | PHASE_LEAP_F2_REPORT_PARTIAL.md |
+| F3, S1–S9, C1 | NOT STARTED | — | — |
 
 ## Feature flags
 (none yet; D23 registry starts here)
