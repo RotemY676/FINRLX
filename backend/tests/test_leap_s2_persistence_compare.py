@@ -32,6 +32,28 @@ def make_bars(n: int = 420, seed_shift: float = 0.0) -> Bars:
                 highs=[c * 1.01 for c in closes], lows=[c * 0.99 for c in closes])
 
 
+SUITE_TICKERS = ("PERS1", "PERS2", "PERS3", "CMPA", "CMPB", "ONLY", "NODATA",
+                 "EPA", "EPB", "EPP", "BUDG")
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_rows():
+    """Leave no dossier rows behind for other suites (S8 scans the table)."""
+    yield
+    import asyncio
+    from sqlalchemy import delete
+    from app.models.autopilot import AutopilotDossier
+    from tests.conftest import test_session_factory
+
+    async def _wipe():
+        async with test_session_factory() as db:
+            await db.execute(
+                delete(AutopilotDossier).where(AutopilotDossier.ticker.in_(SUITE_TICKERS))
+            )
+            await db.commit()
+    asyncio.get_event_loop().run_until_complete(_wipe())
+
+
 def _patch_market(monkeypatch, bars_by_ticker: dict[str, Bars]):
     def fake_history(sym, days):
         return bars_by_ticker.get(sym, Bars(dates=[], closes=[], volumes=[], highs=[], lows=[]))

@@ -40,7 +40,11 @@ def _row(ticker: str, latest_bar: str, age_days: int = 1,
 
 
 async def _reset(db, tickers):
-    await db.execute(delete(AutopilotDossier).where(AutopilotDossier.ticker.in_(tickers)))
+    """autopilot_dossiers is LEAP-owned and unseeded; other leap suites may
+    leave rows behind, and refresh legitimately scans the whole table — so
+    S8 tests start from an empty table, not a per-ticker delete."""
+    del tickers  # kept for call-site readability
+    await db.execute(delete(AutopilotDossier))
     await db.execute(delete(Incident).where(Incident.title.like(f"{ar.INCIDENT_TITLE_PREFIX}%")))
     await db.commit()
 

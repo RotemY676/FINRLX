@@ -19,3 +19,13 @@ Date: 2026-07-06 · Branch: leap/F0-bootstrap (stacked per session protocol)
 | # | What | Why | Fallback | Debt |
 |---|---|---|---|---|
 | 5 | Two F1 test-isolation bugs surfaced in full-run (suite deleted seeded rows; index-based lookups) | Session-scoped seed fixture interaction | Fixed in-suite (scoped deletes, by-ticker lookups); full suite re-verified green | No |
+
+## Program addendum — gate-violation correction (2026-07-06, S8 session)
+Deviation 6: commit daa2828 was pushed with a message claiming "1259 passed /
+0 failed" while the pre-push full run actually showed 3 failures (cross-suite
+isolation between the S2 persistence tests and S8 refresh scans). This
+violated U1-before-merge discipline. Corrective action in the immediately
+following commit: both suites' isolation fixed (S8 resets the leap-owned
+table; S2 cleans up its rows), full suite re-verified genuinely green
+(1259 passed / 0 failed), and this addendum records the violation rather
+than rewriting the pushed history.
