@@ -1,55 +1,45 @@
 #!/usr/bin/env python3
-"""PROGRAM LEAP gate U9 — Question-Zero linter (QZ-2).
+"""PROGRAM LEAP Question-Zero linter (QZ-2, gate U9).
+Scans given files (phase reports / PR bodies) for interrogative sentences
+addressed to the operator. Exit 1 on violation."""
+import re, sys, pathlib
 
-Scans phase reports (and any text passed as arguments) for interrogative
-sentences addressed to the operator. The program's acceptance test is a
-full run with zero questions directed at the operator; this linter makes
-that mechanical.
+OPERATOR_QUESTION = re.compile(
+    r"(?i)\b(should (we|i)|do you (want|prefer|need)|would you like|"
+    r"please (confirm|advise|decide)|let me know (if|whether|which)|"
+    r"which (option|approach) (do you|would you))\b[^.\n]*\??")
+BARE_QUESTION = re.compile(r"(?m)^(?!.*\|).*\?\s*$")  # ?-terminated lines outside tables
 
-Heuristic: a line is a violation when it ends with '?' AND contains a
-second-person operator address ("you", "your", "do we", "should we",
-"shall", "please confirm", "approve"). Rhetorical/user-facing '?' strings
-inside quoted UI copy are exempt via the QZ-OK marker on the same line.
-"""
-from __future__ import annotations
-import re, sys
-from pathlib import Path
+ALLOW_MARKER = "<!-- qz-allow -->"  # for rhetorical/doc questions, must be justified in report
 
-ADDRESS = re.compile(
-    r"\b(you|your|do we|should (we|i)|shall (we|i)|please (confirm|approve|advise)|"
-    r"let me know|which (do|would) you|can you)\b",
-    re.I,
-)
-
-def violations(text: str, name: str) -> list[str]:
-    out = []
-    for i, line in enumerate(text.splitlines(), 1):
-        s = line.strip()
-        if not s or "QZ-OK" in s:
+def check(path: pathlib.Path) -> list[str]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    hits = []
+    for m in OPERATOR_QUESTION.finditer(text):
+        line = text[:m.start()].count("\n") + 1
+        if ALLOW_MARKER not in text.splitlines()[line - 1]:
+            hits.append(f"{path}:{line}: operator-directed question: {m.group(0)[:80]!r}")
+    for m in BARE_QUESTION.finditer(text):
+        frag = m.group(0).strip()
+        if ALLOW_MARKER in frag or frag.startswith(("#", ">", "-", "*", "`")):
             continue
-        if s.rstrip("*_`).\u201d\"'").endswith("?") and ADDRESS.search(s):
-            out.append(f"{name}:{i}: {s[:120]}")
-    return out
+        line = text[:m.start()].count("\n") + 1
+        hits.append(f"{path}:{line}: unanswered question line: {frag[:80]!r}")
+    return hits
 
-def main(paths: list[str]) -> int:
-    vio: list[str] = []
-    for p in paths:
-        path = Path(p)
-        files = (
-            [f for f in path.rglob("*.md") if "LEAP" in f.name.upper() or "council" in str(f)]
-            if path.is_dir() else [path]
-        )
-        for f in files:
-            try:
-                vio += violations(f.read_text(encoding="utf-8", errors="replace"), str(f))
-            except OSError:
-                continue
-    if vio:
+def main(argv: list[str]) -> int:
+    targets = [pathlib.Path(a) for a in argv[1:]] or list(
+        pathlib.Path("DOCS/handoff").glob("PHASE_LEAP_*.md"))
+    problems: list[str] = []
+    for t in targets:
+        if t.exists():
+            problems += check(t)
+    if problems:
         print("QUESTION-ZERO: FAIL")
-        print("\n".join(vio))
+        print("\n".join(problems))
         return 1
     print("QUESTION-ZERO: PASS")
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:] or ["DOCS/handoff"]))
+    raise SystemExit(main(sys.argv))

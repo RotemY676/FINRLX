@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-06T11:27:15.475451+00:00",
+  "experiments": [
+    {
+      "experiment_id": "d07cc4b5-acaf-4e6b-8922-c6900932fc9b",
+      "created_at": "2026-07-06T11:27:15.470318+00:00",
+      "updated_at": "2026-07-06T11:27:15.475412+00:00",
+      "lifecycle_state": "completed",
+      "name": "Exp B",
+      "linked_export_id": "75752bf4-ac7a-4d39-b4e2-e973c6effb16",
+      "linked_export_fingerprint": "90b19d25e86bdb52",
+      "linked_export_checksum": "fd8ef7ec6d646ae5f8ae35ed23e1abc5",
+      "linked_export_row_count": 23,
+      "linked_export_date_range": {
+        "start": "2026-03-16",
+        "end": "2026-04-15"
+      },
+      "hypothesis": "",
+      "method_notes": "",
+      "parameters": {},
+      "expected_metrics": [],
+      "result_summary": "B results",
+      "result_metrics": {
+        "sharpe_ratio": 1.2,
+        "max_drawdown": -0.05
+      },
+      "result_artifact_path": null,
+      "warnings": [],
+      "limitations": [
+        "Research-only, offline-only, shadow experiment.",
+        "Not used by production recommendations.",
+        "Not eligible for promotion.",
+        "No broker execution.",
+        "No automatic training or benchmark execution."
+      ],
+      "research_only": true,
+      "offline_only": true,
+      "shadow_only": true,
+      "no_production_influence": true,
+      "not_eligible_for_promotion": true
+    },
+    {
+      "experiment_id": "ee2496f5-d33d-4034-98c0-a4a7a4943272",
+      "created_at": "2026-07-06T11:27:15.462287+00:00",
+      "updated_at": "2026-07-06T11:27:15.467781+00:00",
+      "lifecycle_state": "completed",
+      "name": "Exp A",
+      "linked_export_id": "75752bf4-ac7a-4d39-b4e2-e973c6effb16",
+      "linked_export_fingerprint": "90b19d25e86bdb52",
+      "linked_export_checksum": "fd8ef7ec6d646ae5f8ae35ed23e1abc5",
+      "linked_export_row_count": 23,
+      "linked_export_date_range": {
+        "start": "2026-03-16",
+        "end": "2026-04-15"
+      },
+      "hypothesis": "",
+      "method_notes": "",
+      "parameters": {},
+      "expected_metrics": [],
+      "result_summary": "A results",
+      "result_metrics": {
+        "sharpe_ratio": 1.5,
+        "max_drawdown": -0.08
+      },
+      "result_artifact_path": null,
+      "warnings": [],
+      "limitations": [
+        "Research-only, offline-only, shadow experiment.",
+        "Not used by production recommendations.",
+        "Not eligible for promotion.",
+        "No broker execution.",
+        "No automatic training or benchmark execution."
+      ],
+      "research_only": true,
+      "offline_only": true,
+      "shadow_only": true,
+      "no_production_influence": true,
+      "not_eligible_for_promotion": true
+    }
+  ]
+}
