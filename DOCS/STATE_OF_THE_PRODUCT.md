@@ -41,7 +41,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S5 One Screen | VERTICAL SLICE DONE at /simple (route flip to / lands with S7) | leap/F0-bootstrap | src/app/simple, src/lib/simpleStance*, wording test |
 | S6 compare UI | DONE at /compare (council PASS; wording-test coverage extended) | leap/F0-bootstrap | src/app/compare |
 | DEBT-S5-2 | OPEN — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
-| F3, S7, C1 | remaining — S7 buildable here; sweeps need Playwright+prod | — | RESUME.md |
+| S7a route flip | DONE — / is Simple Mode; command center at /pro; Pro switcher in both shells; council PASS | leap/F0-bootstrap | council/S7A_* |
+| F3, S7b, C1 | remaining per RESUME.md (S7b buildable; sweeps env-blocked) | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

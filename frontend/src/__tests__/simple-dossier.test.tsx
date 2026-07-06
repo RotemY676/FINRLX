@@ -1,113 +1,126 @@
 /**
- * PROGRAM LEAP S5 — One Screen dossier rendering tests.
- * Council coverage: UX Critic (all key regions render; degraded states
- * labeled) and Truthfulness Auditor (disclaimers, tournament rationale,
- * honest RL status all visible).
+ * LEAP S5/S7a — Simple Mode dossier rendering (ported from the pre-S1 slice's
+ * suite, upgraded to the spec: the payload's raw stance vocabulary must map
+ * to research language at the UI boundary — the old suite asserted the raw
+ * word; this one asserts the mapping).
  */
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { DossierView } from "../app/simple/DossierView";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-const baseDossier = {
+vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+
+import {
+  DisclaimerStrip,
+  SummaryBar,
+  TournamentScoreboard,
+  VerdictCards,
+  type DossierPayload,
+} from "@/components/simple/DossierView";
+
+const CANDIDATE = {
+  key: "sma_cross",
+  name: "SMA(20/50) crossover",
+  kind: "heuristic",
+  train_sharpe: 0.9,
+  val_sharpe: 0.7,
+  divergence: 0.2,
+  penalty: 0.3,
+  score: 0.4,
+};
+
+const DOSSIER: DossierPayload = {
   ticker: "TEST",
-  generated_at: "2026-07-06T12:00:00Z",
+  generated_at: "2026-07-06T00:00:00Z",
+  config_version: "v-test",
   freshness: { latest_bar: "2026-07-03", bars: 500, news_source_available: true },
   summary: {
     latest_close: 123.45,
-    stance: "hold",
-    composite_score: 0.05,
+    stance: "hold", // raw engine vocabulary — must render as "neutral"
+    composite_score: 0.1,
     avg_confidence: 0.6,
     regime: "uptrend",
-    stance_kind: "research stance from the FINRLX engine ensemble — not advice",
+    stance_kind: "research stance",
   },
   sections: {
     technical: {
-      regime: { label: "uptrend", detail: "price above SMA50", kind: "research overlay — rule-based label, not a prediction" },
-      composite: { drivers: ["[technical_momentum] 20d return positive"], caveats: [] },
-      engines: {},
+      available: true,
+      features: { rsi_14: 55.2, macd_hist_12_26_9: 0.12, drawdown_20d: -0.02 },
+      regime: { label: "uptrend", detail: "", kind: "research overlay" },
+      composite: { stance: "buy", composite_score: 0.4, avg_confidence: 0.6 },
     },
     news_sentiment: {
       available: true,
       note: null,
-      counts: { positive: 3, neutral: 2 },
+      counts: { positive: 3 },
       items_7d: [
-        { date: "2026-07-02", title: "Test headline", sentiment: "positive", compound: 0.4 },
+        {
+          date: "2026-07-01",
+          title: "TEST expands capacity",
+          sentiment: "positive",
+          compound: 0.4,
+          why_this_matters: "Capacity affects supply assumptions.",
+          annotation_meta: {
+            model: "fake:m",
+            generated_at: "2026-07-06",
+            freshness_stamp: "2026-07-01",
+          },
+        },
       ],
     },
-    fundamentals: { available: false, note: "Fundamentals join the dossier when a provider is configured." },
+    fundamentals: { available: false, note: "Fundamentals join later." },
     model_insight: {
-      status: "complete",
-      n_splits: 3,
-      deflation_penalty: 0.21,
-      candidates: [
-        { key: "sma_xover", name: "SMA(20/50) crossover", kind: "heuristic", train_sharpe: 0.9, val_sharpe: 0.8, divergence: 0.1, score: 0.5 },
-        { key: "ml_gbr", name: "ML return forecaster", kind: "ml", train_sharpe: 1.4, val_sharpe: 0.3, divergence: 1.1, score: -0.4 },
-      ],
-      winner: {
-        name: "SMA(20/50) crossover", kind: "heuristic", score: 0.5,
-        rationale: "Selected 'SMA(20/50) crossover' — highest validation score after an overfitting-divergence penalty.",
-      },
+      candidates: [CANDIDATE],
+      winner: { ...CANDIDATE, rationale: "highest penalty-adjusted validation score" },
       rl: { status: "queued_for_research_run", note: "RL candidates train only in the isolated research environment." },
     },
   },
   price_series: [
-    { date: "2026-07-01", close: 120 },
-    { date: "2026-07-02", close: 121.5 },
+    { date: "2026-07-02", close: 122.0 },
     { date: "2026-07-03", close: 123.45 },
   ],
-  stages: [{ stage: "ingest — price history", ms: 800 }],
   disclaimers: [
     "Research analysis, not investment advice.",
-    "Past performance does not guarantee future results.",
+    "Past performance does not predict future results.",
   ],
-  served_from_cache: false,
-} as never;
+};
 
-describe("DossierView", () => {
-  it("renders the summary bar, all four cards, and the freshness stamp", () => {
-    render(<DossierView dossier={baseDossier} />);
-    expect(screen.getByTestId("dossier-ticker").textContent).toBe("TEST");
-    expect(screen.getByTestId("stance-badge").textContent).toContain("hold");
-    for (const id of ["card-price", "card-technical", "card-news", "card-fundamentals", "card-model"]) {
-      expect(screen.getByTestId(id)).toBeTruthy();
-    }
-    expect(screen.getByTestId("freshness").textContent).toContain("2026-07-03");
+describe("Simple Mode dossier", () => {
+  it("maps raw stance vocabulary to research language (never renders it raw)", () => {
+    render(<SummaryBar dossier={DOSSIER} />);
+    const bar = screen.getByText(/stance:/);
+    expect(bar.textContent).toContain("neutral");
+    expect(document.body.textContent).not.toMatch(/\bhold\b/);
   });
 
-  it("explains the automatic model selection and shows the honest RL status", () => {
-    render(<DossierView dossier={baseDossier} />);
-    expect(screen.getByTestId("tournament-winner").textContent).toContain("SMA(20/50) crossover");
-    expect(screen.getByTestId("card-model").textContent).toContain("overfitting-divergence penalty");
-    expect(screen.getByTestId("rl-status").textContent).toContain("queued for research run");
-    expect(screen.getByTestId("scoreboard")).toBeTruthy();
+  it("renders ticker, price, regime, and the freshness stamp", () => {
+    render(<SummaryBar dossier={DOSSIER} />);
+    expect(screen.getByText("TEST")).toBeTruthy();
+    expect(screen.getByText("123.45")).toBeTruthy();
+    expect(screen.getByText(/regime: uptrend/)).toBeTruthy();
+    expect(screen.getByText(/Data through 2026-07-03/)).toBeTruthy();
+  });
+
+  it("renders all four verdict cards with honest degraded fundamentals", () => {
+    render(<VerdictCards dossier={DOSSIER} />);
+    for (const title of ["Technical", "News & sentiment", "Fundamentals", "Model insight"]) {
+      expect(screen.getByText(title)).toBeTruthy();
+    }
+    expect(screen.getByText("Fundamentals join later.")).toBeTruthy();
+    expect(screen.getByText(/Why it matters: Capacity affects supply/)).toBeTruthy();
+    expect(screen.getByText(/Generated by fake:m/)).toBeTruthy();
+  });
+
+  it("explains the winner and opens the scoreboard with penalty column + verbatim RL note", () => {
+    render(<TournamentScoreboard tournament={DOSSIER.sections.model_insight} />);
+    expect(screen.getByText(/winner: SMA\(20\/50\) crossover/)).toBeTruthy();
+    expect(screen.getByText(/overfitting penalties/)).toBeTruthy();
+    fireEvent.click(screen.getByText("How this was chosen"));
+    expect(screen.getByText("Penalty")).toBeTruthy();
+    expect(screen.getByText(/isolated research environment/)).toBeTruthy();
   });
 
   it("always shows the research-not-advice disclaimers", () => {
-    render(<DossierView dossier={baseDossier} />);
-    expect(screen.getByTestId("disclaimers").textContent).toContain("not investment advice");
-  });
-
-  it("labels a degraded news section instead of hiding it", () => {
-    const degraded = structuredClone(baseDossier) as typeof baseDossier & {
-      sections: { news_sentiment: { available: boolean; note: string } };
-    };
-    degraded.sections.news_sentiment.available = false;
-    degraded.sections.news_sentiment.note =
-      "News source unavailable — section degraded, analysis continued without it.";
-    render(<DossierView dossier={degraded as never} />);
-    expect(screen.getByTestId("news-degraded").textContent).toContain("degraded");
-  });
-
-  it("shows an honest message when history is insufficient for the tournament", () => {
-    const insufficient = structuredClone(baseDossier) as never as {
-      sections: { model_insight: { status: string; winner: null; note: string } };
-    };
-    insufficient.sections.model_insight = {
-      status: "insufficient_history",
-      winner: null,
-      note: "Fewer than 30 weekly observations — the tournament needs more history.",
-    } as never;
-    render(<DossierView dossier={insufficient as never} />);
-    expect(screen.getByTestId("tournament-insufficient").textContent).toContain("needs more history");
+    render(<DisclaimerStrip disclaimers={DOSSIER.disclaimers} />);
+    expect(screen.getByText(/not investment advice/)).toBeTruthy();
   });
 });

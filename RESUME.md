@@ -1,18 +1,14 @@
 # PROGRAM LEAP — RESUME marker (§2.2)
-DONE: F0, F1(backend), F2(core), S1, S2, S3, S4, S6(backend), S8, S9, C1-prep,
-and now S5 vertical slice at /simple (spec-conformant One Screen: hero,
-indicative progress, dossier with stance-mapping boundary, staleness tiers,
-scoreboard, disclaimers; wording test enforcing the ban list; tsc + 45 vitest
-+ next build green; backend 1281 green).
-CORRECTION to earlier claims: the node toolchain DOES work in this
-environment (npm ci + tsc + vitest + next build verified). Still genuinely
-blocked here: Playwright browser downloads (domain not allowlisted),
-production-network sweeps, and the Actions workflow install (E1 token scope).
-Next tasks, in order:
-1. S6 UI: /compare page over GET /autopilot/compare (buildable here).
-2. S5 polish: autocomplete via asset-search; price chart with regime shading;
-   export button reusing /analyze offline-HTML pattern (§5b disclaimers).
-3. S7: /pro migration + route flip of /simple -> / (CSV-driven 308s) —
-   buildable here; e2e verification needs Playwright (Claude Code).
-4. F1.6 staleness badges on Pro surfaces; F3 sweeps (needs browsers/prod);
-   C1 close + tag.
+DONE: F0, F1(be), F2(core), S1, S2, S3, S4, S5(+chart), S6(be+UI), S7a
+(route flip: / = Simple Mode, command center -> /pro with switcher links,
+/simple alias kept), S8, S9, C1-prep. Frontend gates all green in-env
+(tsc/eslint/vitest 50/next build); backend 1281 green.
+Remaining program:
+1. S7b: full D33 migration of manual surfaces under /pro/* + redirects CSV
+   e2e spec (buildable here; e2e run needs Playwright browsers).
+2. S5 polish: autocomplete (asset-search), export per spec §5b (DEBT list:
+   DEBT-S5-1 job-polling progress, DEBT-S5-2 regime band series).
+3. F1.6 staleness badges on Pro surfaces.
+4. F3 sweeps + C1 close + tag leap-v1 — REQUIRES Playwright browsers +
+   production network + E1 token (workflow scope). These are the only
+   environment-blocked items left.
