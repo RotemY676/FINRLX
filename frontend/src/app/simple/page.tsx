@@ -45,8 +45,14 @@ type ViewState =
   | { kind: "nodata"; ticker: string }
   | { kind: "error"; ticker: string };
 
+interface AssetSuggestion {
+  ticker: string;
+  name?: string | null;
+}
+
 export default function SimpleModePage() {
   const [input, setInput] = useState("");
+  const [suggestions, setSuggestions] = useState<AssetSuggestion[]>([]);
   const [state, setState] = useState<ViewState>({ kind: "hero" });
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -94,6 +100,34 @@ export default function SimpleModePage() {
     }
   }
 
+  useEffect(() => {
+    // Autocomplete via the Phase 20.3 asset-search endpoint; suggestions are
+    // an assist, never a gate — any typed ticker submits.
+    const q = input.trim();
+    if (state.kind !== "hero" || q.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const ctl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/v1/assets?q=${encodeURIComponent(q)}`,
+          { signal: ctl.signal },
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as { data?: AssetSuggestion[] };
+        setSuggestions((body.data ?? []).slice(0, 5));
+      } catch {
+        /* suggestions are best-effort */
+      }
+    }, 200);
+    return () => {
+      ctl.abort();
+      clearTimeout(t);
+    };
+  }, [input, state.kind]);
+
   /* Indicative pacing — explicitly not a claim of backend progress. */
   const indicativeStage = Math.min(Math.floor(elapsed / 1.2), STAGES.length - 1);
 
@@ -124,6 +158,22 @@ export default function SimpleModePage() {
               Research
             </button>
           </form>
+          {suggestions.length > 0 && (
+            <ul className="mx-auto mt-2 max-w-md rounded-lg border border-[var(--line)] bg-[var(--surface)] text-left text-sm">
+              {suggestions.map((sug) => (
+                <li key={sug.ticker}>
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left hover:bg-[var(--surface-2)]"
+                    onClick={() => void research(sug.ticker)}
+                  >
+                    <span className="font-medium">{sug.ticker}</span>
+                    {sug.name ? <span className="text-[var(--ink-2)]"> — {sug.name}</span> : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mx-auto mt-4 max-w-lg text-sm text-[var(--ink-2)]">
             Automatic 360° research: prices, news, technicals, and a model tournament —
             with the evidence for every conclusion.

@@ -42,7 +42,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S6 compare UI | DONE at /compare (council PASS; wording-test coverage extended) | leap/F0-bootstrap | src/app/compare |
 | DEBT-S5-2 | OPEN — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
 | S7a route flip | DONE — / is Simple Mode; command center at /pro; Pro switcher in both shells; council PASS | leap/F0-bootstrap | council/S7A_* |
-| F3, S7b, C1 | remaining per RESUME.md (S7b buildable; sweeps env-blocked) | — | RESUME.md |
+| S5 polish | DONE — autocomplete + §5b-binding export (council PASS) | leap/F0-bootstrap | exportDossier.ts + binding test |
+| F3, S7b, F1.6, C1 | remaining per RESUME.md (S7b/F1.6 buildable; sweeps env-blocked) | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

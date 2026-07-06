@@ -146,6 +146,15 @@ export function SummaryBar({ dossier }: { dossier: DossierPayload }) {
       <Chip tone={tier === "fresh" ? "neutral" : tier === "stale" ? "caution" : "breach"}>
         Data through {dossier.freshness.latest_bar}
       </Chip>
+      <button
+        type="button"
+        className="ml-auto rounded-lg border border-[var(--line-strong)] px-3 py-1 text-sm text-[var(--ink)]"
+        onClick={() => {
+          void import("@/lib/exportDossier").then((m) => m.downloadDossierHtml(dossier));
+        }}
+      >
+        Export
+      </button>
     </div>
   );
 }
