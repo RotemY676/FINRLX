@@ -96,3 +96,4 @@ __all__ = [
     "LLMTokenUsage",
     "TickerInsights",
 ]
+from app.models.autopilot import AutopilotDossier  # noqa: F401,E402  (LEAP S2)

@@ -1,16 +1,13 @@
 # PROGRAM LEAP — RESUME marker (§2.2)
-Completed through this session: F0; F1 backend (incl. LEAP_PRICE_CHAIN flag + DAG watchdog);
-F2 core + opt-in calendar rebalances; S3 indicator pack; S4 core (tournament with
-overfitting guard + regularized ML forecaster, leakage-tested).
+Backend track through this session: F0 DONE; F1 backend DONE; F2 core DONE;
+S3 DONE; S4 core+adapters DONE (in-service candidates + tournament, RL leg honest
+degradation); S2 DONE backend (pipeline, hostile-input, cache, persistence D34,
+migration 036, compare endpoint S6-backend, isolation test, D39 budget test).
 Next tasks, in order:
-1. S4 continuation: heuristic candidate pack adapters (momentum/mean-reversion/
-   regime-filtered) bridging run_strategy mechanics to tournament CandidateFn;
-   RL leg adapter via research-container artifacts (D35 fallback path);
-   isolation regression test (GS4.4); D39 runtime budget test.
-2. S2: autopilot.py stage runner + job API + dossier schema/migration + cache,
-   composing single_ticker_analysis + tournament + S3 features.
-3. F2 leftover: ingest date-range session filtering (low priority — providers
-   already return traded days).
-4. F1 leftover + all frontend phases (S1 wireframes, S5-S7): Claude Code with
-   node toolchain + rotated token (E1, workflow scope).
-Delete when S2+S4 close.
+1. S8 seed: wire dossier auto-refresh job into daily_dag (refresh persisted
+   tickers <=30d old, budget-aware) + material-change notification rules.
+2. S9: annotation job + contract validator (flag-gated, key-optional).
+3. F2 leftover: session-filtered ingest ranges (low priority).
+4. Frontend track (Claude Code + node + rotated token E1): S1 wireframes,
+   S5 One Screen, S6 compare UI, S7 /pro migration, F1.6 staleness badges, F3 sweeps.
+Delete when S8+S9 backend close.

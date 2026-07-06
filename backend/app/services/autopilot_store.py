@@ -1,0 +1,172 @@
+"""LEAP S2/S6 — dossier persistence + multi-ticker comparison assembly.
+
+Async layer over the synchronous autopilot pipeline:
+
+  persist_dossier(db, dossier)        upsert latest-per-ticker (D34)
+  load_persisted(db, ticker)          latest stored payload or None
+  get_or_build_dossier(db, ticker)    warm order: in-process cache ->
+                                      persisted row (same latest bar +
+                                      config version) -> full pipeline build
+                                      (thread-offloaded), then persist
+  build_comparison(db, tickers)       <=4 tickers (D32) side-by-side on the
+                                      shared dossier dimensions, with
+                                      computed divergence highlights (S6) —
+                                      differences are measured, never
+                                      editorialized.
+
+Isolation (D30/GS4.4): this module reads/writes autopilot_dossiers only —
+never recommendations/publication tables; the regression test asserts it.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+from datetime import UTC, datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.autopilot import AutopilotDossier
+from app.services.autopilot import CONFIG_VERSION, build_dossier, validate_ticker
+
+COMPARISON_MAX_TICKERS = 4
+
+__all__ = [
+    "COMPARISON_MAX_TICKERS",
+    "persist_dossier",
+    "load_persisted",
+    "get_or_build_dossier",
+    "build_comparison",
+]
+
+
+async def persist_dossier(db: AsyncSession, dossier: dict) -> AutopilotDossier:
+    ticker = dossier["ticker"]
+    row = (
+        await db.execute(
+            select(AutopilotDossier).where(AutopilotDossier.ticker == ticker)
+        )
+    ).scalar_one_or_none()
+    payload = json.dumps(dossier, default=str)
+    if row is None:
+        row = AutopilotDossier(
+            ticker=ticker,
+            latest_bar_date=(dossier.get("freshness") or {}).get("latest_bar", ""),
+            config_version=dossier.get("config_version", CONFIG_VERSION),
+            generated_at=datetime.now(UTC),
+            payload_json=payload,
+        )
+        db.add(row)
+    else:
+        row.latest_bar_date = (dossier.get("freshness") or {}).get("latest_bar", "")
+        row.config_version = dossier.get("config_version", CONFIG_VERSION)
+        row.generated_at = datetime.now(UTC)
+        row.payload_json = payload
+    await db.flush()
+    return row
+
+
+async def load_persisted(db: AsyncSession, ticker: str) -> dict | None:
+    row = (
+        await db.execute(
+            select(AutopilotDossier).where(AutopilotDossier.ticker == ticker)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    payload = json.loads(row.payload_json)
+    payload["served_from_persistence"] = True
+    return payload
+
+
+async def get_or_build_dossier(db: AsyncSession, raw_ticker: str) -> dict:
+    """Warm path: persisted row when it matches the current config version;
+    otherwise a full (thread-offloaded) pipeline build, persisted after."""
+    ticker = validate_ticker(raw_ticker)
+    persisted = await load_persisted(db, ticker)
+    if persisted is not None and persisted.get("config_version") == CONFIG_VERSION:
+        return persisted
+    dossier = await asyncio.to_thread(build_dossier, ticker)
+    await persist_dossier(db, dossier)
+    return dossier
+
+
+# ── comparison (S6) ─────────────────────────────────────────────────────────
+
+
+def _dim(dossier: dict) -> dict:
+    """The shared comparison dimensions extracted from one dossier."""
+    sections = dossier.get("sections", {})
+    tourn = sections.get("model_insight", {}) or {}
+    winner = tourn.get("winner") or {}
+    summary = dossier.get("summary", {}) or {}
+    news = sections.get("news_sentiment", {}) or {}
+    return {
+        "ticker": dossier["ticker"],
+        "latest_bar_date": (dossier.get("freshness") or {}).get("latest_bar"),
+        "stance": summary.get("stance"),
+        "regime": summary.get("regime"),
+        "composite_score": summary.get("composite_score"),
+        "news_counts_7d": news.get("counts"),
+        "news_available": news.get("available"),
+        "selected_model": winner.get("name"),
+        "selected_model_key": winner.get("key"),
+        "selected_model_kind": winner.get("kind"),
+        "selected_model_score": winner.get("score"),
+        "validation_sharpe": winner.get("val_sharpe"),
+        "freshness": dossier.get("freshness"),
+        "served_from_cache": bool(
+            dossier.get("served_from_cache") or dossier.get("served_from_persistence")
+        ),
+    }
+
+
+def _divergence_highlights(columns: list[dict]) -> list[dict]:
+    """Measured disagreements across tickers — facts, not editorial."""
+    highlights: list[dict] = []
+    stances = {c["ticker"]: c["stance"] for c in columns if c.get("stance")}
+    if len(set(stances.values())) > 1:
+        highlights.append({"dimension": "stance", "values": stances})
+    regimes = {c["ticker"]: c["regime"] for c in columns if c["regime"]}
+    if len(set(regimes.values())) > 1:
+        highlights.append({"dimension": "regime", "values": regimes})
+    models = {c["ticker"]: c["selected_model"] for c in columns if c["selected_model"]}
+    if len(set(models.values())) > 1:
+        highlights.append({"dimension": "selected_model", "values": models})
+    sharpes = {
+        c["ticker"]: c["validation_sharpe"]
+        for c in columns
+        if isinstance(c.get("validation_sharpe"), (int, float))
+    }
+    if len(sharpes) >= 2 and (max(sharpes.values()) - min(sharpes.values())) > 0.5:
+        highlights.append({"dimension": "validation_sharpe_spread", "values": sharpes})
+    return highlights
+
+
+async def build_comparison(db: AsyncSession, raw_tickers: list[str]) -> dict:
+    tickers = [validate_ticker(t) for t in raw_tickers]
+    # dedupe, preserve order
+    tickers = list(dict.fromkeys(tickers))
+    if not 2 <= len(tickers) <= COMPARISON_MAX_TICKERS:
+        raise ValueError(
+            f"Comparison takes 2-{COMPARISON_MAX_TICKERS} distinct tickers; got {len(tickers)}."
+        )
+    columns: list[dict] = []
+    errors: dict[str, str] = {}
+    for t in tickers:
+        try:
+            columns.append(_dim(await get_or_build_dossier(db, t)))
+        except (ValueError, RuntimeError) as exc:
+            errors[t] = str(exc)
+    return {
+        "tickers": tickers,
+        "columns": columns,
+        "errors": errors,
+        "divergence_highlights": _divergence_highlights(columns),
+        "disclaimers": [
+            "Research analysis, not investment advice.",
+            "Comparison dimensions come from each ticker's dossier; see the "
+            "per-ticker dossier for full evidence and limitations.",
+        ],
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
