@@ -348,6 +348,63 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
   );
 }
 
+/* ── Price chart ───────────────────────────────────────────────────────────
+   Honesty note: the dossier payload carries the CURRENT regime label, not
+   per-period band data, so this chart draws no historical regime shading
+   (fake bands would be invented data). Band series = DEBT-S5-2 (backend
+   addition). The svg carries a <title> per the F3 accessibility lesson. */
+
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+export function DossierPriceChart({ dossier }: { dossier: DossierPayload }) {
+  const data = dossier.price_series;
+  if (!data || data.length < 2) return null;
+  return (
+    <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-2)]">
+        Price · {data.length} sessions
+      </h3>
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <title>{`${dossier.ticker} closing prices, ${data.length} sessions through ${dossier.freshness.latest_bar}`}</title>
+            <XAxis dataKey="date" hide />
+            <YAxis
+              domain={["auto", "auto"]}
+              width={56}
+              tick={{ fontSize: 11 }}
+              stroke="var(--ink-4)"
+            />
+            <Tooltip
+              formatter={(value: number | string) => [String(value), "close"]}
+              labelStyle={{ color: "var(--ink-2)" }}
+            />
+            <Line
+              type="monotone"
+              dataKey="close"
+              stroke="var(--primary)"
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-1 text-xs text-[var(--ink-4)]">
+        Current regime: {dossier.summary.regime} (rule-based research overlay, not a
+        prediction).
+      </p>
+    </div>
+  );
+}
+
 /* ── Disclaimers ───────────────────────────────────────────────────────── */
 
 export function DisclaimerStrip({ disclaimers }: { disclaimers: string[] }) {

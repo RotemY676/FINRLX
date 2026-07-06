@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   DegradedBanner,
   DisclaimerStrip,
+  DossierPriceChart,
   SummaryBar,
   VerdictCards,
   type DossierPayload,
@@ -169,6 +170,7 @@ export default function SimpleModePage() {
           <SummaryBar dossier={state.dossier} />
           <DegradedBanner dossier={state.dossier} />
           <VerdictCards dossier={state.dossier} />
+          <DossierPriceChart dossier={state.dossier} />
           <DisclaimerStrip disclaimers={state.dossier.disclaimers} />
           <button
             type="button"

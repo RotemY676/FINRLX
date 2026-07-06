@@ -39,7 +39,9 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S1 design sprint | DONE (spec + wireframes + copy deck; 2 council PASS verdicts, 4 findings fixed incl. stance-vocabulary mapping) | leap/F0-bootstrap | DOCS/design/*, council/S1_* |
 | DEBT-S5-1 | OPEN — job-polling endpoint for real per-stage progress (v1 progress is indicative) | — | SIMPLE_MODE_SPEC.md §J1 |
 | S5 One Screen | VERTICAL SLICE DONE at /simple (route flip to / lands with S7) | leap/F0-bootstrap | src/app/simple, src/lib/simpleStance*, wording test |
-| F3, S6-UI, S7, C1 | remaining — build possible here; e2e/sweeps need Playwright+prod access | — | RESUME.md |
+| S6 compare UI | DONE at /compare (council PASS; wording-test coverage extended) | leap/F0-bootstrap | src/app/compare |
+| DEBT-S5-2 | OPEN — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
+| F3, S7, C1 | remaining — S7 buildable here; sweeps need Playwright+prod | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

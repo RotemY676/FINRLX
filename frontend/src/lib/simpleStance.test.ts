@@ -33,6 +33,7 @@ describe("toSimpleStance (binding UI boundary)", () => {
 describe("Simple Mode wording test (safe-language enforcement)", () => {
   const roots = [
     join(__dirname, "..", "app", "simple"),
+    join(__dirname, "..", "app", "compare"),
     join(__dirname, "..", "components", "simple"),
   ];
 
