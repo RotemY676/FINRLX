@@ -66,3 +66,4 @@ anthropic==0.42.0
 # the parser to "lxml" by adding lxml to requirements — the
 # extraction module is parser-agnostic.
 beautifulsoup4==4.12.3
+exchange_calendars>=4.5  # LEAP F2 trading calendar (D3/D21')

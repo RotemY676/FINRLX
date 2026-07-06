@@ -35,8 +35,12 @@ def _bar(ticker: str, bar_date: date, quality_flag: str | None = None) -> Market
     )
 
 
+LEAP_TICKERS = ("FRESH1", "STALE1", "DEGR1", "DEGR2", "WKND", "FLAGD")
+
+
 async def _reset(db) -> None:
-    await db.execute(delete(MarketBar))
+    """Remove only this suite's rows; session-scoped seed data must survive."""
+    await db.execute(delete(MarketBar).where(MarketBar.ticker.in_(LEAP_TICKERS)))
     await db.execute(
         delete(Incident).where(Incident.title.like(f"{INCIDENT_TITLE_PREFIX}%"))
     )
@@ -64,12 +68,12 @@ async def test_fresh_stale_degraded_classification():
         report = await evaluate_price_freshness(db, now=NOW)
         await _reset(db)
 
-    by = {t.ticker: t for t in report.tickers}
+    by = {t.ticker: t for t in report.tickers if t.ticker in LEAP_TICKERS}
     assert report.expected_latest_session_iso == "2026-06-10"
     assert by["FRESH1"].status == "fresh" and by["FRESH1"].lag_trading_days == 1
     assert by["STALE1"].status == "stale" and by["STALE1"].lag_trading_days == 3
     assert by["DEGR1"].status == "degraded" and by["DEGR1"].lag_trading_days == 8
-    assert [t.ticker for t in report.degraded] == ["DEGR1"]
+    assert [t.ticker for t in report.degraded if t.ticker in LEAP_TICKERS] == ["DEGR1"]
 
 
 @pytest.mark.asyncio
@@ -85,8 +89,9 @@ async def test_weekend_does_not_count_as_lag():
         report = await evaluate_price_freshness(db, now=sunday)
         await _reset(db)
     assert report.expected_latest_session_iso == "2026-06-05"
-    assert report.tickers[0].status == "fresh"
-    assert report.tickers[0].lag_trading_days == 0
+    wknd = next(t for t in report.tickers if t.ticker == "WKND")
+    assert wknd.status == "fresh"
+    assert wknd.lag_trading_days == 0
 
 
 @pytest.mark.asyncio
@@ -100,8 +105,9 @@ async def test_quality_flagged_bars_do_not_count_as_freshness():
         await db.commit()
         report = await evaluate_price_freshness(db, now=NOW)
         await _reset(db)
-    assert report.tickers[0].status == "degraded"
-    assert report.tickers[0].latest_bar_date_iso == "2026-05-29"
+    flagd = next(t for t in report.tickers if t.ticker == "FLAGD")
+    assert flagd.status == "degraded"
+    assert flagd.latest_bar_date_iso == "2026-05-29"
 
 
 @pytest.mark.asyncio

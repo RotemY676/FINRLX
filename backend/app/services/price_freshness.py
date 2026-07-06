@@ -8,9 +8,9 @@ classified as:
     stale     2 <= lag <= 5
     degraded  lag > 5
 
-Until F2 lands the exchange calendar, "expected latest session" uses
-calendar-naive weekday logic (Mon-Fri), which is correct except on market
-holidays.  # TODO(F2): replace _expected_latest_session with trading_calendar
+Session arithmetic is delegated to app.utils.trading_calendar (F2), so
+holidays are handled correctly; if the calendar package is unavailable the
+utility degrades to weekday logic by itself.
 
 Pure analysis (evaluate_price_freshness) + idempotent incident emission,
 mirroring fx_freshness so the OP-2 scheduler can call it safely.
@@ -18,13 +18,14 @@ mirroring fx_freshness so the OP-2 scheduler can call it safely.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ingestion import MarketBar
 from app.models.ops import Incident
+from app.utils import trading_calendar
 
 FRESH_MAX_LAG = 1
 STALE_MAX_LAG = 5
@@ -57,28 +58,11 @@ class PriceFreshnessReport:
 
 
 def _expected_latest_session(now: datetime) -> date:
-    """Most recent weekday on or before `now` (naive of holidays until F2)."""
-    d = now.date()
-    # Before a plausible daily close+ingest completion (06:00 UTC next day),
-    # yesterday's session is the newest we can fairly expect.
-    if now.hour < 6:
-        d -= timedelta(days=1)
-    while d.weekday() >= 5:  # Sat=5, Sun=6
-        d -= timedelta(days=1)
-    return d
+    return trading_calendar.expected_latest_session(now)
 
 
 def _trading_day_lag(latest: date, expected: date) -> int:
-    """Weekday count in (latest, expected]; 0 when latest >= expected."""
-    if latest >= expected:
-        return 0
-    lag = 0
-    d = latest
-    while d < expected:
-        d += timedelta(days=1)
-        if d.weekday() < 5:
-            lag += 1
-    return lag
+    return trading_calendar.trading_day_lag(latest, expected)
 
 
 def classify_lag(lag: int) -> str:
