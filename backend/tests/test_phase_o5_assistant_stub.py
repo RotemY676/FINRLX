@@ -86,11 +86,14 @@ def test_router_constructs_local_ollama_without_key(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_anthropic_stub_raises_with_friendly_message(monkeypatch):
+    # Phase 17.2 made the Anthropic provider real, so a placeholder key now
+    # triggers a live API call. The friendly no-network guard is the
+    # empty-key path — assert that instead (LEAP F0 baseline fix).
     from app.services.llm.anthropic import AnthropicProvider
     from app.services.llm.provider import StubProviderError
     from app.services.llm.types import LLMMessage
-    p = AnthropicProvider(api_key="stub")
-    with pytest.raises(StubProviderError, match="stub"):
+    p = AnthropicProvider(api_key="")
+    with pytest.raises(StubProviderError, match="LLM_ANTHROPIC_API_KEY is empty"):
         await p.chat([LLMMessage(role="user", content="hi")])
 
 
