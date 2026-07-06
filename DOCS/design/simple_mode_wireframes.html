@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FINRLX Simple Mode — S1 wireframes (low-fi)</title>
+<style>
+  /* Low-fidelity on purpose: structure, hierarchy, and copy only.
+     Color decisions defer to the existing globals.css token system (D14);
+     token names are annotated where the real build binds them. */
+  :root{
+    --canvas:#f7f8fa; --surface:#ffffff; --line:#d9dde3; --line-strong:#c3c9d1;
+    --ink:#20242c; --ink-2:#5a616c; --soft:#eef0f3; --mark:#8a93a0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);
+       font:14px/1.5 ui-sans-serif,system-ui,sans-serif}
+  nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);
+      padding:10px 16px;display:flex;gap:14px;flex-wrap:wrap;z-index:5}
+  nav a{color:var(--ink-2);text-decoration:underline}
+  section{max-width:1080px;margin:32px auto;padding:0 16px}
+  h2{font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .frame{background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+         padding:20px;position:relative}
+  .frame::after{content:attr(data-note);position:absolute;top:-9px;right:12px;
+         background:var(--canvas);color:var(--mark);font-size:11px;padding:0 6px}
+  .box{border:1px dashed var(--line-strong);border-radius:8px;padding:12px;margin:8px 0;
+       background:var(--soft)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>.box{flex:1;min-width:220px;margin:0}
+  .chip{display:inline-block;border:1px solid var(--line-strong);border-radius:999px;
+        padding:1px 10px;font-size:12px;color:var(--ink-2);background:var(--surface)}
+  .tok{font-size:11px;color:var(--mark)}
+  .btn{display:inline-block;border:1px solid var(--ink);border-radius:8px;
+       padding:8px 18px;font-weight:600}
+  .quiet{color:var(--ink-2)}
+  .input{border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);
+         padding:14px;font-size:18px;max-width:460px;margin:0 auto}
+  .center{text-align:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .stagelist li{margin:6px 0}
+  .done::marker{content:"✔ "} .run::marker{content:"… "} .todo::marker{content:"○ "}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  .banner{border:1px solid var(--line-strong);background:var(--soft);border-radius:8px;
+          padding:8px 12px;margin-bottom:10px}
+  .phone{max-width:390px;margin:0 auto}
+  footer.disc{border-top:1px solid var(--line);margin-top:14px;padding-top:8px;
+          font-size:12px;color:var(--ink-2)}
+</style>
+</head>
+<body>
+<nav>
+  <strong>S1 wireframes</strong>
+  <a href="#j0">J0 Hero</a><a href="#j1">J1 Progress</a><a href="#j2">J2 Dossier</a>
+  <a href="#j3">J3 Compare</a><a href="#j45">J4/J5 Empty & Error</a><a href="#mobile">Mobile</a>
+</nav>
+
+<section id="j0">
+  <h2>J0 — Hero (`/`)</h2>
+  <div class="frame" data-note="signature: the page IS the input — nothing competes">
+    <div class="center" style="padding:56px 0">
+      <div style="font-size:24px;font-weight:700;margin-bottom:18px">Research any stock</div>
+      <div class="input quiet">Try NVDA <span class="tok">(autofocus · autocomplete: asset-search)</span></div>
+      <div style="margin:16px 0"><span class="btn">Research</span></div>
+      <div class="quiet" style="max-width:520px;margin:0 auto">
+        Automatic 360° research: prices, news, technicals, and a model
+        tournament — with the evidence for every conclusion.</div>
+      <div class="tok" style="margin-top:22px">TopBar (not drawn): logo · Compare · Help · Pro mode · account</div>
+    </div>
+    <footer class="disc">Research analysis, not investment advice.</footer>
+  </div>
+</section>
+
+<section id="j1">
+  <h2>J1 — Progress</h2>
+  <div class="frame" data-note="real pipeline stages, aria-live=polite; never a bare spinner">
+    <div><span class="chip">NVDA</span> <span class="quiet">Researching… 6.2s</span></div>
+    <ul class="stagelist">
+      <li class="done">Fetching price history <span class="tok">(748 sessions)</span></li>
+      <li class="done">Reading recent news <span class="tok">(12 items, 7 days)</span></li>
+      <li class="run">Computing technical signals</li>
+      <li class="todo">Running the model tournament</li>
+      <li class="todo">Assembling your dossier</li>
+    </ul>
+    <div class="quiet tok">Shown only past 20s: “First-time research for a ticker takes longer;
+      results are cached afterward.”</div>
+  </div>
+</section>
+
+<section id="j2">
+  <h2>J2 — Dossier (the One Screen)</h2>
+  <div class="frame" data-note="SummaryBar sticky; drawers overlay — navigation never leaves the page">
+    <div class="box" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <strong>NVDA</strong> <span>184.22</span>
+      <span class="chip">stance: constructive <span class="tok">--pos-soft</span></span>
+      <span class="chip">regime: uptrend <span class="tok">--accent</span></span>
+      <span class="chip">data through 2026-07-02 <span class="tok">fresh: stamp only</span></span>
+      <span style="margin-left:auto" class="chip">Compare</span><span class="chip">Export</span>
+    </div>
+    <div class="banner tok">Degraded-staleness variant only: “Price data ends 2026-06-24;
+      conclusions may be outdated.” (--breach-soft)</div>
+    <div class="grid2">
+      <div class="box"><strong>Technical</strong> <span class="chip">constructive</span>
+        <table><tr><td>RSI (14)</td><td>61.3</td><td class="quiet">momentum firm, not stretched</td></tr>
+        <tr><td>MACD hist</td><td>+0.42</td><td class="quiet">trend improving</td></tr>
+        <tr><td>20d drawdown</td><td>−2.1%</td><td class="quiet">shallow</td></tr></table>
+        <span class="quiet">All signals →</span> <span class="tok">EvidenceDrawer</span></div>
+      <div class="box"><strong>News &amp; sentiment</strong> <span class="chip">7d: 8 pos · 3 neu · 1 neg</span>
+        <div>“Datacenter capacity expansion” <span class="chip">positive</span><br>
+        <span class="quiet">Why it matters: capacity plans give supply-side input for margin
+        scenarios.</span> <span class="tok">shown only when annotations_status=ok; meta: model+freshness</span></div></div>
+      <div class="box"><strong>Fundamentals</strong><br>
+        <span class="quiet">Fundamentals join the dossier when a provider is configured;
+        the analysis does not depend on them.</span></div>
+      <div class="box"><strong>Model insight</strong>
+        <span class="chip">winner: Regime-filtered momentum</span> <span class="chip">rule-based</span><br>
+        <span class="quiet">Validation score 1.21 — chosen over 4 candidates after
+        walk-forward validation with overfitting penalties.</span><br>
+        <span class="quiet">How this was chosen →</span> <span class="tok">TournamentScoreboard drawer:
+        per-candidate train/val Sharpe, divergence, penalty, score; RL leg status verbatim</span></div>
+    </div>
+    <div class="box" style="height:120px" >Price chart · 260 sessions · regime shading bands
+      <span class="tok">(svg &lt;title&gt; required — F3)</span></div>
+    <footer class="disc">Research analysis, not investment advice. Walk-forward validation on
+      historical data; past performance does not predict future results.</footer>
+  </div>
+</section>
+
+<section id="j3">
+  <h2>J3 — Compare (`/compare?tickers=NVDA,AMD,AVGO`)</h2>
+  <div class="frame" data-note="divergence markers carry measured values, never judgments">
+    <table>
+      <tr><th></th><th>NVDA</th><th>AMD <span class="tok">(building… per-column J1)</span></th><th>AVGO</th></tr>
+      <tr><td>Stance ◆</td><td>constructive</td><td class="quiet">—</td><td>neutral</td></tr>
+      <tr><td>Regime</td><td>uptrend</td><td class="quiet">—</td><td>uptrend</td></tr>
+      <tr><td>Selected model ◆</td><td>Regime-filtered momentum</td><td class="quiet">—</td><td>Ridge (ML)</td></tr>
+      <tr><td>Validation Sharpe</td><td>1.21</td><td class="quiet">—</td><td>0.64</td></tr>
+      <tr><td>Data through</td><td>2026-07-02</td><td class="quiet">—</td><td>2026-07-02</td></tr>
+    </table>
+    <div class="tok">◆ divergence highlight rows (from payload); per-ticker failure renders in-column
+      with the API error, other columns unaffected</div>
+    <footer class="disc">Comparison dimensions come from each ticker's dossier; see the per-ticker
+      dossier for full evidence and limitations.</footer>
+  </div>
+</section>
+
+<section id="j45">
+  <h2>J4 / J5 — No data & error</h2>
+  <div class="row">
+    <div class="box"><strong>No price data found for “XYZW”.</strong><br>
+      <span class="quiet">Did you mean:</span> <span class="chip">XYZ — Example Corp</span><br>
+      <span class="tok">input stays focused; raw 502 detail logged, not shown</span></div>
+    <div class="box"><strong>Research is temporarily unavailable.</strong><br>
+      <span class="quiet">Your ticker is kept — retry when ready.</span>
+      <div style="margin-top:8px"><span class="btn">Retry NVDA</span></div></div>
+  </div>
+</section>
+
+<section id="mobile">
+  <h2>Mobile (&lt;1024px) — stack order</h2>
+  <div class="phone frame" data-note="SummaryBar collapses to two lines; drawers become full-height sheets">
+    <div class="box">NVDA · 184.22 · <span class="chip">constructive</span><br>
+      <span class="tok">uptrend · data through 2026-07-02 · Compare · Export</span></div>
+    <div class="box">Technical</div>
+    <div class="box">News &amp; sentiment</div>
+    <div class="box">Fundamentals</div>
+    <div class="box">Model insight</div>
+    <div class="box" style="height:70px">Chart</div>
+    <footer class="disc">Research analysis, not investment advice.</footer>
+  </div>
+</section>
+</body>
+</html>
