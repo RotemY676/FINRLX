@@ -47,6 +47,21 @@ async def job_daily_fx_freshness(db: AsyncSession) -> str:
     )
 
 
+async def job_daily_price_freshness(db: AsyncSession) -> str:
+    """LEAP F1.5: equity price freshness watchdog (calendar-aware via F2)."""
+    from app.services.price_freshness import (
+        emit_incidents_if_degraded,
+        evaluate_price_freshness,
+    )
+
+    report = await evaluate_price_freshness(db)
+    opened = await emit_incidents_if_degraded(db, report)
+    return (
+        f"tickers={len(report.tickers)} stale={len(report.stale)} "
+        f"degraded={len(report.degraded)} incidents_opened={opened}"
+    )
+
+
 async def job_daily_notify_incidents(db: AsyncSession) -> str:
     result = await notify_unsent_incidents(db)
     return (
@@ -63,6 +78,7 @@ async def job_daily_notify_incidents(db: AsyncSession) -> str:
 DAILY_DAG: list[tuple[str, JobFunc]] = [
     ("daily_fx_refresh", job_daily_fx_refresh),
     ("daily_fx_freshness", job_daily_fx_freshness),
+    ("daily_price_freshness", job_daily_price_freshness),  # LEAP F1.5
     ("daily_notify_incidents", job_daily_notify_incidents),
 ]
 

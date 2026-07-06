@@ -107,6 +107,63 @@ def _compute_relative_volume(volumes: list[int], lookback: int) -> tuple[float |
     return round(volumes[-1] / avg, 4), "ok"
 
 
+def _ema_series(values: list[float], span: int) -> list[float]:
+    """Standard EMA with alpha=2/(span+1), seeded with the first value."""
+    alpha = 2.0 / (span + 1.0)
+    out = [values[0]]
+    for v in values[1:]:
+        out.append(alpha * v + (1.0 - alpha) * out[-1])
+    return out
+
+
+def _compute_macd_hist(closes: list[float]) -> tuple[float | None, str]:
+    """MACD histogram: (EMA12 - EMA26) minus its EMA9 signal, at the last bar."""
+    if len(closes) < 35:
+        return None, "insufficient_data"
+    ema12 = _ema_series(closes, 12)
+    ema26 = _ema_series(closes, 26)
+    macd_line = [a - b for a, b in zip(ema12, ema26)]
+    signal = _ema_series(macd_line, 9)
+    return round(macd_line[-1] - signal[-1], 6), "ok"
+
+
+def _compute_rsi_wilder(closes: list[float], period: int = 14) -> tuple[float | None, str]:
+    """Wilder-smoothed RSI over `period` days, 0-100."""
+    if len(closes) < period + 1:
+        return None, "insufficient_data"
+    gains, losses = [], []
+    for prev, cur in zip(closes[:-1], closes[1:]):
+        change = cur - prev
+        gains.append(max(change, 0.0))
+        losses.append(max(-change, 0.0))
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    for g, l in zip(gains[period:], losses[period:]):
+        avg_gain = (avg_gain * (period - 1) + g) / period
+        avg_loss = (avg_loss * (period - 1) + l) / period
+    if avg_loss == 0:
+        return 100.0, "ok"
+    rs = avg_gain / avg_loss
+    return round(100.0 - 100.0 / (1.0 + rs), 4), "ok"
+
+
+def _compute_turbulence(closes: list[float], lookback: int = 20) -> tuple[float | None, str]:
+    """Per-asset turbulence: squared z-score of the latest daily return
+    against the trailing `lookback`-day return distribution."""
+    if len(closes) < lookback + 2:
+        return None, "insufficient_data"
+    rets = [(b - a) / a for a, b in zip(closes[:-1], closes[1:]) if a != 0]
+    if len(rets) < lookback + 1:
+        return None, "insufficient_data"
+    window, latest = rets[-(lookback + 1):-1], rets[-1]
+    mean = sum(window) / len(window)
+    var = sum((r - mean) ** 2 for r in window) / (len(window) - 1)
+    if var <= 0:
+        return None, "insufficient_data"
+    z = (latest - mean) / (var ** 0.5)
+    return round(z * z, 6), "ok"
+
+
 # ── Service class ────────────────────────────────────────────────────
 
 class FeatureService:
@@ -277,6 +334,14 @@ class FeatureService:
                     unit = "pct"
                 elif defn.key == "volatility_20d":
                     value, quality = _compute_volatility(closes, window)
+                elif defn.key == "volatility_60d":
+                    value, quality = _compute_volatility(closes, 60)
+                elif defn.key == "macd_hist_12_26_9":
+                    value, quality = _compute_macd_hist(closes)
+                elif defn.key == "rsi_14":
+                    value, quality = _compute_rsi_wilder(closes)
+                elif defn.key == "turbulence_20d":
+                    value, quality = _compute_turbulence(closes)
                     unit = "ratio"
                 elif defn.key == "drawdown_20d":
                     value, quality = _compute_drawdown(closes, window)

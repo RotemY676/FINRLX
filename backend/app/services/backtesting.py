@@ -198,23 +198,47 @@ class BacktestService:
             "volatility": vol,
         }
 
-    def _generate_rebalance_dates(self, start: date, end: date, frequency: str) -> list[date]:
-        """Generate rebalance dates between start and end."""
+    def _generate_rebalance_dates(
+        self,
+        start: date,
+        end: date,
+        frequency: str,
+        use_trading_calendar: bool = False,
+    ) -> list[date]:
+        """Generate rebalance dates between start and end.
+
+        Default behavior is byte-identical to the historical weekday logic so
+        existing backtests and replays reproduce exactly (LEAP G3.2/G4.2).
+        `use_trading_calendar=True` (LEAP F2, opt-in for new pipelines) snaps
+        to real exchange sessions, excluding holidays.
+        """
+        if use_trading_calendar:
+            from app.utils import trading_calendar as _tc
+
+            def _is_day(x: date) -> bool:
+                return _tc.is_session(x)
+
+            def _snap(x: date) -> date:
+                while not _tc.is_session(x):
+                    x = x + timedelta(days=1)
+                return x
+        else:
+            def _is_day(x: date) -> bool:
+                return x.weekday() < 5
+
+            def _snap(x: date) -> date:
+                while x.weekday() >= 5:
+                    x = x + timedelta(days=1)
+                return x
         dates = []
         d = start
         while d <= end:
-            if d.weekday() < 5:  # skip weekends
+            if _is_day(d):  # skip non-trading days
                 dates.append(d)
             if frequency == REBALANCE_MONTHLY:
-                # Advance ~30 days
-                d += timedelta(days=30)
-                # Snap to next weekday
-                while d.weekday() >= 5:
-                    d += timedelta(days=1)
+                d = _snap(d + timedelta(days=30))
             else:  # weekly
-                d += timedelta(days=7)
-                while d.weekday() >= 5:
-                    d += timedelta(days=1)
+                d = _snap(d + timedelta(days=7))
         return dates
 
     async def run_backtest(

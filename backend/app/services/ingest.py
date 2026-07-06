@@ -174,6 +174,12 @@ def _fetch_bars_by_provider(
         )
         return bars, warnings
     if source == "yfinance":
+        from app.core.config import settings
+        if settings.leap_price_chain:
+            bars, warnings, _used = chain_provider.fetch_bars_chain(
+                ticker, asset_id, date_from, date_to
+            )
+            return bars, warnings
         return yfinance_provider.fetch_bars(ticker, asset_id, date_from, date_to)
     return _generate_bars(ticker, asset_id, date_from, date_to, source), []
 
