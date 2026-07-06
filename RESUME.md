@@ -1,12 +1,13 @@
 # PROGRAM LEAP — RESUME marker (§2.2)
-DONE: F0, F1(be), F2(core), S1, S2, S3, S4, S5(+chart), S6(be+UI), S7a
-(route flip: / = Simple Mode, command center -> /pro with switcher links,
-/simple alias kept), S8, S9, C1-prep. Frontend gates all green in-env
-(tsc/eslint/vitest 50/next build); backend 1281 green.
-Remaining program:
-1. S7b: full D33 migration of manual surfaces under /pro/* + redirects CSV
-   e2e spec (buildable here; e2e run needs Playwright browsers).
-3. F1.6 staleness badges on Pro surfaces.
-4. F3 sweeps + C1 close + tag leap-v1 — REQUIRES Playwright browsers +
-   production network + E1 token (workflow scope). These are the only
-   environment-blocked items left.
+DONE: F0, F1 (CLOSED end-to-end incl. F1.6 UI), F2(core), S1, S2, S3, S4,
+S5 (+polish), S6 (backend+UI), S7a, S8, S9, C1-prep. All in-env gates green:
+backend 1282/0, frontend tsc+eslint+vitest 51+build.
+Remaining program — ONLY these:
+1. S7b: full D33 migration of remaining manual surfaces under /pro/* with the
+   redirects CSV + e2e spec (large; buildable here, e2e run env-blocked).
+2. F2 leftover: session-filtered ingest ranges (low priority).
+3. F3 sweeps (logged-out re-verify + first authenticated) — env-blocked
+   (Playwright browser download domain + production network).
+4. C1 close report + tag leap-v1 — after F3.
+5. E1 operator item: rotate exposed token (fine-grained, workflow scope) and
+   install DOCS/ci/leap-ci.yml.pending.

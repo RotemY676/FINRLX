@@ -25,6 +25,7 @@ import { PriceChartCard } from "@/components/charts/PriceChartCard";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { Icon } from "@/components/icons/Icon";
 import { FundamentalsPanel } from "@/components/research/FundamentalsPanel";
+import { PriceFreshnessBadge } from "@/components/research/PriceFreshnessBadge";
 import { PeersPanel } from "@/components/research/PeersPanel";
 import { DocumentsPanel } from "@/components/research/DocumentsPanel";
 import { InsightsPanel } from "@/components/research/InsightsPanel";
@@ -76,6 +77,7 @@ export default function ResearchTickerPage({ params }: PageProps) {
             ← Research hub
           </Link>
           <h1 className="text-page-title text-ink mt-1 font-mono">{ticker}</h1>
+          <div className="mt-1"><PriceFreshnessBadge ticker={ticker} /></div>
           <p className="text-body-sm text-ink-2 mt-1 max-w-xl leading-snug">
             Research workspace. Output here is informational — not a
             recommendation to buy or sell the security.

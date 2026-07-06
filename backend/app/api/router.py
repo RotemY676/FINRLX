@@ -5,6 +5,7 @@ from app.api.v1.actions import router as actions_router
 from app.api.v1.analysis import router as analysis_router
 from app.api.v1.assets import router as assets_router
 from app.api.v1.autopilot import router as autopilot_router
+from app.api.v1.price_freshness import router as price_freshness_router
 from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.backtests import router as backtests_router
@@ -54,6 +55,7 @@ api_router = APIRouter()
 api_router.include_router(overview_router, tags=["overview"])
 api_router.include_router(analysis_router, tags=["analysis"])
 api_router.include_router(autopilot_router, tags=["autopilot"])
+api_router.include_router(price_freshness_router, tags=["prices"])
 api_router.include_router(recommendations_router, tags=["recommendations"])
 api_router.include_router(decision_router, tags=["decision"])
 api_router.include_router(comparison_router, tags=["comparison"])

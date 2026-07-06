@@ -22,7 +22,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 - News "why this matters": BACKEND LANDED (flag+provider+canary-gated, adversarial validator; dossier News card integration); assistant still stub
 - Authenticated a11y sweep: NEVER RUN → F3
 - Trading calendar: LANDED (watchdog integrated; 2 call-sites pending)
-- Price provider chain: LANDED backend (yfinance→stooq→cache, provenance, quality flags, watchdog); UI pending
+- Price provider chain: CLOSED end-to-end (chain, provenance, quality flags, calendar-aware watchdog, DAG, LEAP_PRICE_CHAIN flag, /prices/freshness API, Pro research badge)
 
 ## LEAP phase ledger
 | Phase | Status | PR | Report |
@@ -43,7 +43,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | DEBT-S5-2 | OPEN — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
 | S7a route flip | DONE — / is Simple Mode; command center at /pro; Pro switcher in both shells; council PASS | leap/F0-bootstrap | council/S7A_* |
 | S5 polish | DONE — autocomplete + §5b-binding export (council PASS) | leap/F0-bootstrap | exportDossier.ts + binding test |
-| F3, S7b, F1.6, C1 | remaining per RESUME.md (S7b/F1.6 buildable; sweeps env-blocked) | — | RESUME.md |
+| F1.6 staleness UI | DONE — /prices/freshness API + PriceFreshnessBadge on /research/[ticker] (council PASS) | leap/F0-bootstrap | council/F16_* |
+| F3, S7b, C1 | remaining per RESUME.md (S7b buildable; sweeps env-blocked) | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)
