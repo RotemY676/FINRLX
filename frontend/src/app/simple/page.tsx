@@ -1,115 +1,220 @@
 "use client";
 
-import { useState } from "react";
-import { DossierView, type Dossier } from "./DossierView";
-
 /**
- * PROGRAM LEAP S5 — The One Screen (Simple Mode vertical slice).
- * Type a ticker, get a 360-degree research dossier. Zero configuration
- * (D32); everything automatic and everything explained (D37); research
- * analysis, not advice (D30).
+ * LEAP S5 — Simple Mode: The One Screen (SIMPLE_MODE_SPEC J0-J5).
+ *
+ * Ships at /simple first; S7 flips it to `/` when the Pro migration moves
+ * today's command-center Home to /pro (sequencing per Decision D26).
+ * Replaces the pre-S1 vertical slice, which rendered the payload's raw
+ * engine stance vocabulary — the exact violation the S1 council caught;
+ * all stance rendering now goes through the lib/simpleStance boundary.
+ *
+ * Honesty note (spec J1, binding): the dossier endpoint is one blocking GET,
+ * so the stage list is *indicative* (client-timed pacing) — it never fakes
+ * per-stage completion. Real per-stage progress is DEBT-S5-1.
  */
+
+import { useEffect, useRef, useState } from "react";
+
+import {
+  DegradedBanner,
+  DisclaimerStrip,
+  SummaryBar,
+  VerdictCards,
+  type DossierPayload,
+} from "@/components/simple/DossierView";
+import { track } from "@/lib/analytics";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "https://backend-production-aab8.up.railway.app";
 
-const STAGE_LABELS = [
-  "Fetching price history…",
-  "Reading recent news and sentiment…",
-  "Computing technical vocabulary…",
-  "Running the model tournament…",
-  "Assembling your dossier…",
-];
+const STAGES = [
+  "Fetching price history",
+  "Reading recent news",
+  "Computing technical signals",
+  "Running the model tournament",
+  "Assembling your dossier",
+] as const;
 
-export default function SimplePage() {
-  const [ticker, setTicker] = useState("");
-  const [running, setRunning] = useState(false);
-  const [stageIdx, setStageIdx] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [dossier, setDossier] = useState<Dossier | null>(null);
+type ViewState =
+  | { kind: "hero" }
+  | { kind: "loading"; ticker: string; startedAt: number }
+  | { kind: "dossier"; dossier: DossierPayload }
+  | { kind: "nodata"; ticker: string }
+  | { kind: "error"; ticker: string };
 
-  async function run(e: React.FormEvent) {
-    e.preventDefault();
-    const sym = ticker.toUpperCase().trim();
-    if (!sym) {
-      setError("Enter a ticker symbol to begin.");
-      return;
-    }
-    setRunning(true);
-    setError(null);
-    setDossier(null);
-    setStageIdx(0);
-    const stageTimer = setInterval(
-      () => setStageIdx((i) => Math.min(i + 1, STAGE_LABELS.length - 1)),
-      2500,
-    );
-    try {
-      const resp = await fetch(
-        `${API_BASE}/api/v1/autopilot/dossier?ticker=${encodeURIComponent(sym)}`,
+export default function SimpleModePage() {
+  const [input, setInput] = useState("");
+  const [state, setState] = useState<ViewState>({ kind: "hero" });
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (state.kind === "loading") {
+      timerRef.current = setInterval(
+        () => setElapsed((Date.now() - state.startedAt) / 1000),
+        250,
       );
-      if (!resp.ok) {
-        const body = await resp.json().catch(() => null);
-        throw new Error(body?.detail || `Request failed (${resp.status})`);
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }
+    setElapsed(0);
+    return undefined;
+  }, [state]);
+
+  async function research(rawTicker: string) {
+    const ticker = rawTicker.trim().toUpperCase();
+    if (!ticker) return;
+    const startedAt = Date.now();
+    setState({ kind: "loading", ticker, startedAt });
+    void track("leap.simple_ticker_submitted");
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/autopilot/dossier?ticker=${encodeURIComponent(ticker)}`,
+      );
+      if (res.status === 400 || res.status === 502) {
+        setState({ kind: "nodata", ticker });
+        return;
       }
-      const body = await resp.json();
-      setDossier(body.data as Dossier);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Analysis failed.");
-    } finally {
-      clearInterval(stageTimer);
-      setRunning(false);
+      if (!res.ok) {
+        setState({ kind: "error", ticker });
+        return;
+      }
+      const body = (await res.json()) as { data: DossierPayload };
+      setState({ kind: "dossier", dossier: body.data });
+      void track("leap.dossier_rendered", {
+        ms: Date.now() - startedAt,
+        cached: Boolean(body.data.served_from_cache || body.data.served_from_persistence),
+      });
+    } catch {
+      setState({ kind: "error", ticker });
     }
   }
 
+  /* Indicative pacing — explicitly not a claim of backend progress. */
+  const indicativeStage = Math.min(Math.floor(elapsed / 1.2), STAGES.length - 1);
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-ink">Research any stock</h1>
-      <p className="mt-1 text-sm text-ink-2">
-        Type a ticker. FINRLX runs the full 360° research pipeline —
-        prices, news, technicals, and an automatic model tournament — and
-        explains everything it finds. No settings, no setup.
-      </p>
-
-      <form onSubmit={run} className="mt-5 flex gap-2">
-        <input
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value)}
-          placeholder="e.g. NVDA"
-          aria-label="Stock ticker symbol"
-          className="w-40 rounded-lg border border-line bg-surface px-3 py-2 text-lg uppercase text-ink outline-none focus:border-accent"
-          maxLength={10}
-          data-testid="ticker-input"
-        />
-        <button
-          type="submit"
-          disabled={running}
-          className="rounded-lg bg-primary px-5 py-2 text-lg font-medium text-primary-ink disabled:opacity-50"
-          data-testid="run-button"
-        >
-          {running ? "Researching…" : "Research"}
-        </button>
-      </form>
-
-      {running && (
-        <div className="mt-6 rounded-xl border border-line bg-surface p-4" data-testid="progress" aria-live="polite">
-          <p className="text-sm text-ink-2">{STAGE_LABELS[stageIdx]}</p>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded bg-surface-3">
-            <div
-              className="h-full bg-accent transition-all duration-700"
-              style={{ width: `${((stageIdx + 1) / STAGE_LABELS.length) * 100}%` }}
+    <main className="mx-auto max-w-5xl space-y-4 px-4 py-8">
+      {state.kind === "hero" && (
+        <section className="py-16 text-center">
+          <h1 className="mb-5 text-2xl font-bold text-[var(--ink)]">Research any stock</h1>
+          <form
+            className="mx-auto flex max-w-md gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void research(input);
+            }}
+          >
+            <input
+              autoFocus
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Try NVDA"
+              aria-label="Stock ticker"
+              className="w-full rounded-lg border border-[var(--line-strong)] bg-[var(--surface)] px-4 py-3 text-lg text-[var(--ink)]"
             />
-          </div>
-        </div>
+            <button
+              type="submit"
+              className="rounded-lg bg-[var(--primary)] px-5 py-3 font-semibold text-[var(--primary-ink)]"
+            >
+              Research
+            </button>
+          </form>
+          <p className="mx-auto mt-4 max-w-lg text-sm text-[var(--ink-2)]">
+            Automatic 360° research: prices, news, technicals, and a model tournament —
+            with the evidence for every conclusion.
+          </p>
+          <p className="mt-8 text-xs text-[var(--ink-4)]">
+            Research analysis, not investment advice.
+          </p>
+        </section>
       )}
 
-      {error && (
-        <p className="mt-6 rounded-lg bg-breach-soft p-3 text-sm text-breach" data-testid="error">
-          {error}
-        </p>
+      {state.kind === "loading" && (
+        <section aria-live="polite" className="mx-auto max-w-md py-16">
+          <p className="mb-3 text-sm text-[var(--ink-2)]">
+            <span className="font-semibold text-[var(--ink)]">{state.ticker}</span> —
+            researching… {elapsed.toFixed(1)}s
+          </p>
+          <ol className="space-y-1 text-sm">
+            {STAGES.map((stage, i) => (
+              <li
+                key={stage}
+                className={
+                  i < indicativeStage
+                    ? "text-[var(--ink-2)]"
+                    : i === indicativeStage
+                      ? "font-medium text-[var(--ink)]"
+                      : "text-[var(--ink-4)]"
+                }
+              >
+                {i < indicativeStage ? "✓ " : i === indicativeStage ? "… " : "○ "}
+                {stage}
+              </li>
+            ))}
+          </ol>
+          {elapsed > 20 && (
+            <p className="mt-3 text-xs text-[var(--ink-2)]">
+              First-time research for a ticker takes longer; results are cached afterward.
+            </p>
+          )}
+        </section>
       )}
 
-      {dossier && <DossierView dossier={dossier} />}
+      {state.kind === "dossier" && (
+        <>
+          <SummaryBar dossier={state.dossier} />
+          <DegradedBanner dossier={state.dossier} />
+          <VerdictCards dossier={state.dossier} />
+          <DisclaimerStrip disclaimers={state.dossier.disclaimers} />
+          <button
+            type="button"
+            className="text-sm text-[var(--primary)] underline"
+            onClick={() => {
+              setInput("");
+              setState({ kind: "hero" });
+            }}
+          >
+            Research another stock
+          </button>
+        </>
+      )}
+
+      {state.kind === "nodata" && (
+        <section className="mx-auto max-w-md py-16 text-center">
+          <p className="font-semibold text-[var(--ink)]">
+            No price data found for “{state.ticker}”.
+          </p>
+          <button
+            type="button"
+            className="mt-4 text-sm text-[var(--primary)] underline"
+            onClick={() => setState({ kind: "hero" })}
+          >
+            Try another ticker
+          </button>
+        </section>
+      )}
+
+      {state.kind === "error" && (
+        <section className="mx-auto max-w-md py-16 text-center">
+          <p className="font-semibold text-[var(--ink)]">
+            Research is temporarily unavailable.
+          </p>
+          <p className="mt-1 text-sm text-[var(--ink-2)]">
+            Your ticker is kept — retry when ready.
+          </p>
+          <button
+            type="button"
+            className="mt-4 rounded-lg border border-[var(--line-strong)] px-4 py-2 text-sm"
+            onClick={() => void research(state.ticker)}
+          >
+            Retry {state.ticker}
+          </button>
+        </section>
+      )}
     </main>
   );
 }

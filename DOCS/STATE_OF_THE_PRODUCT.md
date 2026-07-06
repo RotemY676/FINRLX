@@ -38,7 +38,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | C1 prep | state-drift check wired into ci_gate | leap/F0-bootstrap | scripts/state_drift_check.py |
 | S1 design sprint | DONE (spec + wireframes + copy deck; 2 council PASS verdicts, 4 findings fixed incl. stance-vocabulary mapping) | leap/F0-bootstrap | DOCS/design/*, council/S1_* |
 | DEBT-S5-1 | OPEN — job-polling endpoint for real per-stage progress (v1 progress is indicative) | — | SIMPLE_MODE_SPEC.md §J1 |
-| F3, S5, S7, C1 | FRONTEND BUILD TRACK — Claude Code required | — | RESUME.md |
+| S5 One Screen | VERTICAL SLICE DONE at /simple (route flip to / lands with S7) | leap/F0-bootstrap | src/app/simple, src/lib/simpleStance*, wording test |
+| F3, S6-UI, S7, C1 | remaining — build possible here; e2e/sweeps need Playwright+prod access | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

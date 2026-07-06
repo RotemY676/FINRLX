@@ -19,7 +19,13 @@ export type AnalyticsEvent =
   | "first_rec_view"
   | "paper_trade"
   | "replay_open"
-  | "disclaimer_accept";
+  | "disclaimer_accept"
+  // LEAP D25 — Simple Mode events (no PII in properties)
+  | "leap.simple_ticker_submitted"
+  | "leap.dossier_rendered"
+  | "leap.evidence_expanded"
+  | "leap.scoreboard_opened"
+  | "leap.compare_started";
 
 type Posthog = {
   init: (key: string, config: Record<string, unknown>) => void;
