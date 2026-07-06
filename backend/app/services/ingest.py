@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.base import gen_uuid
 from app.models.ingestion import IngestionManifest, MarketBar, NewsEvent
 from app.models.reference import Asset
-from app.services.data_providers import yfinance_provider
+from app.services.data_providers import chain_provider, yfinance_provider
 
 logger = logging.getLogger(__name__)
 
@@ -163,10 +163,16 @@ def _fetch_bars_by_provider(
     """Dispatch to the configured provider, returning (bars, warnings).
 
     `source` is treated as a freeform manifest label for backward compatibility.
-    The only special-cased provider key is "yfinance"; everything else routes
+    Special-cased provider keys: "chain" (LEAP F1 provider chain, D1) and
+    "yfinance"; everything else routes
     to the deterministic local generator (which stamps the original `source`
     onto each bar so callers can still tell ingestions apart).
     """
+    if source == chain_provider.CHAIN_SOURCE:
+        bars, warnings, _used = chain_provider.fetch_bars_chain(
+            ticker, asset_id, date_from, date_to
+        )
+        return bars, warnings
     if source == "yfinance":
         return yfinance_provider.fetch_bars(ticker, asset_id, date_from, date_to)
     return _generate_bars(ticker, asset_id, date_from, date_to, source), []
