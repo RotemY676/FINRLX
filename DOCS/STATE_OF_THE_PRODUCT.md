@@ -19,7 +19,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 - ml_return_forecaster: REAL MODEL LANDED (ml_forecaster.py, regularized HistGBR, leakage-tested); engine wiring to model_predictions pending S2/S4 integration
 - Decision page deep links / audit drawer / gate checklist / hero split: DEFERRED → S7
 - IA consolidation + /news→/insights: DEFERRED → S7 (as /pro migration)
-- News "why this matters" + assistant: STUB → S9
+- News "why this matters": BACKEND LANDED (flag+provider+canary-gated, adversarial validator; dossier News card integration); assistant still stub
 - Authenticated a11y sweep: NEVER RUN → F3
 - Trading calendar: LANDED (watchdog integrated; 2 call-sites pending)
 - Price provider chain: LANDED backend (yfinance→stooq→cache, provenance, quality flags, watchdog); UI pending
@@ -34,7 +34,9 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S4 tournament core + ML leg | CORE DONE (adapters/integration in RESUME.md) | leap/F0-bootstrap | test suites test_leap_s4_* |
 | S2 autopilot backend | DONE (pipeline+persistence+compare; UI pending) | leap/F0-bootstrap | test_leap_autopilot.py, test_leap_s2_persistence_compare.py |
 | S8 background autonomy | DONE backend (DAG refresh + material-change incidents) | leap/F0-bootstrap | test_leap_s8_refresh.py |
-| F3, S1, S5, S7, S9, C1 | NOT STARTED (S6 backend DONE) | — | — |
+| S9 sourced annotations | DONE backend (flag OFF by default; E3 key enables) | leap/F0-bootstrap | test_leap_s9_annotations.py |
+| C1 prep | state-drift check wired into ci_gate | leap/F0-bootstrap | scripts/state_drift_check.py |
+| F3, S1, S5, S7, C1 | FRONTEND TRACK — Claude Code required | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

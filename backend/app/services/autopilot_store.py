@@ -20,6 +20,7 @@ never recommendations/publication tables; the regression test asserts it.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from datetime import UTC, datetime
 
@@ -87,8 +88,50 @@ async def get_or_build_dossier(db: AsyncSession, raw_ticker: str) -> dict:
     if persisted is not None and persisted.get("config_version") == CONFIG_VERSION:
         return persisted
     dossier = await asyncio.to_thread(build_dossier, ticker)
+    await _attach_annotations(dossier)
     await persist_dossier(db, dossier)
     return dossier
+
+
+def _news_item_id(item: dict) -> str:
+    raw = f"{item.get('date','')}|{item.get('title','')}"
+    return "n-" + hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+
+
+async def _attach_annotations(dossier: dict) -> None:
+    """LEAP S9 (D16): flag/provider/canary-gated 'why this matters' notes on
+    the dossier News card. Additive and failure-proof: any non-ok status
+    leaves the dossier exactly as built, with the status recorded."""
+    from app.services.news_annotations import annotate_items
+
+    news = (dossier.get("sections") or {}).get("news_sentiment") or {}
+    items = news.get("items_7d") or []
+    enriched = [
+        {
+            "item_id": _news_item_id(i),
+            "published_at": i.get("date"),
+            "title": i.get("title", ""),
+            "summary": i.get("title", ""),
+        }
+        for i in items
+    ]
+    try:
+        result = await annotate_items(dossier["ticker"], enriched)
+    except Exception:  # noqa: BLE001 — annotations must never break dossiers
+        news["annotations_status"] = "generation_error"
+        return
+    news["annotations_status"] = result["status"]
+    if result["status"] == "ok" and result["annotations"]:
+        by_id = {a["source_binding"]["item_id"]: a for a in result["annotations"]}
+        for i in items:
+            ann = by_id.get(_news_item_id(i))
+            if ann:
+                i["why_this_matters"] = ann["annotation"]
+                i["annotation_meta"] = {
+                    "model": ann["model"],
+                    "generated_at": ann["generated_at"],
+                    "freshness_stamp": ann["freshness_stamp"],
+                }
 
 
 # ── comparison (S6) ─────────────────────────────────────────────────────────

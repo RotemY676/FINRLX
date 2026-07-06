@@ -12,4 +12,5 @@ npx tsc --noEmit
 npx eslint . --max-warnings=0 || npx next lint --max-warnings=0
 npx vitest run --reporter=dot
 npx next build
+python3 "$ROOT/scripts/state_drift_check.py"
 echo "== LEAP CI GATE: PASS =="
