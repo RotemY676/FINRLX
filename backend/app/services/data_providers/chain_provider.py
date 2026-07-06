@@ -18,7 +18,7 @@ per-bar fetched_at/provenance columns are tracked as F1 remaining work).
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from app.services.data_providers import stooq_provider, yfinance_provider
@@ -54,6 +54,11 @@ def fetch_bars_chain(
         bars, warnings = module.fetch_bars(ticker, asset_id, start, end)
         all_warnings.extend(warnings)
         if bars:
+            fetched_at = datetime.now(timezone.utc)
+            for bar in bars:
+                bar["fetched_at"] = fetched_at
+                bar["chain_position"] = position
+            _apply_quality_flags(bars, all_warnings)
             all_warnings.append(f"chain: served by {name} (position {position})")
             if position > 1:
                 logger.warning(
@@ -69,3 +74,38 @@ def fetch_bars_chain(
         "existing cached bars remain authoritative (stale)"
     )
     return [], all_warnings, None
+
+
+# ── data quality (D8) ───────────────────────────────────────────────────────
+
+SUSPECT_MOVE_THRESHOLD = 0.40  # |day-over-day close change| beyond this is flagged
+
+
+def _apply_quality_flags(bars: list[dict[str, Any]], warnings: list[str]) -> None:
+    """Flag (never silently drop) bars that fail D8 sanity rules.
+
+    Flagged bars persist with quality_flag set; the feature layer excludes
+    them, and ops surfaces show them. Providers already reject nonpositive
+    prices via validate_bar; this adds the cross-bar checks.
+    """
+    ordered = sorted(bars, key=lambda b: b["bar_date"])
+    seen_dates: set = set()
+    prev_close: float | None = None
+    for bar in ordered:
+        if bar["bar_date"] in seen_dates:
+            bar["quality_flag"] = "duplicate"
+            warnings.append(f"quality: duplicate bar flagged {bar['ticker']} {bar['bar_date']}")
+        seen_dates.add(bar["bar_date"])
+        close = bar["close"]
+        if close <= 0:
+            bar["quality_flag"] = "nonpositive"
+            warnings.append(f"quality: nonpositive close flagged {bar['ticker']} {bar['bar_date']}")
+        elif prev_close and prev_close > 0:
+            move = abs(close / prev_close - 1.0)
+            if move > SUSPECT_MOVE_THRESHOLD:
+                bar["quality_flag"] = "suspect_move"
+                warnings.append(
+                    f"quality: suspect move {move:.0%} flagged {bar['ticker']} {bar['bar_date']}"
+                )
+        if bar.get("quality_flag") != "suspect_move" or prev_close is None:
+            prev_close = close

@@ -44,6 +44,10 @@ class MarketBar(Base, TimestampMixin):
     close: Mapped[float] = mapped_column(Float, nullable=False)
     volume: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="local")
+    # LEAP F1 (D7/D8): per-bar provenance + data-quality flag. Additive, nullable.
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    chain_position: Mapped[int | None] = mapped_column(Integer)
+    quality_flag: Mapped[str | None] = mapped_column(String(30))  # suspect_move|duplicate|nonpositive
 
 
 class NewsEvent(Base, TimestampMixin):

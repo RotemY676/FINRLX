@@ -154,6 +154,7 @@ class FeatureService:
         stmt = (
             select(MarketBar.bar_date, MarketBar.close, MarketBar.volume)
             .where(MarketBar.asset_id == asset_id)
+            .where(MarketBar.quality_flag.is_(None))  # LEAP F1 (D8): flagged bars excluded
             .where(MarketBar.bar_date <= before)
             .where(MarketBar.interval == "1d")
             .order_by(MarketBar.bar_date.desc())
