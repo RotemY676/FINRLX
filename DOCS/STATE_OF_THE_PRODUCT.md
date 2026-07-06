@@ -33,7 +33,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S3 indicator pack | DONE (additive, replay-safe) | leap/F0-bootstrap | in F2/S-batch commits |
 | S4 tournament core + ML leg | CORE DONE (adapters/integration in RESUME.md) | leap/F0-bootstrap | test suites test_leap_s4_* |
 | S2 autopilot backend | DONE (pipeline+persistence+compare; UI pending) | leap/F0-bootstrap | test_leap_autopilot.py, test_leap_s2_persistence_compare.py |
-| F3, S1, S5–S9, C1 | NOT STARTED (S6 backend DONE) | — | — |
+| S8 background autonomy | DONE backend (DAG refresh + material-change incidents) | leap/F0-bootstrap | test_leap_s8_refresh.py |
+| F3, S1, S5, S7, S9, C1 | NOT STARTED (S6 backend DONE) | — | — |
 
 ## Feature flags
 (none yet; D23 registry starts here)

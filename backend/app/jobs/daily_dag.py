@@ -62,6 +62,19 @@ async def job_daily_price_freshness(db: AsyncSession) -> str:
     )
 
 
+async def job_daily_dossier_refresh(db: AsyncSession) -> str:
+    """LEAP S8 (D38): budget-aware refresh of recently-researched dossiers,
+    with material-change incidents that daily_notify_incidents delivers."""
+    from app.services.autopilot_refresh import refresh_dossiers
+
+    report = await refresh_dossiers(db)
+    return (
+        f"evaluated={report.evaluated} refreshed={len(report.refreshed)} "
+        f"fresh={len(report.skipped_fresh)} over_budget={len(report.skipped_budget)} "
+        f"failed={len(report.failed)} change_incidents={report.material_change_incidents}"
+    )
+
+
 async def job_daily_notify_incidents(db: AsyncSession) -> str:
     result = await notify_unsent_incidents(db)
     return (
@@ -79,6 +92,7 @@ DAILY_DAG: list[tuple[str, JobFunc]] = [
     ("daily_fx_refresh", job_daily_fx_refresh),
     ("daily_fx_freshness", job_daily_fx_freshness),
     ("daily_price_freshness", job_daily_price_freshness),  # LEAP F1.5
+    ("daily_dossier_refresh", job_daily_dossier_refresh),  # LEAP S8
     ("daily_notify_incidents", job_daily_notify_incidents),
 ]
 
