@@ -67,3 +67,4 @@ anthropic==0.42.0
 # extraction module is parser-agnostic.
 beautifulsoup4==4.12.3
 exchange_calendars>=4.5  # LEAP F2 trading calendar (D3/D21')
+scikit-learn>=1.6  # LEAP S4 ML forecaster leg (D21'/D35b)

@@ -16,7 +16,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 - Operator console, universe CRUD with soft-delete provenance, onboarding wizard
 
 ## Stubbed / flagged / deferred (from FINRLX_UNIMPLEMENTED_FUNCTIONALITY_AUDIT.md)
-- ml_return_forecaster: STUB → planned real in S4
+- ml_return_forecaster: REAL MODEL LANDED (ml_forecaster.py, regularized HistGBR, leakage-tested); engine wiring to model_predictions pending S2/S4 integration
 - Decision page deep links / audit drawer / gate checklist / hero split: DEFERRED → S7
 - IA consolidation + /news→/insights: DEFERRED → S7 (as /pro migration)
 - News "why this matters" + assistant: STUB → S9
@@ -30,7 +30,9 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | F0 bootstrap | DONE | leap/F0-bootstrap | PHASE_LEAP_F0_REPORT.md |
 | F1 provider chain | BACKEND DONE (UI badges + flag flip in RESUME.md) | leap/F0-bootstrap | PHASE_LEAP_F1_REPORT_PARTIAL.md |
 | F2 trading calendar | CORE DONE (ingest+backtest call-sites in RESUME.md) | leap/F0-bootstrap | PHASE_LEAP_F2_REPORT_PARTIAL.md |
-| F3, S1–S9, C1 | NOT STARTED | — | — |
+| S3 indicator pack | DONE (additive, replay-safe) | leap/F0-bootstrap | in F2/S-batch commits |
+| S4 tournament core + ML leg | CORE DONE (adapters/integration in RESUME.md) | leap/F0-bootstrap | test suites test_leap_s4_* |
+| F3, S1–S2, S5–S9, C1 | NOT STARTED | — | — |
 
 ## Feature flags
 (none yet; D23 registry starts here)

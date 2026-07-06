@@ -1,10 +1,16 @@
 # PROGRAM LEAP — RESUME marker (§2.2)
-Active phase: F1 — backend COMPLETE; two tasks remain (frontend/toolchain-bound):
-1. (1.6) UI staleness badges on /research/<ticker>, /decision, /analyze via existing
-   freshness components, driven by price_freshness statuses + e2e (needs node toolchain).
-2. Flag flip: LEAP_PRICE_CHAIN env flag (D23) switching default ingest source to
-   "chain"; wire scheduler daily ingest + emit_incidents_if_degraded into daily_dag.
-Then F2 remaining: apply trading_calendar at ingest date-range generation and
-backtest/replay arithmetic with determinism gate G3.2 (utility + watchdog application
-done in this session if F2 committed below).
-Delete this file when F1+F2 fully close.
+Completed through this session: F0; F1 backend (incl. LEAP_PRICE_CHAIN flag + DAG watchdog);
+F2 core + opt-in calendar rebalances; S3 indicator pack; S4 core (tournament with
+overfitting guard + regularized ML forecaster, leakage-tested).
+Next tasks, in order:
+1. S4 continuation: heuristic candidate pack adapters (momentum/mean-reversion/
+   regime-filtered) bridging run_strategy mechanics to tournament CandidateFn;
+   RL leg adapter via research-container artifacts (D35 fallback path);
+   isolation regression test (GS4.4); D39 runtime budget test.
+2. S2: autopilot.py stage runner + job API + dossier schema/migration + cache,
+   composing single_ticker_analysis + tournament + S3 features.
+3. F2 leftover: ingest date-range session filtering (low priority — providers
+   already return traded days).
+4. F1 leftover + all frontend phases (S1 wireframes, S5-S7): Claude Code with
+   node toolchain + rotated token (E1, workflow scope).
+Delete when S2+S4 close.

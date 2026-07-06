@@ -1,0 +1,47 @@
+{
+  "export_id": "7dc3cce3-939c-4306-a21f-98c2b881ec39",
+  "created_at": "2026-07-06T13:06:22.022949+00:00",
+  "name": "Local Research Dataset Export",
+  "scope": "local_research",
+  "research_only": true,
+  "offline_only": true,
+  "shadow_only": true,
+  "no_production_influence": true,
+  "not_eligible_for_promotion": true,
+  "source_candidate_id": null,
+  "source_benchmark_report_id": null,
+  "candidate_metadata": null,
+  "benchmark_metadata": null,
+  "row_count": 1,
+  "date_range": {
+    "start": "2010-01-01",
+    "end": "2010-01-01"
+  },
+  "export_format": "jsonl",
+  "feature_schema": [
+    "price",
+    "engine_score"
+  ],
+  "target_schema": [
+    "next_price",
+    "realized_return"
+  ],
+  "warning_schema": [],
+  "checksum": "de3e266659f67eefee9ab1faf46f422d",
+  "fingerprint": "932fa6f3e0fb6535",
+  "safety_flags": {
+    "research_only": true,
+    "offline_only": true,
+    "shadow_only": true,
+    "no_production_influence": true,
+    "not_eligible_for_promotion": true
+  },
+  "limitations": [
+    "Research-only, offline-only, shadow-only dataset.",
+    "Not used by production recommendations.",
+    "Not eligible for promotion.",
+    "No broker execution.",
+    "No real-time production signal generation."
+  ],
+  "warnings": []
+}
