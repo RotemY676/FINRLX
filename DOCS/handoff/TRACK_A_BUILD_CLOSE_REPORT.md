@@ -37,3 +37,22 @@ Operator items open: E1 (rotate exposed token + install CI), E7 (torch
 research worker → activates real RL + FinGPT lanes), E8 (Finnhub social tier).
 
 Tag `leap-track-a-build` marks this build-complete state.
+
+## Addendum 2026-07-07 — CI incident (post-close)
+A pre-existing `.github/workflows/ci.yml` (predates Program LEAP; runs ruff,
+mypy, pytest, vitest, next build, and Playwright e2e) reported red on `main`.
+Root causes and fixes at 073be872:
+1. **Backend (41s, ruff):** 93 lint violations accumulated across the
+   program's phases (our gates ran pytest/contract suites but never ruff) —
+   cleared; including one REAL latent bug: `sys.exit` without `import sys`
+   in single_ticker_analysis's yfinance-empty path, now a RuntimeError.
+   ruff + mypy + full pytest (1310/0) green locally on CI's exact commands.
+2. **Frontend (6m43s, e2e):** 17 Playwright specs predated the S7b `/pro`
+   migration and asserted the Pro shell on `/` (now Simple Mode) —
+   retargeted; `playwright test --list` compiles 47 tests / 21 files;
+   typecheck + vitest(67/0) + build re-verified with CI's commands.
+**Honest limits:** Playwright cannot execute in this sandbox and the PAT has
+no Actions-read scope, so the next CI run is the arbiter. Residual risk:
+content assertions inside pre-LEAP specs may have drifted beyond routing —
+only CI execution reveals those. Process fix adopted: `ruff check` +
+`mypy` + `playwright --list` join the local phase-gate checklist from now on.
