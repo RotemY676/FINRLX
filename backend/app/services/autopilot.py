@@ -53,7 +53,7 @@ from app.services.single_ticker_analysis import (
 
 logger = logging.getLogger(__name__)
 
-CONFIG_VERSION = "leap-s4-v1"
+CONFIG_VERSION = "a1-leap-s4-v1"
 TICKER_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$")
 
 # D39 defaults (zero-config: constants, not user settings)
@@ -361,6 +361,82 @@ def validate_ticker(raw: str) -> str:
     return sym
 
 
+def _timed(stages: list, name: str, fn):
+    """Run a section builder with timing + total failure containment."""
+    import time as _time
+
+    t0 = _time.time()
+    try:
+        out = fn()
+    except Exception as exc:  # noqa: BLE001 — sections never sink a dossier
+        logger.warning("dossier section %s failed: %s", name, exc)
+        out = {"available": False, "reason": "section_error", "source": name}
+    stages.append({"stage": name, "ms": int((_time.time() - t0) * 1000)})
+    return out
+
+
+def _section_fundamentals(ticker: str, stages: list) -> dict:
+    """LEAP A1 (D43): SEC XBRL trends (keyless, always attempted) + the
+    existing Finnhub fundamentals snapshot when that provider is configured.
+    Context only — never feeds stances (regression-tested)."""
+
+    def _build():
+        from app.services.data_providers.sec_xbrl import build_xbrl_trends
+        from app.services.fundamentals.router import get_provider
+
+        xbrl = build_xbrl_trends(ticker)
+        snapshot: dict = {"available": False, "reason": "provider_not_configured"}
+        provider = get_provider()
+        if provider is not None and provider.__class__.__name__ != "StubFundamentalsProvider":
+            import asyncio
+
+            try:
+                resp = asyncio.run(provider.get_fundamentals(ticker))
+                snapshot = {"available": True, "source": "finnhub", **(
+                    resp.model_dump() if hasattr(resp, "model_dump") else dict(resp)
+                )}
+            except Exception as exc:  # noqa: BLE001
+                snapshot = {"available": False, "reason": str(exc)[:120]}
+        return {
+            "available": bool(xbrl.get("available") or snapshot.get("available")),
+            "xbrl": xbrl,
+            "snapshot": snapshot,
+            "note": None if (xbrl.get("available") or snapshot.get("available")) else (
+                "No fundamentals source reachable (SEC XBRL had no usable facts "
+                "and no provider is configured); the analysis does not depend on them."
+            ),
+        }
+
+    return _timed(stages, "fundamentals", _build)
+
+
+def _section_filings(ticker: str, stages: list) -> dict:
+    def _build():
+        from app.services.data_providers.finnhub_extras import (
+            filings_tone,
+            similarity_index,
+        )
+
+        tone = filings_tone(ticker)
+        sim = similarity_index(ticker)
+        return {
+            "available": bool(tone.get("available") or sim.get("available")),
+            "tone": tone,
+            "similarity": sim,
+        }
+
+    return _timed(stages, "filings", _build)
+
+
+def _section_insider(ticker: str, stages: list) -> dict:
+    def _build():
+        from app.services.data_providers.finnhub_extras import insider_sentiment
+
+        return insider_sentiment(ticker)
+
+    return _timed(stages, "insider", _build)
+
+
 def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> dict:
     """The full autopilot pipeline for one ticker. Synchronous v1 with
     per-stage timings persisted in the payload; cache-backed (D34)."""
@@ -458,10 +534,9 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
                     for n in news_7d[:10]
                 ],
             },
-            "fundamentals": {
-                "available": False,
-                "note": "Fundamentals join the dossier when a provider is configured (Finnhub); the analysis does not depend on them.",
-            },
+            "fundamentals": _section_fundamentals(ticker, stages),
+            "filings": _section_filings(ticker, stages),
+            "insider": _section_insider(ticker, stages),
             "model_insight": tournament,
         },
         "price_series": price_series,

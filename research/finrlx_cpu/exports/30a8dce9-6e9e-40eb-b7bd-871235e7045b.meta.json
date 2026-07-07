@@ -1,0 +1,47 @@
+{
+  "export_id": "30a8dce9-6e9e-40eb-b7bd-871235e7045b",
+  "created_at": "2026-07-07T04:52:04.716530+00:00",
+  "name": "Experiment Tracking Test Export",
+  "scope": "local_research",
+  "research_only": true,
+  "offline_only": true,
+  "shadow_only": true,
+  "no_production_influence": true,
+  "not_eligible_for_promotion": true,
+  "source_candidate_id": null,
+  "source_benchmark_report_id": null,
+  "candidate_metadata": null,
+  "benchmark_metadata": null,
+  "row_count": 23,
+  "date_range": {
+    "start": "2026-03-16",
+    "end": "2026-04-15"
+  },
+  "export_format": "jsonl",
+  "feature_schema": [
+    "price",
+    "engine_score"
+  ],
+  "target_schema": [
+    "next_price",
+    "realized_return"
+  ],
+  "warning_schema": [],
+  "checksum": "cd0e1901be55aa0787038bf9585d3293",
+  "fingerprint": "6847a9bc1f0db85e",
+  "safety_flags": {
+    "research_only": true,
+    "offline_only": true,
+    "shadow_only": true,
+    "no_production_influence": true,
+    "not_eligible_for_promotion": true
+  },
+  "limitations": [
+    "Research-only, offline-only, shadow-only dataset.",
+    "Not used by production recommendations.",
+    "Not eligible for promotion.",
+    "No broker execution.",
+    "No real-time production signal generation."
+  ],
+  "warnings": []
+}
