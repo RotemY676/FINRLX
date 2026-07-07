@@ -1,9 +1,15 @@
 # PROGRAM LEAP — Autonomous Step-Change Execution Plan for FINRLX
 
-**Version:** 3.0 · **Date:** 2026-07-06 · **Supersedes:** v2.0 (same day)
+**Version:** 4.0 · **Date:** 2026-07-06 · **Supersedes:** v3.0 (same day)
 **Companion:** `DOCS/handoff/FINRLX_DEEP_ANALYSIS_REPORT_2026-07-06.md`
 
 **Changelog:**
+v4.0 — **Track A: Analyst Desk** (persona pivot to the experienced investor; see
+`DOCS/handoff/ANALYST_DESK_RESEARCH_REPORT_2026-07-06.md` for the evidence base).
+Adds phases A1–A6 + verification wave V1; Decision Register D41–D52; operator
+items E7–E8; binding process rules from the honesty ledger (ls-remote proof,
+structural DOM tests, screenshot-before-visual-claims). v1–v3 phases F0–S9 are
+COMPLETE and deployed (main @ d7eca5b).
 v3.0 — Program re-centered on the **Simple-Mode Revolution**: ticker-in → automatic 360° research dossier out, zero configuration; new Autopilot Research Engine with automatic model tournament (heuristics + ML + shadow-RL candidates, auto-selected per ticker with overfitting guards); The One Screen as the default product; all manual/advanced surfaces migrated to a Pro area; agent + council development topology for Claude Code (§3); Question-Zero enforcement as a hard gate (§2.5); phases restructured F0–F3 / S1–S9 / C1; new KPIs; Decision Register extended to D40.
 v2.0 — autonomy architecture, D1–D28, file-level phase specs, hardening track, KPIs.
 v1.0 — initial program.
@@ -216,3 +222,112 @@ Appendices A–E of v2.0 (report template, commit/PR conventions, gate commands,
 ---
 
 *End of plan v3.0 — the single source of truth for Program LEAP. Amendments are committed as v3.x with a changelog line.*
+
+
+---
+
+# TRACK A — ANALYST DESK (v4.0 addendum)
+
+Operating contract, phase loop, council protocol, question-zero, RESUME and
+rollback rules: unchanged from §§2–3. Binding additions from the honesty
+ledger: (P1) any claim of a remote state change carries `git ls-remote`
+output in the same command block; (P2) any composition change ships a
+structural rendered-DOM test; (P3) no visual-quality claim without a
+screenshot artifact — where browsers are unavailable, reports state
+"visual sign-off pending" explicitly.
+
+## A. Decision Register additions (D41–D52)
+
+| ID | Decision | Default | Fallback |
+|---|---|---|---|
+| D41 | Desk route | `/desk/[ticker]` inside Pro chrome; Simple dossier gains one "Open full desk" link; Simple Mode itself unchanged | — |
+| D42 | Section streaming | One endpoint per section group: `GET /autopilot/desk/{ticker}/{section}` for `header, chart, signals, tournament, rl, news_social, filings, insider, peers, risk`; each cached/persisted like dossiers; contract E.5; the desk page mounts sections independently with skeletons | Section endpoint failing → that section renders its honest degraded state; page never blocks |
+| D43 | New data adapters | SEC XBRL `companyfacts` (keyless, always on); Finnhub insider-MSPR + filings-sentiment + similarity-index behind existing key; Finnhub social-sentiment behind `FINNHUB_PREMIUM` flag (tier unverified — E8); keyless social fallback = ApeWisdom, labeled "mentions only, unscored" | Any adapter absent → section shows the named missing source, never fabricates |
+| D44 | FinGPT sentiment leg | Inference on the E7 research worker (FinGPT v3-series checkpoint from HuggingFace); every news item stores BOTH scores (lexicon + FinGPT) + agreement metric; UI renders both lanes; FinGPT never influences stances in Track A — display + A/B logging only | E7 absent → single-lane rendering exactly as today, status `research_worker_unavailable` |
+| D45 | FinRL ensemble recipe | PPO/A2C/DDPG smallest-viable configs per the ICAIF-2020 recipe on the E7 worker; quarterly selection by rolling validation Sharpe; turbulence circuit-breaker threshold from policy config; artifacts via the 8E import path; selection-history artifact schema E.6; all under existing isolation invariants (D18/D30 regression-tested) | E7 absent → tournament unchanged; RL lab section shows queued state + what would appear |
+| D46 | Event markers | `{date, type: news|filing|insider|rebalance, label, evidence_ref}`; sources: news dates, filing filed_dates, insider months, tournament rebalances; every marker hover-links its evidence | Source absent → marker class simply absent |
+| D47 | Regime band series | Backend computes per-session historical regime labels via the S3 regime service over rolling windows (closes DEBT-S5-2); engine-config versioned; byte-stable replay gate applies | — |
+| D48 | Signal matrix stats | Per feature: value, percentile vs its own trailing 3-year distribution, 60-session sparkline, plain-language read, methodology drawer text | <1y history → percentile omitted with "insufficient history" note |
+| D49 | Motion rules | framer-motion only (existing dep); numbers count-in once on mount; zero looped animation; sections lazy-mount via IntersectionObserver; D27 budgets advisory until M1 | — |
+| D50 | Peers selection | Finnhub `profile2` industry match (free tier), max 5, else universe co-membership; labeled "auto-selected comparables" | Neither available → section degraded state |
+| D51 | SEC API etiquette | `companyfacts` requests send User-Agent `FINRLX research (SEC_CONTACT_EMAIL env or ops@finrlx)` per SEC policy; polite rate limiting; cached aggressively | — |
+| D52 | Visual verification | A5 merges with structural DOM tests + wording tests; screenshot artifacts required where browsers exist (V1); until then every A5 report carries "visual sign-off pending" (P3) | — |
+
+## B. Operator items (once)
+| # | Item | Unlocks | If skipped |
+|---|---|---|---|
+| E7 | One torch-capable research worker (Railway service from `research/finrlx_cpu`, or scheduled local runs pushing artifacts) | A3 ensemble legs + A2 FinGPT lane | Both degrade honestly; program continues |
+| E8 | Verify/purchase Finnhub tier for `/stock/social-sentiment`; set `FINNHUB_PREMIUM=1` | Scored Reddit/Twitter lane | Mentions-only fallback lane, labeled |
+| E1 | (still open from v1) rotate exposed PAT with workflow scope; install `DOCS/ci/leap-ci.yml.pending` | CI enforcement + future workflow edits | Gates enforced by agent discipline only |
+
+## C. Phase specifications A1–A6, V1
+
+**A1 — Data expansion (filings·insider·XBRL real)** · deps: none · ~3h
+Tasks: SEC XBRL client (`services/data_providers/sec_xbrl.py`, D51) + ratio
+series (revenue, margins, leverage, dilution) with trailing trends; Finnhub
+adapters: insider MSPR, filings sentiment, 10-K similarity index (flagged);
+dossier/desk sections `fundamentals`, `filings`, `insider` become real with
+per-section availability + caveat copy (MSPR noisiness verbatim from report).
+Gates: adapter contract tests incl. absence paths; keyless path always green;
+zero stance influence (regression).
+
+**A2 — Sentiment duality (social lane + FinGPT A/B)** · deps: A1 · ~3h
+Tasks: social adapter (D43) with mentions-fallback labeling; dual-score
+storage per news item + agreement metric (D44); worker-side FinGPT scorer
+job spec + artifact import; `news_social` section payload with divergence
+flag. Gates: both-lane rendering tests; flag-off byte-identical regression;
+divergence math unit-tested; honest statuses.
+
+**A3 — FinRL ensemble legs + selection history** · deps: A1, E7(optional) · ~4h
+Tasks: ensemble runner per D45 in the research container; quarterly-selection
+artifact (E.6) + turbulence-gate events; import → tournament candidates;
+`rl` + `tournament` section payloads gain selection-history strip data.
+Gates: isolation regression (GS4.4 extended); runtime caps; deflated-penalty
+scoring untouched; honest E7-absent path e2e.
+
+**A4 — Dossier v2 payload (everything the desk needs)** · deps: A1–A3 · ~3h
+Tasks: regime band series (D47, closes DEBT-S5-2); event-marker feed (D46);
+full signal-matrix payload (D48); walk-forward split-visualization data;
+section endpoints (D42) + persistence; schema E.5 committed with fixtures.
+Gates: schema contract tests; byte-stable versioning gate (G4.2 pattern);
+warm section reads <500ms test.
+
+**A5 — The Desk UI (`/desk/[ticker]`, sections 1–12)** · deps: A4, S7b(done) · ~6h
+Tasks: Pro-design-system desk shell (GlassCard language) + sticky command
+header + mini-map; master chart (bands, subpanes, hoverable event markers);
+signal-matrix heat grid with drawers; tournament arena (leaderboard, equity
+curves, split visualization, penalty bars, selection strip); RL lab; dual
+sentiment tape; filings intelligence (ratio sparklines, similarity delta,
+tone); insider gauge; peers; risk dials; journal hooks; disclaimer strip;
+"Open full desk" link from Simple dossier; ⌘K section jumps.
+Gates: structural DOM test per section (P2); wording tests extended to
+`/desk`; motion rules tested (no looped animation); bundle within D27;
+report states visual sign-off pending (P3/D52).
+
+**A6 — Live dynamics & alerts** · deps: A5, S8(done) · ~2h
+Tasks: section revalidation on freshness change; score-change count-ins;
+desk alert hooks into S8 material-change incidents; add-to-compare from desk.
+Gates: revalidation tests; no-loop rule; notification evidence-links intact.
+
+**V1 — Verification wave (env-bound; Claude Code)** · deps: all · ~3h
+Tasks: F3 sweeps (logged-out re-verify on final IA + first authenticated) +
+`leap-redirects.spec.ts` run + desk screenshot set (closes every P3 pending)
++ axe on `/desk`; C1 final: measured K-values, close report update, tag
+`leap-v2`. Gates: 0 serious/critical axe; screenshots committed; tag pushed
+with ls-remote proof.
+
+## D. Track-A exit KPIs
+KA1 desk renders 12/12 sections with provenance for a liquid US ticker;
+KA2 signal matrix ≥ full computed feature set with percentiles;
+KA3 tournament arena shows splits + penalties + selection history visually;
+KA4 dual sentiment lanes live (or labeled fallback) with divergence flag;
+KA5 filings section shows XBRL trends + similarity delta;
+KA6 RL lab truthful in both E7 states; KA7 zero questions asked; KA8 every
+visual claim backed by a V1 screenshot.
+
+## E. Risk additions
+FinGPT checkpoint licensing/base-model terms verified before deployment
+(Llama-family licenses) — A2 task, fallback to ChatGLM2-based v3.1 or skip
+leg honestly · SEC rate limits → aggressive caching (D51) · Desk density vs
+performance → lazy mounting + M1 budgets · Finnhub tier surprise → E8
+verification before UI promises (mentions fallback in place).
