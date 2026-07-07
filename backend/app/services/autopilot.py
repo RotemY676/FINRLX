@@ -227,7 +227,7 @@ def build_candidates() -> list[Candidate]:
 
 # ── Tournament (D36, D37) ────────────────────────────────────────────────────
 
-def run_tournament(states: list[RebalanceState]) -> dict:
+def run_tournament(states: list[RebalanceState], ticker: str | None = None) -> dict:
     splits = walk_forward_splits(len(states))
     candidates = build_candidates()
     n_eligible = len(candidates)
@@ -272,6 +272,22 @@ def run_tournament(states: list[RebalanceState]) -> dict:
         })
 
     # Ties break toward the simpler model (D36): heuristic > ml > rl.
+    # LEAP A3 (D45): merge FinRL ensemble agents from the research artifact
+    # (if published for this ticker) under the SAME protocol + re-deflated
+    # penalties; absent/rejected artifacts leave rows untouched.
+    rl_status = _rl_leg_status()
+    if ticker:
+        try:
+            from app.services.finrl_ensemble import merge_rl_candidates
+
+            rows, rl_status = merge_rl_candidates(
+                ticker, rows, splits, n_val_periods, DIVERGENCE_LAMBDA
+            )
+            deflation_penalty = rows[0]["penalty"] if rows else deflation_penalty
+            n_eligible = len(rows)
+        except Exception as _exc:  # noqa: BLE001 — artifact path never sinks the tournament
+            logger.warning("ensemble merge failed for %s: %s", ticker, _exc)
+
     ranked = sorted(rows, key=lambda r: (-r["score"], _COMPLEXITY.get(r["kind"], 9), r["key"]))
     winner = ranked[0]
     rationale = (
@@ -289,7 +305,7 @@ def run_tournament(states: list[RebalanceState]) -> dict:
         "deflation_penalty": deflation_penalty,
         "candidates": ranked,
         "winner": {**winner, "rationale": rationale},
-        "rl": _rl_leg_status(),
+        "rl": rl_status,
         "seed": RANDOM_SEED,
     }
 
@@ -487,7 +503,7 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
     start = bars.dates[max(0, min(60, len(bars.dates) - 1))]
     rebalances = _generate_weekly_rebalances(start, latest)
     states = precompute_rebalance_states(bars, news_items, rebalances)
-    tournament = run_tournament(states)
+    tournament = run_tournament(states, ticker=sym)
     done(s)
 
     s = stage("dossier — assembly")

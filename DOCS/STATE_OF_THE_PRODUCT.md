@@ -47,6 +47,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S7b /pro migration | DONE — 16 manual route trees under /pro, 32 permanent redirects, link sweep, specs updated (council PASS incl. remote-proof rule) | leap/S7b | council/S7B_* |
 | A1 data expansion | DONE — SEC XBRL trends (keyless) + Finnhub insider/filings adapters; 3 real dossier sections; stance regression | main | test_leap_a1_data_expansion.py |
 | A2 sentiment duality | DONE — social lane (premium flag + labeled fallback), divergence, FinGPT artifact lane (E.7 contract) | main | test_leap_a2_social.py |
+| A3 FinRL ensemble | DONE — E.6 artifact contract, protocol-match + re-deflation gates, worker runner + state exporter ready for E7 | main | test_leap_a3_ensemble.py |
 | F3 sweeps + C1 close | remaining verification items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags
