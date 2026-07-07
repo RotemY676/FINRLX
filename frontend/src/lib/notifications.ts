@@ -70,7 +70,7 @@ function breachToNotification(b: OpsBreach, idx: number): NotificationItem {
     title: b.label,
     description: `Utilisation ${(b.utilization * 100).toFixed(0)}% — trend ${b.trend} — related ${b.related}`,
     asOf: null,
-    href: "/ops",
+    href: "/pro/ops",
     source: "/api/v1/ops",
     icon: "risk",
   };
@@ -83,7 +83,7 @@ function incidentToNotification(i: OpsIncident): NotificationItem {
     title: i.title,
     description: `${i.owner} · ${i.status}${i.affected_recs ? ` · ${i.affected_recs} affected` : ""}`,
     asOf: i.started || null,
-    href: "/ops",
+    href: "/pro/ops",
     source: "/api/v1/ops",
     icon: "alert-triangle",
   };
@@ -98,7 +98,7 @@ function overviewToNotification(o: OverviewData): NotificationItem | null {
     title: "New recommendation published",
     description: `${rec.total_positions} position${rec.total_positions === 1 ? "" : "s"} · status ${rec.status}`,
     asOf: o.last_published_at,
-    href: "/decision",
+    href: "/pro/decision",
     source: "/api/v1/overview",
     icon: "decision",
   };

@@ -39,6 +39,8 @@ const VIEWPORTS = [
 ] as const;
 
 const PUBLIC_ROUTES = [
+  "/simple",
+  "/compare",
   "/",
   "/login",
   "/signup",
@@ -49,23 +51,23 @@ const PUBLIC_ROUTES = [
 ];
 
 const AUTH_ROUTES = [
-  "/decision",
-  "/research",
-  "/backtests",
-  "/paper",
-  "/risk",
-  "/replay",
-  "/comparison",
-  "/policies",
-  "/universe",
-  "/news",
-  "/integrations",
-  "/templates",
+  "/pro/decision",
+  "/pro/research",
+  "/pro/backtests",
+  "/pro/paper",
+  "/pro/risk",
+  "/pro/replay",
+  "/pro/comparison",
+  "/pro/policies",
+  "/pro/universe",
+  "/pro/news",
+  "/pro/integrations",
+  "/pro/templates",
   "/profile",
   "/feedback",
-  "/ops",
-  "/operator",
-  "/admin",
+  "/pro/ops",
+  "/pro/operator",
+  "/pro/admin",
   "/onboarding",
 ];
 

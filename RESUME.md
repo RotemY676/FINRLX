@@ -1,13 +1,12 @@
 # PROGRAM LEAP — RESUME marker (§2.2)
-DONE: F0, F1 (CLOSED end-to-end incl. F1.6 UI), F2(core), S1, S2, S3, S4,
-S5 (+polish), S6 (backend+UI), S7a, S8, S9, C1-prep. All in-env gates green:
-backend 1282/0, frontend tsc+eslint+vitest 51+build.
-Remaining program — ONLY these:
-1. S7b: full D33 migration of remaining manual surfaces under /pro/* with the
-   redirects CSV + e2e spec (large; buildable here, e2e run env-blocked).
-2. F2 leftover: session-filtered ingest ranges (low priority).
-3. F3 sweeps (logged-out re-verify + first authenticated) — env-blocked
-   (Playwright browser download domain + production network).
-4. C1 close report + tag leap-v1 — after F3.
-5. E1 operator item: rotate exposed token (fine-grained, workflow scope) and
+BUILD TRACK COMPLETE: F0, F1 (end-to-end), F2 (core; ingest-range leftover
+folded into debt register), S1-S9 all landed incl. S7b full /pro migration.
+Remaining = verification-only, env-blocked here:
+1. F3: logged-out re-sweep + first authenticated sweep + run
+   tests/e2e/leap-redirects.spec.ts (needs Playwright browsers).
+2. C1: close report + KPI table with measured values + tag leap-v1.
+3. E1 (operator, once): rotate exposed token (fine-grained + workflow scope),
    install DOCS/ci/leap-ci.yml.pending.
+Binding process rules added this session: remote-state claims require
+ls-remote proof; composition changes require structural DOM tests; no visual
+claims without screenshots.

@@ -17,11 +17,11 @@ const SUGGESTED_PROMPTS = [
  *
  * No live in-app LLM yet (backend `/api/v1/assistant/*` returns 503
  * unless `LLM_PROVIDER` is configured). FINRLX's canonical path for
- * assistant context today is the operator console at `/operator`,
+ * assistant context today is the operator console at `/pro/operator`,
  * which captures GPT/Claude responses against a recommendation,
  * replay, news item, or manual surface.
  *
- * Each suggested prompt deep-links to `/operator?surface=manual&prompt=...`
+ * Each suggested prompt deep-links to `/pro/operator?surface=manual&prompt=...`
  * so the operator lands with the question pre-filled.
  *
  * Constraints encoded by `finrlx-ai-ux-governance`:
@@ -46,7 +46,7 @@ export function ResearchAssistantPreview() {
         {SUGGESTED_PROMPTS.map((p) => (
           <Link
             key={p}
-            href={`/operator?surface=manual&prompt=${encodeURIComponent(p)}`}
+            href={`/pro/operator?surface=manual&prompt=${encodeURIComponent(p)}`}
             className="w-full text-left rounded-md border border-line bg-surface-2 px-3 min-h-11 md:min-h-0 md:py-2 text-caption text-ink-2 hover:border-primary hover:bg-surface-3 transition-colors flex items-center gap-2"
             title="Opens the operator console with this prompt pre-filled"
           >

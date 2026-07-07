@@ -247,7 +247,7 @@ export function UserMenu() {
 
           {/* Workspace shortcuts */}
           <div className="border-b border-line py-1">
-            <MenuRow icon="layers" href="/templates" onClick={close}>
+            <MenuRow icon="layers" href="/pro/templates" onClick={close}>
               Templates
             </MenuRow>
             <MenuRow icon="message" href="/feedback" onClick={close}>

@@ -86,7 +86,7 @@ export default function OnboardingPage() {
       .then((me) => {
         if (cancelled) return;
         if (me.has_profile) {
-          router.replace("/decision");
+          router.replace("/pro/decision");
         }
       })
       .catch(() => {
@@ -170,7 +170,7 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
     try {
       await submitProfile(answers, "wizard initial submit");
-      router.replace("/decision");
+      router.replace("/pro/decision");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);

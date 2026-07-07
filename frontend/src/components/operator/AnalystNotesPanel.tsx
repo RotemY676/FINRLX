@@ -86,7 +86,7 @@ export function AnalystNotesPanel({
           </span>
         </h3>
         <Link
-          href={`/operator?rec=${recommendationId}&surface=replay`}
+          href={`/pro/operator?rec=${recommendationId}&surface=replay`}
           className="text-[12px] text-primary hover:underline"
         >
           Add note →

@@ -27,21 +27,21 @@ interface CrumbDescriptor {
 
 const CRUMB_MAP: Record<string, CrumbDescriptor> = {
   "/": { area: null, title: "Decision Command Center" },
-  "/research": { area: "Research", title: "Research hub" },
-  "/decision": { area: "Decisions", title: "Current recommendation" },
-  "/comparison": { area: "Decisions", title: "Engine comparison" },
-  "/replay": { area: "Decisions", title: "Replay & forensics" },
-  "/templates": { area: "Decisions", title: "Templates" },
-  "/backtests": { area: "Research", title: "Backtests" },
-  "/universe": { area: "Research", title: "Universe" },
-  "/paper": { area: "Portfolio & Risk", title: "Paper portfolio" },
-  "/risk": { area: "Portfolio & Risk", title: "Risk workspace" },
-  "/news": { area: "Insights", title: "News intelligence" },
-  "/ops": { area: "Ops & Governance", title: "Ops command" },
-  "/policies": { area: "Ops & Governance", title: "Policies" },
-  "/integrations": { area: "Ops & Governance", title: "Integrations" },
-  "/admin": { area: "Ops & Governance", title: "Research lab" },
-  "/operator": { area: "Ops & Governance", title: "Operator console" },
+  "/pro/research": { area: "Research", title: "Research hub" },
+  "/pro/decision": { area: "Decisions", title: "Current recommendation" },
+  "/pro/comparison": { area: "Decisions", title: "Engine comparison" },
+  "/pro/replay": { area: "Decisions", title: "Replay & forensics" },
+  "/pro/templates": { area: "Decisions", title: "Templates" },
+  "/pro/backtests": { area: "Research", title: "Backtests" },
+  "/pro/universe": { area: "Research", title: "Universe" },
+  "/pro/paper": { area: "Portfolio & Risk", title: "Paper portfolio" },
+  "/pro/risk": { area: "Portfolio & Risk", title: "Risk workspace" },
+  "/pro/news": { area: "Insights", title: "News intelligence" },
+  "/pro/ops": { area: "Ops & Governance", title: "Ops command" },
+  "/pro/policies": { area: "Ops & Governance", title: "Policies" },
+  "/pro/integrations": { area: "Ops & Governance", title: "Integrations" },
+  "/pro/admin": { area: "Ops & Governance", title: "Research lab" },
+  "/pro/operator": { area: "Ops & Governance", title: "Operator console" },
   "/profile": { area: "Settings", title: "My profile" },
   "/feedback": { area: "Settings", title: "Send feedback" },
   "/help": { area: "Settings", title: "Help center" },
@@ -70,7 +70,7 @@ export function TopBar({
     CRUMB_MAP[pathname] ||
     (pathname.startsWith("/help")
       ? { area: "Settings", title: "Help center" }
-      : pathname.startsWith("/research/")
+      : pathname.startsWith("/pro/research/")
         ? { area: "Research", title: pathname.split("/")[2]?.toUpperCase() ?? "Ticker" }
         : { area: null, title: "Workspace" });
   const { theme, toggleTheme } = useTheme();

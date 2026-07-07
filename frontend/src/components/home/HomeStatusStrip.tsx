@@ -90,7 +90,7 @@ export function HomeStatusStrip({
             : "no active portfolio"
         }
         tone={portfolio.riskWarning ? "caution" : "neutral"}
-        href={portfolio.hasPortfolio ? "/paper" : "/templates"}
+        href={portfolio.hasPortfolio ? "/pro/paper" : "/pro/templates"}
       />
 
       {/* Data / system health */}

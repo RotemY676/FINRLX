@@ -48,8 +48,8 @@ export function CopyLLMContextButton({
   if (!flags.operator_console) return null;
 
   const operatorHref = bundle.recommendation_id
-    ? `/operator?rec=${bundle.recommendation_id}&surface=${bundle.surface}`
-    : `/operator?surface=${bundle.surface}`;
+    ? `/pro/operator?rec=${bundle.recommendation_id}&surface=${bundle.surface}`
+    : `/pro/operator?surface=${bundle.surface}`;
 
   return (
     <div className={`inline-flex flex-col gap-1.5 ${className}`}>

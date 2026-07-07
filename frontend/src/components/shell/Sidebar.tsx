@@ -49,53 +49,53 @@ const AREAS: ReadonlyArray<NavArea> = [
   {
     key: "research",
     label: "Research",
-    paths: ["/research", "/universe", "/backtests"],
+    paths: ["/pro/research", "/pro/universe", "/pro/backtests"],
     entries: [
       // Phase 6 — Research hub landing.
-      { key: "research-hub", href: "/research", label: "Research hub", icon: "search" },
-      { key: "universe", href: "/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
-      { key: "backtests", href: "/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
+      { key: "research-hub", href: "/pro/research", label: "Research hub", icon: "search" },
+      { key: "universe", href: "/pro/universe", label: "Universe", icon: "universe", flagKey: "universe_ui" },
+      { key: "backtests", href: "/pro/backtests", label: "Backtests", icon: "backtest", flagKey: "backtests" },
     ],
   },
   {
     key: "decisions",
     label: "Decisions",
-    paths: ["/decision", "/comparison", "/replay", "/templates"],
+    paths: ["/pro/decision", "/pro/comparison", "/pro/replay", "/pro/templates"],
     entries: [
-      { key: "decision", href: "/decision", label: "Current recommendation", icon: "decision", countKey: "decisions" },
-      { key: "comparison", href: "/comparison", label: "Engine comparison", icon: "compare" },
-      { key: "replay", href: "/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
-      { key: "templates", href: "/templates", label: "Templates", icon: "layers" },
+      { key: "decision", href: "/pro/decision", label: "Current recommendation", icon: "decision", countKey: "decisions" },
+      { key: "comparison", href: "/pro/comparison", label: "Engine comparison", icon: "compare" },
+      { key: "replay", href: "/pro/replay", label: "Replay & forensics", icon: "replay", flagKey: "replay" },
+      { key: "templates", href: "/pro/templates", label: "Templates", icon: "layers" },
     ],
   },
   {
     key: "portfolio",
     label: "Portfolio & Risk",
-    paths: ["/paper", "/risk"],
+    paths: ["/pro/paper", "/pro/risk"],
     entries: [
-      { key: "paper", href: "/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
-      { key: "risk", href: "/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
+      { key: "paper", href: "/pro/paper", label: "Paper portfolio", icon: "paper", flagKey: "paper_trading" },
+      { key: "risk", href: "/pro/risk", label: "Risk workspace", icon: "risk", countKey: "risk", flagKey: "risk_ui" },
     ],
   },
   {
     key: "insights",
     label: "Insights",
-    paths: ["/news"],
+    paths: ["/pro/news"],
     entries: [
-      { key: "news", href: "/news", label: "News intelligence", icon: "news", flagKey: "news_ui" },
+      { key: "news", href: "/pro/news", label: "News intelligence", icon: "news", flagKey: "news_ui" },
     ],
   },
   {
     key: "ops",
     label: "Ops & Governance",
-    paths: ["/ops", "/policies", "/integrations", "/admin", "/operator"],
+    paths: ["/pro/ops", "/pro/policies", "/pro/integrations", "/pro/admin", "/pro/operator"],
     entries: [
-      { key: "ops", href: "/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
-      { key: "policies", href: "/policies", label: "Policies", icon: "check", flagKey: "policy_ui" },
-      { key: "integrations", href: "/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
+      { key: "ops", href: "/pro/ops", label: "Ops command", icon: "ops", countKey: "ops", flagKey: "ops_ui" },
+      { key: "policies", href: "/pro/policies", label: "Policies", icon: "check", flagKey: "policy_ui" },
+      { key: "integrations", href: "/pro/integrations", label: "Integrations", icon: "database", flagKey: "integrations_ui" },
       // Desktop-only research lab. Sidebar entry survives so operators can find it; the page itself shows a desktop-only gate on mobile.
-      { key: "admin", href: "/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
-      { key: "operator", href: "/operator", label: "Operator console", icon: "user", flagKey: "operator_console", requiresAuth: true },
+      { key: "admin", href: "/pro/admin", label: "Research lab", icon: "compare", flagKey: "research_lane" },
+      { key: "operator", href: "/pro/operator", label: "Operator console", icon: "user", flagKey: "operator_console", requiresAuth: true },
     ],
   },
   {

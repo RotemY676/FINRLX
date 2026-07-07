@@ -136,7 +136,7 @@ function PeerRow({ peer }: { peer: PeerEntryData }) {
   return (
     <li>
       <Link
-        href={`/research/${encodeURIComponent(peer.ticker)}`}
+        href={`/pro/research/${encodeURIComponent(peer.ticker)}`}
         className="flex items-center gap-3 py-2.5 hover:bg-surface-3 -mx-2 px-2 rounded-md transition-colors"
       >
         <span className="font-mono text-body-sm text-ink font-semibold w-16 shrink-0">

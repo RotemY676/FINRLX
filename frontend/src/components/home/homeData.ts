@@ -250,7 +250,7 @@ function buildDecisionQueue(raw: RawSources): HomeDecisionItem[] {
       lastUpdated: null,
       nextAction: "review-evidence",
       actionLabel: ACTION_LABELS["review-evidence"],
-      href: "/ops",
+      href: "/pro/ops",
       source: "ops.queue",
     });
   }
@@ -268,7 +268,7 @@ function buildDecisionQueue(raw: RawSources): HomeDecisionItem[] {
       lastUpdated: raw.overview?.freshness?.data_as_of ?? null,
       nextAction: "review-evidence",
       actionLabel: ACTION_LABELS["review-evidence"],
-      href: "/decision",
+      href: "/pro/decision",
       source: "overview.warnings",
     });
   }
@@ -288,7 +288,7 @@ function buildDecisionQueue(raw: RawSources): HomeDecisionItem[] {
         lastUpdated: rec.data_as_of,
         nextAction: "review-evidence",
         actionLabel: ACTION_LABELS["review-evidence"],
-        href: "/decision",
+        href: "/pro/decision",
         source: "recommendation.warnings",
       });
     }
@@ -307,7 +307,7 @@ function buildDecisionQueue(raw: RawSources): HomeDecisionItem[] {
       lastUpdated: incident.started,
       nextAction: "open-ops",
       actionLabel: ACTION_LABELS["open-ops"],
-      href: "/ops",
+      href: "/pro/ops",
       source: "ops.incidents",
     });
   }
@@ -324,7 +324,7 @@ function buildDecisionQueue(raw: RawSources): HomeDecisionItem[] {
       lastUpdated: null,
       nextAction: "view-risk",
       actionLabel: ACTION_LABELS["view-risk"],
-      href: "/risk",
+      href: "/pro/risk",
       source: "ops.breaches",
     });
   }
@@ -400,7 +400,7 @@ function buildOpportunities(raw: RawSources): OpportunityRadarRow[] {
       dataFreshness,
       evidenceSources,
       recommendationState: rec.status,
-      href: "/decision",
+      href: "/pro/decision",
     };
   });
 }

@@ -26,7 +26,7 @@ export function PortfolioImpactCard({ portfolio }: Props) {
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
-            href="/templates"
+            href="/pro/templates"
             className="inline-flex items-center justify-center min-h-11 md:min-h-0 md:py-2 px-3 rounded-md bg-primary text-primary-ink text-[12px] font-medium"
           >
             Try a template
@@ -49,7 +49,7 @@ export function PortfolioImpactCard({ portfolio }: Props) {
       subtitle={portfolio.portfolioName ?? "Paper portfolio"}
       right={
         <Link
-          href="/paper"
+          href="/pro/paper"
           className="inline-flex items-center text-[11.5px] text-primary hover:underline"
         >
           Open paper portfolio

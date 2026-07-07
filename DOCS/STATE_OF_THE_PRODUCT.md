@@ -44,7 +44,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | S7a route flip | DONE — / is Simple Mode; command center at /pro; Pro switcher in both shells; council PASS | leap/F0-bootstrap | council/S7A_* |
 | S5 polish | DONE — autocomplete + §5b-binding export (council PASS) | leap/F0-bootstrap | exportDossier.ts + binding test |
 | F1.6 staleness UI | DONE — /prices/freshness API + PriceFreshnessBadge on /research/[ticker] (council PASS) | leap/F0-bootstrap | council/F16_* |
-| F3, S7b, C1 | remaining per RESUME.md (S7b buildable; sweeps env-blocked) | — | RESUME.md |
+| S7b /pro migration | DONE — 16 manual route trees under /pro, 32 permanent redirects, link sweep, specs updated (council PASS incl. remote-proof rule) | leap/S7b | council/S7B_* |
+| F3 sweeps + C1 close | ONLY remaining items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags
 (none yet; D23 registry starts here)

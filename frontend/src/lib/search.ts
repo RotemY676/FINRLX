@@ -51,21 +51,21 @@ interface RouteEntry {
 
 const ROUTES: ReadonlyArray<RouteEntry> = [
   { label: "Home", href: "/", area: "Home", icon: "overview", keywords: ["dashboard", "command center"] },
-  { label: "Research hub", href: "/research", area: "Research", icon: "search" },
-  { label: "Universe", href: "/universe", area: "Research", icon: "universe", keywords: ["coverage", "readiness"] },
-  { label: "Backtests", href: "/backtests", area: "Research", icon: "backtest" },
-  { label: "Current recommendation", href: "/decision", area: "Decisions", icon: "decision", keywords: ["recommendation", "thesis"] },
-  { label: "Engine comparison", href: "/comparison", area: "Decisions", icon: "compare" },
-  { label: "Replay & forensics", href: "/replay", area: "Decisions", icon: "replay" },
-  { label: "Templates", href: "/templates", area: "Decisions", icon: "layers" },
-  { label: "Paper portfolio", href: "/paper", area: "Portfolio & Risk", icon: "paper" },
-  { label: "Risk workspace", href: "/risk", area: "Portfolio & Risk", icon: "risk" },
-  { label: "News intelligence", href: "/news", area: "Insights", icon: "news" },
-  { label: "Ops command", href: "/ops", area: "Ops & Governance", icon: "ops" },
-  { label: "Policies", href: "/policies", area: "Ops & Governance", icon: "check" },
-  { label: "Integrations", href: "/integrations", area: "Ops & Governance", icon: "database" },
-  { label: "Research lab", href: "/admin", area: "Ops & Governance", icon: "compare", keywords: ["wizard", "pipeline canvas", "kanban"] },
-  { label: "Operator console", href: "/operator", area: "Ops & Governance", icon: "user" },
+  { label: "Research hub", href: "/pro/research", area: "Research", icon: "search" },
+  { label: "Universe", href: "/pro/universe", area: "Research", icon: "universe", keywords: ["coverage", "readiness"] },
+  { label: "Backtests", href: "/pro/backtests", area: "Research", icon: "backtest" },
+  { label: "Current recommendation", href: "/pro/decision", area: "Decisions", icon: "decision", keywords: ["recommendation", "thesis"] },
+  { label: "Engine comparison", href: "/pro/comparison", area: "Decisions", icon: "compare" },
+  { label: "Replay & forensics", href: "/pro/replay", area: "Decisions", icon: "replay" },
+  { label: "Templates", href: "/pro/templates", area: "Decisions", icon: "layers" },
+  { label: "Paper portfolio", href: "/pro/paper", area: "Portfolio & Risk", icon: "paper" },
+  { label: "Risk workspace", href: "/pro/risk", area: "Portfolio & Risk", icon: "risk" },
+  { label: "News intelligence", href: "/pro/news", area: "Insights", icon: "news" },
+  { label: "Ops command", href: "/pro/ops", area: "Ops & Governance", icon: "ops" },
+  { label: "Policies", href: "/pro/policies", area: "Ops & Governance", icon: "check" },
+  { label: "Integrations", href: "/pro/integrations", area: "Ops & Governance", icon: "database" },
+  { label: "Research lab", href: "/pro/admin", area: "Ops & Governance", icon: "compare", keywords: ["wizard", "pipeline canvas", "kanban"] },
+  { label: "Operator console", href: "/pro/operator", area: "Ops & Governance", icon: "user" },
   { label: "My profile", href: "/profile", area: "Settings", icon: "user" },
   { label: "Help center", href: "/help", area: "Settings", icon: "help-circle" },
   { label: "Send feedback", href: "/feedback", area: "Settings", icon: "message" },
@@ -89,7 +89,7 @@ export function searchRoutes(query: string): SearchResult[] {
     // Surface a curated top-7 list when the input is empty so the
     // palette doesn't read as a blank "ask anything" surface (rule 3
     // of finrlx-ai-ux-governance).
-    const featured = ["/", "/research", "/decision", "/paper", "/risk", "/news", "/ops"];
+    const featured = ["/", "/pro/research", "/pro/decision", "/pro/paper", "/pro/risk", "/pro/news", "/pro/ops"];
     return ROUTES.filter((r) => featured.includes(r.href)).map(routeToResult);
   }
   return ROUTES.filter((r) => matches(r.label, r.keywords, n) || r.area.toLowerCase().includes(n))
@@ -116,7 +116,7 @@ export function searchTicker(query: string): SearchResult | null {
     category: "ticker",
     label: upper,
     description: "Open research workspace",
-    href: `/research/${upper}`,
+    href: `/pro/research/${upper}`,
     icon: "search",
   };
 }
@@ -142,7 +142,7 @@ export function searchOperatorAnalyses(
       category: "operator",
       label: a.prompt?.slice(0, 60) || a.response.slice(0, 60),
       description: `${a.source} · ${a.surface}${a.recommendation_id ? ` · ${a.recommendation_id.slice(0, 8)}` : ""}`,
-      href: `/operator?id=${encodeURIComponent(a.id)}`,
+      href: `/pro/operator?id=${encodeURIComponent(a.id)}`,
       icon: "message",
     }));
 }
