@@ -59,13 +59,13 @@ def attach_llm_scores(ticker: str, items: list[dict]) -> dict:
     scored, agreements = 0, []
     for item in items:
         entry = artifact["items"].get(item_key(item.get("date", ""), item.get("title", "")))
-        if not entry or not isinstance(entry.get("score"), (int, float)):
+        if not entry or not isinstance(entry.get("score"), int | float):
             continue
         llm = float(entry["score"])
         item["sentiment_llm"] = round(llm, 3)
         item["llm_label"] = entry.get("label")
         lex = item.get("compound")
-        if isinstance(lex, (int, float)):
+        if isinstance(lex, int | float):
             agree = (llm >= 0) == (lex >= 0)
             item["agreement"] = agree
             agreements.append(agree)

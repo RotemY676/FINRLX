@@ -150,7 +150,7 @@ def _feature_series(bars: Bars, fn) -> list[float]:
     closes, vols = bars.closes, bars.volumes
     for i in range(61, len(closes) + 1):
         v = fn(closes[:i], vols[:i])
-        out.append(v if isinstance(v, (int, float)) else float("nan"))
+        out.append(v if isinstance(v, int | float) else float("nan"))
     return out
 
 
@@ -170,7 +170,7 @@ def signal_matrix(bars: Bars, flat_features: dict) -> list[dict]:
     for key, name, fn, read in _MATRIX_SPECS:
         current = (flat_features.get(key) or {}).get("value")
         row = {"key": key, "name": name, "value": current, "read": read}
-        if have_history and isinstance(current, (int, float)):
+        if have_history and isinstance(current, int | float):
             series = _feature_series(bars, fn)
             if len(series) >= MIN_PERCENTILE_HISTORY:
                 row["percentile"] = _percentile(series[:-1], current)

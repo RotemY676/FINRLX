@@ -68,7 +68,7 @@ def fetch_social_scored(ticker: str) -> dict:
         mentions = sum(int(r.get("mention", 0)) for r in rows)
         pos = sum(int(r.get("positiveMention", 0)) for r in rows)
         neg = sum(int(r.get("negativeMention", 0)) for r in rows)
-        scores = [float(r["score"]) for r in rows if isinstance(r.get("score"), (int, float))]
+        scores = [float(r["score"]) for r in rows if isinstance(r.get("score"), int | float)]
         return {
             "mentions_7d": mentions,
             "positive_7d": pos,

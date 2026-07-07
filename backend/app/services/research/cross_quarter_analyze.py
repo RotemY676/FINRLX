@@ -165,7 +165,7 @@ def _parse_metrics_block(text: str) -> dict | None:
             if not isinstance(q, dict):
                 continue
             value = q.get("value")
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 continue
             clean_quarters.append({
                 "period_end": q.get("period_end") or "",

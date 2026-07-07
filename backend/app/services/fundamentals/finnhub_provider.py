@@ -66,7 +66,7 @@ def _safe_float(d: dict[str, Any], key: str) -> float | None:
     val = d.get(key)
     if val is None:
         return None
-    if isinstance(val, (int, float)):
+    if isinstance(val, int | float):
         return float(val)
     if isinstance(val, str):
         try:

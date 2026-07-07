@@ -179,7 +179,7 @@ def _divergence_highlights(columns: list[dict]) -> list[dict]:
     sharpes = {
         c["ticker"]: c["validation_sharpe"]
         for c in columns
-        if isinstance(c.get("validation_sharpe"), (int, float))
+        if isinstance(c.get("validation_sharpe"), int | float)
     }
     if len(sharpes) >= 2 and (max(sharpes.values()) - min(sharpes.values())) > 0.5:
         highlights.append({"dimension": "validation_sharpe_spread", "values": sharpes})
