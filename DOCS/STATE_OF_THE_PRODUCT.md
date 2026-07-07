@@ -46,6 +46,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | F1.6 staleness UI | DONE — /prices/freshness API + PriceFreshnessBadge on /research/[ticker] (council PASS) | leap/F0-bootstrap | council/F16_* |
 | S7b /pro migration | DONE — 16 manual route trees under /pro, 32 permanent redirects, link sweep, specs updated (council PASS incl. remote-proof rule) | leap/S7b | council/S7B_* |
 | A1 data expansion | DONE — SEC XBRL trends (keyless) + Finnhub insider/filings adapters; 3 real dossier sections; stance regression | main | test_leap_a1_data_expansion.py |
+| A2 sentiment duality | DONE — social lane (premium flag + labeled fallback), divergence, FinGPT artifact lane (E.7 contract) | main | test_leap_a2_social.py |
 | F3 sweeps + C1 close | remaining verification items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags

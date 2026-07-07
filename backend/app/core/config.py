@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # LEAP S9 (D16): sourced "why this matters" news annotations. OFF until an
     # LLM provider is configured and the canary passes per batch.
     insights_annotations: bool = False
+    # LEAP A2 (D43): Finnhub social-sentiment endpoint requires a paid tier
+    # (unverified — E8); the scored social lane activates only with this flag.
+    finnhub_premium: bool = False
 
     # Defaults: ON for backward compat in tests; production overrides to OFF via env.
     feature_research_lane: bool = True   # Show admin/research/RL UI

@@ -498,6 +498,38 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
     news_counts: dict[str, int] = {}
     for n in news_items:
         news_counts[n.sentiment_label] = news_counts.get(n.sentiment_label, 0) + 1
+    # LEAP A2 (D43/D44): social lane + measured media-vs-social divergence.
+    def _build_social():
+        from app.services.data_providers.social_sentiment import (
+            build_social_lane,
+            compute_divergence,
+        )
+
+        lane = build_social_lane(sym)
+        media_avg = (
+            sum(n.sentiment_compound for n in news_7d) / len(news_7d)
+            if news_7d else None
+        )
+        return lane, compute_divergence(media_avg, lane)
+
+    try:
+        _social, _divergence = _build_social()
+    except Exception as _exc:  # noqa: BLE001 — lane can never sink a dossier
+        logger.warning("social lane failed: %s", _exc)
+        _social = {"available": False, "reason": "section_error", "source": "social"}
+        _divergence = {"status": "not_applicable", "reason": "social lane errored"}
+    _news_item_dicts = [
+        {"date": n.published.isoformat() if hasattr(n.published, "isoformat") else str(n.published),
+         "title": n.title, "sentiment": n.sentiment_label,
+         "compound": round(n.sentiment_compound, 3)}
+        for n in news_7d[:10]
+    ]
+    try:
+        from app.services.fingpt_lane import attach_llm_scores
+        _fingpt_status = attach_llm_scores(sym, _news_item_dicts)
+    except Exception as _exc:  # noqa: BLE001
+        logger.warning("fingpt lane failed: %s", _exc)
+        _fingpt_status = {"status": "lane_error"}
     dossier = {
         "ticker": sym,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -527,12 +559,10 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
                 "available": news_ok,
                 "note": None if news_ok else "News source unavailable — section degraded, analysis continued without it.",
                 "counts": news_counts,
-                "items_7d": [
-                    {"date": n.published.isoformat() if hasattr(n.published, "isoformat") else str(n.published),
-                     "title": n.title, "sentiment": n.sentiment_label,
-                     "compound": round(n.sentiment_compound, 3)}
-                    for n in news_7d[:10]
-                ],
+                "social": _social,
+                "divergence": _divergence,
+                "fingpt_lane": _fingpt_status,
+                "items_7d": _news_item_dicts,
             },
             "fundamentals": _section_fundamentals(ticker, stages),
             "filings": _section_filings(ticker, stages),
