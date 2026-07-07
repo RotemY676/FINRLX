@@ -8,6 +8,9 @@
  */
 
 import Link from "next/link";
+
+import DeskV2 from "@/components/deskv2/DeskV2";
+import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -83,6 +86,17 @@ function StreamedSection({
 }
 
 export default function DeskPage() {
+  // Desk W1 (DEC-7): v2 renders only when the DESK_V2 flag is ON.
+  // Fail-closed context => legacy desk during load and by default.
+  const { flags } = useFeatureFlags();
+  const v2Params = useParams<{ ticker: string }>();
+  if (flags.desk_v2) {
+    return <DeskV2 ticker={String(v2Params.ticker ?? "").toUpperCase()} />;
+  }
+  return <LegacyDeskPage />;
+}
+
+function LegacyDeskPage() {
   const params = useParams<{ ticker: string }>();
   const ticker = decodeURIComponent(params.ticker ?? "").toUpperCase();
   const revision = useDeskFreshness(ticker);

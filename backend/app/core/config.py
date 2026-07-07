@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     # while peers wait on a paid-tier upgrade).
     feature_research_fundamentals_ui: bool = True
     feature_research_peers_ui: bool = True
+    # Desk W1 (SPEC-01 DEC-7): the Unified Research Desk v2 ships dark.
+    # Default OFF; flipped only after the W1 exit gate (SPEC-04 G-1..G-7).
+    feature_desk_v2: bool = False
 
     # LLM provider abstraction (Phase O-5 → 17.4). Two activation modes:
     #
