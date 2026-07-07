@@ -51,7 +51,8 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | A4 dossier v2 | DONE — regime bands (DEBT-S5-2 closed), event markers, signal matrix w/ percentiles, split windows, 10 D42 section endpoints | main | test_leap_a4_desk_payload.py |
 | A5 Analyst Desk UI | DONE — /pro/desk/[ticker], 10 streamed sections, mini-map, arena+matrix+tapes; 256KB; visual sign-off pending V1 | main | desk-sections.test.tsx |
 | A6 live dynamics | DONE — freshness-driven revalidation (hook-tested), S8 alert surfacing on header, D49 no-loop scan | main | desk-sections.test.tsx |
+| Desk W1 core (Track B) | DONE structural (sandbox) — API-4/6/7 + v2 UI behind DESK_V2 flag OFF; browser phase per CLAUDE_CODE_HANDOFF_DESK_W1.md | desk/w1-core→main | test_desk_w1.py, deskv2.test.tsx, DOCS/specs/ |
 | F3 sweeps + C1 close | remaining verification items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags
-(none yet; D23 registry starts here)
+- FEATURE_DESK_V2 (default OFF) — Unified Research Desk v2; flip only after SPEC-04 G-1..G-7 in the browser-equipped phase (DEC-7)

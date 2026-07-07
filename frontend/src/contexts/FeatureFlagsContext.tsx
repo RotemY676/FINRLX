@@ -37,6 +37,9 @@ export interface FeatureFlags {
   // Phase 16 — research fundamentals + peers panels on /research/[ticker]
   research_fundamentals_ui: boolean;
   research_peers_ui: boolean;
+  // Desk W1 (DEC-7) — Unified Research Desk v2; dark until the SPEC-04
+  // exit gate passes in the browser-equipped environment.
+  desk_v2: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -58,6 +61,7 @@ const FAIL_CLOSED: FeatureFlags = {
   operator_console: false,
   research_fundamentals_ui: false,
   research_peers_ui: false,
+  desk_v2: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -92,6 +96,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             operator_console: Boolean(data.operator_console),
             research_fundamentals_ui: Boolean(data.research_fundamentals_ui),
             research_peers_ui: Boolean(data.research_peers_ui),
+            desk_v2: Boolean(data.desk_v2),
           });
         }
       })

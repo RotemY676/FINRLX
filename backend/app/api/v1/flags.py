@@ -37,5 +37,8 @@ async def flags() -> ApiResponse[dict]:
             # Phase 16 — research fundamentals + peers UI gates.
             "research_fundamentals_ui": settings.feature_research_fundamentals_ui,
             "research_peers_ui": settings.feature_research_peers_ui,
+            # Desk W1 (DEC-7): Unified Research Desk v2, dark until the
+            # SPEC-04 exit gate passes in the browser-equipped environment.
+            "desk_v2": settings.feature_desk_v2,
         },
     )

@@ -13,7 +13,8 @@ import asyncio
 import logging
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -23,9 +24,15 @@ from app.services.autopilot_store import (
     build_comparison,
     persist_dossier,
 )
+from app.services.desk_elevation import elevate
+from app.services.desk_methods import method_block
+from app.services.desk_status import RateLimiter, compute_desk_status
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Desk W1 (SPEC-02 API-4): in-process limiter, 20/min per client (SO-1).
+_status_limiter = RateLimiter(limit=20, window_s=60.0)
 
 
 @router.get(
@@ -150,12 +157,75 @@ async def autopilot_desk_section(
         payload = _SECTION_MAP[section](dossier)
     except KeyError:
         payload = {"available": False, "reason": "section_missing_in_dossier"}
+    # Desk W1 (SPEC-02 API-6, additive): Forensic-drawer method block.
+    _method = method_block(section, dossier)
+    if _method is not None:
+        payload["method"] = _method
+    # Desk W1 (SPEC-02 API-7): elevation block on the signals payload —
+    # ranks unusualness only, with its full method disclosed inline (QS-2).
+    if section == "signals":
+        _regime = ((dossier.get("summary") or {}).get("regime")
+                   or ((dossier.get("sections") or {}).get("technical") or {})
+                   .get("regime", {}).get("label", "neutral"))
+        payload["elevation"] = elevate(payload.get("signal_matrix") or [],
+                                       str(_regime))
     if section == "header":
         # LEAP A6: surface S8 material-change alerts for this ticker so the
         # desk can show them live; evidence-linked, read-only.
         payload["alerts"] = await _open_ticker_alerts(db, dossier["ticker"])
     return {"data": {"ticker": dossier["ticker"], "section": section,
                      "generated_at": dossier["generated_at"], "payload": payload}}
+
+
+@router.get(
+    "/autopilot/desk/{ticker}/status",
+    summary="Desk W1 (SPEC-02 API-4) — the six engine-dial states + alerts",
+    description=(
+        "Dial truth has ONE source: this endpoint. Derived from the "
+        "PERSISTED dossier only — a status poll never triggers a pipeline "
+        "build. Closed state enum (live|degraded|unavailable) with "
+        "detail_code; SPEC-02 R3-T1. Rate-limited 20/min per client (SO-1)."
+    ),
+)
+async def autopilot_desk_status(
+    ticker: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    client = (request.client.host if request.client else "unknown")
+    allowed, retry_after = _status_limiter.check(client)
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            headers={"Retry-After": str(retry_after)},
+            content={"error": {"code": "RATE_LIMITED",
+                               "message": "status polls are limited to 20/min",
+                               "retry_after_s": retry_after}},
+        )
+    from app.services.autopilot import validate_ticker
+    from app.services.autopilot_store import load_persisted
+
+    try:
+        sym = validate_ticker(ticker)
+    except ValueError as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": {"code": "TICKER_INVALID", "message": str(e)}},
+        )
+    dossier = await load_persisted(db, sym)
+    if dossier is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": {"code": "NO_DOSSIER",
+                               "message": "no persisted dossier for this "
+                                          "ticker — start research first"}},
+        )
+    alerts = await _open_ticker_alerts(db, dossier["ticker"])
+    body = compute_desk_status(dossier, alerts_unseen=len(alerts))
+    etag = f'W/"{body["fingerprint"]}"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    return JSONResponse(content={"data": body}, headers={"ETag": etag})
 
 
 async def _open_ticker_alerts(db: AsyncSession, ticker: str) -> list[dict]:
