@@ -150,5 +150,38 @@ async def autopilot_desk_section(
         payload = _SECTION_MAP[section](dossier)
     except KeyError:
         payload = {"available": False, "reason": "section_missing_in_dossier"}
+    if section == "header":
+        # LEAP A6: surface S8 material-change alerts for this ticker so the
+        # desk can show them live; evidence-linked, read-only.
+        payload["alerts"] = await _open_ticker_alerts(db, dossier["ticker"])
     return {"data": {"ticker": dossier["ticker"], "section": section,
                      "generated_at": dossier["generated_at"], "payload": payload}}
+
+
+async def _open_ticker_alerts(db: AsyncSession, ticker: str) -> list[dict]:
+    from sqlalchemy import select
+
+    from app.models.ops import Incident
+    from app.services.autopilot_refresh import INCIDENT_TITLE_PREFIX
+
+    rows = (
+        await db.execute(
+            select(Incident)
+            .where(
+                Incident.title == f"{INCIDENT_TITLE_PREFIX}{ticker}",
+                Incident.status != "resolved",
+            )
+            .order_by(Incident.created_at.desc())
+            .limit(3)
+        )
+    ).scalars().all()
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "severity": r.severity,
+            "description": r.description,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]

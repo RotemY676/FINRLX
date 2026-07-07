@@ -237,3 +237,58 @@ describe("FundamentalsSection + FilingsSection + RiskSection", () => {
     expect(screen.getByTestId("desk-risk").textContent).toContain("p65 vs own history");
   });
 });
+
+/* ── LEAP A6: motion no-loop rule (D49) + revalidation contract ─────────── */
+
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
+describe("D49 motion rules — zero perpetual animation on the desk", () => {
+  const roots = [
+    join(__dirname, "..", "components", "desk"),
+    join(__dirname, "..", "app", "pro", "desk"),
+  ];
+  const files = roots.flatMap(function walk(dir): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)],
+    );
+  });
+  it("bans looped animation primitives (animate-pulse allowed only for loading skeletons)", () => {
+    for (const f of files) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).not.toMatch(/repeat:\s*Infinity/);
+      expect(src, f).not.toMatch(/animate-spin/);
+      expect(src, f).not.toMatch(/animation-iteration-count:\s*infinite/);
+      if (/animate-pulse/.test(src)) {
+        expect(f.endsWith("primitives.tsx"), `${f}: animate-pulse outside skeleton`).toBe(true);
+        // and only inside the aria-busy skeleton block
+        expect(src).toMatch(/aria-busy="true"[\s\S]{0,200}animate-pulse/);
+      }
+    }
+  });
+});
+
+describe("A6 revalidation contract", () => {
+  it("useDeskSection re-arms to idle when the revision bumps", async () => {
+    const { renderHook, waitFor } = await import("@testing-library/react");
+    const { useDeskSection } = await import("@/components/desk/primitives");
+    const calls: string[] = [];
+    // @ts-expect-error test stub
+    globalThis.fetch = async (url: string) => {
+      calls.push(String(url));
+      return {
+        ok: true,
+        json: async () => ({ data: { payload: { n: calls.length }, generated_at: `t${calls.length}` } }),
+      };
+    };
+    const { result, rerender } = renderHook(
+      ({ rev }) => useDeskSection<any>("NVDA", "signals", true, rev),
+      { initialProps: { rev: 0 } },
+    );
+    await waitFor(() => expect(result.current.kind).toBe("ready"));
+    expect(calls.length).toBe(1);
+    rerender({ rev: 1 });
+    await waitFor(() => expect(calls.length).toBe(2)); // revision bump refetched
+    await waitFor(() => expect(result.current.kind).toBe("ready"));
+  });
+});

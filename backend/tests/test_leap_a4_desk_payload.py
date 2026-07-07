@@ -114,3 +114,41 @@ async def test_desk_section_endpoints(client, monkeypatch):
 
     r4 = await client.get("/api/v1/autopilot/desk/@@@/header")
     assert r4.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_header_section_carries_open_alerts(client, monkeypatch):
+    """LEAP A6: S8 material-change incidents surface on the desk header."""
+    from app.services import autopilot
+    import app.services.data_providers.sec_xbrl as x
+    import app.services.data_providers.finnhub_extras as fx
+    from tests.conftest import test_session_factory as async_session_maker
+    from app.models.ops import Incident
+    from app.services.autopilot_refresh import INCIDENT_TITLE_PREFIX
+
+    bars = _bars(420)
+    monkeypatch.setattr(autopilot, "fetch_history", lambda s, days: bars)
+    monkeypatch.setattr(autopilot, "fetch_news", lambda s, limit=20: ([], False))
+    monkeypatch.setattr(x, "resolve_cik", lambda t: None)
+    monkeypatch.setattr(fx, "_key", lambda: None)
+    autopilot._dossier_cache.clear()
+
+    async with async_session_maker() as db:
+        db.add(Incident(
+            title=f"{INCIDENT_TITLE_PREFIX}A6AL",
+            severity=3, status="open",
+            description="stance changed hold -> trim (evidence: /api/v1/autopilot/dossier?ticker=A6AL)",
+        ))
+        await db.commit()
+
+    r = await client.get("/api/v1/autopilot/desk/A6AL/header")
+    assert r.status_code == 200
+    alerts = r.json()["data"]["payload"]["alerts"]
+    assert len(alerts) == 1
+    assert alerts[0]["severity"] == 3
+    assert "stance changed" in alerts[0]["description"]
+
+    # other tickers see no alerts
+    autopilot._dossier_cache.clear()
+    r2 = await client.get("/api/v1/autopilot/desk/A6XX/header")
+    assert r2.json()["data"]["payload"]["alerts"] == []

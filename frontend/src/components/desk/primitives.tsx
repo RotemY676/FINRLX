@@ -21,10 +21,18 @@ export type SectionState<T> =
   | { kind: "ready"; payload: T; generatedAt: string }
   | { kind: "error"; detail: string };
 
-export function useDeskSection<T>(ticker: string, section: string, active: boolean) {
+export function useDeskSection<T>(
+  ticker: string,
+  section: string,
+  active: boolean,
+  revision = 0,
+) {
   const [state, setState] = useState<SectionState<T>>({ kind: "idle" });
+  // LEAP A6: one effect keyed on revision — a freshness bump refetches; the
+  // cleanup only cancels when inputs truly change (never mid-flight on our
+  // own state transitions).
   useEffect(() => {
-    if (!active || state.kind !== "idle") return;
+    if (!active) return;
     let cancelled = false;
     setState({ kind: "loading" });
     void (async () => {
@@ -54,9 +62,45 @@ export function useDeskSection<T>(ticker: string, section: string, active: boole
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticker, section, active]);
+  }, [ticker, section, active, revision]);
   return state;
+}
+
+/**
+ * LEAP A6 — freshness watcher: polls the lightweight header section every
+ * 5 minutes (visible tab only). When generated_at moves, the returned
+ * revision increments and streamed sections revalidate. One-shot polls on an
+ * interval — not an animation loop (D49 governs motion, not data freshness).
+ */
+export function useDeskFreshness(ticker: string, intervalMs = 300_000) {
+  const [revision, setRevision] = useState(0);
+  const lastRef = useRef<string | null>(null);
+  useEffect(() => {
+    let stop = false;
+    const probe = async () => {
+      if (stop || document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/v1/autopilot/desk/${encodeURIComponent(ticker)}/header`,
+        );
+        if (!res.ok) return;
+        const body = await res.json();
+        const stamp = String(body?.data?.generated_at ?? "");
+        if (lastRef.current && stamp && stamp !== lastRef.current) {
+          setRevision((r) => r + 1);
+        }
+        if (stamp) lastRef.current = stamp;
+      } catch {
+        /* freshness probing never surfaces errors */
+      }
+    };
+    const id = window.setInterval(() => void probe(), intervalMs);
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+    };
+  }, [ticker, intervalMs]);
+  return revision;
 }
 
 /** Lazy-mount wrapper: children render only once scrolled near the viewport. */

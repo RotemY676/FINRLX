@@ -13,8 +13,10 @@ import { useState } from "react";
 
 import {
   DeskCard,
+  Pill,
   SectionSkeleton,
   SectionDegraded,
+  useDeskFreshness,
   useDeskSection,
   useNearViewport,
 } from "@/components/desk/primitives";
@@ -53,16 +55,18 @@ function StreamedSection({
   id,
   title,
   subtitle,
+  revision,
   Component,
 }: {
   ticker: string;
   id: string;
   title: string;
   subtitle?: string;
+  revision: number;
   Component: (p: { payload: any }) => React.ReactNode;
 }) {
   const [ref, near] = useNearViewport<HTMLDivElement>();
-  const state = useDeskSection<any>(ticker, id, near);
+  const state = useDeskSection<any>(ticker, id, near, revision);
   return (
     <div ref={ref}>
       <DeskCard id={id} title={title} subtitle={subtitle}>
@@ -81,8 +85,10 @@ function StreamedSection({
 export default function DeskPage() {
   const params = useParams<{ ticker: string }>();
   const ticker = decodeURIComponent(params.ticker ?? "").toUpperCase();
-  const header = useDeskSection<any>(ticker, "header", true);
+  const revision = useDeskFreshness(ticker);
+  const header = useDeskSection<any>(ticker, "header", true, revision);
   const [active, setActive] = useState<string>("chart");
+  const alerts: any[] = header.kind === "ready" ? (header.payload?.alerts ?? []) : [];
 
   return (
     <div className="mx-auto flex max-w-6xl gap-6 px-4 py-6" data-testid="analyst-desk">
@@ -102,6 +108,13 @@ export default function DeskPage() {
 
       <main className="min-w-0 flex-1 space-y-5">
         <DeskCard id="header" title="Analyst Desk" subtitle="evidence-first research">
+          {alerts.length > 0 && (
+            <div data-testid="desk-alerts" className="mb-3 rounded-lg border border-line bg-caution-soft p-2 text-xs text-caution-soft-ink">
+              {alerts.map((a) => (
+                <p key={a.id}>⚠ {a.title} — {a.description?.slice(0, 140)}</p>
+              ))}
+            </div>
+          )}
           {header.kind === "ready" ? (
             <HeaderSection payload={header.payload} />
           ) : header.kind === "error" ? (
@@ -112,7 +125,7 @@ export default function DeskPage() {
         </DeskCard>
 
         {REGISTRY.map((s) => (
-          <StreamedSection key={s.id} ticker={ticker} {...s} />
+          <StreamedSection key={s.id} ticker={ticker} revision={revision} {...s} />
         ))}
 
         <footer className="rounded-lg border border-line bg-surface-2 p-3 text-xs text-ink-4"
