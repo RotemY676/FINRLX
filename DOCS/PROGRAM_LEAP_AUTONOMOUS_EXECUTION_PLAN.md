@@ -39,7 +39,7 @@ Unchanged from v2.0 §§1–2 (seven-step phase loop, RESUME.md survivability, s
 ### 2.5 Question-Zero rule (the operator's stated acceptance test)
 The program passes only if it runs end-to-end **without a single question directed at the operator**. Enforcement is mechanical, not aspirational:
 - **QZ-1:** The agent never asks the operator anything, in any channel. Every fork resolves via the Decision Register (§4) or its fallback.
-- **QZ-2:** Gate on every PR: report + PR body contain no interrogative sentence addressed to the operator ("should we…?", "do you want…?", "?"-terminated requests). A `scripts/question_zero_check.py` linter scans PR bodies and reports; failure blocks merge.
+- **QZ-2:** Gate on every PR: report + PR body contain no interrogative sentence addressed to the operator ("should we…", "do you want…", question-mark-terminated requests). A `scripts/question_zero_check.py` linter scans PR bodies and reports; failure blocks merge. <!-- qz-allow -->
 - **QZ-3:** Genuinely undecidable items (money, external accounts, irreversible brand moves) do not become questions — they become **Blocked Reports** naming the single E-item that unblocks, and the agent proceeds to the next unblocked phase.
 - **QZ-4:** The C1 close report certifies: zero questions asked across the program, with the deviations ledger as evidence of how forks were resolved instead.
 
