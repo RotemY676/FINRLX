@@ -91,9 +91,13 @@ def sharpe(returns: Sequence[float]) -> float:
     n = len(returns)
     if n < 2:
         return 0.0
-    mean = sum(returns) / n
-    var = sum((r - mean) ** 2 for r in returns) / (n - 1)
-    if var <= 0:
+    mean = math.fsum(returns) / n
+    var = math.fsum((r - mean) ** 2 for r in returns) / (n - 1)
+    # Constant/near-constant series have no meaningful Sharpe. The epsilon is
+    # relative to the mean's scale so float-summation residue (which differs
+    # across Python versions: 3.12 sum() is compensated, 3.11 is not) can
+    # never masquerade as real variance and explode the ratio.
+    if var <= (1e-9 * max(abs(mean), 1e-12)) ** 2:
         return 0.0
     return (mean / math.sqrt(var)) * math.sqrt(TRADING_DAYS_PER_YEAR)
 

@@ -24,3 +24,11 @@ echo "── CI-parity: pinned ruff + mypy (backend) ──"
 
 echo "── CI-parity: playwright spec compilation (frontend) ──"
 ( cd frontend && DISABLE_WEBSERVER=1 npx playwright test --list > /dev/null && echo "playwright --list OK" )
+
+# CI-PARITY (added after the 3-strike CI incident of 2026-07-07):
+# gates MUST run on the CI interpreter when available. A CPython matching
+# .github/workflows/ci.yml lives at ~/py311 (built from source); prefer
+# /tmp/ci311/bin/python (pinned-deps venv) for ruff/mypy/pytest if present.
+if [ -x /tmp/ci311/bin/python ]; then
+  echo "[ci_gate] CI-parity interpreter detected: $(/tmp/ci311/bin/python -V)"
+fi
