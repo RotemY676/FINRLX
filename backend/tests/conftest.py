@@ -191,3 +191,25 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+# ── LEAP hermetic-network guard ──────────────────────────────────────────────
+# Unit tests must behave identically on any machine. GitHub runners have open
+# internet while dev sandboxes do not, which made provider-backed dossier
+# sections (SEC XBRL / Finnhub / ApeWisdom, added in Track A) behave
+# differently in CI vs locally. This autouse fixture makes ALL outbound httpx
+# calls fail fast with ConnectError — exactly the graceful-degradation path
+# the providers are built for. Tests that exercise provider logic patch
+# httpx.get (or module-level _get) themselves, which overrides this for their
+# duration; everything else gets deterministic "unreachable" sections.
+import httpx as _httpx
+import pytest as _pytest
+
+
+@_pytest.fixture(autouse=True)
+def _hermetic_network(monkeypatch):
+    def _blocked(*args, **kwargs):
+        raise _httpx.ConnectError("outbound network disabled in unit tests")
+
+    monkeypatch.setattr(_httpx, "get", _blocked)
+    yield
