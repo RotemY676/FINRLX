@@ -1,0 +1,879 @@
+{
+  "metadata": {
+    "export_id": "a5be99be-d941-4958-a354-410b631fe58c",
+    "created_at": "2026-07-07T14:35:43.782705+00:00",
+    "name": "Local Research Dataset Export",
+    "scope": "local_research",
+    "research_only": true,
+    "offline_only": true,
+    "shadow_only": true,
+    "no_production_influence": true,
+    "not_eligible_for_promotion": true,
+    "source_candidate_id": null,
+    "source_benchmark_report_id": null,
+    "candidate_metadata": null,
+    "benchmark_metadata": null,
+    "row_count": 23,
+    "date_range": {
+      "start": "2026-03-16",
+      "end": "2026-04-15"
+    },
+    "export_format": "json",
+    "feature_schema": [
+      "price",
+      "engine_score"
+    ],
+    "target_schema": [
+      "next_price",
+      "realized_return"
+    ],
+    "warning_schema": [],
+    "checksum": "cd0e1901be55aa0787038bf9585d3293",
+    "fingerprint": "3bf5778e6b113cd7",
+    "safety_flags": {
+      "research_only": true,
+      "offline_only": true,
+      "shadow_only": true,
+      "no_production_influence": true,
+      "not_eligible_for_promotion": true
+    },
+    "limitations": [
+      "Research-only, offline-only, shadow-only dataset.",
+      "Not used by production recommendations.",
+      "Not eligible for promotion.",
+      "No broker execution.",
+      "No real-time production signal generation."
+    ],
+    "warnings": []
+  },
+  "rows": [
+    {
+      "date": "2026-03-16",
+      "next_date": "2026-03-17",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-17",
+      "next_date": "2026-03-18",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-18",
+      "next_date": "2026-03-19",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-19",
+      "next_date": "2026-03-20",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-20",
+      "next_date": "2026-03-23",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-23",
+      "next_date": "2026-03-24",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-24",
+      "next_date": "2026-03-25",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-25",
+      "next_date": "2026-03-26",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-26",
+      "next_date": "2026-03-27",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-27",
+      "next_date": "2026-03-30",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-30",
+      "next_date": "2026-03-31",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-03-31",
+      "next_date": "2026-04-01",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-01",
+      "next_date": "2026-04-02",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-02",
+      "next_date": "2026-04-03",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-03",
+      "next_date": "2026-04-06",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-06",
+      "next_date": "2026-04-07",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 206.54,
+          "realized_return": 0.0
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 423.72,
+          "realized_return": 0.0
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-07",
+      "next_date": "2026-04-08",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 206.54,
+          "engine_score": 0.3126,
+          "next_price": 192.55,
+          "realized_return": -0.067735
+        },
+        {
+          "ticker": "MSFT",
+          "price": 423.72,
+          "engine_score": -0.2317,
+          "next_price": 414.41,
+          "realized_return": -0.021972
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-08",
+      "next_date": "2026-04-09",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 192.55,
+          "engine_score": 0.3126,
+          "next_price": 192.7,
+          "realized_return": 0.000779
+        },
+        {
+          "ticker": "MSFT",
+          "price": 414.41,
+          "engine_score": -0.2317,
+          "next_price": 424.65,
+          "realized_return": 0.02471
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-09",
+      "next_date": "2026-04-10",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 192.7,
+          "engine_score": 0.3126,
+          "next_price": 196.7,
+          "realized_return": 0.020758
+        },
+        {
+          "ticker": "MSFT",
+          "price": 424.65,
+          "engine_score": -0.2317,
+          "next_price": 436.82,
+          "realized_return": 0.028659
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "next_date": "2026-04-13",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 196.7,
+          "engine_score": 0.3126,
+          "next_price": 195.43,
+          "realized_return": -0.006457
+        },
+        {
+          "ticker": "MSFT",
+          "price": 436.82,
+          "engine_score": -0.2317,
+          "next_price": 428.32,
+          "realized_return": -0.019459
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-13",
+      "next_date": "2026-04-14",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 195.43,
+          "engine_score": 0.3126,
+          "next_price": 192.17,
+          "realized_return": -0.016681
+        },
+        {
+          "ticker": "MSFT",
+          "price": 428.32,
+          "engine_score": -0.2317,
+          "next_price": 436.32,
+          "realized_return": 0.018678
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-14",
+      "next_date": "2026-04-15",
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 192.17,
+          "engine_score": 0.3126,
+          "next_price": 195.1,
+          "realized_return": 0.015247
+        },
+        {
+          "ticker": "MSFT",
+          "price": 436.32,
+          "engine_score": -0.2317,
+          "next_price": 434.02,
+          "realized_return": -0.005271
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    },
+    {
+      "date": "2026-04-15",
+      "next_date": null,
+      "assets": [
+        {
+          "ticker": "AAPL",
+          "price": 195.1,
+          "engine_score": 0.3126,
+          "next_price": null,
+          "realized_return": null
+        },
+        {
+          "ticker": "MSFT",
+          "price": 434.02,
+          "engine_score": -0.2317,
+          "next_price": null,
+          "realized_return": null
+        }
+      ],
+      "universe_tickers": [
+        "AAPL",
+        "MSFT"
+      ],
+      "policy_constraints": {
+        "position_cap_max": 0.15,
+        "cash_floor": 0.05,
+        "confidence_model_min": 0.25,
+        "confidence_data_min": 0.5,
+        "confidence_operational_min": 0.5,
+        "sector_cap": 0.3,
+        "data_freshness_max_age": 24.0,
+        "ml_shadow_only": 1.0,
+        "publication_requires_lineage": 1.0,
+        "max_invested": 0.95
+      }
+    }
+  ]
+}

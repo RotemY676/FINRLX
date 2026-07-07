@@ -3,38 +3,55 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_pricechart_nvda(client):
-    """GET /pricechart?ticker=NVDA returns chart data with events."""
+async def test_pricechart_serves_real_chain_data(client, monkeypatch):
+    """K1 rewrite: /pricechart serves the provider chain, not a generator.
+
+    (Replaces the design-sprint5 fabricator-era assertions that required
+    invented events and a fictional confidence band.)"""
+    from datetime import date, timedelta
+
+    import app.api.v1.pricechart as pc
+    import app.services.single_ticker_analysis as sta
+    from app.services.single_ticker_analysis import Bars
+
+    dates, closes = [], []
+    d, px, i = date(2024, 6, 3), 100.0, 0
+    while len(dates) < 300:
+        if d.weekday() < 5:
+            px *= 1.001
+            dates.append(d); closes.append(round(px, 4)); i += 1
+        d += timedelta(days=1)
+    bars = Bars(dates=dates, closes=closes, volumes=[1] * 300,
+                highs=closes, lows=closes)
+
+    def fake_history(sym, days):
+        if sym == "SPY":
+            raise RuntimeError("no benchmark here")
+        return bars
+
+    monkeypatch.setattr(sta, "fetch_history", fake_history)
+    pc._cache.clear()
     r = await client.get("/api/v1/pricechart?ticker=NVDA")
     assert r.status_code == 200
     data = r.json()["data"]
     assert data["ticker"] == "NVDA"
-    assert len(data["points"]) >= 10
-    assert len(data["events"]) == 3
-    assert data["points"][0]["benchmark"] is not None
-    assert data["points"][0]["band_upper"] is not None
+    assert len(data["points"]) >= 200
+    assert data["points"][-1]["price"] == closes[-1]
+    assert data["events"] == []          # fabricated headlines are gone
+    assert data["points"][0].get("band_upper") is None  # fictional band gone
 
 
 @pytest.mark.asyncio
-async def test_pricechart_unknown_ticker(client):
-    """GET /pricechart?ticker=ZZZZ returns generic chart."""
+async def test_pricechart_unknown_ticker_is_null_not_fiction(client, monkeypatch):
+    import app.api.v1.pricechart as pc
+    import app.services.single_ticker_analysis as sta
+
+    monkeypatch.setattr(sta, "fetch_history",
+                        lambda t, d: (_ for _ in ()).throw(RuntimeError("none")))
+    pc._cache.clear()
     r = await client.get("/api/v1/pricechart?ticker=ZZZZ")
     assert r.status_code == 200
-    data = r.json()["data"]
-    assert data["ticker"] == "ZZZZ"
-    assert len(data["points"]) >= 10
-    assert len(data["events"]) == 0
-
-
-@pytest.mark.asyncio
-async def test_pricechart_aapl(client):
-    """GET /pricechart?ticker=AAPL returns chart with 2 events."""
-    r = await client.get("/api/v1/pricechart?ticker=AAPL")
-    assert r.status_code == 200
-    data = r.json()["data"]
-    assert data["ticker"] == "AAPL"
-    assert len(data["events"]) == 2
-
+    assert r.json()["data"] is None
 
 @pytest.mark.asyncio
 async def test_ops_engines_have_drift(client):
@@ -46,7 +63,7 @@ async def test_ops_engines_have_drift(client):
     for engine in data:
         assert "drift" in engine
         # drift is a float (may be 0.0 if only one run exists)
-        assert isinstance(engine["drift"], (int, float))
+        assert isinstance(engine["drift"], int | float)
 
 
 @pytest.mark.asyncio
@@ -56,7 +73,7 @@ async def test_incident_resolve(client):
     r = await client.get("/api/v1/ops/incidents")
     incidents = r.json()["data"]
     assert len(incidents) >= 1
-    inc_id = incidents[0]["id"]
+    incidents[0]["id"]
 
     # Resolve it — note: inc_id is truncated (8 chars) in the API response,
     # but we need the full ID. The resolve endpoint uses full DB id.

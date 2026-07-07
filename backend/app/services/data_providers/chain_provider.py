@@ -49,11 +49,20 @@ def fetch_bars_chain(
     ([], warnings). All accumulated warnings from failed legs are preserved
     so manifests show the full degradation story.
     """
+    # K1: coverage-aware acceptance. "First non-empty wins" let a provider
+    # returning a handful of bars beat a fallback holding the full window
+    # (credibility audit Finding A). A leg now stands alone only when it
+    # covers enough of the requested window; otherwise deeper legs are
+    # consulted and the deepest set is served.
+    expected = max(int(((end - start).days) * 5 / 7 * 0.9), 1)
+    best: tuple[int, int, str, list[dict[str, Any]]] | None = None
     all_warnings: list[str] = []
     for position, (name, module) in enumerate(_CHAIN, start=1):
         bars, warnings = module.fetch_bars(ticker, asset_id, start, end)
         all_warnings.extend(warnings)
-        if bars:
+        if bars and (best is None or len(bars) > best[0]):
+            best = (len(bars), position, name, bars)
+        if bars and len(bars) >= expected * 0.5:
             fetched_at = datetime.now(UTC)
             for bar in bars:
                 bar["fetched_at"] = fetched_at
@@ -69,6 +78,18 @@ def fetch_bars_chain(
                     name,
                 )
             return bars, all_warnings, name
+    if best is not None:
+        _count, position, name, bars = best
+        fetched_at = datetime.now(UTC)
+        for bar in bars:
+            bar["fetched_at"] = fetched_at
+            bar["chain_position"] = position
+        _apply_quality_flags(bars, all_warnings)
+        all_warnings.append(
+            f"chain: served by {name} (position {position}) with PARTIAL coverage "
+            f"({_count} bars vs ~{expected} expected)"
+        )
+        return bars, all_warnings, name
     all_warnings.append(
         f"chain: all providers empty for {ticker} [{start}..{end}]; "
         "existing cached bars remain authoritative (stale)"

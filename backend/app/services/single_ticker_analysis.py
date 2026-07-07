@@ -163,9 +163,71 @@ class Bars:
         )
 
 
+MIN_COVERAGE = 0.5  # a source must cover >=50% of expected sessions to stand alone
+
+
+def _expected_sessions(days: int) -> int:
+    return max(int(days * 5 / 7 * 0.9), 1)
+
+
+def _bars_from_stooq(ticker: str, start: date, end: date) -> Bars:
+    """Keyless fallback via the F1 stooq provider (Operation Credibility K1).
+
+    The dossier path previously used raw yfinance ONLY; from cloud hosts
+    yfinance frequently returns a thin recent window instead of failing,
+    which produced real latest prices with empty rolling features (the
+    production 'dash-wall', credibility audit Finding A)."""
+    from app.services.data_providers import stooq_provider
+
+    rows, _warnings = stooq_provider.fetch_bars(ticker, ticker, start, end)
+    dates_, closes_, volumes_, highs_, lows_ = [], [], [], [], []
+    for r in rows:
+        c = r.get("close")
+        if not c or c <= 0:
+            continue
+        d = r["bar_date"] if "bar_date" in r else r.get("date")
+        dates_.append(d if isinstance(d, date) else date.fromisoformat(str(d)[:10]))
+        closes_.append(float(c))
+        volumes_.append(int(r.get("volume") or 0))
+        highs_.append(float(r.get("high") or c))
+        lows_.append(float(r.get("low") or c))
+    return Bars(dates_, closes_, volumes_, highs_, lows_)
+
+
 def fetch_history(ticker: str, days: int) -> Bars:
+    """Deepest-coverage-wins across yfinance -> stooq (K1)."""
     end = date.today()
     start = end - timedelta(days=days)
+    need = _expected_sessions(days)
+
+    yf_bars = Bars([], [], [], [], [])
+    try:
+        yf_bars = _fetch_history_yfinance(ticker, start, end)
+    except Exception as exc:  # noqa: BLE001 — fall through to the next source
+        _log.warning("fetch_history: yfinance failed for %s: %s", ticker, exc)
+    if len(yf_bars.closes) >= need * MIN_COVERAGE and len(yf_bars.closes) >= 60:
+        return yf_bars
+
+    try:
+        sq_bars = _bars_from_stooq(ticker, start, end)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("fetch_history: stooq failed for %s: %s", ticker, exc)
+        sq_bars = Bars([], [], [], [], [])
+
+    best = yf_bars if len(yf_bars.closes) >= len(sq_bars.closes) else sq_bars
+    if len(yf_bars.closes) and best is sq_bars:
+        _log.warning(
+            "fetch_history: yfinance thin for %s (%d bars); stooq served %d",
+            ticker, len(yf_bars.closes), len(sq_bars.closes),
+        )
+    if not best.closes:
+        raise RuntimeError(
+            f"no provider returned usable history for {ticker} in {start}..{end}"
+        )
+    return best
+
+
+def _fetch_history_yfinance(ticker: str, start: date, end: date) -> Bars:
     tkr = yf.Ticker(ticker)
     df = tkr.history(
         start=start.isoformat(),
@@ -175,7 +237,7 @@ def fetch_history(ticker: str, days: int) -> Bars:
         actions=False,
     )
     if df is None or df.empty:
-        raise RuntimeError(f"yfinance returned no data for {ticker} in {start}..{end}")
+        raise RuntimeError(f"yfinance returned no data for {ticker}")
     dates_, closes_, volumes_, highs_, lows_ = [], [], [], [], []
     for ts, row in df.iterrows():
         d = ts.date() if hasattr(ts, "date") else ts

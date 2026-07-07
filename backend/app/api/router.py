@@ -9,6 +9,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.autopilot import router as autopilot_router
 from app.api.v1.backtests import router as backtests_router
 from app.api.v1.comparison import router as comparison_router
+from app.api.v1.data_health import router as data_health_router
 from app.api.v1.decision import router as decision_router
 from app.api.v1.engines import router as engines_router
 from app.api.v1.features import router as features_router
@@ -71,6 +72,7 @@ api_router.include_router(feedback_router, tags=["feedback"])
 api_router.include_router(scenario_router, tags=["scenario"])
 api_router.include_router(actions_router, tags=["actions"])
 api_router.include_router(pricechart_router, tags=["pricechart"])
+api_router.include_router(data_health_router, tags=["ops"])
 api_router.include_router(ingest_router, tags=["ingestion"])
 api_router.include_router(features_router, tags=["features"])
 api_router.include_router(pipeline_router, tags=["pipeline"])
