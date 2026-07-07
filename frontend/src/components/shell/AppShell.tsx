@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { TopBar } from "./TopBar";
 import { AppBar } from "./AppBar";
 import { ContextStrip } from "./ContextStrip";
+import { usePathname } from "next/navigation";
+import { SimpleShell } from "./SimpleShell";
 import { Sidebar } from "./Sidebar";
 import { PaneProvider, ContextPanePanel, usePaneContext } from "./ContextPane";
 import { CommandPalette } from "./CommandPalette";
@@ -25,6 +27,13 @@ const MOBILE_BREAKPOINT = "(max-width: 767px)";
  *   bottom sheet overlaying main content. Both share the same toggles.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  // LEAP S7a fix: Simple Mode routes get minimal chrome (spec J0/S7.4);
+  // everything else keeps the full Pro shell untouched.
+  const pathname = usePathname();
+  const SIMPLE_ROUTES = new Set(["/", "/simple", "/compare"]);
+  if (pathname && SIMPLE_ROUTES.has(pathname)) {
+    return <SimpleShell>{children}</SimpleShell>;
+  }
   return (
     <PaneProvider>
       <ShellInner>{children}</ShellInner>

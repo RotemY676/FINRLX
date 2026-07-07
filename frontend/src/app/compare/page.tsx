@@ -83,12 +83,12 @@ export default function ComparePage() {
     data.divergence_highlights.some((h) => h.dimension === dim);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 px-4 py-8">
-      <h1 className="text-xl font-bold text-[var(--ink)]">Compare</h1>
+    <div className="mx-auto max-w-5xl space-y-4 px-4 py-8">
+      <h1 className="text-xl font-bold text-ink">Compare</h1>
 
       {(state.kind === "input" || state.kind === "error") && (
         <section className="max-w-md">
-          <label htmlFor="cmp" className="text-sm text-[var(--ink-2)]">
+          <label htmlFor="cmp" className="text-sm text-ink-2">
             Add tickers (2-4), comma-separated
           </label>
           <form
@@ -103,17 +103,17 @@ export default function ComparePage() {
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
               placeholder="NVDA, AMD"
-              className="w-full rounded-lg border border-[var(--line-strong)] bg-[var(--surface)] px-3 py-2 text-[var(--ink)]"
+              className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink"
             />
             <button
               type="submit"
-              className="rounded-lg bg-[var(--primary)] px-4 py-2 font-semibold text-[var(--primary-ink)]"
+              className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-ink"
             >
               Compare
             </button>
           </form>
           {state.kind === "error" && (
-            <p className="mt-3 text-sm text-[var(--ink)]">
+            <p className="mt-3 text-sm text-ink">
               Comparison is temporarily unavailable. Your tickers are kept — retry when
               ready.
             </p>
@@ -122,7 +122,7 @@ export default function ComparePage() {
       )}
 
       {state.kind === "loading" && (
-        <section aria-live="polite" className="py-12 text-sm text-[var(--ink-2)]">
+        <section aria-live="polite" className="py-12 text-sm text-ink-2">
           Building dossiers for {state.tickers.join(", ")}… First-time tickers take
           longer; results are cached afterward.
         </section>
@@ -132,10 +132,10 @@ export default function ComparePage() {
         <section className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
-              <tr className="text-left text-[var(--ink-2)]">
+              <tr className="text-left text-ink-2">
                 <th className="py-2 pr-3 font-medium">Dimension</th>
                 {state.data.tickers.map((t) => (
-                  <th key={t} className="py-2 pr-3 font-semibold text-[var(--ink)]">
+                  <th key={t} className="py-2 pr-3 font-semibold text-ink">
                     {t}
                   </th>
                 ))}
@@ -191,25 +191,25 @@ export default function ComparePage() {
               />
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-[var(--ink-4)]">
+          <p className="mt-2 text-xs text-ink-4">
             ◆ marks dimensions where the tickers differ — values shown are measured, side
             by side.
           </p>
-          <div className="mt-3 border-t border-[var(--line)] pt-2 text-xs text-[var(--ink-2)]">
+          <div className="mt-3 border-t border-line pt-2 text-xs text-ink-2">
             {state.data.disclaimers.map((d) => (
               <p key={d}>{d}</p>
             ))}
           </div>
           <button
             type="button"
-            className="mt-3 text-sm text-[var(--primary)] underline"
+            className="mt-3 text-sm text-primary underline"
             onClick={() => setState({ kind: "input" })}
           >
             Compare different tickers
           </button>
         </section>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -226,21 +226,21 @@ function Row({
 }) {
   const byTicker = new Map(data.columns.map((c) => [c.ticker, c]));
   return (
-    <tr className="border-t border-[var(--line)]">
-      <td className="py-2 pr-3 text-[var(--ink-2)]">
+    <tr className="border-t border-line">
+      <td className="py-2 pr-3 text-ink-2">
         {label} {diverged && <span aria-label="tickers differ on this dimension">◆</span>}
       </td>
       {data.tickers.map((t) => {
         const col = byTicker.get(t);
         if (!col) {
           return (
-            <td key={t} className="py-2 pr-3 text-[var(--ink-2)]">
+            <td key={t} className="py-2 pr-3 text-ink-2">
               Couldn&apos;t build this dossier: {data.errors[t] ?? "unavailable"}
             </td>
           );
         }
         return (
-          <td key={t} className="py-2 pr-3 text-[var(--ink)]">
+          <td key={t} className="py-2 pr-3 text-ink">
             {render(col)}
           </td>
         );

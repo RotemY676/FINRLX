@@ -85,13 +85,13 @@ export interface TournamentPayload {
 function toneClasses(tone: "pos" | "neutral" | "caution" | "breach"): string {
   switch (tone) {
     case "pos":
-      return "bg-[var(--pos-soft)] text-[var(--pos-soft-ink)]";
+      return "bg-pos-soft text-pos-soft-ink";
     case "caution":
-      return "bg-[var(--caution-soft)] text-[var(--caution-soft-ink)]";
+      return "bg-caution-soft text-caution-soft-ink";
     case "breach":
-      return "bg-[var(--breach-soft)] text-[var(--breach-soft-ink)]";
+      return "bg-breach-soft text-breach-soft-ink";
     default:
-      return "bg-[var(--surface-2)] text-[var(--ink-2)]";
+      return "bg-surface-2 text-ink-2";
   }
 }
 
@@ -107,7 +107,7 @@ export function Chip({
   return (
     <span
       title={title}
-      className={`inline-flex items-center rounded-full border border-[var(--line)] px-2.5 py-0.5 text-xs font-medium ${toneClasses(tone)}`}
+      className={`inline-flex items-center rounded-full border border-line px-2.5 py-0.5 text-xs font-medium ${toneClasses(tone)}`}
     >
       {children}
     </span>
@@ -134,9 +134,9 @@ export function SummaryBar({ dossier }: { dossier: DossierPayload }) {
   const stance: SimpleStance = toSimpleStance(dossier.summary.stance);
   const tier = stalenessTier(dossier.freshness.latest_bar);
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
-      <span className="text-lg font-semibold text-[var(--ink)]">{dossier.ticker}</span>
-      <span className="text-[var(--ink)]">{dossier.summary.latest_close.toFixed(2)}</span>
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-4 py-3">
+      <span className="text-lg font-semibold text-ink">{dossier.ticker}</span>
+      <span className="text-ink">{dossier.summary.latest_close.toFixed(2)}</span>
       <Chip tone={stanceTone(stance)} title={STANCE_HOVER_LABEL}>
         stance: {stance}
       </Chip>
@@ -148,7 +148,7 @@ export function SummaryBar({ dossier }: { dossier: DossierPayload }) {
       </Chip>
       <button
         type="button"
-        className="ml-auto rounded-lg border border-[var(--line-strong)] px-3 py-1 text-sm text-[var(--ink)]"
+        className="ml-auto rounded-lg border border-line-strong px-3 py-1 text-sm text-ink"
         onClick={() => {
           void import("@/lib/exportDossier").then((m) => m.downloadDossierHtml(dossier));
         }}
@@ -162,7 +162,7 @@ export function SummaryBar({ dossier }: { dossier: DossierPayload }) {
 export function DegradedBanner({ dossier }: { dossier: DossierPayload }) {
   if (stalenessTier(dossier.freshness.latest_bar) !== "degraded") return null;
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--breach-soft)] px-4 py-2 text-sm text-[var(--breach-soft-ink)]">
+    <div className="rounded-lg border border-line bg-breach-soft px-4 py-2 text-sm text-breach-soft-ink">
       Price data ends {dossier.freshness.latest_bar}; conclusions may be outdated.
     </div>
   );
@@ -178,8 +178,8 @@ const FEATURE_READS: Array<{ key: string; label: string }> = [
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-2)]">
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-2">
         {title}
       </h3>
       {children}
@@ -206,9 +206,9 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
         <table className="mt-2 w-full text-sm">
           <tbody>
             {featureRows.map((r) => (
-              <tr key={r.label} className="border-t border-[var(--line)]">
-                <td className="py-1 text-[var(--ink-2)]">{r.label}</td>
-                <td className="py-1 text-right font-mono text-[var(--ink)]">
+              <tr key={r.label} className="border-t border-line">
+                <td className="py-1 text-ink-2">{r.label}</td>
+                <td className="py-1 text-right font-mono text-ink">
                   {typeof r.value === "number" ? r.value.toFixed(3) : "—"}
                 </td>
               </tr>
@@ -217,7 +217,7 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
         </table>
         <button
           type="button"
-          className="mt-2 text-sm text-[var(--primary)] underline"
+          className="mt-2 text-sm text-primary underline"
           onClick={() => {
             setSignalsOpen((v) => !v);
             if (!signalsOpen) void track("leap.evidence_expanded", { card: "technical" });
@@ -229,8 +229,8 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
           <table className="mt-2 w-full text-xs">
             <tbody>
               {Object.entries(tech.features).map(([k, v]) => (
-                <tr key={k} className="border-t border-[var(--line)]">
-                  <td className="py-0.5 text-[var(--ink-2)]">{k}</td>
+                <tr key={k} className="border-t border-line">
+                  <td className="py-0.5 text-ink-2">{k}</td>
                   <td className="py-0.5 text-right font-mono">
                     {typeof v === "number" ? v.toFixed(4) : "—"}
                   </td>
@@ -251,14 +251,14 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
             </div>
             <ul className="space-y-2 text-sm">
               {news.items_7d.slice(0, 4).map((item) => (
-                <li key={`${item.date}-${item.title}`} className="border-t border-[var(--line)] pt-2">
-                  <span className="text-[var(--ink)]">{item.title}</span>{" "}
+                <li key={`${item.date}-${item.title}`} className="border-t border-line pt-2">
+                  <span className="text-ink">{item.title}</span>{" "}
                   <Chip>{item.sentiment}</Chip>
                   {item.why_this_matters && (
-                    <p className="mt-1 text-[var(--ink-2)]">
+                    <p className="mt-1 text-ink-2">
                       Why it matters: {item.why_this_matters}
                       {item.annotation_meta && (
-                        <span className="block text-xs text-[var(--ink-4)]">
+                        <span className="block text-xs text-ink-4">
                           Generated by {item.annotation_meta.model} · based on item from{" "}
                           {item.annotation_meta.freshness_stamp}
                         </span>
@@ -270,12 +270,12 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
             </ul>
           </>
         ) : (
-          <p className="text-sm text-[var(--ink-2)]">{news.note}</p>
+          <p className="text-sm text-ink-2">{news.note}</p>
         )}
       </Card>
 
       <Card title="Fundamentals">
-        <p className="text-sm text-[var(--ink-2)]">{dossier.sections.fundamentals.note}</p>
+        <p className="text-sm text-ink-2">{dossier.sections.fundamentals.note}</p>
       </Card>
 
       <Card title="Model insight">
@@ -292,7 +292,7 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
   const winner = tournament.winner;
   if (!winner) {
     return (
-      <p className="text-sm text-[var(--ink-2)]">
+      <p className="text-sm text-ink-2">
         {tournament.rationale ??
           "The tournament needs more history to validate candidates honestly."}
       </p>
@@ -304,14 +304,14 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
         <Chip tone="pos">winner: {winner.name}</Chip>
         <Chip>{winner.kind === "ml" ? "machine-learning" : "rule-based"}</Chip>
       </div>
-      <p className="mt-2 text-sm text-[var(--ink-2)]">
+      <p className="mt-2 text-sm text-ink-2">
         {winner.name} — validation score {winner.score}, chosen over{" "}
         {tournament.candidates.length} candidates after walk-forward validation with
         overfitting penalties.
       </p>
       <button
         type="button"
-        className="mt-2 text-sm text-[var(--primary)] underline"
+        className="mt-2 text-sm text-primary underline"
         onClick={() => {
           setOpen((v) => !v);
           if (!open) void track("leap.scoreboard_opened");
@@ -323,7 +323,7 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
         <div className="mt-2 overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-[var(--ink-2)]">
+              <tr className="text-left text-ink-2">
                 <th className="py-1">Candidate</th>
                 <th>Kind</th>
                 <th className="text-right">Train Sharpe</th>
@@ -335,7 +335,7 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
             </thead>
             <tbody>
               {tournament.candidates.map((c) => (
-                <tr key={c.key} className="border-t border-[var(--line)] font-mono">
+                <tr key={c.key} className="border-t border-line font-mono">
                   <td className="py-1 font-sans">{c.name}</td>
                   <td className="font-sans">{c.kind === "ml" ? "machine-learning" : "rule-based"}</td>
                   <td className="text-right">{c.train_sharpe.toFixed(2)}</td>
@@ -347,7 +347,7 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
               ))}
             </tbody>
           </table>
-          <div className="mt-2 rounded border border-[var(--line)] bg-[var(--surface-2)] p-2 text-xs text-[var(--ink-2)]">
+          <div className="mt-2 rounded border border-line bg-surface-2 p-2 text-xs text-ink-2">
             <div className="font-semibold">Reinforcement-learning candidates</div>
             <div>{tournament.rl?.note ?? tournament.rl?.status}</div>
           </div>
@@ -376,8 +376,8 @@ export function DossierPriceChart({ dossier }: { dossier: DossierPayload }) {
   const data = dossier.price_series;
   if (!data || data.length < 2) return null;
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--ink-2)]">
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-2">
         Price · {data.length} sessions
       </h3>
       <div className="h-56 w-full">
@@ -406,7 +406,7 @@ export function DossierPriceChart({ dossier }: { dossier: DossierPayload }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="mt-1 text-xs text-[var(--ink-4)]">
+      <p className="mt-1 text-xs text-ink-4">
         Current regime: {dossier.summary.regime} (rule-based research overlay, not a
         prediction).
       </p>
@@ -418,7 +418,7 @@ export function DossierPriceChart({ dossier }: { dossier: DossierPayload }) {
 
 export function DisclaimerStrip({ disclaimers }: { disclaimers: string[] }) {
   return (
-    <div className="border-t border-[var(--line)] pt-2 text-xs text-[var(--ink-2)]">
+    <div className="border-t border-line pt-2 text-xs text-ink-2">
       {disclaimers.map((d) => (
         <p key={d}>{d}</p>
       ))}

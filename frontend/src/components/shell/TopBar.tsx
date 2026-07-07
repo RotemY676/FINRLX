@@ -128,7 +128,6 @@ export function TopBar({
           FINRLX
         </span>
       </Link>
-      <Link href="/pro" className="text-sm text-[var(--ink-2)] underline-offset-2 hover:underline" title="Pro mode: the full decision command center and manual tools">Pro</Link>
 
       {/* Nav toggle — opens the mobile drawer below md, collapses the column above md */}
       <button

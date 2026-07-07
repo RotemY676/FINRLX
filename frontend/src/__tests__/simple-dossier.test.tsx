@@ -124,3 +124,18 @@ describe("Simple Mode dossier", () => {
     expect(screen.getByText(/not investment advice/)).toBeTruthy();
   });
 });
+
+describe("Simple routes chrome (S7a fix regression lock)", () => {
+  it("SimpleShell renders exactly one main, the Pro switch, and no sidebar chrome", async () => {
+    const { SimpleShell } = await import("@/components/shell/SimpleShell");
+    const { container } = render(
+      <SimpleShell>
+        <div>content</div>
+      </SimpleShell>,
+    );
+    expect(container.querySelectorAll("main").length).toBe(1);
+    expect(screen.getByTitle(/Pro mode/)).toBeTruthy();
+    expect(container.querySelector("aside")).toBeNull();
+    expect(container.querySelector('input[type="search"]')).toBeNull();
+  });
+});

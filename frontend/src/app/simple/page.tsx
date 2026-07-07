@@ -132,10 +132,10 @@ export default function SimpleModePage() {
   const indicativeStage = Math.min(Math.floor(elapsed / 1.2), STAGES.length - 1);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 px-4 py-8">
+    <div className="mx-auto max-w-5xl space-y-4 px-4 py-8">
       {state.kind === "hero" && (
         <section className="py-16 text-center">
-          <h1 className="mb-5 text-2xl font-bold text-[var(--ink)]">Research any stock</h1>
+          <h1 className="mb-5 text-2xl font-bold text-ink">Research any stock</h1>
           <form
             className="mx-auto flex max-w-md gap-2"
             onSubmit={(e) => {
@@ -149,36 +149,36 @@ export default function SimpleModePage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Try NVDA"
               aria-label="Stock ticker"
-              className="w-full rounded-lg border border-[var(--line-strong)] bg-[var(--surface)] px-4 py-3 text-lg text-[var(--ink)]"
+              className="w-full rounded-lg border border-line-strong bg-surface px-4 py-3 text-lg text-ink"
             />
             <button
               type="submit"
-              className="rounded-lg bg-[var(--primary)] px-5 py-3 font-semibold text-[var(--primary-ink)]"
+              className="rounded-lg bg-primary px-5 py-3 font-semibold text-primary-ink"
             >
               Research
             </button>
           </form>
           {suggestions.length > 0 && (
-            <ul className="mx-auto mt-2 max-w-md rounded-lg border border-[var(--line)] bg-[var(--surface)] text-left text-sm">
+            <ul className="mx-auto mt-2 max-w-md rounded-lg border border-line bg-surface text-left text-sm">
               {suggestions.map((sug) => (
                 <li key={sug.ticker}>
                   <button
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-[var(--surface-2)]"
+                    className="w-full px-3 py-2 text-left hover:bg-surface-2"
                     onClick={() => void research(sug.ticker)}
                   >
                     <span className="font-medium">{sug.ticker}</span>
-                    {sug.name ? <span className="text-[var(--ink-2)]"> — {sug.name}</span> : null}
+                    {sug.name ? <span className="text-ink-2"> — {sug.name}</span> : null}
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          <p className="mx-auto mt-4 max-w-lg text-sm text-[var(--ink-2)]">
+          <p className="mx-auto mt-4 max-w-lg text-sm text-ink-2">
             Automatic 360° research: prices, news, technicals, and a model tournament —
             with the evidence for every conclusion.
           </p>
-          <p className="mt-8 text-xs text-[var(--ink-4)]">
+          <p className="mt-8 text-xs text-ink-4">
             Research analysis, not investment advice.
           </p>
         </section>
@@ -186,8 +186,8 @@ export default function SimpleModePage() {
 
       {state.kind === "loading" && (
         <section aria-live="polite" className="mx-auto max-w-md py-16">
-          <p className="mb-3 text-sm text-[var(--ink-2)]">
-            <span className="font-semibold text-[var(--ink)]">{state.ticker}</span> —
+          <p className="mb-3 text-sm text-ink-2">
+            <span className="font-semibold text-ink">{state.ticker}</span> —
             researching… {elapsed.toFixed(1)}s
           </p>
           <ol className="space-y-1 text-sm">
@@ -196,10 +196,10 @@ export default function SimpleModePage() {
                 key={stage}
                 className={
                   i < indicativeStage
-                    ? "text-[var(--ink-2)]"
+                    ? "text-ink-2"
                     : i === indicativeStage
-                      ? "font-medium text-[var(--ink)]"
-                      : "text-[var(--ink-4)]"
+                      ? "font-medium text-ink"
+                      : "text-ink-4"
                 }
               >
                 {i < indicativeStage ? "✓ " : i === indicativeStage ? "… " : "○ "}
@@ -208,7 +208,7 @@ export default function SimpleModePage() {
             ))}
           </ol>
           {elapsed > 20 && (
-            <p className="mt-3 text-xs text-[var(--ink-2)]">
+            <p className="mt-3 text-xs text-ink-2">
               First-time research for a ticker takes longer; results are cached afterward.
             </p>
           )}
@@ -224,7 +224,7 @@ export default function SimpleModePage() {
           <DisclaimerStrip disclaimers={state.dossier.disclaimers} />
           <button
             type="button"
-            className="text-sm text-[var(--primary)] underline"
+            className="text-sm text-primary underline"
             onClick={() => {
               setInput("");
               setState({ kind: "hero" });
@@ -237,12 +237,12 @@ export default function SimpleModePage() {
 
       {state.kind === "nodata" && (
         <section className="mx-auto max-w-md py-16 text-center">
-          <p className="font-semibold text-[var(--ink)]">
+          <p className="font-semibold text-ink">
             No price data found for “{state.ticker}”.
           </p>
           <button
             type="button"
-            className="mt-4 text-sm text-[var(--primary)] underline"
+            className="mt-4 text-sm text-primary underline"
             onClick={() => setState({ kind: "hero" })}
           >
             Try another ticker
@@ -252,21 +252,21 @@ export default function SimpleModePage() {
 
       {state.kind === "error" && (
         <section className="mx-auto max-w-md py-16 text-center">
-          <p className="font-semibold text-[var(--ink)]">
+          <p className="font-semibold text-ink">
             Research is temporarily unavailable.
           </p>
-          <p className="mt-1 text-sm text-[var(--ink-2)]">
+          <p className="mt-1 text-sm text-ink-2">
             Your ticker is kept — retry when ready.
           </p>
           <button
             type="button"
-            className="mt-4 rounded-lg border border-[var(--line-strong)] px-4 py-2 text-sm"
+            className="mt-4 rounded-lg border border-line-strong px-4 py-2 text-sm"
             onClick={() => void research(state.ticker)}
           >
             Retry {state.ticker}
           </button>
         </section>
       )}
-    </main>
+    </div>
   );
 }
