@@ -40,7 +40,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | DEBT-S5-1 | OPEN — job-polling endpoint for real per-stage progress (v1 progress is indicative) | — | SIMPLE_MODE_SPEC.md §J1 |
 | S5 One Screen | VERTICAL SLICE DONE at /simple (route flip to / lands with S7) | leap/F0-bootstrap | src/app/simple, src/lib/simpleStance*, wording test |
 | S6 compare UI | DONE at /compare (council PASS; wording-test coverage extended) | leap/F0-bootstrap | src/app/compare |
-| DEBT-S5-2 | OPEN — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
+| DEBT-S5-2 | CLOSED by A4 — per-period regime band series for chart shading (backend) | — | DossierView.tsx note |
 | S7a route flip | DONE — / is Simple Mode; command center at /pro; Pro switcher in both shells; council PASS | leap/F0-bootstrap | council/S7A_* |
 | S5 polish | DONE — autocomplete + §5b-binding export (council PASS) | leap/F0-bootstrap | exportDossier.ts + binding test |
 | F1.6 staleness UI | DONE — /prices/freshness API + PriceFreshnessBadge on /research/[ticker] (council PASS) | leap/F0-bootstrap | council/F16_* |
@@ -48,6 +48,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | A1 data expansion | DONE — SEC XBRL trends (keyless) + Finnhub insider/filings adapters; 3 real dossier sections; stance regression | main | test_leap_a1_data_expansion.py |
 | A2 sentiment duality | DONE — social lane (premium flag + labeled fallback), divergence, FinGPT artifact lane (E.7 contract) | main | test_leap_a2_social.py |
 | A3 FinRL ensemble | DONE — E.6 artifact contract, protocol-match + re-deflation gates, worker runner + state exporter ready for E7 | main | test_leap_a3_ensemble.py |
+| A4 dossier v2 | DONE — regime bands (DEBT-S5-2 closed), event markers, signal matrix w/ percentiles, split windows, 10 D42 section endpoints | main | test_leap_a4_desk_payload.py |
 | F3 sweeps + C1 close | remaining verification items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags

@@ -453,6 +453,34 @@ def _section_insider(ticker: str, stages: list) -> dict:
     return _timed(stages, "insider", _build)
 
 
+def _build_desk_block(sym, bars, news_item_dicts, filings_section,
+                      insider_section, rebalances, states, price_series):
+    """LEAP A4 (D46-D48): everything the Analyst Desk chart/matrix/arena need."""
+    from app.services.desk_payload import (
+        event_markers,
+        regime_band_series,
+        signal_matrix,
+        split_windows,
+    )
+
+    chart_start = price_series[0]["date"] if price_series else "1900-01-01"
+    state_dates = [st.date for st in states]
+    splits = walk_forward_splits(len(states))
+    from app.services.single_ticker_analysis import compute_features as _cf
+
+    flat = _flatten_features(_cf(bars.closes, bars.volumes, [], news_source_exists=False))
+    return {
+        "available": True,
+        "regime_bands": regime_band_series(bars),
+        "event_markers": event_markers(
+            sym, news_item_dicts, filings_section, insider_section,
+            rebalances, chart_start,
+        ),
+        "signal_matrix": signal_matrix(bars, flat),
+        "split_windows": split_windows(state_dates, splits),
+    }
+
+
 def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> dict:
     """The full autopilot pipeline for one ticker. Synchronous v1 with
     per-stage timings persisted in the payload; cache-backed (D34)."""
@@ -546,6 +574,8 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
     except Exception as _exc:  # noqa: BLE001
         logger.warning("fingpt lane failed: %s", _exc)
         _fingpt_status = {"status": "lane_error"}
+    _filings_holder = _section_filings(ticker, stages)
+    _insider_holder = _section_insider(ticker, stages)
     dossier = {
         "ticker": sym,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -581,9 +611,14 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
                 "items_7d": _news_item_dicts,
             },
             "fundamentals": _section_fundamentals(ticker, stages),
-            "filings": _section_filings(ticker, stages),
-            "insider": _section_insider(ticker, stages),
+            "filings": _filings_holder,
+            "insider": _insider_holder,
             "model_insight": tournament,
+            "desk": _timed(stages, "desk", lambda: _build_desk_block(
+                sym, bars, _news_item_dicts,
+                _filings_holder, _insider_holder,
+                rebalances, states, price_series,
+            )),
         },
         "price_series": price_series,
         "stages": stages,

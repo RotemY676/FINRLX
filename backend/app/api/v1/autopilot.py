@@ -95,3 +95,60 @@ async def autopilot_compare(
         await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     return {"data": result}
+
+
+# LEAP A4 (D42) — section endpoints: the desk streams each section
+# independently; slices come from the (persisted-or-built) dossier.
+_SECTION_MAP = {
+    "header": lambda d: {"ticker": d["ticker"], "summary": d["summary"],
+                          "freshness": d["freshness"], "generated_at": d["generated_at"],
+                          "config_version": d["config_version"],
+                          "disclaimers": d["disclaimers"]},
+    "chart": lambda d: {"price_series": d.get("price_series", []),
+                         "regime_bands": d["sections"]["desk"].get("regime_bands", []),
+                         "event_markers": d["sections"]["desk"].get("event_markers", [])},
+    "signals": lambda d: {"signal_matrix": d["sections"]["desk"].get("signal_matrix", []),
+                           "technical": d["sections"]["technical"]},
+    "tournament": lambda d: {**d["sections"]["model_insight"],
+                              "split_windows": d["sections"]["desk"].get("split_windows", [])},
+    "rl": lambda d: d["sections"]["model_insight"].get("rl", {}),
+    "news_social": lambda d: d["sections"]["news_sentiment"],
+    "fundamentals": lambda d: d["sections"]["fundamentals"],
+    "filings": lambda d: d["sections"]["filings"],
+    "insider": lambda d: d["sections"]["insider"],
+    "risk": lambda d: {"regime_bands": d["sections"]["desk"].get("regime_bands", []),
+                        "signal_matrix": [r for r in d["sections"]["desk"].get("signal_matrix", [])
+                                          if "volatility" in r["key"] or "drawdown" in r["key"]
+                                          or "turbulence" in r["key"]]},
+}
+
+
+@router.get(
+    "/autopilot/desk/{ticker}/{section}",
+    summary="One Analyst Desk section (D42 streaming contract)",
+)
+async def autopilot_desk_section(
+    ticker: str,
+    section: str,
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.autopilot_store import get_or_build_dossier
+
+    if section not in _SECTION_MAP:
+        raise HTTPException(status_code=404,
+                            detail=f"Unknown section; valid: {sorted(_SECTION_MAP)}")
+    try:
+        dossier = await get_or_build_dossier(db, ticker)
+        await db.commit()
+    except ValueError as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        await db.rollback()
+        raise HTTPException(status_code=502, detail=str(e))
+    try:
+        payload = _SECTION_MAP[section](dossier)
+    except KeyError:
+        payload = {"available": False, "reason": "section_missing_in_dossier"}
+    return {"data": {"ticker": dossier["ticker"], "section": section,
+                     "generated_at": dossier["generated_at"], "payload": payload}}
