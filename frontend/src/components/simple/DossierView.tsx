@@ -146,9 +146,16 @@ export function SummaryBar({ dossier }: { dossier: DossierPayload }) {
       <Chip tone={tier === "fresh" ? "neutral" : tier === "stale" ? "caution" : "breach"}>
         Data through {dossier.freshness.latest_bar}
       </Chip>
+      <a
+        href={`/pro/desk/${encodeURIComponent(dossier.ticker)}`}
+        className="ml-auto rounded-lg border border-line-strong px-3 py-1 text-sm text-ink"
+        data-testid="open-full-desk"
+      >
+        Open full desk
+      </a>
       <button
         type="button"
-        className="ml-auto rounded-lg border border-line-strong px-3 py-1 text-sm text-ink"
+        className="rounded-lg border border-line-strong px-3 py-1 text-sm text-ink"
         onClick={() => {
           void import("@/lib/exportDossier").then((m) => m.downloadDossierHtml(dossier));
         }}

@@ -49,6 +49,7 @@ Updated: 2026-07-06 · Phase: F0 · Maintained per gate U6 (every merged PR upda
 | A2 sentiment duality | DONE — social lane (premium flag + labeled fallback), divergence, FinGPT artifact lane (E.7 contract) | main | test_leap_a2_social.py |
 | A3 FinRL ensemble | DONE — E.6 artifact contract, protocol-match + re-deflation gates, worker runner + state exporter ready for E7 | main | test_leap_a3_ensemble.py |
 | A4 dossier v2 | DONE — regime bands (DEBT-S5-2 closed), event markers, signal matrix w/ percentiles, split windows, 10 D42 section endpoints | main | test_leap_a4_desk_payload.py |
+| A5 Analyst Desk UI | DONE — /pro/desk/[ticker], 10 streamed sections, mini-map, arena+matrix+tapes; 256KB; visual sign-off pending V1 | main | desk-sections.test.tsx |
 | F3 sweeps + C1 close | remaining verification items — env-blocked (Playwright browsers + production network); run via Claude Code with E1 token | — | RESUME.md |
 
 ## Feature flags

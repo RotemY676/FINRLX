@@ -35,6 +35,9 @@ describe("Simple Mode wording test (safe-language enforcement)", () => {
     join(__dirname, "..", "app", "simple"),
     join(__dirname, "..", "app", "compare"),
     join(__dirname, "..", "components", "simple"),
+    // LEAP A5: the Analyst Desk speaks the same bounded vocabulary
+    join(__dirname, "..", "components", "desk"),
+    join(__dirname, "..", "app", "pro", "desk"),
   ];
 
   function sourceFiles(dir: string): string[] {
