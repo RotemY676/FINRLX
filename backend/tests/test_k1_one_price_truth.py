@@ -27,7 +27,9 @@ def _bars(n=420):
     while len(dates) < n:
         if d.weekday() < 5:
             px *= 1.0 + (0.004 if (i // 20) % 2 == 0 else -0.002)
-            dates.append(d); closes.append(round(px, 4)); i += 1
+            dates.append(d)
+            closes.append(round(px, 4))
+            i += 1
         d += timedelta(days=1)
     return Bars(dates=dates, closes=closes, volumes=[1_000_000] * n,
                 highs=[c * 1.01 for c in closes], lows=[c * 0.99 for c in closes])

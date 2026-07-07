@@ -19,7 +19,9 @@ async def test_pricechart_serves_real_chain_data(client, monkeypatch):
     while len(dates) < 300:
         if d.weekday() < 5:
             px *= 1.001
-            dates.append(d); closes.append(round(px, 4)); i += 1
+            dates.append(d)
+            closes.append(round(px, 4))
+            i += 1
         d += timedelta(days=1)
     bars = Bars(dates=dates, closes=closes, volumes=[1] * 300,
                 highs=closes, lows=closes)

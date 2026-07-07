@@ -204,12 +204,32 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
     value: tech.features[f.key],
   })).filter((r) => r.value !== null && r.value !== undefined);
 
+  // Operation Credibility K1 — empty-state doctrine: a wall of dashes may
+  // never render. When (nearly) no signals carry values, the tables are
+  // replaced by ONE explanatory state that names the cause and the fix path.
+  const signalValues = Object.values(tech.features ?? {});
+  const populatedCount = signalValues.filter(
+    (v: unknown) => typeof v === "number" && Number.isFinite(v),
+  ).length;
+  const signalsEmpty = signalValues.length > 0 && populatedCount === 0;
+
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Technical">
         <Chip tone={stanceTone(techStance)} title={STANCE_HOVER_LABEL}>
           {techStance}
         </Chip>
+        {signalsEmpty ? (
+          <div data-testid="signals-empty-state"
+            className="mt-2 rounded-lg border border-line bg-surface-2 p-3 text-sm text-ink-2">
+            <p className="font-medium text-ink">Signals are waiting on price history.</p>
+            <p className="mt-1">
+              Computing these signals needs more trading sessions than the data
+              source currently provides for this ticker. This is a data-depth
+              limitation, not an analysis result — no value here is estimated.
+            </p>
+          </div>
+        ) : (
         <table className="mt-2 w-full text-sm">
           <tbody>
             {featureRows.map((r) => (
@@ -222,6 +242,8 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
             ))}
           </tbody>
         </table>
+        )}
+        {!signalsEmpty && (
         <button
           type="button"
           className="mt-2 text-sm text-primary underline"
@@ -232,14 +254,19 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
         >
           {signalsOpen ? "Hide signals" : "All signals"}
         </button>
-        {signalsOpen && (
+        )}
+        {signalsOpen && !signalsEmpty && (
           <table className="mt-2 w-full text-xs">
             <tbody>
               {Object.entries(tech.features).map(([k, v]) => (
                 <tr key={k} className="border-t border-line">
                   <td className="py-0.5 text-ink-2">{k}</td>
                   <td className="py-0.5 text-right font-mono">
-                    {typeof v === "number" ? v.toFixed(4) : "—"}
+                    {typeof v === "number" ? (
+                      v.toFixed(4)
+                    ) : (
+                      <span className="text-ink-4">insufficient history</span>
+                    )}
                   </td>
                 </tr>
               ))}

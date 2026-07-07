@@ -139,3 +139,33 @@ describe("Simple routes chrome (S7a fix regression lock)", () => {
     expect(container.querySelector('input[type="search"]')).toBeNull();
   });
 });
+
+describe("K1 empty-state doctrine — no dash-walls", () => {
+  it("collapses an all-null signal set into one explanatory state", async () => {
+    const { render, screen } = await import("@testing-library/react");
+    const { VerdictCards } = await import("@/components/simple/DossierView");
+    const dossier = structuredClone(DOSSIER);
+    dossier.sections.technical.features = {
+      return_5d: null, return_20d: null, return_60d: null,
+      volatility_20d: null, drawdown_20d: null,
+    };
+    render(<VerdictCards dossier={dossier as never} />);
+    const state = screen.getByTestId("signals-empty-state");
+    expect(state.textContent).toContain("waiting on price history");
+    expect(state.textContent).toContain("not an analysis result");
+    // the doctrine: zero dash rows render
+    expect(screen.queryAllByText("—").length).toBe(0);
+    expect(screen.queryByText("All signals")).toBeNull();
+  });
+
+  it("partial data renders values plus honest per-row notes, never bare dashes", async () => {
+    const { render, screen, fireEvent } = await import("@testing-library/react");
+    const { VerdictCards } = await import("@/components/simple/DossierView");
+    const dossier = structuredClone(DOSSIER);
+    dossier.sections.technical.features = { return_5d: 0.0123, return_60d: null };
+    render(<VerdictCards dossier={dossier as never} />);
+    fireEvent.click(screen.getByText("All signals"));
+    expect(screen.getByText("0.0123")).toBeTruthy();
+    expect(screen.getByText("insufficient history")).toBeTruthy();
+  });
+});
