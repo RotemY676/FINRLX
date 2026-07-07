@@ -56,7 +56,6 @@ from app.services.edgar.ticker_lookup import (
     EdgarUpstreamError,
 )
 
-
 _SUBMISSIONS_URL_TMPL = "https://data.sec.gov/submissions/CIK{cik}.json"
 _REQUEST_TIMEOUT_SECONDS = 30.0
 _QUARTERLY_FORMS = frozenset({"10-Q", "10-K"})

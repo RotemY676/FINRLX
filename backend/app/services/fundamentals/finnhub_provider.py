@@ -37,8 +37,8 @@ import httpx
 
 from app.services.fundamentals.cache import (
     FUNDAMENTALS_CACHE,
-    PEERS_LIST_CACHE,
     PEER_QUOTE_CACHE,
+    PEERS_LIST_CACHE,
 )
 from app.services.fundamentals.provider import (
     FundamentalsProvider,
@@ -49,7 +49,6 @@ from app.services.fundamentals.types import (
     PeerEntry,
     PeersResponse,
 )
-
 
 FINNHUB_BASE_URL = "https://finnhub.io/api/v1"
 DEFAULT_TIMEOUT_S = 10.0
@@ -237,8 +236,8 @@ class FinnhubFundamentalsProvider(FundamentalsProvider):
         # Pydantic alias-by-name for the 52-week range — assign by alias
         # after construction so the model_config populate_by_name keeps
         # both spellings consistent.
-        setattr(response, "week_52_high", _safe_float(metrics, "52WeekHigh"))
-        setattr(response, "week_52_low", _safe_float(metrics, "52WeekLow"))
+        response.week_52_high = _safe_float(metrics, "52WeekHigh")
+        response.week_52_low = _safe_float(metrics, "52WeekLow")
 
         FUNDAMENTALS_CACHE.set(symbol, response)
         return response

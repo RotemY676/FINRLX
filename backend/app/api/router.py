@@ -4,10 +4,9 @@ from fastapi import APIRouter
 from app.api.v1.actions import router as actions_router
 from app.api.v1.analysis import router as analysis_router
 from app.api.v1.assets import router as assets_router
-from app.api.v1.autopilot import router as autopilot_router
-from app.api.v1.price_freshness import router as price_freshness_router
 from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.autopilot import router as autopilot_router
 from app.api.v1.backtests import router as backtests_router
 from app.api.v1.comparison import router as comparison_router
 from app.api.v1.decision import router as decision_router
@@ -31,6 +30,7 @@ from app.api.v1.overview import router as overview_router
 from app.api.v1.paper import router as paper_router
 from app.api.v1.pipeline import router as pipeline_router
 from app.api.v1.policies import router as policies_router
+from app.api.v1.price_freshness import router as price_freshness_router
 from app.api.v1.pricechart import router as pricechart_router
 from app.api.v1.profile import router as profile_router
 from app.api.v1.publication import router as publication_router

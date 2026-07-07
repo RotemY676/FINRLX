@@ -15,7 +15,7 @@ test("decision page renders with disclaimer banner present", async ({ page }) =>
     body: JSON.stringify({ detail: "backend offline for E2E smoke" }),
   }));
 
-  const res = await page.goto("/decision");
+  const res = await page.goto("/pro/decision");
   expect(res?.status()).toBeLessThan(500);
 
   const accept = page.getByRole("button", { name: /i understand/i });

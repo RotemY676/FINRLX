@@ -13,7 +13,7 @@ from app.core.database import Base
 from app.models.base import TimestampMixin, gen_uuid
 
 
-class PublicationStatus(str, enum.Enum):
+class PublicationStatus(str, enum.Enum):  # noqa: UP042 — StrEnum would change str() semantics persisted in DB rows
     DRAFT = "draft"
     STAGED = "staged"
     APPROVED = "approved"

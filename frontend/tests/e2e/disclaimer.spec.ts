@@ -4,7 +4,7 @@ import { expectNoSeriousAxeViolations } from "./_helpers/axe";
 
 test.describe("Disclaimer modal and footer", () => {
   test("first visit shows the blocking modal and footer banner", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/pro");
 
     // Modal is the first interactive element.
     const dialog = page.getByRole("dialog");
@@ -18,7 +18,7 @@ test.describe("Disclaimer modal and footer", () => {
   });
 
   test("accepting the modal persists across reloads", async ({ page, context }) => {
-    await page.goto("/");
+    await page.goto("/pro");
     await page.getByRole("button", { name: /i understand/i }).click();
     await expect(page.getByRole("dialog")).toBeHidden();
 

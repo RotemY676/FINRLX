@@ -22,7 +22,7 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
   });
 
   test("nav toggle opens the drawer; backdrop click closes it", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/pro");
 
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
@@ -45,7 +45,7 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
   });
 
   test("page renders without serious a11y violations on mobile", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/pro");
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
 
@@ -54,7 +54,7 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
   });
 
   test("skip-to-content link is the first focusable element and lands on main", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/pro");
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
     await page.waitForLoadState("networkidle");
@@ -71,7 +71,7 @@ test.describe("Mobile shell drawer (375x667 — iPhone SE)", () => {
   });
 
   test("context pane toggle wires aria-expanded state both ways", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/pro");
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
     await page.waitForLoadState("networkidle");

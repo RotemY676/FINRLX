@@ -8,7 +8,7 @@ test("universe page renders without a 500", async ({ page }) => {
     body: JSON.stringify({ detail: "backend offline for E2E smoke" }),
   }));
 
-  const res = await page.goto("/universe");
+  const res = await page.goto("/pro/universe");
   expect(res?.status()).toBeLessThan(500);
 
   const accept = page.getByRole("button", { name: /i understand/i });

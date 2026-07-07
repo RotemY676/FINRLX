@@ -46,7 +46,6 @@ from app.services.edgar.ticker_lookup import (
     EdgarUpstreamError,
 )
 
-
 _DOWNLOAD_TIMEOUT_SECONDS = 60.0
 # SEC filings can be large — 10-Ks routinely hit 10+ MB. Cap at 50 MB
 # to match the PDF upload cap (settings.documents_max_size_mb) so the

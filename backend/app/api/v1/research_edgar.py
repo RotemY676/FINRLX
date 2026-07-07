@@ -28,13 +28,13 @@ from app.api.deps import make_meta
 from app.core.database import get_db
 from app.models.auth import User
 from app.schemas.common import ApiResponse
+from app.services.documents.analyze import BudgetExceededError
 from app.services.edgar import (
     EdgarConfigError,
     EdgarUpstreamError,
     fetch_recent_quarterly_filings,
     resolve_ticker,
 )
-from app.services.documents.analyze import BudgetExceededError
 from app.services.llm.provider import StubProviderError
 from app.services.research.auto_ingest import (
     TickerNotCoveredError,

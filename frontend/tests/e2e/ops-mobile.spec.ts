@@ -15,7 +15,7 @@ test.describe("Ops command @ 375x667 (iPhone SE)", () => {
   });
 
   test("renders without 500 and is axe-clean on mobile", async ({ page }) => {
-    const res = await page.goto("/ops");
+    const res = await page.goto("/pro/ops");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });
@@ -39,7 +39,7 @@ test.describe("Ops command @ 1280x720 (desktop)", () => {
   });
 
   test("renders without 500 on desktop", async ({ page }) => {
-    const res = await page.goto("/ops");
+    const res = await page.goto("/pro/ops");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });

@@ -36,7 +36,6 @@ import httpx
 
 from app.core.config import settings
 
-
 _TICKER_TABLE_URL = "https://www.sec.gov/files/company_tickers.json"
 _REQUEST_TIMEOUT_SECONDS = 15.0
 

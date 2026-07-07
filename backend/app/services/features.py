@@ -122,7 +122,7 @@ def _compute_macd_hist(closes: list[float]) -> tuple[float | None, str]:
         return None, "insufficient_data"
     ema12 = _ema_series(closes, 12)
     ema26 = _ema_series(closes, 26)
-    macd_line = [a - b for a, b in zip(ema12, ema26)]
+    macd_line = [a - b for a, b in zip(ema12, ema26, strict=False)]
     signal = _ema_series(macd_line, 9)
     return round(macd_line[-1] - signal[-1], 6), "ok"
 
@@ -132,15 +132,15 @@ def _compute_rsi_wilder(closes: list[float], period: int = 14) -> tuple[float | 
     if len(closes) < period + 1:
         return None, "insufficient_data"
     gains, losses = [], []
-    for prev, cur in zip(closes[:-1], closes[1:]):
+    for prev, cur in zip(closes[:-1], closes[1:], strict=False):
         change = cur - prev
         gains.append(max(change, 0.0))
         losses.append(max(-change, 0.0))
     avg_gain = sum(gains[:period]) / period
     avg_loss = sum(losses[:period]) / period
-    for g, l in zip(gains[period:], losses[period:]):
+    for g, loss in zip(gains[period:], losses[period:], strict=True):
         avg_gain = (avg_gain * (period - 1) + g) / period
-        avg_loss = (avg_loss * (period - 1) + l) / period
+        avg_loss = (avg_loss * (period - 1) + loss) / period
     if avg_loss == 0:
         return 100.0, "ok"
     rs = avg_gain / avg_loss
@@ -152,7 +152,7 @@ def _compute_turbulence(closes: list[float], lookback: int = 20) -> tuple[float 
     against the trailing `lookback`-day return distribution."""
     if len(closes) < lookback + 2:
         return None, "insufficient_data"
-    rets = [(b - a) / a for a, b in zip(closes[:-1], closes[1:]) if a != 0]
+    rets = [(b - a) / a for a, b in zip(closes[:-1], closes[1:], strict=False) if a != 0]
     if len(rets) < lookback + 1:
         return None, "insufficient_data"
     window, latest = rets[-(lookback + 1):-1], rets[-1]

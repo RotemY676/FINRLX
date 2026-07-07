@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -43,7 +42,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import ResearchDocument
 from app.services.documents.extraction import estimate_tokens
 from app.services.edgar import (
-    EdgarConfigError,
     EdgarExtractionError,
     EdgarUpstreamError,
     extract_text_from_filing,
@@ -207,7 +205,7 @@ async def _find_existing(
     db: AsyncSession,
     ticker: str,
     accession_no: str,
-) -> Optional[ResearchDocument]:
+) -> ResearchDocument | None:
     """Look up an existing sec_auto row by (ticker, accession_no).
     Returns None if no row exists."""
     stmt = select(ResearchDocument).where(

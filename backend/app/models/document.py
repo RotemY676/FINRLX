@@ -17,7 +17,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 from app.models.base import gen_uuid
 
-
 # Extraction lifecycle.  "pending" means the upload finished and the
 # extraction task is queued (in Phase 17.0 we extract synchronously, so
 # the row goes pending -> ready in one POST; the enum is forward-compat

@@ -22,7 +22,7 @@ test.describe("Engine Comparison @ 375x667 (iPhone SE)", () => {
   });
 
   test("page renders without 500 and is axe-clean on mobile", async ({ page }) => {
-    const res = await page.goto("/comparison");
+    const res = await page.goto("/pro/comparison");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });
@@ -46,7 +46,7 @@ test.describe("Engine Comparison @ 1280x720 (desktop)", () => {
   });
 
   test("page renders without 500 on desktop", async ({ page }) => {
-    const res = await page.goto("/comparison");
+    const res = await page.goto("/pro/comparison");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });

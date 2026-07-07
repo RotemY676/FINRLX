@@ -26,7 +26,6 @@ from app.services.fundamentals.types import (
     PeersResponse,
 )
 
-
 _STUB_NOTE = (
     "No fundamentals provider configured. Set FUNDAMENTALS_PROVIDER=finnhub "
     "and FINNHUB_API_KEY=… in the backend environment to activate this surface."

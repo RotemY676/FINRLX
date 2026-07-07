@@ -17,7 +17,7 @@ Empty `q` returns the first `limit` active assets sorted by ticker —
 useful as a "browse all" mode in the picker.
 """
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import make_meta

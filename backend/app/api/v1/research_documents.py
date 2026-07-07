@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -65,7 +64,6 @@ from app.services.documents.analyze import (
 )
 from app.services.llm.provider import StubProviderError
 
-
 router = APIRouter()
 
 # Mirrors the Phase 16 regex so the regex used to validate a ticker on
@@ -93,9 +91,9 @@ class DocumentSummary(BaseModel):
     filename: str
     mime_type: str
     file_size_bytes: int
-    extracted_text_tokens_estimate: Optional[int] = None
+    extracted_text_tokens_estimate: int | None = None
     extraction_status: str
-    extraction_error: Optional[str] = None
+    extraction_error: str | None = None
     uploaded_by_email: str
     uploaded_at: datetime
 
@@ -103,7 +101,7 @@ class DocumentSummary(BaseModel):
 class DocumentDetail(DocumentSummary):
     """Full document row, including the extracted text body."""
 
-    extracted_text: Optional[str] = None
+    extracted_text: str | None = None
 
 
 class DocumentListResponse(BaseModel):
@@ -411,9 +409,9 @@ class AnalysisOut(BaseModel):
     created_by_email: str
     provider: str
     model: str
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    cost_estimate_usd: Optional[float] = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cost_estimate_usd: float | None = None
     created_at: datetime
 
 

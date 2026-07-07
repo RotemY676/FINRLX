@@ -13,7 +13,7 @@ test.describe("Admin page @ 375x667 (iPhone SE)", () => {
   });
 
   test("shows the desktop-only notice; 'Continue anyway' loads the full shell", async ({ page }) => {
-    await page.goto("/admin");
+    await page.goto("/pro/admin");
 
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
@@ -42,7 +42,7 @@ test.describe("Admin page @ 1280x720 (desktop)", () => {
   });
 
   test("desktop renders the full AdminShell — no notice", async ({ page }) => {
-    await page.goto("/admin");
+    await page.goto("/pro/admin");
     const accept = page.getByRole("button", { name: /i understand/i });
     if (await accept.isVisible({ timeout: 1000 }).catch(() => false)) await accept.click();
 

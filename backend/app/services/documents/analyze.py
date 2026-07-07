@@ -14,17 +14,15 @@ Why this lives in its own module:
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import logging
-
 from app.services.documents import budget as budget_svc
 from app.services.llm import LLMMessage, get_provider_chain
-from app.services.llm.router import get_provider_status
 from app.services.llm.provider import StubProviderError
+from app.services.llm.router import get_provider_status
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +75,8 @@ class AnalysisResult:
     response_text: str
     provider: str
     model: str
-    input_tokens: Optional[int]
-    output_tokens: Optional[int]
+    input_tokens: int | None
+    output_tokens: int | None
 
 
 async def analyze_document(

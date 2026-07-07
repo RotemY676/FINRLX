@@ -28,14 +28,12 @@ import logging
 import math
 import re
 import time
-from dataclasses import dataclass, field
-from datetime import date
+from dataclasses import dataclass
 from threading import Lock
 from typing import Callable
 
 from app.services.single_ticker_analysis import (
     Bars,
-    NewsItem,
     RebalanceState,
     StrategyDef,
     _generate_weekly_rebalances,
@@ -168,7 +166,7 @@ def _make_ml_fit() -> Callable[[list[RebalanceState]], Callable[[RebalanceState]
     """
     def fit(train: list[RebalanceState]) -> Callable[[RebalanceState], float]:
         X, y = [], []
-        for a, b in zip(train, train[1:]):
+        for a, b in zip(train, train[1:], strict=False):
             X.append(_state_feature_vector(a))
             y.append((b.price - a.price) / a.price if a.price else 0.0)
         if len(X) < 8:
@@ -194,7 +192,7 @@ def _ridge_predictor(X: list[list[float]], y: list[float]) -> Callable[[list[flo
     lam = 1.0
     XtX = [[sum(r[i] * r[j] for r in X) + (lam if i == j else 0.0)
             for j in range(n_feat)] for i in range(n_feat)]
-    Xty = [sum(r[i] * t for r, t in zip(X, y)) for i in range(n_feat)]
+    Xty = [sum(r[i] * t for r, t in zip(X, y, strict=False)) for i in range(n_feat)]
     # Gaussian elimination
     A = [row[:] + [Xty[i]] for i, row in enumerate(XtX)]
     for col in range(n_feat):
@@ -205,9 +203,9 @@ def _ridge_predictor(X: list[list[float]], y: list[float]) -> Callable[[list[flo
         for r in range(n_feat):
             if r != col and abs(A[r][col]) > 1e-12:
                 f = A[r][col] / A[col][col]
-                A[r] = [a - f * b for a, b in zip(A[r], A[col])]
+                A[r] = [a - f * b for a, b in zip(A[r], A[col], strict=False)]
     w = [A[i][n_feat] / A[i][i] if abs(A[i][i]) > 1e-12 else 0.0 for i in range(n_feat)]
-    return lambda v: sum(wi * vi for wi, vi in zip(w, v))
+    return lambda v: sum(wi * vi for wi, vi in zip(w, v, strict=False))
 
 
 def build_candidates() -> list[Candidate]:
@@ -537,7 +535,7 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
     s = stage("dossier — assembly")
     price_series = [
         {"date": d.isoformat(), "close": round(c, 4)}
-        for d, c in zip(bars.dates, bars.closes)
+        for d, c in zip(bars.dates, bars.closes, strict=False)
     ][-260:]
     news_counts: dict[str, int] = {}
     for n in news_items:

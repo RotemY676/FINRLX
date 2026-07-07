@@ -5,8 +5,8 @@ single-purpose services (EDGAR, documents, LLM, budget) into the
 flows the user-facing endpoints invoke.
 """
 from app.services.research.auto_ingest import (
-    AutoIngestResult,
     AutoIngestFailure,
+    AutoIngestResult,
     auto_ingest_filings,
 )
 from app.services.research.cross_quarter_analyze import (

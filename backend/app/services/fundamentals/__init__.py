@@ -10,16 +10,16 @@ The Finnhub implementation lands in Phase 16.2 alongside cache and
 real-key validation. The router + endpoints are fully wired so the
 activation flip in Phase 16.3 is just configuration.
 """
-from app.services.fundamentals.router import get_provider, get_provider_status, ProviderStatus
-from app.services.fundamentals.types import (
-    FundamentalsResponse,
-    PeersResponse,
-    PeerEntry,
-)
 from app.services.fundamentals.provider import (
+    FundamentalsNotAvailable,
     FundamentalsProvider,
     FundamentalsProviderError,
-    FundamentalsNotAvailable,
+)
+from app.services.fundamentals.router import ProviderStatus, get_provider, get_provider_status
+from app.services.fundamentals.types import (
+    FundamentalsResponse,
+    PeerEntry,
+    PeersResponse,
 )
 
 __all__ = [

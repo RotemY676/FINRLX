@@ -20,7 +20,6 @@ import logging
 import os
 import threading
 import time
-from typing import Any
 
 import httpx
 
@@ -167,7 +166,7 @@ def build_xbrl_trends(ticker: str) -> dict:
     ]
     sh_years = sorted(sh_by)[-MAX_YEARS:]
     dilution = []
-    for prev, cur in zip(sh_years, sh_years[1:]):
+    for prev, cur in zip(sh_years, sh_years[1:], strict=False):
         if sh_by.get(prev):
             dilution.append(
                 {"fy": cur, "value": round(sh_by[cur] / sh_by[prev] - 1.0, 4)}

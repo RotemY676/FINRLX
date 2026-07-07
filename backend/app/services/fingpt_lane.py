@@ -31,7 +31,7 @@ ARTIFACT_DIR = pathlib.Path(__file__).resolve().parents[3] / "research" / "artif
 
 
 def item_key(date_str: str, title: str) -> str:
-    return hashlib.sha1(f"{date_str}|{title}".encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha1(f"{date_str}|{title}".encode()).hexdigest()[:12]
 
 
 def load_artifact(ticker: str) -> dict | None:

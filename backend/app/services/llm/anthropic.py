@@ -31,7 +31,6 @@ from __future__ import annotations
 from app.services.llm.provider import LLMProvider, StubProviderError
 from app.services.llm.types import LLMMessage, LLMResponse
 
-
 # Default model. Operators can override via the LLM_MODEL env var. The
 # 4.x lineup has the largest context window (200K) at the time of
 # Phase 17.2, which fits typical 10-Q / 10-K filings comfortably.
@@ -55,11 +54,11 @@ class AnthropicProvider(LLMProvider):
         # Lazy import so the rest of the app doesn't pay the SDK's
         # cold-start cost when no provider is configured.
         try:
-            from anthropic import AsyncAnthropic
             from anthropic import (
                 APIConnectionError,
                 APIStatusError,
                 APITimeoutError,
+                AsyncAnthropic,
                 AuthenticationError,
                 RateLimitError,
             )

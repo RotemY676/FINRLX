@@ -18,7 +18,7 @@ per-bar fetched_at/provenance columns are tracked as F1 remaining work).
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 from app.services.data_providers import stooq_provider, yfinance_provider
@@ -54,7 +54,7 @@ def fetch_bars_chain(
         bars, warnings = module.fetch_bars(ticker, asset_id, start, end)
         all_warnings.extend(warnings)
         if bars:
-            fetched_at = datetime.now(timezone.utc)
+            fetched_at = datetime.now(UTC)
             for bar in bars:
                 bar["fetched_at"] = fetched_at
                 bar["chain_position"] = position

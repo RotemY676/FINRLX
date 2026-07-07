@@ -22,7 +22,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.document_analysis import LLMTokenUsage
 
-
 # Per-million-token prices in USD. Conservative defaults; update when
 # Anthropic / OpenAI revise their boards.
 _PRICE_PER_M_INPUT_USD: dict[str, float] = {

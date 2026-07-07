@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import math
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from html import escape as h
 from pathlib import Path
@@ -148,7 +148,7 @@ class Bars:
     def latest_date(self) -> date | None:
         return self.dates[-1] if self.dates else None
 
-    def window_ending(self, end_date: date) -> "Bars":
+    def window_ending(self, end_date: date) -> Bars:
         """Return a view of this series up to and including `end_date`."""
         idx = [i for i, d in enumerate(self.dates) if d <= end_date]
         if not idx:
@@ -175,7 +175,7 @@ def fetch_history(ticker: str, days: int) -> Bars:
         actions=False,
     )
     if df is None or df.empty:
-        sys.exit(f"ERROR: yfinance returned no data for {ticker} in {start}..{end}")
+        raise RuntimeError(f"yfinance returned no data for {ticker} in {start}..{end}")
     dates_, closes_, volumes_, highs_, lows_ = [], [], [], [], []
     for ts, row in df.iterrows():
         d = ts.date() if hasattr(ts, "date") else ts
@@ -426,7 +426,7 @@ def precompute_rebalance_states(
     Strategies just read from this cache — no recomputation per strategy.
     """
     sorted_dates = bars.dates
-    close_by_date = {d: c for d, c in zip(bars.dates, bars.closes)}
+    close_by_date = {d: c for d, c in zip(bars.dates, bars.closes, strict=False)}
 
     def close_at(d: date) -> float | None:
         lo, hi = 0, len(sorted_dates) - 1
@@ -1672,7 +1672,7 @@ def build_html_report(
     # Price curve restricted to backtest window for the chart.
     price_curve = [
         {"date": d.isoformat(), "close": c}
-        for d, c in zip(bars.dates, bars.closes)
+        for d, c in zip(bars.dates, bars.closes, strict=False)
         if d >= backtest_start
     ]
 
@@ -1753,7 +1753,7 @@ class AnalysisResult:
     """
     ticker: str
     html: str
-    bars: "Bars"
+    bars: Bars
     features: dict
     engine_outputs: dict
     composite: dict

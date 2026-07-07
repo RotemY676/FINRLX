@@ -37,7 +37,6 @@ from app.services.fundamentals import (
     get_provider_status,
 )
 
-
 router = APIRouter()
 
 # Matches Yahoo-style symbols only.  Mirrors the frontend regex in

@@ -15,7 +15,7 @@ test.describe("Backtests @ 375x667 (iPhone SE)", () => {
   });
 
   test("renders without 500 and is axe-clean on mobile", async ({ page }) => {
-    const res = await page.goto("/backtests");
+    const res = await page.goto("/pro/backtests");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });

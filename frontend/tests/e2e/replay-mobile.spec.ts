@@ -15,7 +15,7 @@ test.describe("Replay & Forensics @ 375x667 (iPhone SE)", () => {
   });
 
   test("renders without 500 and is axe-clean on mobile", async ({ page }) => {
-    const res = await page.goto("/replay");
+    const res = await page.goto("/pro/replay");
     expect(res?.status()).toBeLessThan(500);
 
     const accept = page.getByRole("button", { name: /i understand/i });
