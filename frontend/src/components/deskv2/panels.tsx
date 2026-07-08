@@ -224,18 +224,29 @@ export function SignalMatrixV2({ rows, elevation, source, onRetry }: {
 // ── CMP-6 TournamentArenaV2 ────────────────────────────────────────────────
 
 export interface Candidate {
+  key?: string;
   name: string;
+  kind?: string;
   train_sharpe?: number;
   val_sharpe?: number;
   divergence?: number;
+  // Backend D42 tournament section names this `penalty`; the early v2 draft
+  // assumed `deflation_penalty`. Accept both so real payloads and fixtures
+  // both render (this mismatch shipped the first crash — see US-3.2 tests).
   deflation_penalty?: number;
+  penalty?: number;
   score?: number;
+  rationale?: string;
   note?: string;
 }
 export interface TournamentPayload {
-  winner?: string;
+  // Backend returns the winning candidate as an OBJECT; the v2 draft assumed a
+  // string. Accept either — rendering an object as a React child crashes the
+  // whole Desk (React #31).
+  winner?: string | Candidate;
   why?: string;
   scoreboard?: Candidate[];
+  candidates?: Candidate[];
   selection_history?: { date: string; winner: string; score?: number }[];
   rl?: { status?: string };
 }
@@ -243,21 +254,28 @@ export interface TournamentPayload {
 export function TournamentArenaV2({ payload }: { payload: TournamentPayload }) {
   const rlGated = payload.rl?.status === "queued_for_research_run";
   const legs = rlGated ? "2 of 3 legs" : "all legs";
+  // Normalize the two payload shapes (real backend vs. early fixtures).
+  const winnerName =
+    typeof payload.winner === "string" ? payload.winner : payload.winner?.name;
+  const winnerWhy =
+    payload.why ??
+    (typeof payload.winner === "object" ? payload.winner?.rationale : undefined);
+  const board: Candidate[] = payload.scoreboard ?? payload.candidates ?? [];
   return (
     <div data-testid="panel-tournament">
-      {payload.winner && (
+      {winnerName && (
         <div data-testid="winner-card"
              style={{ border: tokens.border.hairline,
                       borderRadius: tokens.radius.card,
                       padding: tokens.space(2),
                       marginBottom: tokens.space(2) }}>
           <strong style={{ color: tokens.color.accent }}>
-            {deskCopy.arena.winner}: {payload.winner}
+            {deskCopy.arena.winner}: {winnerName}
           </strong>
-          {payload.why && <p style={{ margin: "6px 0 0" }}>{payload.why}</p>}
+          {winnerWhy && <p style={{ margin: "6px 0 0" }}>{winnerWhy}</p>}
         </div>
       )}
-      {payload.scoreboard && payload.scoreboard.length > 0 && (
+      {board.length > 0 && (
         <table data-testid="scoreboard"
                style={{ width: "100%", borderCollapse: "collapse",
                         fontSize: tokens.type.scale.sm }}>
@@ -274,13 +292,13 @@ export function TournamentArenaV2({ payload }: { payload: TournamentPayload }) {
             </tr>
           </thead>
           <tbody style={tokens.type.numeric}>
-            {payload.scoreboard.map((c) => (
-              <tr key={c.name} data-testid={`candidate-${c.name}`}>
+            {board.map((c) => (
+              <tr key={c.key ?? c.name} data-testid={`candidate-${c.name}`}>
                 <td style={{ padding: "4px 8px" }}>{c.name}</td>
                 <td style={{ padding: "4px 8px" }}>{c.val_sharpe ?? "–"}</td>
                 <td style={{ padding: "4px 8px" }}>{c.divergence ?? "–"}</td>
                 <td style={{ padding: "4px 8px" }}>
-                  {c.deflation_penalty ?? "–"}
+                  {c.deflation_penalty ?? c.penalty ?? "–"}
                 </td>
               </tr>
             ))}

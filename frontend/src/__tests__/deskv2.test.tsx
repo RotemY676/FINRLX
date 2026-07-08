@@ -174,6 +174,34 @@ describe("TournamentArenaV2", () => {
     expect(screen.getByTestId("selection-history").textContent)
       .toContain("first analysis");
   });
+
+  // Regression: the live D42 tournament section returns `winner` as an OBJECT
+  // and lists rows under `candidates` with a `penalty` field — the early v2
+  // draft assumed a string winner + `scoreboard`/`deflation_penalty`, which
+  // rendered an object as a React child and crashed the whole Desk (React #31).
+  it("renders the real backend shape (winner object + candidates + penalty)", () => {
+    const real = {
+      winner: {
+        key: "buy_hold", name: "Buy & Hold", kind: "benchmark",
+        val_sharpe: 0.0, divergence: 0.0, penalty: 0.2081, score: -0.208,
+        rationale: "highest validation score across 3 walk-forward splits",
+      },
+      candidates: [
+        { key: "buy_hold", name: "Buy & Hold", val_sharpe: 0.0,
+          divergence: 0.0, penalty: 0.2081 },
+        { key: "mom", name: "Momentum", val_sharpe: 0.31,
+          divergence: 0.12, penalty: 0.05 },
+      ],
+      rl: { status: "queued_for_research_run" },
+    };
+    render(<TournamentArenaV2 payload={real} />);
+    expect(screen.getByTestId("winner-card").textContent).toContain("Buy & Hold");
+    expect(screen.getByTestId("winner-card").textContent)
+      .toContain("highest validation score");
+    // both candidate rows render, penalty column reads the `penalty` field
+    expect(screen.getByTestId("candidate-Momentum")).toBeTruthy();
+    expect(screen.getByTestId("candidate-Buy & Hold").textContent).toContain("0.2081");
+  });
 });
 
 // ── CMP-2 VerdictBand (US-2.1) ──────────────────────────────────────────────

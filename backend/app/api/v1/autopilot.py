@@ -130,53 +130,10 @@ _SECTION_MAP = {
 }
 
 
-@router.get(
-    "/autopilot/desk/{ticker}/{section}",
-    summary="One Analyst Desk section (D42 streaming contract)",
-)
-async def autopilot_desk_section(
-    ticker: str,
-    section: str,
-    db: AsyncSession = Depends(get_db),
-):
-    from app.services.autopilot_store import get_or_build_dossier
-
-    if section not in _SECTION_MAP:
-        raise HTTPException(status_code=404,
-                            detail=f"Unknown section; valid: {sorted(_SECTION_MAP)}")
-    try:
-        dossier = await get_or_build_dossier(db, ticker)
-        await db.commit()
-    except ValueError as e:
-        await db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-    except RuntimeError as e:
-        await db.rollback()
-        raise HTTPException(status_code=502, detail=str(e))
-    try:
-        payload = _SECTION_MAP[section](dossier)
-    except KeyError:
-        payload = {"available": False, "reason": "section_missing_in_dossier"}
-    # Desk W1 (SPEC-02 API-6, additive): Forensic-drawer method block.
-    _method = method_block(section, dossier)
-    if _method is not None:
-        payload["method"] = _method
-    # Desk W1 (SPEC-02 API-7): elevation block on the signals payload —
-    # ranks unusualness only, with its full method disclosed inline (QS-2).
-    if section == "signals":
-        _regime = ((dossier.get("summary") or {}).get("regime")
-                   or ((dossier.get("sections") or {}).get("technical") or {})
-                   .get("regime", {}).get("label", "neutral"))
-        payload["elevation"] = elevate(payload.get("signal_matrix") or [],
-                                       str(_regime))
-    if section == "header":
-        # LEAP A6: surface S8 material-change alerts for this ticker so the
-        # desk can show them live; evidence-linked, read-only.
-        payload["alerts"] = await _open_ticker_alerts(db, dossier["ticker"])
-    return {"data": {"ticker": dossier["ticker"], "section": section,
-                     "generated_at": dossier["generated_at"], "payload": payload}}
-
-
+# NOTE: /status MUST be declared before the generic /{section} route.
+# Starlette matches routes in definition order, so /desk/{ticker}/{section}
+# would otherwise shadow /desk/{ticker}/status — capturing section="status"
+# and returning a 404 "unknown section" (this shipped the first Desk-v2 crash).
 @router.get(
     "/autopilot/desk/{ticker}/status",
     summary="Desk W1 (SPEC-02 API-4) — the six engine-dial states + alerts",
@@ -226,6 +183,53 @@ async def autopilot_desk_status(
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})
     return JSONResponse(content={"data": body}, headers={"ETag": etag})
+
+
+@router.get(
+    "/autopilot/desk/{ticker}/{section}",
+    summary="One Analyst Desk section (D42 streaming contract)",
+)
+async def autopilot_desk_section(
+    ticker: str,
+    section: str,
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.autopilot_store import get_or_build_dossier
+
+    if section not in _SECTION_MAP:
+        raise HTTPException(status_code=404,
+                            detail=f"Unknown section; valid: {sorted(_SECTION_MAP)}")
+    try:
+        dossier = await get_or_build_dossier(db, ticker)
+        await db.commit()
+    except ValueError as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        await db.rollback()
+        raise HTTPException(status_code=502, detail=str(e))
+    try:
+        payload = _SECTION_MAP[section](dossier)
+    except KeyError:
+        payload = {"available": False, "reason": "section_missing_in_dossier"}
+    # Desk W1 (SPEC-02 API-6, additive): Forensic-drawer method block.
+    _method = method_block(section, dossier)
+    if _method is not None:
+        payload["method"] = _method
+    # Desk W1 (SPEC-02 API-7): elevation block on the signals payload —
+    # ranks unusualness only, with its full method disclosed inline (QS-2).
+    if section == "signals":
+        _regime = ((dossier.get("summary") or {}).get("regime")
+                   or ((dossier.get("sections") or {}).get("technical") or {})
+                   .get("regime", {}).get("label", "neutral"))
+        payload["elevation"] = elevate(payload.get("signal_matrix") or [],
+                                       str(_regime))
+    if section == "header":
+        # LEAP A6: surface S8 material-change alerts for this ticker so the
+        # desk can show them live; evidence-linked, read-only.
+        payload["alerts"] = await _open_ticker_alerts(db, dossier["ticker"])
+    return {"data": {"ticker": dossier["ticker"], "section": section,
+                     "generated_at": dossier["generated_at"], "payload": payload}}
 
 
 async def _open_ticker_alerts(db: AsyncSession, ticker: str) -> list[dict]:
