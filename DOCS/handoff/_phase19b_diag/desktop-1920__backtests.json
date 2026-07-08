@@ -1,0 +1,24 @@
+{
+  "route": "/backtests",
+  "viewport": "desktop-1920",
+  "count": 1,
+  "nodes": [
+    {
+      "target": ".border-primary > .flex-wrap.gap-2.shrink-0 > .text-breach.text-\\[13px\\].font-mono",
+      "html": "<span class=\"font-mono text-[13px] text-breach\">-2.1%</span>",
+      "failureSummary": [
+        "Fix any of the following:",
+        "Element has insufficient color contrast of 4.37 (foreground color: #cf4040, background color: #f4f7fa, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+      ],
+      "data": {
+        "fgColor": "#cf4040",
+        "bgColor": "#f4f7fa",
+        "contrastRatio": 4.37,
+        "fontSize": "9.8pt (13px)",
+        "fontWeight": "normal",
+        "messageKey": null,
+        "expectedContrastRatio": "4.5:1"
+      }
+    }
+  ]
+}

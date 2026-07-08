@@ -2,7 +2,7 @@
 
 /**
  * Desk W1 — v2 panels: VerdictBand (CMP-2), SignalMatrixV2 (CMP-5),
- * TournamentArenaV2 (CMP-6). Every state here maps to a SPEC-03 \u00A76
+ * TournamentArenaV2 (CMP-6). Every state here maps to a SPEC-03 §6
  * screenshot row; DEC-5 (n/6 evidence honesty) and QS-2 (elevation caption)
  * are enforced in markup, then in tests.
  */
@@ -49,14 +49,14 @@ export function VerdictBand({ head, statusFetch, onStanceClick }: {
       <div>
         <div style={{ fontWeight: 600, fontSize: tokens.type.scale.lg }}>
           {head.ticker}
-          {head.name ? ` \u00B7 ${head.name}` : ""}
+          {head.name ? ` · ${head.name}` : ""}
         </div>
         <div style={{ ...tokens.type.numeric, fontSize: tokens.type.scale.md }}
              title={head.price?.source
                ? `source: ${head.price.source}` : undefined}>
           {head.price?.last != null
             ? `${head.price.last} ${head.currency ?? ""}`
-            : "\u2014 price pending"}
+            : "— price pending"}
           {head.price?.as_of && (
             <span style={{ color: tokens.color.neutral.n600,
                            fontSize: tokens.type.scale.xs,
@@ -77,7 +77,7 @@ export function VerdictBand({ head, statusFetch, onStanceClick }: {
         <strong style={{ color: tokens.color.accent }}>
           {stance.state ?? "no stance yet"}
         </strong>
-        {" \u00B7 "}
+        {" · "}
         {cov
           ? deskCopy.evidenceCoverage(cov.have, cov.of)
           : deskCopy.stanceKind}
@@ -105,7 +105,7 @@ export function VerdictBand({ head, statusFetch, onStanceClick }: {
                 aria-label={`${statusFetch.status.alerts_unseen} unseen alerts`}
                 style={{ color: tokens.color.semantic.cautious,
                          fontWeight: 600 }}>
-            \u26A0 {statusFetch.status.alerts_unseen}
+            ⚠ {statusFetch.status.alerts_unseen}
           </span>
         )}
     </header>
@@ -277,10 +277,10 @@ export function TournamentArenaV2({ payload }: { payload: TournamentPayload }) {
             {payload.scoreboard.map((c) => (
               <tr key={c.name} data-testid={`candidate-${c.name}`}>
                 <td style={{ padding: "4px 8px" }}>{c.name}</td>
-                <td style={{ padding: "4px 8px" }}>{c.val_sharpe ?? "\u2013"}</td>
-                <td style={{ padding: "4px 8px" }}>{c.divergence ?? "\u2013"}</td>
+                <td style={{ padding: "4px 8px" }}>{c.val_sharpe ?? "–"}</td>
+                <td style={{ padding: "4px 8px" }}>{c.divergence ?? "–"}</td>
                 <td style={{ padding: "4px 8px" }}>
-                  {c.deflation_penalty ?? "\u2013"}
+                  {c.deflation_penalty ?? "–"}
                 </td>
               </tr>
             ))}

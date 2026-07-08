@@ -35,7 +35,7 @@ export type StatusFetch =
   | { kind: "loading" }
   | { kind: "ready"; status: DeskStatus }
   | { kind: "no_dossier" }
-  | { kind: "unavailable" }; // dials hidden, never guessed (SPEC-02 \u00A73)
+  | { kind: "unavailable" }; // dials hidden, never guessed (SPEC-02 §3)
 
 export function useDeskStatus(ticker: string, revision = 0): StatusFetch {
   const [state, setState] = useState<StatusFetch>({ kind: "loading" });
@@ -134,7 +134,7 @@ export function EngineDial({ status }: { status: SectionStatus }) {
                      color: tokens.color.neutral.n600 }}>
         {label}
       </span>
-      <span className="sr-only">{stateText}{status.reason ? ` \u2014 ${status.reason}` : ""}</span>
+      <span className="sr-only">{stateText}{status.reason ? ` — ${status.reason}` : ""}</span>
     </div>
   );
 }
@@ -226,7 +226,7 @@ export function ForensicDrawer({ panel, method, fingerprint, computedAt, onClose
                   borderLeft: tokens.border.hairline, padding: tokens.space(3),
                   overflowY: "auto", zIndex: 60 }}>
       <button onClick={onClose} aria-label="Close" style={{ float: "right" }}>
-        \u00D7
+        ×
       </button>
       <h2 style={{ fontSize: tokens.type.scale.md, marginTop: 0 }}>
         {deskCopy.drawer.title(panel)}
@@ -261,10 +261,10 @@ export function ForensicDrawer({ panel, method, fingerprint, computedAt, onClose
                        color: tokens.color.neutral.n600 }}>
         <strong>{deskCopy.drawer.provenance}:</strong>{" "}
         {method?.sources.map((s) =>
-          `${s.name}${s.as_of ? ` \u00B7 ${s.as_of}` : ""}${s.coverage ? ` \u00B7 ${s.coverage}` : ""}`,
+          `${s.name}${s.as_of ? ` · ${s.as_of}` : ""}${s.coverage ? ` · ${s.coverage}` : ""}`,
         ).join(" | ")}
-        {fingerprint && <> \u00B7 fp {fingerprint}</>}
-        {computedAt && <> \u00B7 {computedAt}</>}
+        {fingerprint && <> · fp {fingerprint}</>}
+        {computedAt && <> · {computedAt}</>}
       </footer>
     </div>
   );

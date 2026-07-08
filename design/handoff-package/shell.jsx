@@ -2,10 +2,10 @@
 const { useState } = React;
 
 const Brand = () => (
-  <div className="brand">
+  <a href="Index.html" className="brand" style={{textDecoration:"none", color:"inherit"}}>
     <div className="brand-mark" />
     <div className="brand-name">QuantPipeline<em> · decision</em></div>
-  </div>
+  </a>
 );
 
 const TopBar = ({ onToggleNav, onToggleCtx, ctxVisible, crumb }) => (
@@ -15,9 +15,9 @@ const TopBar = ({ onToggleNav, onToggleCtx, ctxVisible, crumb }) => (
       <Icon name="panel-left" size={15} />
     </button>
     <nav className="crumbs">
-      <span>Workspaces</span>
+      <a href="Index.html" style={{color:"inherit", textDecoration:"none"}}>Workspaces</a>
       <Icon name="chevron-right" size={12} className="sep" />
-      <span>Decisions</span>
+      <a href="Overview.html" style={{color:"inherit", textDecoration:"none"}}>Decisions</a>
       <Icon name="chevron-right" size={12} className="sep" />
       <span className="cur">{crumb || "NVDA · long thesis"}</span>
     </nav>
@@ -58,12 +58,10 @@ const LeftNav = () => {
     { key: "overview", label: "Overview", icon: "overview", badge: "4", href: "Overview.html" },
     { key: "decision", label: "Decisions", icon: "decision", badge: "12", href: "Decision Workspace.html" },
     { key: "compare", label: "Engine comparison", icon: "compare", href: "Engine Comparison.html" },
-    { key: "risk", label: "Risk workspace", icon: "risk", badge: "2", href: "#" },
-    { key: "replay", label: "Replay & forensics", icon: "replay", href: "#" },
-    { key: "backtest", label: "Backtests", icon: "backtest", href: "#" },
-    { key: "paper", label: "Paper portfolio", icon: "paper", href: "#" },
-    { key: "universe", label: "Universe", icon: "universe", href: "#" },
-    { key: "news", label: "News intelligence", icon: "news", href: "#" },
+    { key: "replay", label: "Replay & forensics", icon: "replay", href: "Replay.html" },
+    { key: "backtest", label: "Backtests", icon: "backtest", href: "Backtests.html" },
+    { key: "paper", label: "Paper portfolio", icon: "paper", href: "Paper Portfolio.html" },
+    { key: "universe", label: "Universe", icon: "universe", href: "Universe.html" },
   ];
   const saved = [
     { label: "Momentum leaders · 3M", c: "" },
@@ -85,11 +83,19 @@ const LeftNav = () => {
       </div>
       <div className="nav-section">
         <div className="nav-label">Operations</div>
-        <div className="nav-item">
+        <a href="Ops.html" className={"nav-item" + (page === "ops" ? " active" : "")}>
           <Icon name="ops" size={16} className="nav-ic" />
           <span>Ops command</span>
           <span className="nav-badge">1</span>
-        </div>
+        </a>
+        <a href="Policy Editor.html" className={"nav-item" + (page === "policy" ? " active" : "")}>
+          <Icon name="check" size={16} className="nav-ic" />
+          <span>Policies</span>
+        </a>
+        <a href="Integrations.html" className={"nav-item" + (page === "integrations" ? " active" : "")}>
+          <Icon name="database" size={16} className="nav-ic" />
+          <span>Integrations</span>
+        </a>
       </div>
       <div className="nav-section">
         <div className="nav-label">Saved views</div>

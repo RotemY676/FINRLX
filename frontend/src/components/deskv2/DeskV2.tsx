@@ -3,7 +3,7 @@
 /**
  * Desk W1 — DeskV2 assembly (SPEC-03 blueprint zones 1,3,4,9; DEC-6 deep
  * links). W1 scope shipped from this environment: Verdict band + dials +
- * Forensic drawer + v2 Panels A/B; panels C\u2013F reuse the tested A5 sections
+ * Forensic drawer + v2 Panels A/B; panels C–F reuse the tested A5 sections
  * pending their v2 skins in the browser-equipped phase (honest scope,
  * recorded in RESUME.md). Everything renders only when flags.desk_v2 is ON.
  */
@@ -46,7 +46,7 @@ function PanelShell({ id, title, children }: {
 export default function DeskV2({ ticker }: { ticker: string }) {
   const router = useRouter();
   const params = useSearchParams();
-  const drawerPanel = params.get("drawer");
+  const drawerPanel = params?.get("drawer") ?? null;
 
   const statusFetch = useDeskStatus(ticker);
   const header = useDeskSection<any>(ticker, "header", true);
@@ -65,19 +65,19 @@ export default function DeskV2({ ticker }: { ticker: string }) {
     ) : s.kind === "error" ? (
       <ErrorCard source={s.detail ?? "section"} healthHref="/pro/ops" />
     ) : (
-      <p>loading\u2026</p>
+      <p>loading…</p>
     );
 
   const openDrawer = useCallback(
     (panel: string) => {
-      const q = new URLSearchParams(params.toString());
+      const q = new URLSearchParams(params?.toString());
       q.set("drawer", panel);
       router.replace(`?${q.toString()}`, { scroll: false });
     },
     [params, router],
   );
   const closeDrawer = useCallback(() => {
-    const q = new URLSearchParams(params.toString());
+    const q = new URLSearchParams(params?.toString());
     q.delete("drawer");
     router.replace(q.size ? `?${q.toString()}` : "?", { scroll: false });
   }, [params, router]);
@@ -123,13 +123,13 @@ export default function DeskV2({ ticker }: { ticker: string }) {
       <VerdictBand head={head} statusFetch={statusFetch}
                    onStanceClick={() => openDrawer("stance")} />
 
-      <PanelShell id="chart" title="Price \u00B7 regime \u00B7 evidence">
+      <PanelShell id="chart" title="Price · regime · evidence">
         {reuse(chart, ChartSection)}
       </PanelShell>
 
       <div style={{ display: "grid", gap: tokens.space(3),
                     gridTemplateColumns: "repeat(auto-fit,minmax(420px,1fr))" }}>
-        <PanelShell id="A" title="A \u00B7 Technical signals">
+        <PanelShell id="A" title="A · Technical signals">
           <button onClick={() => openDrawer("A")}
                   data-testid="how-A" style={{ float: "right" }}>
             How was this computed?
@@ -143,11 +143,11 @@ export default function DeskV2({ ticker }: { ticker: string }) {
           ) : signals.kind === "error" ? (
             <ErrorCard source={signals.detail} healthHref="/pro/ops" />
           ) : (
-            <p>loading\u2026</p>
+            <p>loading…</p>
           )}
         </PanelShell>
 
-        <PanelShell id="B" title="B \u00B7 Model tournament arena">
+        <PanelShell id="B" title="B · Model tournament arena">
           <button onClick={() => openDrawer("B")}
                   data-testid="how-B" style={{ float: "right" }}>
             How was this computed?
@@ -157,21 +157,21 @@ export default function DeskV2({ ticker }: { ticker: string }) {
           ) : tournament.kind === "error" ? (
             <ErrorCard source={tournament.detail} healthHref="/pro/ops" />
           ) : (
-            <p>loading\u2026</p>
+            <p>loading…</p>
           )}
         </PanelShell>
 
-        <PanelShell id="C" title="C \u00B7 News & social sentiment">
+        <PanelShell id="C" title="C · News & social sentiment">
           {reuse(newsSocial, NewsSocialSection)}
         </PanelShell>
 
-        <PanelShell id="E" title="E \u00B7 Fundamentals & filings">
+        <PanelShell id="E" title="E · Fundamentals & filings">
           {reuse(fundamentals, FundamentalsSection)}
           {reuse(filings, FilingsSection)}
           {reuse(insider, InsiderSection)}
         </PanelShell>
 
-        <PanelShell id="F" title="F \u00B7 Sector context">
+        <PanelShell id="F" title="F · Sector context">
           <p style={{ color: tokens.color.neutral.n600 }}>
             {deskCopy.sector.benchmarkScope}
           </p>

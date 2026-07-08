@@ -1,0 +1,148 @@
+16. UX Appendix
+Detailed UX appendix for site, dashboard, mobile, and operator surfaces
+<w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:type="auto" w:w="0"/><w:jc w:val="center"/><w:tblLook w:firstColumn="1" w:firstRow="1" w:lastColumn="0" w:lastRow="0" w:noHBand="0" w:noVBand="1" w:val="04A0"/></w:tblPr><w:tblGrid><w:gridCol w:w="5040"/><w:gridCol w:w="5040"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:type="dxa" w:w="5040"/><w:tcMar><w:top w:w="70" w:type="dxa"/><w:start w:w="90" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:end w:w="90" w:type="dxa"/></w:tcMar><w:shd w:fill="EAF2FF"/></w:tcPr><w:p><w:pPr><w:pStyle w:val="BodySmall"/></w:pPr><w:r><w:t>Program
+QuantPipeline - private modular portfolio decision platform
+Document purpose
+Detailed UX appendix for site, dashboard, mobile, and operator surfaces
+Status
+Working baseline for design and delivery
+
+This appendix consolidates the behavioral UX rules that sit underneath the product requirements and functional specification. It is intended to reduce ambiguity for design, engineering, and QA. The focus is not on isolated screens but on the interaction model, decision rhythm, and trust-building behaviors that must hold across the full product.
+
+# 1. UX purpose and design posture
+QuantPipeline is not a generic trading dashboard. It is a decision environment that turns heterogeneous analysis into one recommendation object that can be challenged, stress-tested, and monitored. The UX must therefore optimize for orientation, confidence calibration, and disciplined action rather than maximum widget density.
+Summary before detail: every workspace starts with a concise answer to "what is happening and why should I care now?"
+Progressive challenge: the user can always dig from recommendation to evidence, then to disagreement, then to replay.
+Decision continuity: screen transitions preserve context so the user never loses the current thesis, horizon, or scenario.
+Trust decomposition: every meaningful output exposes model confidence, data quality, and operational readiness as separate signals.
+Action accountability: publishing, deferring, or monitoring all create an explicit state change visible later in replay and admin surfaces.
+
+# 2. Experience architecture and modes
+The product has four primary usage modes. The shell must preserve a common mental model while allowing each mode to privilege different information density and action patterns.
+Mode
+Primary user question
+Primary objects
+Interaction emphasis
+Overview
+What deserves attention right now?
+recommendations, watchlists, regime indicators
+scan, prioritize, enter a workspace
+Decision workspace
+Should I accept, challenge, or defer this thesis?
+recommendation object, evidence, scenario deltas
+read, compare, manipulate assumptions
+Forensics and validation
+What happened, and would the system have behaved well?
+snapshots, backtests, audit events
+trace, compare, annotate
+Admin and ops
+Can the platform be trusted and published?
+queues, incidents, policies, health metrics
+approve, investigate, control
+
+# 3. Primary user journeys
+The platform must support a repeatable decision rhythm. The following journeys are the baseline to optimize for during wireframing and implementation.
+Daily review: open overview, inspect the highest priority recommendation, enter the decision workspace, challenge assumptions, save or defer.
+Thesis challenge: compare multiple analytical engines, inspect feature attribution and disagreement, run scenario changes, decide whether the recommendation remains publishable.
+Risk review: inspect aggregate exposure, concentration, and drawdown constraints, then trace how the current recommendation affects portfolio-level posture.
+Post-mortem or replay: load a historical snapshot, compare proposed action vs actual outcome, identify whether the miss was analytical, data-related, or operational.
+Operator release review: validate health, policy, freshness, and approvals before allowing publication or promotion to paper/live use.
+
+# 4. Global shell and navigation behavior
+Desktop uses a three-zone shell: left navigation, central workspace, right context pane.
+Mobile collapses the right pane into a bottom sheet and turns the left navigation into bottom navigation plus a saved-view drawer.
+The shell always exposes current scope: universe, time horizon, scenario, view mode, and recommendation state.
+Cross-screen links should preserve filter context and the currently selected recommendation when possible.
+Search, notifications, and command palette must be globally reachable from every major route.
+
+# 5. Dashboard and overview UX
+The overview is a triage surface. It should not repeat every detail available later. The job is to establish market regime, show what changed, and highlight the ideas that deserve review.
+A ranked recommendation list is more useful than a wall of disconnected cards.
+The overview must distinguish fresh changes from stable existing views through visual recency cues.
+The top recommendation summary must explain the change driver in one short sentence, not just show a score.
+Overview charts should be limited to a small number of decision-relevant visuals: regime, concentration, risk posture, and notable divergence.
+Empty states should suggest how to populate the page: choose a universe, widen the horizon, or enable one of the engines.
+
+# 6. Decision workspace UX
+This is the core workbench. The center of gravity is a recommendation hero, followed by evidence, risk, and challenge tools. The user must be able to read top-down and move from confidence to causality without opening six separate tabs.
+Zone
+Must contain
+Behavioral rule
+Hero strip
+ticker or basket, stance, weight, horizon, confidence, action state
+One-screen answer in under five seconds
+Evidence narrative
+top drivers, regime context, recent changes, evidence quality
+Prefer concise narrative over raw feature dumps
+Challenge controls
+scenario inputs, alternative assumptions, threshold toggles
+Every change should preview the delta before commit
+Right context pane
+risk, disagreement, policy flags, provenance, notes
+Persistent and referenceable across tabs
+Action bar
+save, defer, publish to paper, bookmark, export note
+Actions use explicit labels; no ambiguous icons alone
+
+# 7. Explainability and disagreement UX
+Explainability is not a research page bolted onto the product. It must live next to the recommendation.
+Disagreement deserves its own explicit block that summarizes which engines disagree, by how much, and on which assumptions.
+When disagreement is high, the UI should shift tone from assertive to provisional and reduce premature action cues.
+Feature contribution displays must remain human-readable and avoid chart junk. Direct labels are preferred over legends far from the data.
+The system should expose the reason for missing explanations; for example, "attribution unavailable because the model served a fallback path".
+
+# 8. Replay, backtests, and paper portfolio UX
+Validation surfaces must behave like analytical tools, not afterthoughts. They answer whether the platform is behaving correctly, not merely whether returns look attractive.
+Replay begins from a known historical snapshot and reconstructs both recommendation and context.
+Backtests must make assumptions explicit near the output: universe, cost model, rebalancing cadence, slippage, exclusions, and policy constraints.
+Paper portfolio workflows should mirror the same action model as live review so the user is training on the final behavior.
+A miss in paper mode should link back to the recommendation snapshot and relevant evidence, not just produce a red performance number.
+
+# 9. Mobile experience principles
+Mobile is summary-first, not feature-identical. It supports review, triage, and lightweight challenge, not deep analysis sessions.
+One-thumb actions, short cards, and bottom sheets are preferred over side-by-side density.
+The first mobile view must present recommendation, confidence, and one next action without scrolling too far.
+Charts should default to one key signal at a time and expose secondary series on demand.
+Offline or degraded states should preserve the last good snapshot and explain freshness clearly.
+
+# 10. Accessibility and inclusivity rules
+Area
+Minimum rule
+Implementation implication
+Color
+Never rely on color alone for critical status
+Use icon, label, and text status together
+Keyboard
+All major actions reachable by keyboard
+Focus order mirrors visual reading order
+Contrast
+Charts and UI controls meet strong contrast
+Avoid low-contrast pastel-only semantics
+Motion
+Animation can never hide state changes
+Offer reduced-motion friendly transitions
+Tables
+Comparison tables need sticky headers and clear row focus
+Support keyboard and screen-reader navigation
+
+# 11. Microcopy and tone
+Use disciplined financial language: recommendation, thesis, confidence, exposure, constraint, replay.
+Avoid theatrical certainty. When the platform is uncertain, say so directly.
+Empty, warning, and degraded states must explain the cause and the next best action.
+Buttons should use verbs tied to product intent: Review, Challenge, Save, Promote to paper, Hold publication, Investigate.
+
+# 12. Acceptance checklist for UX QA
+Theme
+Pass condition
+Orientation
+A new user can tell what the recommendation is and why it matters from the first screen
+Continuity
+Filters and selected context persist through major navigation transitions
+Trust
+Confidence, data quality, and operational readiness are all visible on decision-critical screens
+Challengeability
+The user can test assumptions without losing the baseline state
+Clarity
+Every empty, warning, and error state proposes a next step
+
+Figure 16-1. Shared information architecture used across UX appendix and IA documents.

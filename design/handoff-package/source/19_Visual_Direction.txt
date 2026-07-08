@@ -1,0 +1,130 @@
+19. Visual Design Direction
+Visual language, charting posture, and interaction styling direction
+<w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:type="auto" w:w="0"/><w:jc w:val="center"/><w:tblLook w:firstColumn="1" w:firstRow="1" w:lastColumn="0" w:lastRow="0" w:noHBand="0" w:noVBand="1" w:val="04A0"/></w:tblPr><w:tblGrid><w:gridCol w:w="5040"/><w:gridCol w:w="5040"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:type="dxa" w:w="5040"/><w:tcMar><w:top w:w="70" w:type="dxa"/><w:start w:w="90" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:end w:w="90" w:type="dxa"/></w:tcMar><w:shd w:fill="EAF2FF"/></w:tcPr><w:p><w:pPr><w:pStyle w:val="BodySmall"/></w:pPr><w:r><w:t>Program
+QuantPipeline - private modular portfolio decision platform
+Document purpose
+Visual language, charting posture, and interaction styling direction
+Status
+Working baseline for design and delivery
+
+This document proposes the visual direction for QuantPipeline. It is not a frozen style guide but a constrained direction that should guide exploration and keep future screen work coherent.
+
+# 1. Visual intent
+The platform should feel credible, analytical, and calm. It should avoid both consumer-finance gamification and institutional terminal intimidation. The desired tone is high-trust, modern, and quietly sophisticated.
+Use clarity and contrast rather than ornamental intensity.
+Promote disciplined reading order through spacing and hierarchy.
+Reserve strong color for actions, risk states, and meaningful changes.
+Make dense data feel organized rather than crowded.
+
+# 2. Color direction
+Role
+Suggested direction
+Notes
+Canvas and surfaces
+cool neutrals and light slate backgrounds
+support long sessions without glare
+Primary action
+clear blue family
+must remain visible in both light and dark modes
+Positive state
+measured green
+avoid neon trading-app aesthetics
+Caution / review
+amber
+used for provisional states and needs-review flags
+Failure / breach
+red
+reserved for policy, data, or risk breaches
+Supportive accents
+limited cyan or indigo
+for charts and advanced analytical cues
+
+# 3. Typography and rhythm
+Display typography is reserved for page titles and major metrics only.
+Section headings should be compact and unambiguous.
+Body text should stay short, especially in evidence narratives and methodology notes.
+Meta labels should be quiet but readable, never microscopic.
+
+# 4. Card, table, and panel language
+Element
+Desired visual behavior
+Avoid
+Cards
+soft elevation, clear title row, stable actions
+shadow-heavy tiles with no hierarchy
+Comparison tables
+strong row striping or separators, sticky headers
+low-contrast dense grids
+Context panes
+subtle background distinction, grouped modules
+undifferentiated sidebars
+Alerts
+severity plus explanation plus next action
+floating red badges without context
+
+# 5. Charting direction
+Charts should explain the recommendation, not compete with it. The default chart posture is direct labeling, minimal clutter, and explicit overlays for events, confidence ranges, and scenario changes.
+Prefer a small number of highly legible charts to many ornamental mini-charts.
+Use event markers and annotations to tie visible movements to evidence.
+When showing confidence or uncertainty, favor bands or intervals that are visually distinct but restrained.
+Legends should be minimized; direct labels or inline labels are preferred.
+
+# 6. Motion and interaction styling
+Motion should reinforce structure: panel expansion, sheet emergence, state confirmation.
+Typical duration range should be fast and calm, roughly 150 to 220 milliseconds for most UI transitions.
+Hover, focus, disabled, and pressed states must be visually consistent across all controls.
+Reduced-motion accessibility support is mandatory from the start.
+
+# 7. Iconography and illustration
+Use a simple line-icon family with consistent stroke weight.
+Icons help scanning but never replace textual meaning for high-stakes actions.
+Illustration should be reserved for empty states and guidance moments, not for analytical surfaces.
+
+# 8. Light and dark mode posture
+Theme rule
+Implementation implication
+Light mode is default baseline
+optimize charts and dense tables here first
+Dark mode is not inversion-only
+re-tune contrast and semantic colors separately
+Semantic states must map across modes
+green, amber, and red must stay distinguishable
+Charts need theme-specific tuning
+gridlines, labels, and bands require separate values
+
+# 9. Visual QA criteria
+Criterion
+Pass condition
+Readability
+Key metric, recommendation, and action visible at first glance
+Restraint
+No screen relies on more than a few strong color accents
+Consistency
+Cards, panes, and tables look like one system
+Trust
+Serious warnings and uncertainty cues are unmistakable
+
+Figure 19-1. Visual design direction board with semantic palette, typography, and chart posture.
+
+# 10. Composition rules for analytical screens
+Composition rule
+Explanation
+One focal message per screen zone
+Each zone should answer one question clearly instead of competing for attention
+Visible breathing room around critical numbers
+Key metrics and actions need separation from dense evidence
+Narrative and chart adjacency
+The user should not have to mentally reconnect a chart to the note that explains it
+Stable action placement
+Primary actions remain in predictable positions across screens
+
+# 11. Brand expression and anti-goals
+The product should not imitate meme-stock, gaming, or casino-like financial apps.
+The product should not look like an engineering prototype held together by generic admin templates.
+A restrained premium tone is preferred over loud futurism.
+Brand presence should appear through consistency, confidence, and exactness rather than decoration.
+
+# 12. Handoff guidance for future visual exploration
+Explore at least two density levels for desktop before locking the final system.
+Validate chart legibility in grayscale and reduced-width layouts early.
+Create paired light and dark examples for one decision screen and one ops screen before scaling the full library.

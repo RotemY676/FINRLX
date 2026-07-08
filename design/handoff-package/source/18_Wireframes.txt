@@ -1,0 +1,157 @@
+18. UI Wireframes and Screen Concepts
+Annotated wireframes and concept screens for the first design baseline
+<w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:type="auto" w:w="0"/><w:jc w:val="center"/><w:tblLook w:firstColumn="1" w:firstRow="1" w:lastColumn="0" w:lastRow="0" w:noHBand="0" w:noVBand="1" w:val="04A0"/></w:tblPr><w:tblGrid><w:gridCol w:w="5040"/><w:gridCol w:w="5040"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:type="dxa" w:w="5040"/><w:tcMar><w:top w:w="70" w:type="dxa"/><w:start w:w="90" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:end w:w="90" w:type="dxa"/></w:tcMar><w:shd w:fill="EAF2FF"/></w:tcPr><w:p><w:pPr><w:pStyle w:val="BodySmall"/></w:pPr><w:r><w:t>Program
+QuantPipeline - private modular portfolio decision platform
+Document purpose
+Annotated wireframes and concept screens for the first design baseline
+Status
+Working baseline for design and delivery
+
+This document translates the IA and UX rules into concrete screen concepts. The wireframes are intentionally mid-fidelity: they define hierarchy, zones, and behavioral responsibilities without pretending that the final visual design is settled.
+
+# 1. Wireframing objectives
+Lock screen hierarchy before visual polish begins.
+Verify that the product can expose recommendation, evidence, risk, and action in one coherent canvas.
+Ensure that mobile and operator surfaces inherit the same mental model.
+
+# 2. Global layout conventions
+Pattern
+Definition
+Why it matters
+Three-zone desktop
+Left navigation, center canvas, right context pane
+gives stable orientation and separates detail from actions
+Hero-first content stack
+top summary before deep evidence
+matches the decision rhythm
+Action persistence
+primary action bar visible near recommendation context
+reduces accidental context loss
+Mobile bottom-sheet context
+right-rail content becomes layered bottom sheet
+preserves explainability on narrow screens
+
+# 3. Main decision workspace concept
+The main decision workspace is the most important screen in the product. The recommendation hero, risk summary, and disagreement block are above the fold. Evidence narrative and challenge controls occupy the center. The right context pane is never decorative; it is a working surface for risk, confidence, provenance, and action.
+
+Figure 18-1. Main decision workspace wireframe.
+Region
+Must show
+Interaction notes
+Left navigation
+major sections, saved views, active route
+collapsed state still exposes active location
+Top bar
+scope, timeframe, search, mode
+must remain visible during internal workspace scroll
+Recommendation hero
+stance, weight, horizon, confidence
+one-click access to notes and publication state
+Evidence narrative
+why now, key drivers, data caveats
+supports inline expansion, not page replacement
+Scenario controls
+assumption edits and sensitivity toggles
+show predicted delta before apply
+Context pane
+risk, disagreement, provenance, actions
+tabbed only if density becomes unmanageable
+
+# 4. Engine comparison concept
+Comparison should not feel like a separate product. It answers one question: how do multiple analytical engines differ, and what synthesis should the user trust?
+
+Figure 18-2. Engine comparison workspace wireframe.
+Use a structured matrix for direct comparison across stance, confidence, risk, and notes.
+Supplement the matrix with one visual explaining where alignment is high or low.
+Finish with a synthesis panel that guides the user back into the decision workspace.
+
+# 5. Mobile decision concept
+Mobile supports triage, monitoring, and lightweight challenge. It should surface a concise recommendation card first, then stack evidence and risk in digestible modules.
+
+Figure 18-3. Mobile decision workspace wireframe.
+Mobile rule
+Description
+Card-first hierarchy
+The recommendation card precedes charts and deep notes
+Bottom navigation
+Core product sections remain reachable with one thumb
+Context as sheet
+Detailed evidence, risk, and notes open as bottom sheets
+Progressive charts
+Only one primary chart per viewport by default
+
+# 6. Admin and ops concept
+The operator view privileges queue state, health, policy, and investigation speed. It still shares the same shell and object model so that admin work remains connected to what the end user sees.
+
+Figure 18-4. Admin and ops workspace wireframe.
+Admin block
+Responsibility
+Command center strip
+At-a-glance health and release readiness
+Publication queue
+Approval, hold, rollback, and reason capture
+Data source health
+freshness, reliability, and drift awareness
+Policy monitor
+violations, overrides, and approval logic
+Investigation workspace
+replay-driven investigation and audit notes
+
+# 7. Secondary concepts to design next
+Backtest lab with assumptions panel and result comparison
+Paper portfolio review with proposal staging and drift alerts
+Replay investigator timeline with artifact side panel
+Universe management with screening, tagging, and saved cohorts
+
+# 8. Wireframe acceptance checklist
+Question
+Pass condition
+Is the recommendation visible without scrolling on core screens?
+yes
+Can the user challenge assumptions without losing the baseline?
+yes
+Do admin screens remain visually related to user screens?
+yes
+Does mobile preserve trust signals instead of hiding them?
+yes
+
+# 9. Engineering handoff annotations
+The wireframes should be read as layout and behavior contracts rather than visual suggestions only. During implementation the following annotations must stay attached to each core screen concept.
+Annotation type
+Examples
+Why it must exist
+Persistent context
+selected recommendation, scenario values, current horizon
+prevents accidental loss of state across panels and routes
+Deferred loading
+comparison details, long histories, extended evidence
+keeps first render fast while preserving depth
+Role-aware actions
+publish, hold, rollback, policy override
+avoids shipping user-only assumptions into operator routes
+Fallback rendering
+missing chart data, unavailable attribution, stale inputs
+prevents blank analytical surfaces
+
+# 10. Responsive adaptation matrix
+Screen concept
+Desktop priority
+Tablet adaptation
+Mobile adaptation
+Decision workspace
+three-zone layout
+context rail may collapse
+context becomes bottom sheet
+Comparison workspace
+matrix plus synthesis panel
+matrix can scroll horizontally
+accordion rows with synthesis summary
+Admin workspace
+parallel modules visible
+secondary modules stack lower
+critical queue and incident modules only
+
+# 11. Screen concept sign-off criteria
+A designer and engineer should be able to agree on component boundaries from the wireframes alone.
+A product reviewer should be able to point to the primary action on every concept screen without guessing.
+Every concept should make degraded and empty states plausible, even if not all are drawn directly on the wireframe.

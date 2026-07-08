@@ -91,14 +91,14 @@ export default function DeskPage() {
   const { flags } = useFeatureFlags();
   const v2Params = useParams<{ ticker: string }>();
   if (flags.desk_v2) {
-    return <DeskV2 ticker={String(v2Params.ticker ?? "").toUpperCase()} />;
+    return <DeskV2 ticker={String(v2Params?.ticker ?? "").toUpperCase()} />;
   }
   return <LegacyDeskPage />;
 }
 
 function LegacyDeskPage() {
   const params = useParams<{ ticker: string }>();
-  const ticker = decodeURIComponent(params.ticker ?? "").toUpperCase();
+  const ticker = decodeURIComponent(params?.ticker ?? "").toUpperCase();
   const revision = useDeskFreshness(ticker);
   const header = useDeskSection<any>(ticker, "header", true, revision);
   const [active, setActive] = useState<string>("chart");

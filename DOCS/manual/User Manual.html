@@ -1,0 +1,1590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FINRLX — User Manual (Beginner Edition)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="manual.css" />
+</head>
+<body>
+
+<!-- ============ Cover ============ -->
+<section class="cover" id="cover">
+  <div class="cover-inner">
+    <div class="cover-mark">
+      <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+        <rect x="2" y="2" width="40" height="40" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" />
+        <path d="M11 28 L18 19 L24 24 L33 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="33" cy="13" r="2.4" fill="currentColor" />
+      </svg>
+      <span class="cover-mark-text">FINRLX</span>
+    </div>
+
+    <p class="cover-eyebrow">User Manual · Beginner Edition</p>
+    <h1 class="cover-title">A guided introduction to <em>governed</em> decision&nbsp;support.</h1>
+    <p class="cover-lede">
+      How to read recommendations, compare engines, run offline benchmarks,
+      and stay inside the safety boundaries that make FINRLX a research and
+      decision-support platform — not a trading terminal.
+    </p>
+
+    <dl class="cover-meta">
+      <div><dt>Audience</dt><dd>First-time users, analysts, research operators, administrators</dd></div>
+      <div><dt>Edition</dt><dd>Beginner, v1.0 · April 2026</dd></div>
+      <div><dt>Scope</dt><dd>Web product, iOS companion, governance &amp; research workflows</dd></div>
+      <div><dt>Status</dt><dd>Decision support only · Not a broker · No live execution</dd></div>
+    </dl>
+
+    <div class="cover-foot">
+      <span>QuantPipeline / FINRLX</span>
+      <span>Confidential — Internal use</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Layout ============ -->
+<div class="layout">
+
+  <!-- Sidebar TOC -->
+  <aside class="toc" aria-label="Table of contents">
+    <div class="toc-brand">
+      <svg width="22" height="22" viewBox="0 0 44 44" aria-hidden="true">
+        <rect x="2" y="2" width="40" height="40" rx="10" fill="none" stroke="currentColor" stroke-width="2" />
+        <path d="M11 28 L18 19 L24 24 L33 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span>FINRLX Manual</span>
+    </div>
+    <nav>
+      <p class="toc-section">Foundations</p>
+      <ol>
+        <li><a href="#ch-1">1 · Product overview</a></li>
+        <li><a href="#ch-2">2 · Conceptual model</a></li>
+        <li><a href="#ch-3">3 · Architecture</a></li>
+        <li><a href="#ch-4">4 · Data &amp; sources</a></li>
+        <li><a href="#ch-5">5 · Safety &amp; governance</a></li>
+        <li><a href="#ch-6">6 · Roles</a></li>
+      </ol>
+      <p class="toc-section">The product</p>
+      <ol start="7">
+        <li><a href="#ch-7">7 · Screen tour</a></li>
+        <li><a href="#ch-8">8 · Quick-start</a></li>
+        <li><a href="#ch-9">9 · Recommendations</a></li>
+        <li><a href="#ch-10">10 · Backtests &amp; replay</a></li>
+        <li><a href="#ch-11">11 · FinRL-X research</a></li>
+        <li><a href="#ch-12">12 · Admin / Ops</a></li>
+      </ol>
+      <p class="toc-section">Working with FINRLX</p>
+      <ol start="13">
+        <li><a href="#ch-13">13 · Reading UI states</a></li>
+        <li><a href="#ch-14">14 · Common workflows</a></li>
+        <li><a href="#ch-15">15 · Worked examples</a></li>
+        <li><a href="#ch-16">16 · Troubleshooting</a></li>
+        <li><a href="#ch-17">17 · Best practices</a></li>
+      </ol>
+      <p class="toc-section">Reference</p>
+      <ol start="18">
+        <li><a href="#ch-18">18 · Glossary</a></li>
+        <li><a href="#ch-19">19 · Screen reference</a></li>
+        <li><a href="#ch-20">20 · Safety wording</a></li>
+        <li><a href="#ch-21">21 · First-day checklist</a></li>
+        <li><a href="#ch-22">22 · Admin pre-flight</a></li>
+        <li><a href="#ch-23">23 · Training session</a></li>
+      </ol>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+    <!-- ============ How to use this manual ============ -->
+    <section class="frontmatter">
+      <h2 class="frontmatter-title">How to read this manual</h2>
+      <p>
+        This manual introduces FINRLX from the perspective of someone seeing
+        the system for the first time. It is organized in three arcs:
+        <em>Foundations</em> (what the platform is and the rules it enforces),
+        <em>The product</em> (the screens themselves), and
+        <em>Working with FINRLX</em> (workflows, examples, and recovery).
+      </p>
+      <p>
+        Every screenshot in this document is taken directly from the shipped
+        design package. Captions explain the <em>task</em> a screen supports,
+        not just its name. Where a workflow has a hard governance boundary
+        — research vs. production, offline vs. live — that boundary is called
+        out in a <strong>safety panel</strong> alongside the prose.
+      </p>
+      <div class="callout callout-warn">
+        <div class="callout-label">Important</div>
+        <p>
+          FINRLX is a decision-support and research platform. It is not a
+          broker, not an order-management system, and not an automated
+          trading system. Nothing in this manual — and nothing the product
+          shows you — should be read as an instruction to place a trade.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 1 ============ -->
+    <section class="chapter" id="ch-1">
+      <p class="chap-eyebrow">Chapter 1</p>
+      <h2 class="chap-title">Product overview</h2>
+      <p class="chap-lede">
+        FINRLX organizes evidence from multiple analytical engines into a
+        structured decision workflow that a human can review, challenge,
+        document, and audit.
+      </p>
+
+      <h3>1.1 What FINRLX is</h3>
+      <p>
+        FINRLX — also referred to as <em>QuantPipeline</em> in the design
+        package — is a decision-support platform for medium-horizon
+        investment analysis. It combines several analytical engines and
+        research workflows into one controlled environment, then presents
+        the output in a form that a human user can review, challenge,
+        monitor, and document.
+      </p>
+      <p>
+        The platform is designed for users who need more than a market-data
+        dashboard. Instead of only showing prices, charts, or news, FINRLX
+        organizes evidence from several sources into a structured decision
+        workflow built around six steps:
+      </p>
+      <ol class="num-steps">
+        <li>Collect and normalize data.</li>
+        <li>Run multiple analytical engines.</li>
+        <li>Compare engines and surface agreement or disagreement.</li>
+        <li>Generate a decision-support view.</li>
+        <li>Preserve auditability and governance.</li>
+        <li>Allow offline research and benchmarks without affecting production.</li>
+      </ol>
+
+      <figure class="fig fig-wide">
+        <img src="img/01-overview.png" alt="The Overview screen — daily triage with top recommendations, portfolio health and an activity feed." />
+        <figcaption>
+          <strong>Figure 1.1 — The Overview screen.</strong> The morning-triage
+          surface. Top recommendations on the left, portfolio health and
+          confidence indicators in the middle, recent activity on the right.
+          Read it as the answer to “what changed since I last looked, and
+          what needs attention now?”
+        </figcaption>
+      </figure>
+
+      <h3>1.2 Questions FINRLX is designed to answer</h3>
+      <ul class="bullet-list">
+        <li>What changed since the last review?</li>
+        <li>Which assets are supported by multiple engines?</li>
+        <li>Where do engines disagree, and why?</li>
+        <li>What is the quality and freshness of the underlying data?</li>
+        <li>What would a historical replay or benchmark show?</li>
+        <li>Is a research model promising enough to keep investigating?</li>
+        <li>Is any output safe, audited, and clearly separated from production?</li>
+      </ul>
+
+      <h3>1.3 What FINRLX is not</h3>
+      <div class="not-list">
+        <span>A brokerage</span>
+        <span>An OMS</span>
+        <span>A trading terminal</span>
+        <span>An auto-trading bot</span>
+        <span>Live RL execution</span>
+        <span>Personal advice</span>
+        <span>A replacement for judgment</span>
+      </div>
+      <p>
+        The system can display research candidates, imported artifacts,
+        benchmarks, and simulated or paper results — but these exist for
+        analysis only. They do not place orders and do not route
+        instructions to a broker.
+      </p>
+
+      <h3>1.4 The value proposition</h3>
+      <p>
+        The value is not only the score or the recommendation. The value is
+        the controlled <em>process</em> around it:
+      </p>
+      <div class="value-grid">
+        <div><strong>Evidence before action</strong><span>Decisions are anchored to the data and engines that produced them.</span></div>
+        <div><strong>Confidence ≠ data quality</strong><span>Two distinct measures, never collapsed into one number.</span></div>
+        <div><strong>Disagreement made visible</strong><span>The system surfaces where engines diverge instead of hiding it.</span></div>
+        <div><strong>Research isolated from production</strong><span>Imported research candidates cannot be promoted automatically.</span></div>
+        <div><strong>Fingerprinted benchmarks</strong><span>Every benchmark stores audit trail and result fingerprint.</span></div>
+        <div><strong>Honest empty states</strong><span>If something can’t be verified, the UI says so explicitly.</span></div>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 2 ============ -->
+    <section class="chapter" id="ch-2">
+      <p class="chap-eyebrow">Chapter 2</p>
+      <h2 class="chap-title">Conceptual model</h2>
+      <p class="chap-lede">
+        Before touching screens, internalize the loop the product is built
+        around and the entities that move through it.
+      </p>
+
+      <h3>2.1 The decision-support loop</h3>
+      <p>
+        Every workflow in FINRLX is a variation on the same seven-step
+        loop. The product surfaces are arranged around it:
+      </p>
+
+      <div class="loop">
+        <div><span>1</span><strong>Triage</strong><em>Overview</em></div>
+        <div><span>2</span><strong>Investigate</strong><em>Decision&nbsp;Workspace</em></div>
+        <div><span>3</span><strong>Compare</strong><em>Engine&nbsp;Comparison</em></div>
+        <div><span>4</span><strong>Replay</strong><em>Replay</em></div>
+        <div><span>5</span><strong>Benchmark</strong><em>Backtests · Ops</em></div>
+        <div><span>6</span><strong>Govern</strong><em>Ops · Policy</em></div>
+        <div><span>7</span><strong>Document</strong><em>Notes · Audit</em></div>
+      </div>
+
+      <p>
+        The loop has a deliberate asymmetry: a user can review evidence and
+        simulated results, but the system <em>does not</em> execute trades.
+        That asymmetry is the central design constraint of the entire
+        product.
+      </p>
+
+      <h3>2.2 The main entities</h3>
+
+      <div class="entity">
+        <h4>Recommendation</h4>
+        <p>
+          The platform’s structured decision-support object. It may
+          summarize multiple engine outputs and contextual evidence for a
+          specific asset, universe, or portfolio question. A recommendation
+          is <em>not</em> an instruction to trade — it is a record that can
+          be reviewed, challenged, monitored, or published to a controlled
+          workflow depending on role and governance settings.
+        </p>
+      </div>
+
+      <div class="entity">
+        <h4>Engine</h4>
+        <p>A source of analytical judgment. Examples include:</p>
+        <ul class="bullet-list cols-2">
+          <li>Technical engine</li>
+          <li>Fundamental / quality engine</li>
+          <li>Sentiment / news engine</li>
+          <li>Machine-learning engine</li>
+          <li>Reinforcement-learning research engine</li>
+          <li>Rule-based / policy-constrained engine</li>
+        </ul>
+        <p>
+          The platform is designed to show both the result and the
+          reasoning context behind an engine’s output.
+        </p>
+      </div>
+
+      <div class="entity">
+        <h4>Candidate</h4>
+        <p>
+          A model, policy, research artifact, or analytical agent that can
+          be evaluated in isolation. Recent FinRL-X research candidates are
+          explicitly marked as <strong>research-only</strong>,
+          <strong>offline-only</strong>, and <strong>shadow-only</strong>.
+        </p>
+      </div>
+
+      <div class="entity">
+        <h4>Benchmark report</h4>
+        <p>
+          An offline evaluation result. It compares one or more agents
+          under the same controlled conditions and stores metrics, reward
+          breakdowns, forensic traces, safety flags, and fingerprints.
+        </p>
+      </div>
+
+      <div class="entity">
+        <h4>Artifact</h4>
+        <p>
+          An offline output from a local research environment. For example,
+          a local CPU PPO/A2C experiment can produce a JSON artifact. The
+          backend can validate and import such artifacts as research-only
+          candidates without running neural inference in production.
+        </p>
+      </div>
+
+      <div class="entity">
+        <h4>Audit event</h4>
+        <p>
+          A record that something important happened — a benchmark was
+          requested, a candidate was imported, a research training stub was
+          run, or a candidate benchmark completed. Audit events support
+          traceability and governance.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 3 ============ -->
+    <section class="chapter" id="ch-3">
+      <p class="chap-eyebrow">Chapter 3</p>
+      <h2 class="chap-title">High-level architecture</h2>
+      <p class="chap-lede">
+        Six layers, two runtimes, and one strict rule: production never
+        runs neural inference.
+      </p>
+
+      <h3>3.1 The six layers</h3>
+
+      <figure class="fig">
+        <div class="diagram">
+          <div class="diagram-row">
+            <span class="layer layer-ui">User Interface — Overview · Decisions · Compare · Replay · Backtests · Policy · Paper · Universe · Ops</span>
+          </div>
+          <div class="diagram-row">
+            <span class="layer layer-gov">Governance — safety flags · isolation · fingerprints · audit · publication boundaries</span>
+          </div>
+          <div class="diagram-row split-2">
+            <span class="layer layer-decision">Decision layer — recommendation assembly · workspace context</span>
+            <span class="layer layer-bench">Benchmark &amp; research — baselines · imported candidates · surrogate adapter</span>
+          </div>
+          <div class="diagram-row">
+            <span class="layer layer-engine">Signal &amp; engine layer — technical · fundamental · sentiment · ML · RL · rule</span>
+          </div>
+          <div class="diagram-row">
+            <span class="layer layer-data">Data layer — assets · features · prices · policy snapshots · benchmark reports · audit · research metadata</span>
+          </div>
+        </div>
+        <figcaption>
+          <strong>Figure 3.1 — Architectural layers.</strong> The UI sits on
+          top of governance, which gates everything below. Decision and
+          benchmark layers are siblings, never parents of each other:
+          benchmarks cannot influence live recommendations.
+        </figcaption>
+      </figure>
+
+      <h3>3.2 Frontend</h3>
+      <p>
+        The frontend is a Next.js application. It exposes the surfaces a
+        user navigates between: <em>Overview</em>, <em>Decisions</em>,
+        <em>Engine Comparison</em>, <em>Replay</em>, <em>Backtests</em>,
+        <em>Paper Portfolio</em>, <em>Policy Editor</em>,
+        <em>Universe</em>, <em>Integrations</em>, and the
+        <em>Admin / Ops</em> command center.
+      </p>
+
+      <h3>3.3 Backend</h3>
+      <p>
+        The backend is a FastAPI service. It exposes versioned endpoints
+        under <code>/api/v1</code> and contains services for
+        recommendations and overview, publication status, the model
+        registry, the RL adapter and benchmark services, FinRL-X research,
+        candidate import and isolation, and audit and governance.
+      </p>
+      <p>
+        The backend deliberately keeps neural RL dependencies out of the
+        production runtime. Production does not require <code>torch</code>,
+        <code>gymnasium</code>, or <code>stable-baselines3</code>.
+      </p>
+
+      <h3>3.4 Research environment</h3>
+      <p>
+        Research infrastructure is separated from production. Local CPU
+        PPO/A2C experiments live under <code>research/finrlx_cpu/</code>.
+        That area can contain a local Dockerfile, research dependencies, a
+        Gymnasium-compatible environment, training scripts, an artifact
+        schema, and local outputs. <strong>These outputs are not
+        automatically trusted by production.</strong> They must be
+        validated and imported as research-only artifacts.
+      </p>
+
+      <h3>3.5 Why production does not run neural inference</h3>
+      <div class="callout callout-info">
+        <div class="callout-label">Design rule</div>
+        <p>
+          Production does not load neural model files or execute PPO/A2C
+          forward passes. Instead, imported research candidates are
+          benchmarked using a safe surrogate adapter. The current adapter
+          identifier is
+          <code class="mono">score_weighted_fallback_surrogate</code>: a
+          deterministic score-weighted fallback. It does not claim real
+          neural inference.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 4 ============ -->
+    <section class="chapter" id="ch-4">
+      <p class="chap-eyebrow">Chapter 4</p>
+      <h2 class="chap-title">Data &amp; information sources</h2>
+      <p class="chap-lede">
+        FINRLX separates three things people often conflate: how confident
+        the model is, how good the data is, and whether the pipeline is
+        operationally healthy.
+      </p>
+
+      <h3>4.1 Categories of information</h3>
+      <table class="table">
+        <thead><tr><th>Category</th><th>Typical contents</th></tr></thead>
+        <tbody>
+          <tr><td>Asset metadata</td><td>Tickers, sectors, exchange, listing status</td></tr>
+          <tr><td>Price &amp; return data</td><td>OHLCV, returns, volatility windows</td></tr>
+          <tr><td>Engine scores</td><td>Per-engine signal output and reasoning context</td></tr>
+          <tr><td>Recommendations</td><td>Structured decision-support records</td></tr>
+          <tr><td>Publication status</td><td>What was published, by whom, under which policy</td></tr>
+          <tr><td>Features</td><td>Engineered inputs to engines and models</td></tr>
+          <tr><td>Policy snapshots</td><td>Versioned guardrails and constraints</td></tr>
+          <tr><td>Benchmark reports</td><td>Offline evaluation results with fingerprints</td></tr>
+          <tr><td>Audit events</td><td>Who/what/when for governance-relevant actions</td></tr>
+          <tr><td>Research artifacts</td><td>Imported local research outputs</td></tr>
+          <tr><td>Imported candidates</td><td>Validated research artifacts surfaced as candidates</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Three independent measures</h3>
+      <p>The Overview, the Decision Workspace, and the operational pages
+        each draw on three measures that the product treats as independent:</p>
+      <div class="trio">
+        <div>
+          <h5>Confidence</h5>
+          <p>How strongly the system supports a view under current assumptions.</p>
+        </div>
+        <div>
+          <h5>Data quality</h5>
+          <p>Freshness, completeness, and provenance of the underlying data.</p>
+        </div>
+        <div>
+          <h5>Operational readiness</h5>
+          <p>Pipeline health — feeds, schedulers, last successful runs.</p>
+        </div>
+      </div>
+      <p>
+        A high model score backed by stale or incomplete data is not the
+        same as a high score backed by fresh, reliable data. The UI never
+        collapses these into a single number.
+      </p>
+
+      <figure class="fig fig-wide">
+        <img src="img/09-integrations.png" alt="Integrations page showing the catalog of external data sources and connection state." />
+        <figcaption>
+          <strong>Figure 4.1 — Integrations.</strong> The source-of-truth
+          for connections to market data, news, sentiment, and reference
+          providers. Health is shown per source and per feed; degraded
+          sources surface to the Overview as data-quality warnings.
+        </figcaption>
+      </figure>
+
+      <h3>4.3 Research artifacts as a special source</h3>
+      <p>
+        A local research artifact is not a production model. It is a
+        structured file that records information about a research
+        experiment. A valid artifact includes:
+      </p>
+      <ul class="bullet-list cols-2">
+        <li>Artifact type and schema version</li>
+        <li>Research / offline / shadow safety flags</li>
+        <li>Algorithm — PPO or A2C</li>
+        <li>Whether training was real or synthetic</li>
+        <li>Dataset summary</li>
+        <li>Training configuration</li>
+        <li>Training metrics</li>
+        <li>Creation timestamp</li>
+        <li>Warnings</li>
+      </ul>
+      <p>Before an artifact can enter the backend as a candidate, it must pass validation.</p>
+
+      <h3>4.4 Production fingerprints</h3>
+      <p>
+        For sensitive workflows, the platform captures lightweight
+        before/after fingerprints for key production surfaces. These
+        fingerprints help prove that a research or benchmark operation did
+        not change production recommendations or publication state.
+      </p>
+      <ul class="bullet-list">
+        <li><code>recommendations_current</code> — the current recommendation set</li>
+        <li><code>publication_status</code> — what is published right now</li>
+        <li><code>overview</code> — marked unavailable when no safe stable internal snapshot exists</li>
+      </ul>
+      <div class="callout callout-info">
+        <div class="callout-label">Honest unavailability</div>
+        <p>
+          If a component cannot be safely snapshotted, the system says so
+          explicitly instead of pretending it was verified. Treat
+          “unavailable” as informative, not as a green check.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 5 ============ -->
+    <section class="chapter" id="ch-5">
+      <p class="chap-eyebrow">Chapter 5</p>
+      <h2 class="chap-title">Safety, governance &amp; boundaries</h2>
+      <p class="chap-lede">
+        Eight principles, five isolation checks, one audit trail, one rule
+        users should never assume away.
+      </p>
+
+      <h3>5.1 Core safety principles</h3>
+      <ol class="num-steps">
+        <li>Research outputs are not production decisions.</li>
+        <li>Imported artifacts are not promoted automatically.</li>
+        <li>Benchmarks do not affect live recommendations.</li>
+        <li>No broker path exists in the product workflow.</li>
+        <li>Offline and shadow workflows must be labeled clearly.</li>
+        <li>All meaningful research actions are auditable.</li>
+        <li>Unsafe or ambiguous states are shown honestly.</li>
+        <li>Confidence is never collapsed with data quality.</li>
+      </ol>
+
+      <h3>5.2 Key safety labels</h3>
+      <p>
+        The following labels appear throughout the product. They are not
+        decorative — they describe real governance boundaries enforced by
+        the backend:
+      </p>
+      <div class="badges">
+        <span class="badge badge-pos">Research only</span>
+        <span class="badge badge-pos">Offline only</span>
+        <span class="badge badge-pos">Shadow only</span>
+        <span class="badge badge-pos">No broker execution</span>
+        <span class="badge badge-pos">No production influence</span>
+        <span class="badge badge-pos">No publication influence</span>
+        <span class="badge badge-pos">Not eligible for promotion</span>
+        <span class="badge badge-pos">No neural inference in production</span>
+      </div>
+
+      <h3>5.3 The five isolation checks</h3>
+      <p>
+        Candidate isolation is the system’s assertion that a research
+        candidate cannot be used for unsafe paths. All five must pass for
+        the candidate to surface as “isolated”:
+      </p>
+      <ol class="num-steps">
+        <li>Promotion blocked</li>
+        <li>Publication blocked</li>
+        <li>Live recommendation use blocked</li>
+        <li>Overview influence blocked</li>
+        <li>Broker execution blocked</li>
+      </ol>
+      <div class="callout callout-warn">
+        <div class="callout-label">Read carefully</div>
+        <p>
+          If any of these checks is missing or false, the UI must not
+          display a green all-safe state. Treat that as a hard stop, not a
+          minor caveat.
+        </p>
+      </div>
+
+      <h3>5.4 The audit trail</h3>
+      <p>The audit trail records:</p>
+      <ul class="bullet-list cols-2">
+        <li>Benchmark requested</li>
+        <li>Benchmark completed</li>
+        <li>Candidate imported</li>
+        <li>Candidate benchmark requested</li>
+        <li>Candidate benchmark completed</li>
+        <li>Import rejected</li>
+      </ul>
+      <p>
+        Audit records answer: who or what initiated the action, what
+        inputs were used, what result was created, and whether safety
+        checks passed.
+      </p>
+
+      <h3>5.5 What you should never assume</h3>
+      <div class="never">
+        <p>A high benchmark result is an investment recommendation.</p>
+        <p>A research candidate can be promoted.</p>
+        <p>A local artifact is trusted just because it was imported.</p>
+        <p>A neural model ran in production.</p>
+        <p>The system has placed, or can place, trades.</p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 6 ============ -->
+    <section class="chapter" id="ch-6">
+      <p class="chap-eyebrow">Chapter 6</p>
+      <h2 class="chap-title">Roles &amp; responsibilities</h2>
+      <p class="chap-lede">
+        Four roles, four lanes. Most users will live in one of them most
+        of the time.
+      </p>
+
+      <div class="role-grid">
+        <article>
+          <h4>Portfolio decision user</h4>
+          <p>Reviews the Overview, Decision Workspace, Engine Comparison, Replay, and Paper Portfolio.</p>
+          <ul>
+            <li>Reviews the current opportunity set</li>
+            <li>Opens recommendations for deeper evidence</li>
+            <li>Compares engines and inspects disagreement</li>
+            <li>Decides to monitor, defer, or publish (per role)</li>
+          </ul>
+        </article>
+        <article>
+          <h4>Research operator</h4>
+          <p>Works with benchmark, backtest, and research workflows.</p>
+          <ul>
+            <li>Runs offline benchmarks</li>
+            <li>Imports research artifacts</li>
+            <li>Reviews benchmark history and fingerprints</li>
+            <li>Confirms research outputs remain isolated</li>
+          </ul>
+        </article>
+        <article>
+          <h4>Admin / Ops</h4>
+          <p>Monitors platform health, audits, publication status, and research guardrails.</p>
+          <ul>
+            <li>Checks data health and publication state</li>
+            <li>Reviews audit events</li>
+            <li>Verifies benchmark governance</li>
+            <li>Confirms candidate isolation and that no production influence occurred</li>
+          </ul>
+        </article>
+        <article>
+          <h4>Developer / quant researcher</h4>
+          <p>Works with local research infrastructure and artifact generation.</p>
+          <ul>
+            <li>Runs local CPU PPO/A2C experiments</li>
+            <li>Produces JSON artifacts</li>
+            <li>Understands artifacts are untrusted by default</li>
+            <li>Hands off to the import &amp; validation workflow</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 7 ============ -->
+    <section class="chapter" id="ch-7">
+      <p class="chap-eyebrow">Chapter 7</p>
+      <h2 class="chap-title">A tour of the screens</h2>
+      <p class="chap-lede">
+        One section per surface. Read the captions — they describe the
+        task each screen exists to support.
+      </p>
+
+      <!-- 7.1 Overview already shown earlier; reuse + describe more -->
+      <h3>7.1 Overview — daily triage</h3>
+      <p>
+        The Overview is the first screen of every session. It answers
+        “what requires attention now?” by leading with top recommendations,
+        portfolio health and data-quality indicators, and a recent activity
+        feed. Use it as a jump-off, not as a place to make decisions.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/01-overview.png" alt="Overview screen." />
+        <figcaption><strong>Figure 7.1 — Overview.</strong> Triage first; investigate second.</figcaption>
+      </figure>
+
+      <h3>7.2 Decision Workspace — single-recommendation deep dive</h3>
+      <p>
+        The Decision Workspace is the deep-dive surface. From a single
+        recommendation it lays out the thesis, evidence modules, scenario
+        controls, risks, and a context pane on the right. Use it to
+        challenge a recommendation rather than only to read it.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/02-decision.png" alt="Decision Workspace." />
+        <figcaption>
+          <strong>Figure 7.2 — Decision Workspace.</strong> The hero
+          summarises the thesis and confidence trio. Below, evidence
+          modules expand into engine reasoning, scenario sliders, and risk
+          notes. The right pane keeps related context — alerts, history,
+          notes — close at hand.
+        </figcaption>
+      </figure>
+
+      <h3>7.3 Engine Comparison — agreement &amp; disagreement</h3>
+      <p>
+        The Engine Comparison view is where you go when you want to know
+        whether a recommendation rests on broad evidence or on a single
+        loud engine. Engines are presented side-by-side with vote
+        direction, confidence, methodology notes, and conflicting
+        evidence.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/03-compare.png" alt="Engine Comparison." />
+        <figcaption>
+          <strong>Figure 7.3 — Engine Comparison.</strong> Agreement is
+          informative; disagreement is more so. The synthesis row at the
+          bottom names the dominant signal and the loudest dissent.
+        </figcaption>
+      </figure>
+
+      <h3>7.4 Replay — historical forensics</h3>
+      <p>
+        Replay is the time-machine. It reconstructs what the system would
+        have known and recommended at any prior point. Use it to ask
+        whether a signal appeared <em>before</em> a move, whether a view
+        survived new data, and which engines were responsible for a
+        change.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/04-replay.png" alt="Replay screen." />
+        <figcaption>
+          <strong>Figure 7.4 — Replay.</strong> A scrubber drives the
+          recommendation snapshot, evidence, and engine votes back in
+          time. Forensic controls let you isolate single engines or
+          regimes.
+        </figcaption>
+      </figure>
+
+      <h3>7.5 Backtests — offline validation</h3>
+      <p>
+        Backtests evaluate models or strategies against historical data.
+        They are <em>not</em> live recommendations. Read them for
+        regime-conditional behavior, drawdowns, and robustness — not as a
+        forecast.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/05-backtests.png" alt="Backtests screen." />
+        <figcaption>
+          <strong>Figure 7.5 — Backtests.</strong> Each tear sheet carries
+          status badges (validated, partial, stale) so you can see at a
+          glance whether the result is trustworthy enough to read.
+        </figcaption>
+      </figure>
+
+      <h3>7.6 Policy Editor — guardrails with live preview</h3>
+      <p>
+        The Policy Editor defines limits, concentration rules, and
+        operational constraints. Edits show a live impact preview so the
+        user can see which current recommendations a change would touch
+        before saving the policy.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/06-policy.png" alt="Policy Editor." />
+        <figcaption>
+          <strong>Figure 7.6 — Policy Editor.</strong> Guardrails on the
+          left, live impact preview on the right. Saving creates a new
+          versioned policy snapshot referenced by future recommendations.
+        </figcaption>
+      </figure>
+
+      <h3>7.7 Paper Portfolio — simulated performance</h3>
+      <p>
+        Paper Portfolio displays simulated portfolio performance for
+        published or monitored recommendations. It does not place orders
+        and is not a broker account. Read it as a feedback loop on
+        published research.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/07-paper.png" alt="Paper Portfolio." />
+        <figcaption>
+          <strong>Figure 7.7 — Paper Portfolio.</strong> Simulated P&amp;L,
+          exposure, and per-recommendation monitoring. No broker
+          connection, by design.
+        </figcaption>
+      </figure>
+
+      <h3>7.8 Universe — assets in scope</h3>
+      <p>
+        Universe manages saved groups of assets, filters, and versioned
+        universe definitions. Use it to decide what is in and out of scope
+        before opening Decision Workspace or running a benchmark.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/08-universe.png" alt="Universe browser." />
+        <figcaption>
+          <strong>Figure 7.8 — Universe.</strong> Filters left, factor
+          exposure right, saved universes pinned. Universes are versioned
+          so older benchmarks remain reproducible.
+        </figcaption>
+      </figure>
+
+      <h3>7.9 Integrations — source &amp; feed health</h3>
+      <p>
+        Integrations is the catalog of upstream data sources and their
+        connection state. It is the place to confirm whether something is
+        upstream-degraded before assuming a recommendation is wrong.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/09-integrations.png" alt="Integrations marketplace." />
+        <figcaption>
+          <strong>Figure 7.9 — Integrations.</strong> Each tile shows
+          health, last successful pull, and whether a source is gated by
+          governance.
+        </figcaption>
+      </figure>
+
+      <h3>7.10 Admin / Ops — command center</h3>
+      <p>
+        Admin / Ops is the command center for governance, audit, benchmark
+        operations, and research workflows. It surfaces benchmark
+        run-controls, the audit trail, FinRL-X research status, imported
+        candidate review, and operational health.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/10-ops.png" alt="Ops command center." />
+        <figcaption>
+          <strong>Figure 7.10 — Ops.</strong> Five lanes: data &amp;
+          publication health, benchmark run, benchmark audit, FinRL-X
+          research, and imported research candidates.
+        </figcaption>
+      </figure>
+
+      <h3>7.11 Onboarding — first-run sign-in &amp; org setup</h3>
+      <p>
+        Onboarding takes a new user through sign-in, organization setup,
+        the role model, and team invites. It also explains the safety
+        boundaries above before the user reaches the Overview.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/11-onboarding.png" alt="Onboarding flow." />
+        <figcaption>
+          <strong>Figure 7.11 — Onboarding.</strong> The flow ends with
+          the user understanding both their role and the boundaries the
+          role does not cross.
+        </figcaption>
+      </figure>
+
+      <h3>7.12 Design System — the visual vocabulary</h3>
+      <p>
+        The Design System documents tokens, components, type, icons, and
+        motion. End users do not need to read it, but recognising its
+        components on other screens is the fastest way to learn how the
+        product communicates state.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/12-designsystem.png" alt="Design System catalog." />
+        <figcaption>
+          <strong>Figure 7.12 — Design System.</strong> If a badge,
+          status, or input looks unfamiliar somewhere in the product, this
+          page is where to find its definition.
+        </figcaption>
+      </figure>
+
+      <h3>7.13 iOS companion app</h3>
+      <p>
+        The iOS app is a triage and review companion — not a full
+        replacement for the web product. It exposes Today / triage,
+        Decision detail, Alerts, Comparison, Replay, Watchlist, Notes, and
+        a Publish flow. Research and admin work continues on the web.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/13-ios.png" alt="iOS companion app." />
+        <figcaption>
+          <strong>Figure 7.13 — iOS companion.</strong> Read-and-review
+          with the same trust trio and disagreement signals as the web
+          product. No broker, no execution, no exception.
+        </figcaption>
+      </figure>
+
+      <h3>7.14 The screen index</h3>
+      <p>
+        A single catalog page lists every shipped surface with a thumbnail
+        and a one-line description. It is useful as a sanity-check that
+        you are reading the right screen for your task.
+      </p>
+      <figure class="fig fig-wide">
+        <img src="img/15-index.png" alt="Screen index." />
+        <figcaption><strong>Figure 7.14 — Index.</strong> Every product surface in one place.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ Chapter 8 ============ -->
+    <section class="chapter" id="ch-8">
+      <p class="chap-eyebrow">Chapter 8</p>
+      <h2 class="chap-title">Beginner quick-start workflow</h2>
+      <p class="chap-lede">
+        Six steps for your first session. Do them in order — the loop is
+        the point.
+      </p>
+
+      <ol class="step-cards">
+        <li>
+          <span>1</span>
+          <h4>Open the Overview</h4>
+          <p>Look for top recommendations, the trust trio (confidence, data quality, ops readiness), and warnings. Don’t jump straight to research.</p>
+        </li>
+        <li>
+          <span>2</span>
+          <h4>Open a deep dive</h4>
+          <p>Pick one recommendation and open Decision Workspace. Read the thesis and evidence; ask whether the conclusion rests on broad or narrow signal.</p>
+        </li>
+        <li>
+          <span>3</span>
+          <h4>Compare engines</h4>
+          <p>Open Engine Comparison. Note which engines agree, which dissent, and whether any disagreement is methodological rather than directional.</p>
+        </li>
+        <li>
+          <span>4</span>
+          <h4>Replay if surprised</h4>
+          <p>If the output is surprising, walk it back through Replay. When did this signal first appear? What changed it?</p>
+        </li>
+        <li>
+          <span>5</span>
+          <h4>Check governance</h4>
+          <p>Open Ops. Confirm data health, publication state, audit recency, and that no isolation check is failing silently.</p>
+        </li>
+        <li>
+          <span>6</span>
+          <h4>Run only safe offline workflows</h4>
+          <p>If your role allows it, run benchmarks. Always check the offline/shadow acknowledgement, and never read a benchmark as a live signal.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============ Chapter 9 ============ -->
+    <section class="chapter" id="ch-9">
+      <p class="chap-eyebrow">Chapter 9</p>
+      <h2 class="chap-title">Understanding recommendations</h2>
+      <p class="chap-lede">
+        A recommendation is a structure, not a number. Read all of it.
+      </p>
+
+      <h3>9.1 Recommendation structure</h3>
+      <ul class="bullet-list cols-2">
+        <li>Asset or universe context</li>
+        <li>Directional thesis or summary</li>
+        <li>Confidence</li>
+        <li>Engine evidence</li>
+        <li>Risk factors</li>
+        <li>Data quality</li>
+        <li>Operational readiness</li>
+        <li>Suggested monitoring or review state</li>
+      </ul>
+
+      <h3>9.2 Confidence is not certainty</h3>
+      <p>
+        Confidence is an internal measure of how strongly the system
+        supports a view <em>under current assumptions</em>. It is not a
+        guarantee. A high-confidence output can still be wrong if data is
+        stale, a new event changes the situation, engines share a blind
+        spot, the regime changes, or a policy constraint conflicts with
+        the recommendation.
+      </p>
+
+      <h3>9.3 Disagreement is information</h3>
+      <p>
+        Disagreement is not a bug. The system is built to surface it. Some
+        useful patterns:
+      </p>
+      <ul class="bullet-list">
+        <li>Technical engine positive, sentiment engine negative.</li>
+        <li>Quality engine strong, valuation engine weak.</li>
+        <li>ML engine high confidence, rule-based engine neutral.</li>
+        <li>Research candidate strong in benchmark, baseline weak.</li>
+      </ul>
+
+      <h3>9.4 The evidence hierarchy</h3>
+      <p>When reviewing a recommendation, look for these in order:</p>
+      <ol class="num-steps">
+        <li>Strong multi-engine agreement.</li>
+        <li>Fresh data.</li>
+        <li>A clear thesis you can articulate in one sentence.</li>
+        <li>Low operational risk.</li>
+        <li>Reasonable scenario behaviour.</li>
+        <li>Replay support — the signal didn’t appear yesterday.</li>
+        <li>No policy conflicts.</li>
+      </ol>
+      <p>If these conditions aren’t met, treat the recommendation cautiously.</p>
+    </section>
+
+    <!-- ============ Chapter 10 ============ -->
+    <section class="chapter" id="ch-10">
+      <p class="chap-eyebrow">Chapter 10</p>
+      <h2 class="chap-title">Backtests, benchmarks &amp; replay</h2>
+      <p class="chap-lede">
+        Three names, three different jobs. Don’t conflate them.
+      </p>
+
+      <h3>10.1 The three terms</h3>
+      <table class="table">
+        <thead><tr><th>Term</th><th>Purpose</th><th>Typical question</th></tr></thead>
+        <tbody>
+          <tr><td>Backtest</td><td>Historical validation of a model or strategy</td><td>How would it have performed historically?</td></tr>
+          <tr><td>Benchmark</td><td>Controlled offline comparison of agents</td><td>How does this candidate compare with baselines?</td></tr>
+          <tr><td>Replay</td><td>Forensic reconstruction of a past recommendation</td><td>What did the system know <em>then</em>?</td></tr>
+        </tbody>
+      </table>
+
+      <h3>10.2 What an offline benchmark report contains</h3>
+      <ul class="bullet-list cols-2">
+        <li>Agent list (requested vs executed)</li>
+        <li>Skipped agents and reasons</li>
+        <li>Metrics by agent</li>
+        <li>Reward breakdown</li>
+        <li>Forensic summary by agent</li>
+        <li>Result fingerprint</li>
+        <li>Safety flags</li>
+        <li>Invariant checks</li>
+        <li>Warnings</li>
+      </ul>
+
+      <h3>10.3 Baseline agents</h3>
+      <p>Common baselines that imported candidates are compared against:</p>
+      <ul class="bullet-list">
+        <li><code>heuristic_baseline</code></li>
+        <li><code>random_valid</code></li>
+        <li><code>score_weighted_baseline</code></li>
+      </ul>
+
+      <h3>10.4 Imported candidate benchmarks &amp; the surrogate</h3>
+      <p>
+        When an imported research candidate is benchmarked in production,
+        the inference mode is
+        <code class="mono">score_weighted_fallback_surrogate</code>. The
+        benchmark is deterministic and safe; it does not run a neural
+        network. The result is comparable in structure to a baseline run,
+        but it is not real neural inference.
+      </p>
+
+      <h3>10.5 Reading benchmark metrics</h3>
+      <p>
+        No single metric is decisive. A high return paired with high
+        drawdown or high turnover is often less attractive than a stable
+        result. Read the metrics together:
+      </p>
+      <ul class="bullet-list cols-2">
+        <li>Total return</li>
+        <li>Total reward</li>
+        <li>Maximum drawdown</li>
+        <li>Turnover</li>
+        <li>Step count</li>
+        <li>Violations / warnings</li>
+      </ul>
+    </section>
+
+    <!-- ============ Chapter 11 ============ -->
+    <section class="chapter" id="ch-11">
+      <p class="chap-eyebrow">Chapter 11</p>
+      <h2 class="chap-title">FinRL-X research workflow</h2>
+      <p class="chap-lede">
+        Reinforcement learning, kept on a short leash. Local-only,
+        offline-only, never auto-promoted.
+      </p>
+
+      <h3>11.1 Why FinRL-X is isolated</h3>
+      <p>
+        FinRL-X introduces neural RL concepts such as PPO and A2C. These
+        methods are useful for experimentation but more complex and
+        riskier than deterministic baselines. The product therefore:
+      </p>
+      <ul class="bullet-list">
+        <li>Does not install neural dependencies in production</li>
+        <li>Does not run PPO/A2C inference in production</li>
+        <li>Validates local research artifacts before they can be imported</li>
+        <li>Blocks promotion of imported candidates</li>
+        <li>Keeps benchmark results offline and shadow-only</li>
+      </ul>
+
+      <h3>11.2 The local research container</h3>
+      <p>The research environment lives at <code>research/finrlx_cpu/</code>. Typical local commands:</p>
+
+      <pre class="code"><code>cd research\finrlx_cpu\scripts
+.\run_research_container.ps1 -Algorithm PPO -Timesteps 200 -Seed 42</code></pre>
+
+      <p>Or, with a virtual environment:</p>
+
+      <pre class="code"><code>cd research\finrlx_cpu
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements-research.txt
+python train_cpu_rl.py --algorithm PPO --timesteps 200 --seed 42</code></pre>
+
+      <p>These workflows are local research only. They do not touch production by default.</p>
+
+      <h3>11.3 Artifact validation</h3>
+      <p>Before import, the backend validates required fields and safety flags. A valid artifact must clearly declare:</p>
+      <ul class="bullet-list cols-2">
+        <li>Research only</li>
+        <li>Offline only</li>
+        <li>Shadow only</li>
+        <li>Not eligible for promotion</li>
+        <li>No broker execution</li>
+        <li>No publication influence</li>
+        <li>No recommendation pollution</li>
+        <li>Algorithm — PPO or A2C</li>
+        <li>CPU-only</li>
+        <li>Whether data is synthetic</li>
+        <li>Training configuration and metrics</li>
+      </ul>
+
+      <h3>11.4 Importing &amp; benchmarking</h3>
+      <p>
+        Artifact import is a controlled backend workflow that requires
+        explicit acknowledgement and creates a research-only candidate
+        with: artifact hash, summary, policy type, training mode, safety
+        flags, isolation checks, production fingerprints, and audit
+        events. The imported candidate is <strong>not eligible for
+        promotion</strong>.
+      </p>
+      <p>
+        Once eligible, the candidate can be benchmarked offline either
+        against baselines or candidate-only. The benchmark context must
+        clearly state:
+      </p>
+      <ul class="bullet-list">
+        <li>Inference mode is <code>score_weighted_fallback_surrogate</code>.</li>
+        <li>Real neural inference is <em>false</em>.</li>
+        <li>Artifact metadata is not used for neural inference.</li>
+        <li>The candidate remains not eligible for promotion.</li>
+      </ul>
+
+      <figure class="fig fig-wide">
+        <img src="img/10-ops.png" alt="Imported research candidate workflow on the Ops page." />
+        <figcaption>
+          <strong>Figure 11.1 — Imported research candidates on Ops.</strong>
+          Each candidate row exposes the artifact hash, isolation checks,
+          benchmark eligibility, and a research-only benchmark form.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ Chapter 12 ============ -->
+    <section class="chapter" id="ch-12">
+      <p class="chap-eyebrow">Chapter 12</p>
+      <h2 class="chap-title">Admin / Ops workflows</h2>
+      <p class="chap-lede">
+        Five lanes, every one of them auditable.
+      </p>
+
+      <h3>12.1 Run an offline benchmark</h3>
+      <ol class="num-steps">
+        <li>Enter a benchmark name (avoid “test”, “run1”).</li>
+        <li>Choose start and end dates.</li>
+        <li>Select agents.</li>
+        <li>Confirm the offline / shadow acknowledgement.</li>
+        <li>Run, then review status, executed/skipped agents, metrics, forensic details, safety flags, and result fingerprint.</li>
+      </ol>
+
+      <h3>12.2 Benchmark governance &amp; audit trail</h3>
+      <p>
+        The governance panel answers: what was run, when, by whom, which
+        agents, were any skipped, did safety checks pass, and what is the
+        result fingerprint.
+      </p>
+
+      <h3>12.3 FinRL-X research spike panel</h3>
+      <p>Shows adapter type, dependency availability, research-only/offline-only/no-broker-execution/no-production-influence statuses.</p>
+
+      <h3>12.4 Imported research candidates</h3>
+      <p>For each candidate, review:</p>
+      <ul class="bullet-list cols-2">
+        <li>Candidate ID</li>
+        <li>Policy type</li>
+        <li>Training mode</li>
+        <li>Artifact hash</li>
+        <li>Artifact summary</li>
+        <li>Source &amp; notes</li>
+        <li>Synthetic data status</li>
+        <li>Safety flags</li>
+        <li>Isolation checks</li>
+        <li>Benchmark eligibility</li>
+      </ul>
+
+      <h3>12.5 Run an offline candidate benchmark</h3>
+      <ol class="num-steps">
+        <li>Select an imported candidate.</li>
+        <li>Confirm eligibility.</li>
+        <li>Enter benchmark name and date range.</li>
+        <li>Choose whether to include baselines.</li>
+        <li>Confirm the research acknowledgement.</li>
+        <li>Run; review summary and benchmark history.</li>
+      </ol>
+      <div class="callout callout-info">
+        <div class="callout-label">UI promise</div>
+        <p>
+          The screen must make clear that this run does not execute a
+          neural model in production. If that statement is missing, stop.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 13 ============ -->
+    <section class="chapter" id="ch-13">
+      <p class="chap-eyebrow">Chapter 13</p>
+      <h2 class="chap-title">How to read common UI states</h2>
+      <p class="chap-lede">
+        Four state families, one reading rule each.
+      </p>
+
+      <figure class="fig fig-wide">
+        <img src="img/14-states.png" alt="The States gallery." />
+        <figcaption>
+          <strong>Figure 13.1 — The States gallery.</strong> Each major
+          surface ships with empty, loading, and error variants documented
+          here. If a screen looks unfamiliar, this gallery is the answer.
+        </figcaption>
+      </figure>
+
+      <div class="state-grid">
+        <article class="state state-pos">
+          <h4>Positive</h4>
+          <p>A check passed. Safety flag is true; isolation blocked an unsafe path; benchmark completed; data source healthy.</p>
+        </article>
+        <article class="state state-caution">
+          <h4>Caution</h4>
+          <p>Review details. Data incomplete; benchmark partial; component snapshot unavailable; candidate not eligible; fallback mode in use.</p>
+        </article>
+        <article class="state state-breach">
+          <h4>Breach / error</h4>
+          <p>Stop. Safety check failed; candidate ineligible; required acknowledgement missing; invalid date range; fingerprint changed unexpectedly.</p>
+        </article>
+        <article class="state state-empty">
+          <h4>Empty</h4>
+          <p>Informational. No imported research candidates yet; no benchmark history for this candidate; no audit events for older benchmarks.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 14 ============ -->
+    <section class="chapter" id="ch-14">
+      <p class="chap-eyebrow">Chapter 14</p>
+      <h2 class="chap-title">Common workflows</h2>
+      <p class="chap-lede">
+        Four scripts you can follow until the loop is muscle memory.
+      </p>
+
+      <div class="workflow">
+        <h4>14.1 Daily analyst</h4>
+        <ol>
+          <li>Open Overview.</li>
+          <li>Review top changes and warnings.</li>
+          <li>Open a recommendation.</li>
+          <li>Review evidence and engine comparison.</li>
+          <li>Use Replay if historical behaviour matters.</li>
+          <li>Document conclusion or monitoring plan.</li>
+        </ol>
+      </div>
+
+      <div class="workflow">
+        <h4>14.2 Research operator</h4>
+        <ol>
+          <li>Open Admin / Ops.</li>
+          <li>Check FinRL-X research status.</li>
+          <li>Validate or import a research artifact.</li>
+          <li>Select the imported candidate.</li>
+          <li>Review eligibility &amp; isolation.</li>
+          <li>Run an offline candidate benchmark.</li>
+          <li>Compare against baselines.</li>
+          <li>Review history &amp; fingerprints.</li>
+        </ol>
+      </div>
+
+      <div class="workflow">
+        <h4>14.3 Admin governance</h4>
+        <ol>
+          <li>Open Admin / Ops.</li>
+          <li>Review benchmark governance &amp; audit trail.</li>
+          <li>Check production fingerprints.</li>
+          <li>Confirm <code>/rl/execute</code> remains unavailable.</li>
+          <li>Review publication status &amp; data health.</li>
+          <li>Confirm no unsafe states are hidden by green badges.</li>
+        </ol>
+      </div>
+
+      <div class="workflow">
+        <h4>14.4 Local research</h4>
+        <ol>
+          <li>Use <code>research/finrlx_cpu/</code> locally.</li>
+          <li>Run a PPO/A2C experiment in container or venv.</li>
+          <li>Generate a research artifact JSON.</li>
+          <li>Validate via the backend API.</li>
+          <li>Import as research-only candidate.</li>
+          <li>Benchmark offline.</li>
+          <li>Do not treat the result as production output.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 15 ============ -->
+    <section class="chapter" id="ch-15">
+      <p class="chap-eyebrow">Chapter 15</p>
+      <h2 class="chap-title">Worked examples</h2>
+      <p class="chap-lede">
+        Three short studies in reading the product correctly.
+      </p>
+
+      <div class="example">
+        <h4>15.1 Reviewing an imported research candidate</h4>
+        <p>You open Admin / Ops and pick a candidate. Verify, in order:</p>
+        <ul class="checklist">
+          <li><span></span>Is <code>imported_from_artifact</code> true?</li>
+          <li><span></span>Is an artifact hash visible?</li>
+          <li><span></span>Is <code>not_eligible_for_promotion</code> true?</li>
+          <li><span></span>Are all isolation checks blocked?</li>
+          <li><span></span>Is the candidate benchmark eligible?</li>
+          <li><span></span>Is the benchmark inference mode clearly a surrogate fallback?</li>
+        </ul>
+        <p>If the answer to any of these is unclear, do not run a benchmark until the issue is resolved.</p>
+      </div>
+
+      <div class="example">
+        <h4>15.2 Interpreting a candidate benchmark</h4>
+        <p>The benchmark shows higher return than baseline, higher drawdown than baseline, inference mode <code>score_weighted_fallback_surrogate</code>, real neural inference <em>false</em>.</p>
+
+        <div class="interp">
+          <div class="interp-good">
+            <h5>Correct reading</h5>
+            <p>“The imported candidate’s surrogate benchmark performed well in this offline comparison, but this is not real production neural inference and not a recommendation. More validation is required.”</p>
+          </div>
+          <div class="interp-bad">
+            <h5>Incorrect reading</h5>
+            <p>“The PPO model says to trade this asset now.”</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example">
+        <h4>15.3 Synthetic artifacts</h4>
+        <p>If an artifact reports <code>synthetic_data=true</code>, treat it as a structural or workflow test — not a market research result. Synthetic artifacts are useful for:</p>
+        <ul class="bullet-list">
+          <li>Testing the import workflow</li>
+          <li>Testing schema validation</li>
+          <li>Testing benchmark integration</li>
+          <li>Training the team on the UI</li>
+        </ul>
+        <p>They are not useful for investment conclusions.</p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 16 ============ -->
+    <section class="chapter" id="ch-16">
+      <p class="chap-eyebrow">Chapter 16</p>
+      <h2 class="chap-title">Troubleshooting</h2>
+      <p class="chap-lede">
+        Symptoms first, likely causes second, recommended action third.
+      </p>
+
+      <div class="trouble">
+        <h4>16.1 I don’t see imported candidates</h4>
+        <p><strong>Likely:</strong> nothing imported yet · candidate list failed to load · filtered view · candidate is non-imported research stub.</p>
+        <p><strong>Action:</strong> check Admin / Ops FinRL-X status; validate &amp; import a sample artifact if appropriate; ask Admin / Ops to review backend status.</p>
+      </div>
+
+      <div class="trouble">
+        <h4>16.2 Candidate is not benchmark eligible</h4>
+        <p><strong>Likely:</strong> missing artifact hash · missing artifact summary · invalid safety flags · not marked imported-from-artifact · not research/offline/shadow only · isolation check failed.</p>
+        <p><strong>Action:</strong> open the eligibility reasons; do not run a benchmark until each reason is resolved.</p>
+      </div>
+
+      <div class="trouble">
+        <h4>16.3 Benchmark button is disabled</h4>
+        <p><strong>Likely:</strong> candidate ineligible · date range missing or invalid · research acknowledgement not selected · benchmark name missing.</p>
+      </div>
+
+      <div class="trouble">
+        <h4>16.4 Benchmark result is partial</h4>
+        <p><strong>Likely:</strong> an agent was skipped · the run did not include all expected agents.</p>
+        <p><strong>Action:</strong> review skipped agents, warnings, requested vs executed, date range, and dataset availability.</p>
+      </div>
+
+      <div class="trouble">
+        <h4>16.5 Production fingerprints show overview unavailable</h4>
+        <p><strong>Likely:</strong> no safe stable internal overview snapshot function exists yet.</p>
+        <p><strong>Action:</strong> read “unavailable” as honest, not as failure. The system marks it explicitly rather than claiming a pass.</p>
+      </div>
+
+      <div class="trouble">
+        <h4>16.6 Dependency unavailable for CPU prototype</h4>
+        <p><strong>Likely:</strong> in production this is expected — neural dependencies are not installed.</p>
+        <p><strong>Action:</strong> the system should return <code>dependency_unavailable</code> cleanly and not create a candidate from a non-run.</p>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 17 ============ -->
+    <section class="chapter" id="ch-17">
+      <p class="chap-eyebrow">Chapter 17</p>
+      <h2 class="chap-title">Best practices</h2>
+
+      <div class="bp-grid">
+        <article>
+          <h4>Don’t over-trust a single number</h4>
+          <p>Never rely on one score, one benchmark metric, or one engine output. Read the full evidence package.</p>
+        </article>
+        <article>
+          <h4>Treat research as research</h4>
+          <p>Imported candidates and offline benchmarks are research tools. They help compare ideas — they are not production decisions.</p>
+        </article>
+        <article>
+          <h4>Check safety &amp; isolation every time</h4>
+          <p>Before any research-candidate workflow: not eligible for promotion, no broker execution, no production influence, no publication influence, no live recommendation use.</p>
+        </article>
+        <article>
+          <h4>Read the warnings</h4>
+          <p>Warnings often explain important limitations: synthetic data, surrogate inference, dependency unavailability, partial benchmarks.</p>
+        </article>
+        <article>
+          <h4>Preserve auditability</h4>
+          <p>Use named runs, clear notes, and date ranges that can be understood later. Avoid <em>test</em>, <em>run1</em>, <em>foo</em>.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ Chapter 18 ============ -->
+    <section class="chapter" id="ch-18">
+      <p class="chap-eyebrow">Chapter 18 · Reference</p>
+      <h2 class="chap-title">Glossary</h2>
+
+      <dl class="glossary">
+        <dt>A2C</dt><dd>Advantage Actor-Critic — a reinforcement-learning algorithm used in research contexts.</dd>
+        <dt>Admin / Ops</dt><dd>Operational and governance area for benchmarks, audit, research status, and system health.</dd>
+        <dt>Artifact</dt><dd>A structured local research output, usually JSON, that can be validated and imported.</dd>
+        <dt>Artifact hash</dt><dd>Deterministic fingerprint of the artifact content.</dd>
+        <dt>Benchmark</dt><dd>Offline comparison of agents under controlled conditions.</dd>
+        <dt>Candidate</dt><dd>A policy, artifact, or research object that can be evaluated but not necessarily used in production.</dd>
+        <dt>Candidate isolation</dt><dd>Checks that block promotion, publication, live recommendation use, overview influence, and broker execution.</dd>
+        <dt>Engine</dt><dd>Analytical module that generates a signal or score.</dd>
+        <dt>FinRL-X</dt><dd>Research integration track for reinforcement-learning concepts and local CPU PPO/A2C artifacts.</dd>
+        <dt>Forensic summary</dt><dd>Step-level trace grouped by benchmark agent.</dd>
+        <dt>Imported research candidate</dt><dd>Candidate created from a validated local research artifact.</dd>
+        <dt>Inference mode</dt><dd>How the candidate was evaluated. In production imported-candidate benchmarks, this should be a surrogate fallback, not real neural inference.</dd>
+        <dt>PPO</dt><dd>Proximal Policy Optimization — a reinforcement-learning algorithm used in research contexts.</dd>
+        <dt>Production fingerprint</dt><dd>Lightweight before/after hash used to prove important production surfaces were not changed.</dd>
+        <dt>Recommendation</dt><dd>Structured decision-support object; not a broker order.</dd>
+        <dt>Replay</dt><dd>Historical forensic view of a prior state or recommendation.</dd>
+        <dt>Research-only</dt><dd>Cannot be treated as production output.</dd>
+        <dt>Shadow-only</dt><dd>Runs beside production without influencing it.</dd>
+        <dt>Surrogate benchmark</dt><dd>Benchmark using a safe deterministic fallback instead of neural model inference.</dd>
+      </dl>
+    </section>
+
+    <!-- ============ Chapter 19 ============ -->
+    <section class="chapter" id="ch-19">
+      <p class="chap-eyebrow">Chapter 19 · Reference</p>
+      <h2 class="chap-title">Screen reference</h2>
+
+      <table class="table">
+        <thead><tr><th>Manual section</th><th>Asset</th><th>What it answers</th></tr></thead>
+        <tbody>
+          <tr><td>Product overview</td><td><code>Overview.html</code></td><td>What needs attention now?</td></tr>
+          <tr><td>Decision workflow</td><td><code>Decision Workspace.html</code></td><td>Why is this recommendation what it is?</td></tr>
+          <tr><td>Engine comparison</td><td><code>Engine Comparison.html</code></td><td>Where do engines agree and disagree?</td></tr>
+          <tr><td>Replay &amp; forensics</td><td><code>Replay.html</code></td><td>What did the system know then?</td></tr>
+          <tr><td>Backtests</td><td><code>Backtests.html</code></td><td>How would this have performed historically?</td></tr>
+          <tr><td>Policy &amp; guardrails</td><td><code>Policy Editor.html</code></td><td>What are the rules and what would changing them touch?</td></tr>
+          <tr><td>Paper portfolio</td><td><code>Paper Portfolio.html</code></td><td>How are published recommendations doing in simulation?</td></tr>
+          <tr><td>Operations &amp; audit</td><td><code>Ops.html</code></td><td>Is the platform healthy and is research isolated?</td></tr>
+          <tr><td>Data &amp; sources</td><td><code>Integrations.html</code></td><td>Are the upstream feeds healthy?</td></tr>
+          <tr><td>Universe</td><td><code>Universe.html</code></td><td>What is in scope for analysis?</td></tr>
+          <tr><td>Components, badges, forms</td><td><code>Design System.html</code></td><td>What does this UI element actually mean?</td></tr>
+          <tr><td>Onboarding</td><td><code>Onboarding.html</code></td><td>Sign-in, org setup, role model, invites.</td></tr>
+          <tr><td>iOS companion</td><td><code>iOS App.html</code></td><td>Triage and review on the go.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============ Chapter 20 ============ -->
+    <section class="chapter" id="ch-20">
+      <p class="chap-eyebrow">Chapter 20 · Reference</p>
+      <h2 class="chap-title">Safety wording guide</h2>
+
+      <div class="wording">
+        <div class="wording-good">
+          <h4>Use this wording</h4>
+          <ul>
+            <li>Offline benchmark</li>
+            <li>Research-only candidate</li>
+            <li>Shadow comparison</li>
+            <li>No production influence</li>
+            <li>Not eligible for promotion</li>
+            <li>No neural inference in production</li>
+            <li>No broker execution</li>
+            <li>Not used by production decisions</li>
+          </ul>
+        </div>
+        <div class="wording-bad">
+          <h4>Avoid this wording</h4>
+          <ul>
+            <li>Buy</li>
+            <li>Sell</li>
+            <li>Trade now</li>
+            <li>Execute trade</li>
+            <li>Live signal</li>
+            <li>Best investment</li>
+            <li>Deploy policy</li>
+            <li>Production alpha</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>The product communicates that it supports research and decisions, but does not execute or recommend trades as live instructions. Internal copy should reflect that.</p>
+    </section>
+
+    <!-- ============ Chapter 21 ============ -->
+    <section class="chapter" id="ch-21">
+      <p class="chap-eyebrow">Chapter 21 · Reference</p>
+      <h2 class="chap-title">First-day checklist</h2>
+
+      <ul class="checklist big">
+        <li><span></span>Open Overview and identify the top three items requiring attention.</li>
+        <li><span></span>Open one Decision Workspace and explain the thesis in your own words.</li>
+        <li><span></span>Open Engine Comparison and identify the strongest disagreement.</li>
+        <li><span></span>Open Replay for the same recommendation.</li>
+        <li><span></span>Open Admin / Ops and find benchmark governance.</li>
+        <li><span></span>Find FinRL-X research status.</li>
+        <li><span></span>Locate Imported Research Candidates.</li>
+        <li><span></span>Select an imported candidate if one exists.</li>
+        <li><span></span>Read the artifact hash and artifact summary.</li>
+        <li><span></span>Confirm candidate isolation state.</li>
+        <li><span></span>Run an offline candidate benchmark only if eligible and your role allows it.</li>
+        <li><span></span>Explain why the result is research-only and not a production recommendation.</li>
+      </ul>
+    </section>
+
+    <!-- ============ Chapter 22 ============ -->
+    <section class="chapter" id="ch-22">
+      <p class="chap-eyebrow">Chapter 22 · Reference</p>
+      <h2 class="chap-title">Administrator pre-flight</h2>
+
+      <p>Before demonstrating the system to a new user, an administrator should verify:</p>
+      <ul class="checklist">
+        <li><span></span><code>/health</code> is working.</li>
+        <li><span></span><code>/overview</code> is working.</li>
+        <li><span></span><code>/recommendations/current</code> is working.</li>
+        <li><span></span><code>/publication/status</code> is working.</li>
+        <li><span></span><code>/rl/execute</code> remains unavailable.</li>
+        <li><span></span>Admin / Ops loads.</li>
+        <li><span></span>At least one benchmark regression can run.</li>
+        <li><span></span>Imported candidate benchmark history works if candidate workflows will be demonstrated.</li>
+        <li><span></span>Safety labels are visible and not misleading.</li>
+        <li><span></span>No UI says or implies that the system can execute trades.</li>
+      </ul>
+    </section>
+
+    <!-- ============ Chapter 23 ============ -->
+    <section class="chapter" id="ch-23">
+      <p class="chap-eyebrow">Chapter 23 · Reference</p>
+      <h2 class="chap-title">A 60-minute training session</h2>
+
+      <ol class="agenda">
+        <li><span>00–10</span><div><h4>Product concept</h4><p>Decision support, engine comparison, governance.</p></div></li>
+        <li><span>10–20</span><div><h4>Daily triage</h4><p>Walk through Overview and Decision Workspace.</p></div></li>
+        <li><span>20–30</span><div><h4>Evidence &amp; disagreement</h4><p>Engine Comparison and Replay.</p></div></li>
+        <li><span>30–40</span><div><h4>Admin / Ops &amp; safety</h4><p>Audit, publication, benchmarks, isolation.</p></div></li>
+        <li><span>40–50</span><div><h4>Research candidate workflow</h4><p>Imported candidate review and offline benchmark.</p></div></li>
+        <li><span>50–60</span><div><h4>Q&amp;A and practice</h4><p>Ask the user to explain why an offline benchmark is not a live recommendation.</p></div></li>
+      </ol>
+    </section>
+
+    <!-- ============ Colophon ============ -->
+    <footer class="colophon">
+      <div>
+        <p class="colophon-title">Colophon</p>
+        <p>Set in <em>Fraunces</em>, <em>Inter Tight</em>, and <em>JetBrains Mono</em>. Color, spacing, and motion follow the FINRLX design tokens. All screenshots captured from the shipped design package.</p>
+      </div>
+      <div>
+        <p class="colophon-title">Status</p>
+        <p>Decision support only · Not a broker · No live execution · Research outputs are not production decisions.</p>
+      </div>
+      <div>
+        <p class="colophon-title">FINRLX · QuantPipeline</p>
+        <p>User Manual, Beginner Edition · v1.0 · April 2026 · Confidential — Internal use.</p>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // Smooth scroll + sidebar active link
+  const links = document.querySelectorAll('.toc a');
+  const sections = [...document.querySelectorAll('.chapter')];
+  const map = new Map(links.length === 0 ? [] : [...links].map(a => [a.getAttribute('href').slice(1), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('is-active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('is-active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.01 });
+  sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>

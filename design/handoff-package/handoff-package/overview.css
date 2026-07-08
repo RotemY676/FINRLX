@@ -1,0 +1,354 @@
+/* ============================================
+   Overview page — triage, health, activity, regime
+   ============================================ */
+
+/* ---- Layout ---- */
+.ov-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--dens-gap);
+  align-items: start;
+}
+.ov-main { display: flex; flex-direction: column; gap: var(--dens-gap); min-width: 0; }
+.ov-side { display: flex; flex-direction: column; gap: var(--dens-gap); position: sticky; top: 52px; }
+
+@media (max-width: 1200px) {
+  .ov-workspace { grid-template-columns: 1fr; }
+  .ov-side { position: static; }
+}
+
+/* ---- Section labels ---- */
+.ov-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ---- Health KPI strip ---- */
+.ov-health {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  padding: 0;
+}
+.ov-kpi {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.ov-kpi::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--line-strong);
+}
+.ov-kpi.tone-primary::before { background: var(--primary); }
+.ov-kpi.tone-pos::before { background: var(--pos); }
+.ov-kpi.tone-caution::before { background: var(--caution); }
+.ov-kpi.tone-breach::before { background: var(--breach); }
+
+.ov-kpi .k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.ov-kpi .v {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.ov-kpi .sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.ov-kpi.tone-breach .v { color: var(--breach-soft-ink); }
+.ov-kpi.tone-caution .v { color: var(--caution-soft-ink); }
+.ov-kpi.tone-pos .v { color: var(--pos-soft-ink); }
+
+@media (max-width: 1280px) {
+  .ov-health { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---- Segmented control ---- */
+.card-head .seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.card-head .seg button {
+  border: 0; background: transparent;
+  font-family: inherit;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.card-head .seg button.active {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  padding: 2px 9px;
+}
+.card-head .seg.sm button { padding: 2px 8px; font-size: 11px; }
+
+/* ---- Triage table ---- */
+.ov-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
+}
+.ov-table thead th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  white-space: nowrap;
+  position: sticky; top: 0; z-index: 1;
+}
+.ov-table tbody td {
+  padding: 12px;
+  border-bottom: 1px dashed var(--line);
+  vertical-align: middle;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.ov-table tbody td.why { white-space: normal; color: var(--ink-2); line-height: 1.5; min-width: 240px; }
+.ov-table tbody tr:hover td {
+  background: color-mix(in oklch, var(--primary) 4%, var(--surface));
+  cursor: pointer;
+}
+.ov-table tbody tr:last-child td { border-bottom: 0; }
+
+.ov-rank {
+  display: inline-flex; width: 22px; height: 22px;
+  align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ov-rec { display: flex; flex-direction: column; gap: 2px; line-height: 1.25; }
+.ov-rec .tk {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.ov-rec .tk:hover { color: var(--primary-soft-ink); }
+.ov-rec .nm { color: var(--ink-2); font-size: 12px; }
+.ov-rec .id { color: var(--ink-4); font-size: 10.5px; font-family: var(--font-mono); }
+
+.ov-stance {
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.ov-stance.buy { color: var(--pos-soft-ink); background: var(--pos-soft); }
+.ov-stance.hold { color: var(--ink-2); background: var(--surface-3); }
+.ov-stance.trim { color: var(--caution-soft-ink); background: var(--caution-soft); }
+.ov-stance.sell { color: var(--breach-soft-ink); background: var(--breach-soft); }
+
+.ov-status-dot {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.ov-status-dot .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-4);
+}
+.ov-status-dot.fresh .dot { background: var(--pos); box-shadow: 0 0 0 3px color-mix(in oklch, var(--pos) 25%, transparent); }
+.ov-status-dot.provisional .dot { background: var(--caution); }
+.ov-status-dot.published .dot { background: var(--primary); }
+.ov-status-dot.pending .dot { background: var(--ink-3); }
+.ov-status-dot.stale .dot { background: var(--breach); }
+.ov-table .age { font-size: 10.5px; color: var(--ink-4); font-family: var(--font-mono); margin-top: 2px; }
+
+.ov-table .flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.ov-table .flag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.ov-table .flag svg { opacity: 0.8; }
+.ov-table .flag.breach {
+  color: var(--breach-soft-ink);
+  background: var(--breach-soft);
+  border-color: color-mix(in oklch, var(--breach) 30%, transparent);
+}
+.ov-table .flag.caution {
+  color: var(--caution-soft-ink);
+  background: var(--caution-soft);
+  border-color: color-mix(in oklch, var(--caution) 30%, transparent);
+}
+
+.ov-table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.ov-table .num.hl-pos { color: var(--pos-soft-ink); }
+.ov-table .num.hl-neg { color: var(--breach-soft-ink); }
+
+.icon-btn.sm { width: 28px; height: 28px; }
+
+/* ---- Regime card ---- */
+.ov-regime .regime-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1.2fr;
+  gap: 24px;
+}
+.regime-col { min-width: 0; }
+.regime-big {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.regime-meta {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+.regime-switch { margin-top: 14px; }
+.regime-switch .bar {
+  height: 6px; background: var(--surface-3); border-radius: 999px; overflow: hidden;
+}
+.regime-switch .bar > span {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.regime-switch > span {
+  display: block; margin-top: 6px;
+  font-size: 11px; color: var(--ink-3); font-family: var(--font-mono);
+}
+.posture-list {
+  list-style: none; padding: 0; margin: 0;
+  font-size: 12.5px;
+}
+.posture-list li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  color: var(--ink-2);
+  border-bottom: 1px dashed var(--line);
+}
+.posture-list li:last-child { border-bottom: 0; }
+.posture-list .sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.posture-list .num {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.tilt-rows { display: flex; flex-direction: column; gap: 6px; }
+.tilt-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 54px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.tilt-row .nm { color: var(--ink-2); }
+.tilt-row .bar {
+  position: relative;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 999px;
+}
+.tilt-row .bar::before {
+  content: "";
+  position: absolute; left: 50%; top: -2px; bottom: -2px;
+  width: 1px; background: var(--line-strong);
+}
+.tilt-row .bar > span {
+  position: absolute; top: 0; bottom: 0;
+  border-radius: 999px;
+}
+.tilt-row .bar > span.pos { background: var(--pos); transform: translateX(0); }
+.tilt-row .bar > span.neg { background: var(--breach); transform: translateX(0); }
+.tilt-row .num { text-align: right; font-family: var(--font-mono); font-size: 11.5px; }
+.tilt-row .num.hl-pos { color: var(--pos-soft-ink); }
+.tilt-row .num.hl-neg { color: var(--breach-soft-ink); }
+
+@media (max-width: 1100px) {
+  .ov-regime .regime-grid { grid-template-columns: 1fr; gap: 18px; }
+}
+
+/* ---- Activity feed ---- */
+.ov-activity .card-body { max-height: none; }
+.ov-act {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px dashed var(--line);
+  position: relative;
+}
+.ov-act:last-child { border-bottom: 0; }
+.ov-act .ic {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  margin-top: 1px;
+}
+.ov-act .ic.ic-publish { background: color-mix(in oklch, var(--primary) 15%, var(--surface-3)); color: var(--primary-soft-ink); }
+.ov-act .ic.ic-breach { background: var(--breach-soft); color: var(--breach-soft-ink); }
+.ov-act .ic.ic-engine { background: color-mix(in oklch, var(--caution) 18%, var(--surface-3)); color: var(--caution-soft-ink); }
+.ov-act .ic.ic-note { background: var(--surface-3); color: var(--ink-2); }
+.ov-act .ic.ic-defer { background: var(--surface-3); color: var(--ink-2); }
+.ov-act .ic.ic-incident { background: color-mix(in oklch, var(--accent) 18%, var(--surface-3)); color: var(--ink); }
+.ov-act .ic.ic-backtest { background: color-mix(in oklch, var(--pos) 15%, var(--surface-3)); color: var(--pos-soft-ink); }
+
+.ov-act .body .line { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+.ov-act .body .line b { color: var(--ink); font-weight: 600; }
+.ov-act .body .line .t { color: var(--ink-4); font-family: var(--font-mono); font-size: 11px; }
+.ov-act .body .meta {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ---- Page head variant for overview ---- */
+.page-head .sub.ov-sub {
+  max-width: 720px;
+}

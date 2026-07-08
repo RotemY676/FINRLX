@@ -1,0 +1,236 @@
+PHASE 8I.2 LOCAL VERIFICATION EVIDENCE (verify-readonly fix)
+Timestamp: 2026-04-27T20:45:30.5130639+03:00
+
+=== GIT STATUS ===
+ M DOCS/handoff/PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md
+ M DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt
+ M backend/app/services/finrlx_research.py
+ M backend/tests/test_phase8i2_dataset_export_governance.py
+?? DOCS/handoff/PHASE_8I0_LOCAL_AUDIT_EVIDENCE.txt
+?? DOCS/handoff/_phase8i_review_package/
+?? frontend/tsconfig.tsbuildinfo
+
+=== GIT DIFF NAME ONLY ===
+warning: in the working copy of 'DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt', LF will be replaced by CRLF the next time Git touches it
+DOCS/handoff/PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md
+DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt
+backend/app/services/finrlx_research.py
+backend/tests/test_phase8i2_dataset_export_governance.py
+
+=== GIT DIFF STAT ===
+warning: in the working copy of 'DOCS/handoff/PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt', LF will be replaced by CRLF the next time Git touches it
+ .../PHASE_8I2_DATASET_EXPORT_GOVERNANCE_REPORT.md  |  17 +-
+ .../PHASE_8I2_LOCAL_VERIFICATION_EVIDENCE.txt      | 219 +--------------------
+ backend/app/services/finrlx_research.py            |  12 +-
+ .../test_phase8i2_dataset_export_governance.py     |  49 +++++
+ 4 files changed, 67 insertions(+), 230 deletions(-)
+
+=== BACKEND TARGETED (8I+8I.2) ===
+C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+System.Management.Automation.RemoteException
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.......................................................                  [100%]
+============================== warnings summary ===============================
+tests/test_phase8i_dataset_export.py::test_export_requires_acknowledgement
+  C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:783: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  C:\Users\Rotem\projects\FINRLX\backend\tests\conftest.py:33
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+55 passed, 1 warning in 34.36s
+
+=== BACKEND REGRESSION ===
+C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+System.Management.Automation.RemoteException
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 51%]
+.....................................................................    [100%]
+============================== warnings summary ===============================
+tests/test_phase8a_finrlx_research.py::test_finrlx_status
+  C:\Users\Rotem\AppData\Local\Programs\Python\Python311\Lib\site-packages\pytest_asyncio\plugin.py:783: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  C:\Users\Rotem\projects\FINRLX\backend\tests\conftest.py:33
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+141 passed, 1 warning in 73.44s (0:01:13)
+
+=== FRONTEND BUILD ===
+
+> finrlx-frontend@0.2.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/11) ...
+   Generating static pages (2/11) 
+   Generating static pages (5/11) 
+   Generating static pages (8/11) 
+ Γ£ô Generating static pages (11/11)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Γöî Γùï /                                    4.72 kB        95.3 kB
+Γö£ Γùï /_not-found                          876 B          88.4 kB
+Γö£ Γùï /admin                               17.9 kB         109 kB
+Γö£ Γùï /backtests                           2.55 kB         197 kB
+Γö£ Γùï /comparison                          10.4 kB         198 kB
+Γö£ Γùï /decision                            13 kB           208 kB
+Γö£ Γùï /icon.svg                            0 B                0 B
+Γö£ Γùï /paper                               3.41 kB         194 kB
+Γöö Γùï /replay                              3.62 kB        96.9 kB
++ First Load JS shared by all            87.5 kB
+  Γö£ chunks/117-d70f252e30bdb96b.js       31.9 kB
+  Γö£ chunks/fd9d1056-8fb6bfb5a9bc068a.js  53.6 kB
+  Γöö other shared chunks (total)          2 kB
+
+
+Γùï  (Static)  prerendered as static content
+
+
+=== FRONTEND TYPECHECK ===
+
+> finrlx-frontend@0.2.0 typecheck
+> tsc --noEmit
+
+
+=== FRONTEND LINT ===
+
+> finrlx-frontend@0.2.0 lint
+> next lint
+
+Γ£ö No ESLint warnings or errors
+
+=== UNSAFE LANGUAGE GREP ===
+No matches found.
+
+=== EXPORT DIR ===
+.gitkeep
+0575b27a-8913-453c-8eca-2b946bd05e12.jsonl
+0575b27a-8913-453c-8eca-2b946bd05e12.meta.json
+0c37f13f-3d1f-4706-a7b3-de779fe5e357.jsonl
+0c37f13f-3d1f-4706-a7b3-de779fe5e357.meta.json
+0d448c18-de7c-4300-8df8-8e1d5ce5c9f3.jsonl
+0d448c18-de7c-4300-8df8-8e1d5ce5c9f3.meta.json
+150b7f4c-6cc0-4790-be49-18512f93f881.jsonl
+150b7f4c-6cc0-4790-be49-18512f93f881.meta.json
+157422ae-83f2-45a3-a7a6-5c3cc24805d9.jsonl
+157422ae-83f2-45a3-a7a6-5c3cc24805d9.meta.json
+1671c718-4aac-46a6-949f-4f7f8b0e9c36.jsonl
+1671c718-4aac-46a6-949f-4f7f8b0e9c36.meta.json
+171a3d87-3f21-4d25-8a54-a9c8b1affae0.jsonl
+171a3d87-3f21-4d25-8a54-a9c8b1affae0.meta.json
+1b883cf9-537f-4a80-bf97-a82943103239.jsonl
+1b883cf9-537f-4a80-bf97-a82943103239.meta.json
+2b339892-8e61-4bb5-91a3-a5e700bff914.jsonl
+2b339892-8e61-4bb5-91a3-a5e700bff914.meta.json
+308b15fd-1662-4cb6-b55a-8544388451fd.jsonl
+308b15fd-1662-4cb6-b55a-8544388451fd.meta.json
+30918213-2c62-40c8-8bf1-13ea59fa99a4.jsonl
+30918213-2c62-40c8-8bf1-13ea59fa99a4.meta.json
+329562ff-085a-4fbe-bf76-6e6e5e05bcc6.jsonl
+329562ff-085a-4fbe-bf76-6e6e5e05bcc6.meta.json
+3cf5d929-8759-4133-8620-ddfff7dca80b.jsonl
+3cf5d929-8759-4133-8620-ddfff7dca80b.meta.json
+3d42ff5d-a3c9-4fe0-8b7d-41306f7d046d.jsonl
+3d42ff5d-a3c9-4fe0-8b7d-41306f7d046d.meta.json
+45b7e675-74bc-4c9a-82e7-38e8f57f2f45.jsonl
+45b7e675-74bc-4c9a-82e7-38e8f57f2f45.meta.json
+45bdb253-0649-44da-bf16-589fa989fcab.jsonl
+45bdb253-0649-44da-bf16-589fa989fcab.meta.json
+46699696-43bd-479e-ae66-33daf0eef11a.jsonl
+46699696-43bd-479e-ae66-33daf0eef11a.meta.json
+4fbfa759-3a1a-42da-91e2-42cf203034c5.jsonl
+4fbfa759-3a1a-42da-91e2-42cf203034c5.meta.json
+5567e4ee-fae4-44ae-9b85-427d96195649.jsonl
+5567e4ee-fae4-44ae-9b85-427d96195649.meta.json
+55a3c14f-4aa8-4f61-97e1-55b9138ee153.jsonl
+55a3c14f-4aa8-4f61-97e1-55b9138ee153.meta.json
+55dbf45d-8773-471c-8468-c59689fb9737.jsonl
+55dbf45d-8773-471c-8468-c59689fb9737.meta.json
+5af0d2ef-b3c2-427f-aed5-69f71adbaaaf.jsonl
+5af0d2ef-b3c2-427f-aed5-69f71adbaaaf.meta.json
+5d88ae4a-a6dd-4bb8-9e22-f658b65e8efd.jsonl
+5d88ae4a-a6dd-4bb8-9e22-f658b65e8efd.meta.json
+62a055af-bb7a-443b-8d21-15224e585a28.jsonl
+62a055af-bb7a-443b-8d21-15224e585a28.meta.json
+69d334ac-e0e9-42e1-9551-8a172b2eae69.json
+6ca0ad90-fa2b-4e56-9265-f0333082fb2c.jsonl
+6ca0ad90-fa2b-4e56-9265-f0333082fb2c.meta.json
+6d522937-432b-42ef-acef-e64405bf88f0.json
+7b5f376a-f8a4-46ca-85f2-d7bc641cbd1c.jsonl
+7b5f376a-f8a4-46ca-85f2-d7bc641cbd1c.meta.json
+7f2ba44a-84b1-4dd5-9f13-bd64ea2ab61d.jsonl
+7f2ba44a-84b1-4dd5-9f13-bd64ea2ab61d.meta.json
+89263ca6-a185-4cca-9515-3ab7665e869c.jsonl
+89263ca6-a185-4cca-9515-3ab7665e869c.meta.json
+918e65fb-21bc-430b-bb22-c7f22e1a763c.jsonl
+918e65fb-21bc-430b-bb22-c7f22e1a763c.meta.json
+9ab4f79b-d405-4417-ae40-92249cd7474a.jsonl
+9ab4f79b-d405-4417-ae40-92249cd7474a.meta.json
+9d95d458-20ea-41b1-bc08-6f8d02661a16.jsonl
+9d95d458-20ea-41b1-bc08-6f8d02661a16.meta.json
+9e00dbe3-8f8e-447b-9264-701454524c71.jsonl
+9e00dbe3-8f8e-447b-9264-701454524c71.meta.json
+a03e11c1-087e-4579-a664-623c7458cb5b.jsonl
+a03e11c1-087e-4579-a664-623c7458cb5b.meta.json
+a9f1470f-106f-4c2a-a494-86b9b500f071.jsonl
+a9f1470f-106f-4c2a-a494-86b9b500f071.meta.json
+ad351322-341e-4ce5-bf63-37d732ddcdbf.jsonl
+ad351322-341e-4ce5-bf63-37d732ddcdbf.meta.json
+b66d4012-5544-40d5-adb1-0d7eb9f83456.jsonl
+b66d4012-5544-40d5-adb1-0d7eb9f83456.meta.json
+ba194160-c8e2-4ca0-98a9-2802587f2353.jsonl
+ba194160-c8e2-4ca0-98a9-2802587f2353.meta.json
+bae225dc-1306-485f-a822-fe3def8ec31d.jsonl
+bae225dc-1306-485f-a822-fe3def8ec31d.meta.json
+bc162472-b5e1-4cdb-ad5b-354b70922c76.jsonl
+bc162472-b5e1-4cdb-ad5b-354b70922c76.meta.json
+c82006af-8ef7-4237-b099-d98f61c816b8.jsonl
+c82006af-8ef7-4237-b099-d98f61c816b8.meta.json
+ce248ca4-e380-4d37-9f09-70d649605884.jsonl
+ce248ca4-e380-4d37-9f09-70d649605884.meta.json
+d1744cd3-56b0-4956-a675-fcd96dff6ac4.jsonl
+d1744cd3-56b0-4956-a675-fcd96dff6ac4.meta.json
+d78a3586-1ddd-417e-bea8-c8b036064042.jsonl
+d78a3586-1ddd-417e-bea8-c8b036064042.meta.json
+dcebda95-81c5-416c-90be-fc5aa3103fa9.jsonl
+dcebda95-81c5-416c-90be-fc5aa3103fa9.meta.json
+e3bd9e88-ab42-4b21-bd01-8feed5d692b0.jsonl
+e3bd9e88-ab42-4b21-bd01-8feed5d692b0.meta.json
+e4f46485-7ab4-4dc0-81cb-5a26af157465.jsonl
+e4f46485-7ab4-4dc0-81cb-5a26af157465.meta.json
+e5083f61-3f20-41ec-abb3-53215e33f3bc.jsonl
+e5083f61-3f20-41ec-abb3-53215e33f3bc.meta.json
+e8df8a46-839a-4247-afdc-7daf6b13335b.jsonl
+e8df8a46-839a-4247-afdc-7daf6b13335b.meta.json
+e999061b-32b8-4bf3-a649-8fd7690b0ef6.jsonl
+e999061b-32b8-4bf3-a649-8fd7690b0ef6.meta.json
+ea0882e2-c210-4f8b-90b4-ab0e2bedd6f6.jsonl
+ea0882e2-c210-4f8b-90b4-ab0e2bedd6f6.meta.json
+eedd2520-5c18-478d-b60d-b36f9a435980.jsonl
+eedd2520-5c18-478d-b60d-b36f9a435980.meta.json
+ef46fc2c-b663-4547-91dc-bf720f3a7713.jsonl
+ef46fc2c-b663-4547-91dc-bf720f3a7713.meta.json
+export_registry.json

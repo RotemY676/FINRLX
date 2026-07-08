@@ -7,17 +7,11 @@
   "pageErrors": [],
   "axe": {
     "critical": 0,
-    "serious": 1,
+    "serious": 0,
     "moderate": 0,
     "minor": 0,
-    "rules": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "nodes": 1
-      }
-    ]
+    "rules": []
   },
   "screenshot": "screenshots\\desktop-1280\\help.png",
-  "durationMs": 10366
+  "durationMs": 5072
 }

@@ -1,0 +1,204 @@
+17. Information Architecture and User Flows
+Canonical information architecture, route system, and user-flow specification
+<w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:type="auto" w:w="0"/><w:jc w:val="center"/><w:tblLook w:firstColumn="1" w:firstRow="1" w:lastColumn="0" w:lastRow="0" w:noHBand="0" w:noVBand="1" w:val="04A0"/></w:tblPr><w:tblGrid><w:gridCol w:w="5040"/><w:gridCol w:w="5040"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:type="dxa" w:w="5040"/><w:tcMar><w:top w:w="70" w:type="dxa"/><w:start w:w="90" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:end w:w="90" w:type="dxa"/></w:tcMar><w:shd w:fill="EAF2FF"/></w:tcPr><w:p><w:pPr><w:pStyle w:val="BodySmall"/></w:pPr><w:r><w:t>Program
+QuantPipeline - private modular portfolio decision platform
+Document purpose
+Canonical information architecture, route system, and user-flow specification
+Status
+Working baseline for design and delivery
+
+This document defines the canonical route map, workspace hierarchy, and user flows for QuantPipeline. It is the connective tissue between product scope, UX principles, and the implementation contract used by frontend and backend teams.
+
+# 1. Information architecture principles
+Organize around decisions, not around model vendors or data-source silos.
+Treat validation and operations as first-class routes, not buried utilities.
+Allow the user to move from summary to evidence to governance without breaking context.
+Preserve a stable shell so route changes feel like focus changes, not product changes.
+
+# 2. Canonical sitemap
+Top-level area
+Representative routes
+Primary purpose
+Overview
+/overview, /overview/watch, /overview/regime
+triage, monitor, prioritize
+Decision
+/decision/:id, /decision/:id/challenge, /decision/:id/risk
+review and challenge a thesis
+Comparison
+/compare/:id, /compare/matrix
+compare engines and synthesize one stance
+Validation
+/replay/:snapshotId, /backtests, /paper
+inspect historical behavior and paper decisions
+Research
+/news, /sentiment, /technical, /universe
+contextual analysis and input discovery
+Admin and ops
+/ops, /ops/publication, /ops/incidents, /ops/policies
+publication control and reliability
+
+# 3. Route hierarchy and persistent shell
+A route should determine the central canvas and its primary actions, while the surrounding shell remains familiar.
+Shell zone
+Persistent across routes
+Route-specific behavior
+Top bar
+search, alerts, saved views, global filters
+context subtitle and route actions change
+Left nav
+major sections and current location
+sub-navigation adjusts to current top-level area
+Center canvas
+yes, but content changes by route
+main analytical surface
+Right context pane
+confidence, risk, notes, metadata
+content module stack changes by route
+Bottom sheet on mobile
+global action tray and context
+opened context depends on current route
+
+# 4. Screen inventory
+Screen / module
+Core objects
+Default entry triggers
+Must-link destinations
+Overview home
+recommendation summaries, regime indicators
+login, daily revisit
+decision, compare, risk
+Decision workspace
+recommendation object
+overview click, alert click
+comparison, replay, paper
+Comparison matrix
+engine outputs, disagreement analysis
+decision challenge action
+decision, risk, methodology
+Risk workspace
+portfolio exposures and constraints
+risk CTA, breach alert
+decision, paper, ops
+Replay investigator
+snapshot, events, realized outcome
+incident or paper miss
+ops incident, policy
+Backtest lab
+strategy runs, assumptions, scorecards
+validation work
+paper, decision, methodology
+Paper portfolio
+positions, proposals, drift alerts
+monitoring work
+decision, replay, ops
+Ops command center
+queues, health, incidents
+operator entry
+publication queue, incidents, policies
+
+# 5. Primary user flows
+The flows below are the minimum journeys that the design and QA process must explicitly validate.
+
+## Daily review flow
+Open overview
+Inspect top recommendation card
+Enter decision workspace
+Read evidence and risk summary
+Save, defer, or move to paper
+Required outcome: A recorded decision state with timestamp and notes
+
+## Challenge flow
+Open a recommendation
+Navigate to comparison
+Inspect divergence and attribution
+Change one or more assumptions
+Return to decision workspace with delta preview
+Required outcome: A revised recommendation or an explicitly deferred decision
+
+## Replay investigation flow
+Open replay from incident or paper alert
+Load historical snapshot
+Inspect inputs, state, and policy status
+Compare proposed action vs actual result
+Write ops note or create follow-up issue
+Required outcome: A resolved investigation artifact
+
+## Operator publication flow
+Open ops command center
+Inspect publication queue item
+Check policy and health gates
+Approve, hold, or rollback
+Record explanation and actor
+Required outcome: A controlled release action visible in audit history
+
+# 6. State transitions and route hand-offs
+From
+To
+What must persist
+What may reset
+Overview
+Decision
+selected recommendation, timeframe, universe
+local sort order on overview widgets
+Decision
+Comparison
+selected recommendation, scenario values
+none unless user starts a fresh comparison
+Decision
+Replay
+snapshot key, decision metadata
+live-only transient controls
+Backtests
+Paper
+selected strategy assumptions, comparison cohort
+temporary chart toggles
+Ops queue
+Incident detail
+item identity, current action rights
+list scroll position only
+
+# 7. Navigation rules and anti-patterns
+Do not create one route per data source if the user expects one decision workspace.
+Do not hide validation and replay behind admin-only patterns; they are part of core trust.
+Do not require the user to reconstruct the current recommendation when moving between comparison and risk.
+Avoid modal overload for critical flows; complex review belongs in full workspaces or drawers.
+
+# 8. Mobile IA adaptation
+Desktop pattern
+Mobile equivalent
+Reason
+Persistent left nav
+bottom navigation + more drawer
+thumb reach and screen width
+Right context rail
+bottom sheet / stacked sections
+preserve context without crowding
+Dense comparison table
+accordion rows with key metrics first
+legibility
+Multi-chart canvas
+single primary chart per viewport
+focus and performance
+
+# 9. Flow instrumentation requirements
+Every key flow should emit entry, exit, and decisive action events.
+Instrumentation should distinguish passive viewing from active challenge behavior.
+Abandonment points in challenge and publication flows need explicit event markers.
+Route-level analytics should always include current persona, mode, and scope.
+
+# 10. IA acceptance criteria
+Question
+Pass condition
+Can the user find the next best action from overview?
+yes, within one click
+Does challenge preserve context?
+yes, recommendation and assumptions persist
+Can a replay investigation link back to the original decision?
+yes, with stable identifiers
+Are operator routes distinct but related to user routes?
+yes, shared objects with role-specific actions
+
+Figure 17-1. Canonical information architecture map.
+
+Figure 17-2. Four key flows that the product must support.

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantPipeline — Component States</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="states.css">
+</head>
+<body>
+
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Component states</h1>
+      <p class="page-lede">Every Tier 1 component rendered across six canonical states: default, loading, empty, degraded, error, and permission‑limited. This is the reference for both designers and engineers — use it to check a component's behavior before inventing your own.</p>
+    </div>
+    <div class="theme-toggle" role="tablist" aria-label="Theme">
+      <button class="active" data-theme="light">Light</button>
+      <button data-theme="dark">Dark</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Component list">
+      <div class="toc-head">Components</div>
+      <a href="#rec">Recommendation card</a>
+      <a href="#trio">Confidence trio</a>
+      <a href="#queue">Triage queue</a>
+      <a href="#chart">Chart panel</a>
+      <a href="#alert">Alert feed</a>
+      <a href="#matrix">Comparison matrix</a>
+      <div class="toc-head" style="margin-top: 20px;">State legend</div>
+      <a href="#legend">What each state means</a>
+    </nav>
+
+    <main>
+
+    <!-- =========================================
+         1. Recommendation Card
+         ========================================= -->
+    <section class="section" id="rec">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · decision primitive</div>
+        <h2 class="section-title">Recommendation card</h2>
+        <p class="section-desc">The central object of the Decision Workspace. When this component can't render normally, the user needs to understand <em>why</em> — data gap, model failure, or permission boundary — before they can act.</p>
+      </header>
+
+      <div class="state-grid">
+
+        <!-- DEFAULT -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">Fresh rec, all signals present</div>
+          </div>
+          <div class="state-body">
+            <div class="rec">
+              <div class="rec-top">
+                <span class="rec-ticker">XOM</span>
+                <span class="pill primary"><span class="pill-dot"></span>Fresh</span>
+                <span class="pill">REC‑2026‑0419‑XOM‑S</span>
+              </div>
+              <p class="rec-thesis">Demand response post‑OPEC+ signals a sustainable −6% horizon move. Refinery capacity and insider activity confirm the downside bias.</p>
+              <div class="rec-metrics">
+                <div class="metric"><div class="metric-label">Stance</div><div class="metric-value breach">SELL</div></div>
+                <div class="metric"><div class="metric-label">Weight</div><div class="metric-value">−2.4%</div></div>
+                <div class="metric"><div class="metric-label">Horizon</div><div class="metric-value">5D</div></div>
+                <div class="metric"><div class="metric-label">Exp. Δ</div><div class="metric-value breach">−6.0%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot loading"></span>Loading</div>
+            <div class="state-note">Show skeleton only for &gt;300ms waits</div>
+          </div>
+          <div class="state-body">
+            <div class="rec" aria-busy="true">
+              <div class="rec-top">
+                <div class="skel" style="width: 60px; height: 18px;"></div>
+                <div class="skel" style="width: 48px; height: 18px; border-radius: 99px;"></div>
+                <div class="skel" style="width: 140px; height: 16px; border-radius: 99px;"></div>
+              </div>
+              <div class="skel" style="width: 100%; height: 12px;"></div>
+              <div class="skel" style="width: 78%; height: 12px;"></div>
+              <div class="rec-metrics">
+                <div class="skel" style="height: 36px;"></div>
+                <div class="skel" style="height: 36px;"></div>
+                <div class="skel" style="height: 36px;"></div>
+                <div class="skel" style="height: 36px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot empty"></span>Empty</div>
+            <div class="state-note">No rec for this symbol yet</div>
+          </div>
+          <div class="state-body">
+            <div class="rec" style="justify-content: center;">
+              <div class="placeholder">
+                <div class="placeholder-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+                </div>
+                <div class="placeholder-title">No recommendation for XOM</div>
+                <div class="placeholder-desc">No engine has produced a signal on this symbol within the current universe. Add it to a watchlist to trigger coverage.</div>
+                <div class="placeholder-actions">
+                  <button class="btn">Add to watchlist</button>
+                  <button class="btn ghost">Request coverage</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEGRADED -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot degraded"></span>Degraded</div>
+            <div class="state-note">One input stale — rec still usable</div>
+          </div>
+          <div class="state-body">
+            <div class="rec">
+              <div class="deg-banner">
+                <span class="deg-banner-dot"></span>
+                <div><b>Provisional.</b> Insider‑flow feed is 2h stale; confidence capped at 0.58.</div>
+              </div>
+              <div class="rec-top">
+                <span class="rec-ticker">XOM</span>
+                <span class="pill caution"><span class="pill-dot"></span>Provisional</span>
+                <span class="pill">REC‑2026‑0419‑XOM‑S</span>
+              </div>
+              <p class="rec-thesis">Demand response post‑OPEC+ signals sustainable downside. <span class="muted">Insider component excluded until feed refreshes.</span></p>
+              <div class="rec-metrics">
+                <div class="metric"><div class="metric-label">Stance</div><div class="metric-value breach">SELL</div></div>
+                <div class="metric"><div class="metric-label">Weight</div><div class="metric-value">−1.8%</div></div>
+                <div class="metric"><div class="metric-label">Horizon</div><div class="metric-value">5D</div></div>
+                <div class="metric"><div class="metric-label">Exp. Δ</div><div class="metric-value muted">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot error"></span>Error</div>
+            <div class="state-note">Scoring pipeline failed</div>
+          </div>
+          <div class="state-body">
+            <div class="rec">
+              <div class="placeholder">
+                <div class="placeholder-icon err">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                </div>
+                <div class="placeholder-title">Couldn't score XOM</div>
+                <div class="placeholder-desc">Momentum engine threw an exception at T+12:04:18 — traceback captured in incident <b>INC‑2026‑0419‑07</b>. Rec was not produced.</div>
+                <div class="placeholder-actions">
+                  <button class="btn primary">Open incident</button>
+                  <button class="btn">Retry scoring</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PERMISSION -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot locked"></span>Permission‑limited</div>
+            <div class="state-note">Viewer role — cannot see weight</div>
+          </div>
+          <div class="state-body">
+            <div class="rec">
+              <div class="rec-top">
+                <span class="rec-ticker">XOM</span>
+                <span class="pill primary"><span class="pill-dot"></span>Fresh</span>
+                <span class="pill">REC‑2026‑0419‑XOM‑S</span>
+              </div>
+              <p class="rec-thesis">Demand response post‑OPEC+ signals sustainable downside. Refinery capacity and insider activity confirm the bias.</p>
+              <div class="rec-metrics">
+                <div class="metric"><div class="metric-label">Stance</div><div class="metric-value breach">SELL</div></div>
+                <div class="metric"><div class="metric-label">Weight</div><div class="metric-value muted" title="Hidden for viewer role">🔒 Hidden</div></div>
+                <div class="metric"><div class="metric-label">Horizon</div><div class="metric-value">5D</div></div>
+                <div class="metric"><div class="metric-label">Exp. Δ</div><div class="metric-value muted">🔒 Hidden</div></div>
+              </div>
+              <div class="deg-banner" style="background: var(--surface-2); color: var(--ink-2);">
+                <span class="deg-banner-dot" style="background: var(--ink-3);"></span>
+                <div>Weight and expected return are restricted to <b>Analyst</b> role or above. <a href="#" style="color: var(--primary); text-decoration: none;">Request access</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         2. Confidence Trio
+         ========================================= -->
+    <section class="section" id="trio">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · trust decomposition</div>
+        <h2 class="section-title">Confidence trio</h2>
+        <p class="section-desc">Three independent signals: model confidence, data quality, and operational readiness. Separating them forces users to see <em>where</em> trust is coming from — a high model score on stale data shouldn't feel like high confidence.</p>
+      </header>
+
+      <div class="state-grid">
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">All three signals healthy</div>
+          </div>
+          <div class="state-body">
+            <div class="trio">
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Model</span><span class="trio-value">0.82</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 82%;"></div></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Data</span><span class="trio-value">0.91</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 91%;"></div></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Ops</span><span class="trio-value">0.95</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 95%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot loading"></span>Loading</div>
+            <div class="state-note">Computing from latest batch</div>
+          </div>
+          <div class="state-body">
+            <div class="trio">
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Model</span><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="skel" style="height: 4px; border-radius: 99px;"></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Data</span><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="skel" style="height: 4px; border-radius: 99px;"></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Ops</span><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="skel" style="height: 4px; border-radius: 99px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot degraded"></span>Degraded</div>
+            <div class="state-note">Data signal below threshold</div>
+          </div>
+          <div class="state-body">
+            <div class="trio">
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Model</span><span class="trio-value">0.82</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 82%;"></div></div>
+              </div>
+              <div class="trio-item" style="border-color: var(--caution); background: var(--caution-soft);">
+                <div class="trio-head"><span class="trio-label" style="color: var(--caution-soft-ink);">Data ⚠</span><span class="trio-value" style="color: var(--caution-soft-ink);">0.44</span></div>
+                <div class="bar" style="background: oklch(from var(--caution) l c h / 0.25);"><div class="bar-fill caution" style="width: 44%;"></div></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Ops</span><span class="trio-value">0.95</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 95%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot error"></span>Error</div>
+            <div class="state-note">Ops engine unreachable</div>
+          </div>
+          <div class="state-body">
+            <div class="trio">
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Model</span><span class="trio-value">0.82</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 82%;"></div></div>
+              </div>
+              <div class="trio-item">
+                <div class="trio-head"><span class="trio-label">Data</span><span class="trio-value">0.91</span></div>
+                <div class="bar"><div class="bar-fill pos" style="width: 91%;"></div></div>
+              </div>
+              <div class="trio-item" style="border-color: var(--breach); background: var(--breach-soft);">
+                <div class="trio-head"><span class="trio-label" style="color: var(--breach-soft-ink);">Ops ✕</span><span class="trio-value" style="color: var(--breach-soft-ink);">—</span></div>
+                <div class="bar" style="background: oklch(from var(--breach) l c h / 0.2);"><div class="bar-fill breach" style="width: 100%; opacity: 0.5;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         3. Queue
+         ========================================= -->
+    <section class="section" id="queue">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · triage list</div>
+        <h2 class="section-title">Triage queue</h2>
+        <p class="section-desc">The Overview's triage table, driven by the prioritization score. Empty and error states must be unambiguous — an empty queue is a <em>state of the world</em>, not a page that failed to load.</p>
+      </header>
+
+      <div class="state-grid wide">
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">5 recs ranked by priority</div>
+          </div>
+          <div class="state-body" style="padding: 14px;">
+            <div class="queue">
+              <div class="qrow">
+                <span class="qrow-rank">#1</span>
+                <span class="qrow-ticker">XOM</span>
+                <span class="qrow-thesis">OPEC+ demand response · 5D · SELL</span>
+                <span class="pill breach" style="justify-self: center;">High</span>
+                <div class="bar" style="width: 72px;"><div class="bar-fill pos" style="width: 82%;"></div></div>
+                <span class="qrow-conf">0.82</span>
+              </div>
+              <div class="qrow">
+                <span class="qrow-rank">#2</span>
+                <span class="qrow-ticker">NVDA</span>
+                <span class="qrow-thesis">Supply constraint easing · 10D · HOLD</span>
+                <span class="pill caution" style="justify-self: center;">Med</span>
+                <div class="bar" style="width: 72px;"><div class="bar-fill" style="width: 67%;"></div></div>
+                <span class="qrow-conf">0.67</span>
+              </div>
+              <div class="qrow">
+                <span class="qrow-rank">#3</span>
+                <span class="qrow-ticker">MSFT</span>
+                <span class="qrow-thesis">Enterprise seat expansion · 20D · BUY</span>
+                <span class="pill caution" style="justify-self: center;">Med</span>
+                <div class="bar" style="width: 72px;"><div class="bar-fill pos" style="width: 74%;"></div></div>
+                <span class="qrow-conf">0.74</span>
+              </div>
+              <div class="qrow">
+                <span class="qrow-rank">#4</span>
+                <span class="qrow-ticker">GLD</span>
+                <span class="qrow-thesis">Policy divergence hedge · 30D · BUY</span>
+                <span class="pill" style="justify-self: center;">Low</span>
+                <div class="bar" style="width: 72px;"><div class="bar-fill" style="width: 58%;"></div></div>
+                <span class="qrow-conf">0.58</span>
+              </div>
+              <div class="qrow">
+                <span class="qrow-rank">#5</span>
+                <span class="qrow-ticker">TSLA</span>
+                <span class="qrow-thesis">Delivery miss already priced · 5D · HOLD</span>
+                <span class="pill" style="justify-self: center;">Low</span>
+                <div class="bar" style="width: 72px;"><div class="bar-fill" style="width: 51%;"></div></div>
+                <span class="qrow-conf">0.51</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-grid" style="margin-top: 0;">
+
+          <div class="state-card">
+            <div class="state-card-head">
+              <div class="state-label"><span class="state-dot loading"></span>Loading</div>
+              <div class="state-note">Initial render</div>
+            </div>
+            <div class="state-body">
+              <div class="queue" style="padding: 4px;">
+                <div class="qrow"><div class="skel" style="width: 20px; height: 12px;"></div><div class="skel" style="width: 48px; height: 14px;"></div><div class="skel" style="height: 12px;"></div><div class="skel" style="width: 40px; height: 18px; border-radius: 99px;"></div><div class="skel" style="height: 4px; border-radius: 99px;"></div><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="qrow"><div class="skel" style="width: 20px; height: 12px;"></div><div class="skel" style="width: 48px; height: 14px;"></div><div class="skel" style="height: 12px;"></div><div class="skel" style="width: 40px; height: 18px; border-radius: 99px;"></div><div class="skel" style="height: 4px; border-radius: 99px;"></div><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="qrow"><div class="skel" style="width: 20px; height: 12px;"></div><div class="skel" style="width: 48px; height: 14px;"></div><div class="skel" style="height: 12px;"></div><div class="skel" style="width: 40px; height: 18px; border-radius: 99px;"></div><div class="skel" style="height: 4px; border-radius: 99px;"></div><div class="skel" style="width: 30px; height: 12px;"></div></div>
+                <div class="qrow"><div class="skel" style="width: 20px; height: 12px;"></div><div class="skel" style="width: 48px; height: 14px;"></div><div class="skel" style="height: 12px;"></div><div class="skel" style="width: 40px; height: 18px; border-radius: 99px;"></div><div class="skel" style="height: 4px; border-radius: 99px;"></div><div class="skel" style="width: 30px; height: 12px;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="state-card-head">
+              <div class="state-label"><span class="state-dot empty"></span>Empty</div>
+              <div class="state-note">No recs above threshold — this is good news</div>
+            </div>
+            <div class="state-body">
+              <div class="placeholder">
+                <div class="placeholder-icon pos">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="placeholder-title">Queue is clear</div>
+                <div class="placeholder-desc">No recommendations cross the 0.55 priority threshold right now. Portfolio is aligned with model output — check back after the next scoring cycle (T+18:00).</div>
+                <div class="placeholder-actions">
+                  <button class="btn">Lower threshold</button>
+                  <button class="btn ghost">See all 47 recs</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="state-card-head">
+              <div class="state-label"><span class="state-dot degraded"></span>Degraded</div>
+              <div class="state-note">Partial ranking — 2 engines offline</div>
+            </div>
+            <div class="state-body" style="padding: 14px; flex-direction: column;">
+              <div class="deg-banner" style="margin-bottom: 10px;">
+                <span class="deg-banner-dot"></span>
+                <div><b>Partial ranking.</b> 2 of 5 engines offline — ordering reflects 3‑engine consensus only.</div>
+              </div>
+              <div class="queue">
+                <div class="qrow"><span class="qrow-rank">#1</span><span class="qrow-ticker">XOM</span><span class="qrow-thesis">OPEC+ demand response</span><span class="pill caution" style="justify-self: center;">~</span><div class="bar" style="width: 72px;"><div class="bar-fill caution" style="width: 58%;"></div></div><span class="qrow-conf">0.58</span></div>
+                <div class="qrow"><span class="qrow-rank">#2</span><span class="qrow-ticker">NVDA</span><span class="qrow-thesis">Supply constraint easing</span><span class="pill caution" style="justify-self: center;">~</span><div class="bar" style="width: 72px;"><div class="bar-fill caution" style="width: 52%;"></div></div><span class="qrow-conf">0.52</span></div>
+                <div class="qrow"><span class="qrow-rank">#3</span><span class="qrow-ticker">GLD</span><span class="qrow-thesis">Policy divergence hedge</span><span class="pill caution" style="justify-self: center;">~</span><div class="bar" style="width: 72px;"><div class="bar-fill caution" style="width: 48%;"></div></div><span class="qrow-conf">0.48</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="state-card-head">
+              <div class="state-label"><span class="state-dot error"></span>Error</div>
+              <div class="state-note">Scoring service down</div>
+            </div>
+            <div class="state-body">
+              <div class="placeholder">
+                <div class="placeholder-icon err">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                </div>
+                <div class="placeholder-title">Can't load the queue</div>
+                <div class="placeholder-desc">Scoring service did not respond within 8s. Cached ranking from <b>T−4h</b> is available, or retry the live fetch.</div>
+                <div class="placeholder-actions">
+                  <button class="btn primary">Retry</button>
+                  <button class="btn">Show cached</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         4. Chart Panel
+         ========================================= -->
+    <section class="section" id="chart">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · visualization</div>
+        <h2 class="section-title">Chart panel</h2>
+        <p class="section-desc">Return chart with benchmark + confidence band. Critical state: when the underlying feed is stale, the chart must not imply precision it doesn't have.</p>
+      </header>
+
+      <div class="state-grid">
+
+        <!-- DEFAULT -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">Live intraday · 1s tick</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="chart-title">XOM · 5D return</div>
+                <div class="chart-meta">Live · T−12s</div>
+              </div>
+              <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="ch-grad" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="var(--breach)" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="var(--breach)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,40 L60,50 L110,65 L170,60 L220,80 L280,95 L340,110 L400,120 L400,140 L0,140 Z" fill="url(#ch-grad)"/>
+                <path d="M0,70 L60,68 L110,72 L170,75 L220,78 L280,80 L340,82 L400,85" fill="none" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4 3"/>
+                <path d="M0,40 L60,50 L110,65 L170,60 L220,80 L280,95 L340,110 L400,120" fill="none" stroke="var(--breach)" stroke-width="2"/>
+                <circle cx="400" cy="120" r="4" fill="var(--breach)"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot loading"></span>Loading</div>
+            <div class="state-note">Fetching historical series</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="skel" style="width: 120px; height: 14px;"></div>
+                <div class="skel" style="width: 60px; height: 12px;"></div>
+              </div>
+              <div class="skel" style="height: 140px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot empty"></span>Empty</div>
+            <div class="state-note">No series in the selected range</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="chart-title">XOM · selected range</div>
+                <div class="chart-meta">0 samples</div>
+              </div>
+              <div class="placeholder" style="min-height: 140px;">
+                <div class="placeholder-desc">No price data in the selected interval. Expand the range or switch to a lower frequency.</div>
+                <div class="placeholder-actions"><button class="btn">Widen to 30D</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEGRADED -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot degraded"></span>Degraded</div>
+            <div class="state-note">Feed stale — band hidden</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="chart-title">XOM · 5D return</div>
+                <div class="chart-meta" style="color: var(--caution-soft-ink);">Stale · T−18m</div>
+              </div>
+              <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none" style="opacity: 0.7;">
+                <path d="M0,70 L60,68 L110,72 L170,75 L220,78 L280,80 L340,82 L400,85" fill="none" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4 3"/>
+                <path d="M0,40 L60,50 L110,65 L170,60 L220,80 L280,95 L340,110 L400,120" fill="none" stroke="var(--breach)" stroke-width="2" stroke-dasharray="2 2"/>
+              </svg>
+              <div class="deg-banner" style="margin-top: -4px;">
+                <span class="deg-banner-dot"></span>
+                <div>Confidence band suppressed while feed is stale &gt;15m.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot error"></span>Error</div>
+            <div class="state-note">Feed unreachable</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="chart-title">XOM · 5D return</div>
+                <div class="chart-meta" style="color: var(--breach-soft-ink);">Feed error</div>
+              </div>
+              <div class="placeholder" style="min-height: 140px;">
+                <div class="placeholder-icon err">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l3 8 4-16 3 8h2"/></svg>
+                </div>
+                <div class="placeholder-title">Chart feed unavailable</div>
+                <div class="placeholder-desc">Price service returned 503 at T−1m. Last successful tick was 3 minutes ago.</div>
+                <div class="placeholder-actions">
+                  <button class="btn primary">Retry</button>
+                  <button class="btn">Feed status</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PERMISSION -->
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot locked"></span>Permission‑limited</div>
+            <div class="state-note">Tick data not licensed</div>
+          </div>
+          <div class="state-body">
+            <div class="chart-panel">
+              <div class="chart-head">
+                <div class="chart-title">XOM · 5D return</div>
+                <div class="chart-meta">Daily bars only</div>
+              </div>
+              <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none">
+                <g fill="var(--breach)" opacity="0.85">
+                  <rect x="10" y="40" width="8" height="70"/>
+                  <rect x="60" y="50" width="8" height="55"/>
+                  <rect x="110" y="60" width="8" height="40"/>
+                  <rect x="160" y="55" width="8" height="55"/>
+                  <rect x="210" y="70" width="8" height="40"/>
+                </g>
+              </svg>
+              <div style="font-size: 11px; color: var(--ink-3); text-align: center;">Intraday ticks require an L2 data entitlement. <a href="#" style="color: var(--primary); text-decoration: none;">Request</a></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         5. Alert feed
+         ========================================= -->
+    <section class="section" id="alert">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · ambient</div>
+        <h2 class="section-title">Alert feed</h2>
+        <p class="section-desc">Inline alerts in the Context pane and Ops center. An empty alert feed should feel reassuring, not suspicious.</p>
+      </header>
+
+      <div class="state-grid">
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">3 active alerts</div>
+          </div>
+          <div class="state-body" style="flex-direction: column; gap: 8px;">
+            <div class="alert breach">
+              <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
+              <div class="alert-body"><div class="alert-title">Energy concentration breached · 12%/10%</div><div class="alert-desc">Portfolio is 2pp over the sector cap — rebalance required before publication.</div></div>
+            </div>
+            <div class="alert caution">
+              <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><circle cx="12" cy="18" r="1.5" fill="currentColor"/></svg></div>
+              <div class="alert-body"><div class="alert-title">Insider‑flow feed stale · 18m</div><div class="alert-desc">Confidence capped at 0.58 for 12 open recs until feed refreshes.</div></div>
+            </div>
+            <div class="alert">
+              <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
+              <div class="alert-body"><div class="alert-title">Scoring cycle complete · 47 recs</div><div class="alert-desc">Batch processed at T−00:12. 4 new recs above threshold.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot empty"></span>Empty</div>
+            <div class="state-note">All‑clear — reassure, don't worry</div>
+          </div>
+          <div class="state-body">
+            <div class="placeholder">
+              <div class="placeholder-icon pos">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="placeholder-title">All clear</div>
+              <div class="placeholder-desc">No breaches, no stale feeds, no failed engines. Last system check T−00:12.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         6. Comparison matrix
+         ========================================= -->
+    <section class="section" id="matrix">
+      <header class="section-head">
+        <div class="section-eyebrow">Tier 1 · disagreement surface</div>
+        <h2 class="section-title">Comparison matrix</h2>
+        <p class="section-desc">Engine‑by‑engine stance comparison. The degraded state is critical — the user must understand that disagreement with <em>missing</em> engines isn't real disagreement.</p>
+      </header>
+
+      <div class="state-grid">
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot default"></span>Default</div>
+            <div class="state-note">5 engines reporting</div>
+          </div>
+          <div class="state-body">
+            <div class="matrix">
+              <div class="matrix-row head">
+                <div class="matrix-cell">Engine</div>
+                <div class="matrix-cell">Stance</div>
+                <div class="matrix-cell">Conf</div>
+                <div class="matrix-cell">Weight</div>
+                <div class="matrix-cell">Horizon</div>
+              </div>
+              <div class="matrix-row">
+                <div class="matrix-cell">Momentum</div>
+                <div class="matrix-cell"><span class="matrix-stance sell">SELL</span></div>
+                <div class="matrix-cell">0.84</div>
+                <div class="matrix-cell">−2.4%</div>
+                <div class="matrix-cell">5D</div>
+              </div>
+              <div class="matrix-row">
+                <div class="matrix-cell">Value</div>
+                <div class="matrix-cell"><span class="matrix-stance hold">HOLD</span></div>
+                <div class="matrix-cell">0.61</div>
+                <div class="matrix-cell">0.0%</div>
+                <div class="matrix-cell">30D</div>
+              </div>
+              <div class="matrix-row">
+                <div class="matrix-cell">Insider</div>
+                <div class="matrix-cell"><span class="matrix-stance sell">SELL</span></div>
+                <div class="matrix-cell">0.72</div>
+                <div class="matrix-cell">−1.8%</div>
+                <div class="matrix-cell">10D</div>
+              </div>
+              <div class="matrix-row">
+                <div class="matrix-cell">Flow</div>
+                <div class="matrix-cell"><span class="matrix-stance buy">BUY</span></div>
+                <div class="matrix-cell">0.55</div>
+                <div class="matrix-cell">+1.2%</div>
+                <div class="matrix-cell">5D</div>
+              </div>
+              <div class="matrix-row">
+                <div class="matrix-cell">Macro</div>
+                <div class="matrix-cell"><span class="matrix-stance sell">SELL</span></div>
+                <div class="matrix-cell">0.68</div>
+                <div class="matrix-cell">−1.1%</div>
+                <div class="matrix-cell">20D</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot loading"></span>Loading</div>
+            <div class="state-note">Fetching engine outputs</div>
+          </div>
+          <div class="state-body">
+            <div class="matrix">
+              <div class="matrix-row head">
+                <div class="matrix-cell">Engine</div>
+                <div class="matrix-cell">Stance</div>
+                <div class="matrix-cell">Conf</div>
+                <div class="matrix-cell">Weight</div>
+                <div class="matrix-cell">Horizon</div>
+              </div>
+              <div class="matrix-row"><div class="matrix-cell"><div class="skel" style="width: 60px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 40px; height: 16px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 30px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 36px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 20px; height: 12px;"></div></div></div>
+              <div class="matrix-row"><div class="matrix-cell"><div class="skel" style="width: 60px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 40px; height: 16px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 30px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 36px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 20px; height: 12px;"></div></div></div>
+              <div class="matrix-row"><div class="matrix-cell"><div class="skel" style="width: 60px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 40px; height: 16px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 30px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 36px; height: 12px;"></div></div><div class="matrix-cell"><div class="skel" style="width: 20px; height: 12px;"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot degraded"></span>Degraded</div>
+            <div class="state-note">2 engines missing — don't infer agreement</div>
+          </div>
+          <div class="state-body" style="flex-direction: column;">
+            <div class="deg-banner" style="margin-bottom: 10px;">
+              <span class="deg-banner-dot"></span>
+              <div><b>Partial consensus.</b> Flow and Macro engines did not report this cycle — apparent agreement is from 3 engines only.</div>
+            </div>
+            <div class="matrix">
+              <div class="matrix-row head">
+                <div class="matrix-cell">Engine</div>
+                <div class="matrix-cell">Stance</div>
+                <div class="matrix-cell">Conf</div>
+                <div class="matrix-cell">Weight</div>
+                <div class="matrix-cell">Horizon</div>
+              </div>
+              <div class="matrix-row"><div class="matrix-cell">Momentum</div><div class="matrix-cell"><span class="matrix-stance sell">SELL</span></div><div class="matrix-cell">0.84</div><div class="matrix-cell">−2.4%</div><div class="matrix-cell">5D</div></div>
+              <div class="matrix-row"><div class="matrix-cell">Value</div><div class="matrix-cell"><span class="matrix-stance hold">HOLD</span></div><div class="matrix-cell">0.61</div><div class="matrix-cell">0.0%</div><div class="matrix-cell">30D</div></div>
+              <div class="matrix-row"><div class="matrix-cell">Insider</div><div class="matrix-cell"><span class="matrix-stance sell">SELL</span></div><div class="matrix-cell">0.72</div><div class="matrix-cell">−1.8%</div><div class="matrix-cell">10D</div></div>
+              <div class="matrix-row" style="opacity: 0.45;"><div class="matrix-cell">Flow <span class="muted">· missing</span></div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div></div>
+              <div class="matrix-row" style="opacity: 0.45;"><div class="matrix-cell">Macro <span class="muted">· missing</span></div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div><div class="matrix-cell muted">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-card">
+          <div class="state-card-head">
+            <div class="state-label"><span class="state-dot empty"></span>Empty</div>
+            <div class="state-note">Only one engine covers this symbol</div>
+          </div>
+          <div class="state-body">
+            <div class="placeholder">
+              <div class="placeholder-icon caution">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><circle cx="12" cy="18" r="1.5" fill="currentColor"/></svg>
+              </div>
+              <div class="placeholder-title">Only 1 engine reporting</div>
+              <div class="placeholder-desc">Macro is the only engine covering this symbol. There's nothing to compare against — treat the signal with corresponding caution.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================
+         Legend
+         ========================================= -->
+    <section class="section" id="legend">
+      <header class="section-head">
+        <div class="section-eyebrow">reference</div>
+        <h2 class="section-title">What each state means</h2>
+        <p class="section-desc">Canonical definitions — use these to decide which state your component is in at any moment.</p>
+      </header>
+
+      <div class="state-grid wide">
+        <div class="state-card" style="padding: 6px 4px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 14px 16px; width: 160px; vertical-align: top;"><div class="state-label"><span class="state-dot default"></span>Default</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">All inputs present, freshness within SLO, user has full permissions. Render the full component as designed.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 14px 16px; vertical-align: top;"><div class="state-label"><span class="state-dot loading"></span>Loading</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">Waiting on data &gt; 300ms. Show skeleton that mirrors final layout. Never show a spinner in the middle of a layout block — it should already look like the thing it's becoming.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 14px 16px; vertical-align: top;"><div class="state-label"><span class="state-dot empty"></span>Empty</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">No data exists — this is a <em>state of the world</em>, not a failure. Explain why it's empty and offer the next action. Tone is neutral or positive (e.g. "queue clear").</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 14px 16px; vertical-align: top;"><div class="state-label"><span class="state-dot degraded"></span>Degraded</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">Component renders but at reduced fidelity — stale input, capped confidence, one engine missing. <b>Show the banner inline</b>, never hide the degradation. User should still be able to proceed with care.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 14px 16px; vertical-align: top;"><div class="state-label"><span class="state-dot error"></span>Error</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">Component cannot render at all — service exception, timeout, data corruption. Name what failed in plain language, expose an incident ID if one exists, and offer a retry or fallback (e.g. cached).</td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 16px; vertical-align: top;"><div class="state-label"><span class="state-dot locked"></span>Permission‑limited</div></td>
+                <td style="padding: 14px 16px; color: var(--ink-2);">User lacks the role or entitlement for some or all of the data. Render what they <em>can</em> see, mask the rest with 🔒, and link to request access. Never silently hide — the gap must be visible.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Theme toggle
+  document.querySelectorAll('.theme-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
+
+</body>
+</html>

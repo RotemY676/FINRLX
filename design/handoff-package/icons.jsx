@@ -41,7 +41,10 @@ const Icon = ({ name, size = 16, className = "", strokeWidth = 1.6, style }) => 
     case "database": return (<svg {...p}><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>);
     case "tag": return (<svg {...p}><path d="M20.5 12.5 12 21l-9-9V3h9Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>);
     case "sparkle": return (<svg {...p}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>);
-    case "close": return (<svg {...p}><path d="M6 6l12 12M18 6L6 18"/></svg>);
+    case "close": case "x": return (<svg {...p}><path d="M6 6l12 12M18 6L6 18"/></svg>);
+    case "chevron-up": return (<svg {...p}><path d="m6 15 6-6 6 6"/></svg>);
+    case "shield": return (<svg {...p}><path d="M12 3 4 6v6c0 4.5 3.3 8.4 8 9 4.7-.6 8-4.5 8-9V6Z"/></svg>);
+    case "target": return (<svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>);
     default: return null;
   }
 };

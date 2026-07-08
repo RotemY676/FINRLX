@@ -95,6 +95,18 @@ research/finrlx_cpu/outputs/*
 !research/finrlx_cpu/outputs/.gitkeep
 research/finrlx_cpu/.venv/
 
+# Research dataset-export dumps (local-only per-UUID artifacts; keep the tracked
+# export_registry.json, not the raw dumps)
+research/finrlx_cpu/exports/*
+!research/finrlx_cpu/exports/.gitkeep
+!research/finrlx_cpu/exports/export_registry.json
+
+# Local backend analysis reports (generated HTML/JSON, local-only)
+backend/reports/
+
+# Claude Code scheduler lock (local runtime state)
+.claude/scheduled_tasks.lock
+
 tsconfig.tsbuildinfo
 frontend/test-results/
 frontend/playwright-report/
