@@ -1,5 +1,21 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 7 (2026-07-21, on `main`) — US-P0-06 zero-fiction static scan (increment 1).**
+> Added `app/core/fiction_policy.py`: a pure AST/text scan of the serving paths
+> (`app/api`, `app/services`) that flags fabrication primitives — any
+> `random`/`numpy.random` draw, and `TODO/FIXME` markers admitting fake/mock/
+> placeholder/synthetic data. Mirrors the `route_policy.py` ratchet: a reviewed,
+> justified baseline (`KNOWN_FICTION_SITES`) that may only shrink, plus a guard
+> test (`test_p0_fiction_scan.py`) asserting the current surface exactly equals
+> the baseline (no new site; no stale entry). Baseline = 6 sites: 2 non-serving
+> (rl test-agent, offline research stub) + 2 pairs of labeled-synthetic beta
+> market-data generators in `ingest.py` (`_generate_bars`/`_generate_news`). The
+> scan **surfaced the ingest generators**, which no prior audit had enumerated as
+> fiction sites. Honest scope: this forward-locks the fabrication surface; it
+> does NOT yet prove ingest synthetic data is failed-closed downstream — that
+> ingest→`DataTruth.is_synthetic` linkage is increment 2 (next). Verify: 4/4
+> guard tests green; ruff + mypy clean.
+>
 > **Slice 6 (2026-07-21, on `main`) — US-P0-03 enforcement increment 2 (market-data ingestion).**
 > Auth-gated `POST /api/v1/ingest/bars` and `POST /api/v1/ingest/news` with
 > `get_current_user`. Injecting bars/news is a zero-fiction control surface —
