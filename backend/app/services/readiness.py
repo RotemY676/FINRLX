@@ -15,6 +15,7 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.jobs import JOB_STATUS_FAILED
 from app.schemas.readiness import (
     READINESS_STATUSES,
     ReadinessComponent,
@@ -22,6 +23,7 @@ from app.schemas.readiness import (
 )
 from app.services import fx_freshness, price_freshness
 from app.services.integrations import IntegrationsService
+from app.services.job_runs import JobRunService
 
 _RANK = {status: i for i, status in enumerate(READINESS_STATUSES)}
 
@@ -102,6 +104,25 @@ async def _provider_component(db: AsyncSession) -> ReadinessComponent:
     )
 
 
+async def _jobs_component(db: AsyncSession) -> ReadinessComponent:
+    recent = await JobRunService(db).list_recent(limit=50)
+    if not recent:
+        return ReadinessComponent(
+            name="jobs",
+            status="unavailable",
+            detail="no recent job runs",
+        )
+    failed = [r for r in recent if r.status == JOB_STATUS_FAILED]
+    status = "degraded" if failed else "ready"
+    return ReadinessComponent(
+        name="jobs",
+        status=status,
+        detail=None if status == "ready" else "one or more recent job runs failed",
+        affected=sorted({r.job_key for r in failed}),
+        metrics={"recent": len(recent), "failed": len(failed)},
+    )
+
+
 async def _guarded(name: str, coro) -> ReadinessComponent:
     """Run a component evaluator fail-closed: any error → unavailable."""
     try:
@@ -119,6 +140,7 @@ async def build_readiness(db: AsyncSession, now: datetime) -> ReadinessReport:
         await _guarded("market_data", _price_component(db, now)),
         await _guarded("fx", _fx_component(db, now)),
         await _guarded("providers", _provider_component(db)),
+        await _guarded("jobs", _jobs_component(db)),
     ]
     overall = _worst([c.status for c in components])
     return ReadinessReport(

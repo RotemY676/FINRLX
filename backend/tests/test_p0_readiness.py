@@ -40,7 +40,7 @@ async def test_admin_gets_readiness_report(client):
     assert r.status_code == 200, r.text
     data = r.json()["data"]
     names = {c["name"] for c in data["components"]}
-    assert {"market_data", "fx", "providers"} <= names
+    assert {"market_data", "fx", "providers", "jobs"} <= names
     assert data["overall"] in {"ready", "degraded", "unavailable"}
     assert isinstance(data["ready"], bool)
     # overall is the worst component; ready iff overall == ready
@@ -58,6 +58,22 @@ async def test_seed_market_data_is_ready_but_fx_unavailable():
     # Overall can never be better than its worst component.
     assert report.overall == "unavailable"
     assert report.ready is False
+
+
+@pytest.mark.asyncio
+async def test_failed_job_run_degrades_jobs_component():
+    """A failed job run must surface as a degraded jobs component with scope."""
+    from app.models.jobs import JOB_STATUS_FAILED, JobRun
+
+    async with AsyncSessionLocal() as db:
+        db.add(JobRun(id=_uid(), job_key="price_refresh", status=JOB_STATUS_FAILED,
+                      started_at=datetime.now(UTC), error="boom"))
+        await db.commit()
+        report = await build_readiness(db, now=datetime.now(UTC))
+
+    jobs = next(c for c in report.components if c.name == "jobs")
+    assert jobs.status == "degraded"
+    assert "price_refresh" in jobs.affected
 
 
 @pytest.mark.asyncio
