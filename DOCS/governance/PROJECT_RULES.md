@@ -51,6 +51,9 @@ For each request, follow the pipeline (detailed in `WORKFLOW.md`):
 ## Rule 10 — File-based, tightly managed infrastructure
 This entire governance system is built at the file / Markdown level. Its structure and management method are documented in `DOCS/governance/README.md`. Development proceeds only after this infrastructure is in place.
 
+## Rule 11 — Autonomous, Council-governed execution (granted 2026-07-21)
+The **Council owns all stage-transition approvals**. No per-stage approval from the user is required. Once a development process is underway, **do not stop** until the entire process is complete — running each slice `research → implement → verify → Council gate → commit+push → next` continuously. Prefer a safe, reversible default over pausing. The **only** permitted stops are the emergency stop-conditions in `COUNCIL.md` ("Emergency stop-conditions"). This rule does not weaken truth-first (Rule elsewhere / user memory): the Council still may not advance on unverified or overstated claims.
+
 ---
 
 ### Precedence

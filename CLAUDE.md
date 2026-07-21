@@ -25,6 +25,8 @@ On **every new session** (and whenever the plugin/IDE restarts), before touching
 9. Per request: **learn from external sources → survey summary → surface questions → internal specs+tests → progress table.**
 10. This whole infrastructure is file-based and tightly managed (see `README.md`).
 
+11. **Autonomous execution** (granted 2026-07-21): the Council approves all stage transitions; do **not** stop for user approval until the whole dev process is done — except the emergency stop-conditions in `COUNCIL.md`.
+
 ## Non-negotiables (from user memory)
 
 - **Truth-first**: no guessing, no false "done" claims. Small, verified steps. If a test fails, say so with the output.

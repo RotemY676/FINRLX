@@ -39,6 +39,25 @@ GATE Gx — <stage transition>
   Chair verdict: ADVANCE | HOLD — <reason>
 ```
 
+## Autonomous authority (granted 2026-07-21)
+
+The Council has **full authority to approve stage transitions without user sign-off** (Rule 11).
+The lead does **not** pause for routine confirmation and does **not** halt the development process
+until it is complete. Every gate is still run and logged; the Chair records the verdict and advances.
+
+### Emergency stop-conditions (the ONLY reasons to pause and ask the user)
+1. **Credentials / secrets** are required, or an action would expose secrets/tokens/keys.
+2. **Destructive or irreversible** action: `git reset --hard`, force-push, production deploy,
+   data deletion/migration of real data, merging via external systems, or **any** real-money /
+   live-trading / broker-execution enablement.
+3. A **genuine blocker** with no safe workaround (e.g. an unresolvable conflict, a hard external
+   dependency failure) that prevents further progress.
+4. A **material product decision** that cannot be safely defaulted. Even here, prefer a safe,
+   reversible default + documentation and keep going; stop only if the choice is truly irreducible.
+5. A **financial-truth violation** that cannot be satisfied fail-closed.
+
+Anything outside this list: the Council decides and execution continues.
+
 ## Rules of order
 - A **BLOCK** from Red Team or a **FAIL** from QA halts the transition until resolved.
 - Truth-first (user memory): the Chair may not record ADVANCE on unverified or overstated claims.
