@@ -71,3 +71,6 @@ Anything outside this list: the Council decides and execution continues.
 |---|---|---|---|
 | 2026-07-21 | G4 (governance bootstrap → ship) | ADVANCE | Files authored & internally consistent; low-risk docs change. Commit+push authorized. |
 | 2026-07-21 | G4 (US-P0-03 i2 ingest-authz → ship) | ADVANCE | QA: 39 focused + 1394 full-suite PASS (real output). Ruff/mypy PASS. Red Team: strengthens zero-fiction control (blocks anon market-data write), adds negative 401 test + ledger ratchet; no BLOCK. Chair: commit `28b8bf6` pushed. |
+| 2026-07-21 | G4 (US-P0-06 i1 fiction-scan → ship) | ADVANCE | QA: 4 guard tests + scan deterministic; ruff/mypy PASS. Surveyor: Explore-agent inventory cross-checked by running scanner. Red Team: scan surfaced previously-unlisted ingest generators; baseline honest, no overclaim. Chair: `cb25076`. |
+| 2026-07-21 | G4 (US-P0-06 i2 fail-closed → ship) | ADVANCE | QA: 46 focused + 1414 full-suite PASS. Red Team: closed a real fail-open leak (nonempty unknown source passed as real); allowlist verified against ingest branches; no regressions. Chair: `52dda91`. |
+| 2026-07-21 | G4 (US-P0-06 i3 demo-labels → ship) | ADVANCE | QA: 23 focused (incl. sprint regressions) + 1418 full-suite PASS. Red Team: additive envelope label, no FE break, domain warnings intact. Chair: `ec6e944`. |

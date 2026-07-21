@@ -8,6 +8,15 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-21 · Autonomous mandate + US-P0-06 delivered (i1–i3)
+- **User grant:** Rule 11 — Council approves all stage transitions; do NOT stop for approval until the whole dev process is complete, except emergencies. Codified in `PROJECT_RULES.md`, `COUNCIL.md`, `CLAUDE.md`; memory `feedback_autonomous_execution`. Commit `48e0d7b`.
+- **Delivered this run (autonomous, Council-gated, all pushed to `main`):**
+  - **US-P0-06 i1** `cb25076` — zero-fiction static scan `app/core/fiction_policy.py` + ratchet test. Surfaced the beta synthetic ingest generators.
+  - **US-P0-06 i2** `52dda91` — fixed a real fail-open leak: `_classify_source` is now an allowlist (`yfinance`/`chain` only); "local" beta data + unknown provenance fail closed. Full suite 1414.
+  - **US-P0-06 i3** `ec6e944` — labeled seeded demo endpoints (`/regime`, `/scenario/*`) with `DEMO_DATA:` in `meta.warnings`. Full suite 1418.
+- **State:** US-P0-06 substantially complete. All tests green; ruff/mypy clean each slice.
+- **NEXT (continue autonomously, no approval needed):** **US-P0-07 freshness suppression audit**, then US-P0-04 (secure web session), then US-P0-05 (CSP). US-P0-03 remaining debt (192) is PARKED pending the beta auth-model product input — do not block other slices on it; pick a safe reversible default if it becomes necessary.
+
 ### Entry — 2026-07-21 · Resumed crashed P0/DecisionPacket task
 - **User request:** Resume the multi-phase FINRLX P0 Truth & Safety + DecisionPacket implementation task (from the two Downloads ZIPs) that was interrupted by a crash; work per governance rules.
 - **Key finding (truth-first):** The crashed session had **already delivered the entire DecisionPacket task (Phases A–F) on `main`** — commits `bb7b9cb`, `1772551`, `eb03555`, `c7fd0dd` (ADR-0001, DELTA+STATUS docs, `decision_packet.py`, `decision_truth.py`, feature-flagged `decision_packet_adapter.py` + API behind `decision_packet_v1`=OFF, P1 tests). Plus US-P0-01/03(i0,i1)/08. All pushed; origin==local.

@@ -38,14 +38,17 @@
 | P0-03 i0 | Route authorization matrix + audit ratchet | — | ✅ | On `main` (a8633f3). |
 | P0-03 i1 | Auth-gate publication governance mutations (5) | — | ✅ | On `main` (20483af). |
 | P0-03 i2 | Auth-gate market-data ingestion (bars/news) | G4 | ✅ | **This session** `28b8bf6`. 39 focused + 1394 full suite green; ruff/mypy clean. Debt 194→192. |
+| P0-06 i1 | Zero-fiction static scan + ratchet (`fiction_policy.py`) | G4 | ✅ | **This session** `cb25076`. Surfaced the beta synthetic ingest generators. |
+| P0-06 i2 | Fail-closed on synthetic ingest sources (allowlist) | G4 | ✅ | **This session** `52dda91`. Fixed a real fail-open leak: "local" beta data now blocked. 1414 suite green. |
+| P0-06 i3 | Label seeded demo endpoints (`/regime`,`/scenario`) | G4 | ✅ | **This session** `ec6e944`. `DEMO_DATA:` in `meta.warnings`. 1418 suite green. |
 | P0-08 | Unified readiness endpoint + jobs component | — | ✅ | On `main` (e3ba39a, d1a772d). |
 
 ## Remaining P0 work (priority order, from STATUS doc)
-- ⬜ **US-P0-03 continued** — gate remaining auth-debt (192): pipeline/engines/features deferred (heavy test-fixture use); needs beta auth-model decision (does FE send a bearer on every call?).
-- ⬜ **US-P0-06** — zero-fiction *static scan* across production paths (beyond the adapter classifier).
+- ⏳ **US-P0-07** — freshness suppression coverage audit (NEXT).
 - ⬜ **US-P0-04** — secure web session (HttpOnly / rotation / CSRF E2E).
 - ⬜ **US-P0-05** — full CSP/web-hardening review.
-- ⬜ **US-P0-07** — freshness suppression coverage audit.
+- 🟡 **US-P0-03 continued** — gate remaining auth-debt (192): pipeline/engines/features deferred (heavy test-fixture use); needs beta auth-model decision (does FE send a bearer on every call?). Parked pending that product input; not blocking other slices.
+- ✅ **US-P0-06** — zero-fiction: static scan + fail-closed synthetic sources + demo labels (i1–i3 done). Follow-up only: demo-flag gating / real regime model (product decision).
 
 ## Backlog / other candidate tracks
 - ⬜ Browser phase (`DOCS/handoff/CLAUDE_CODE_HANDOFF_DESK_W1.md`): e2e matrix, screenshots, gates G-1..G-7, then flip `FEATURE_DESK_V2`.
