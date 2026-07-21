@@ -8,6 +8,12 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-21 · Two directional decisions locked
+- **Decision 1 — Execution mode:** FULL AUTONOMOUS, no more check-ins. Run US-P0-07 → US-P0-04 → US-P0-05 back-to-back, Council-gated, commit+push each, stop only for real emergencies. Do NOT ask the user again.
+- **Decision 2 — Beta auth model:** the FE sends a bearer on EVERY call → **gate everything**. The remaining ~192 `AUTH_DEBT_BASELINE` routes may all be auth-gated (US-P0-03 unparked). Memory: `project_beta_auth_model`.
+- **Work queue (in order):** US-P0-07 freshness suppression → US-P0-04 secure web session → US-P0-05 CSP → US-P0-03 bulk route-gating toward zero debt.
+- **NEXT action:** begin US-P0-07 (freshness suppression audit). No approval needed.
+
 ### Entry — 2026-07-21 · Autonomous mandate + US-P0-06 delivered (i1–i3)
 - **User grant:** Rule 11 — Council approves all stage transitions; do NOT stop for approval until the whole dev process is complete, except emergencies. Codified in `PROJECT_RULES.md`, `COUNCIL.md`, `CLAUDE.md`; memory `feedback_autonomous_execution`. Commit `48e0d7b`.
 - **Delivered this run (autonomous, Council-gated, all pushed to `main`):**
