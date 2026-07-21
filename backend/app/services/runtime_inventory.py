@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
 from app.core.config import Settings
+from app.core.route_policy import classify_public_routes
 from app.schemas.inventory import (
     FlagInfo,
     ProviderInfo,
@@ -141,6 +142,13 @@ def build_runtime_inventory(*, app: FastAPI, settings: Settings, now: datetime) 
     for ri in routes:
         auth_summary[ri.auth] = auth_summary.get(ri.auth, 0) + 1
 
+    # US-P0-03 route-authorization audit over the currently-public routes.
+    public_entries = [
+        f"{method} {ri.path}" for ri in routes if ri.auth == "public" for method in ri.methods
+    ]
+    authz_split = classify_public_routes(public_entries)
+    authz = {k: len(v) for k, v in authz_split.items()}
+
     schema_contracts = sorted(
         {ri.response_model for ri in routes if ri.response_model}
     )
@@ -161,6 +169,8 @@ def build_runtime_inventory(*, app: FastAPI, settings: Settings, now: datetime) 
         pins=pins,
         route_count=len(routes),
         auth_summary=auth_summary,
+        authz=authz,
+        unclassified_public_routes=authz_split["unclassified"],
         routes=routes,
         flags=_flags(settings),
         providers=_providers(settings),

@@ -43,6 +43,10 @@ class RuntimeInventory(BaseModel):
     pins: dict[str, str | None] = Field(default_factory=dict)
     route_count: int
     auth_summary: dict[str, int] = Field(default_factory=dict)
+    # US-P0-03: split of the currently-public routes into
+    # allowed / known-debt / unclassified counts. `unclassified` must be 0.
+    authz: dict[str, int] = Field(default_factory=dict)
+    unclassified_public_routes: list[str] = Field(default_factory=list)
     routes: list[RouteInfo] = Field(default_factory=list)
     flags: list[FlagInfo] = Field(default_factory=list)
     providers: list[ProviderInfo] = Field(default_factory=list)

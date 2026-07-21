@@ -1,5 +1,19 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 3 (2026-07-21, on `main`) — US-P0-03 Route authorization matrix (audit).**
+> `app/core/route_policy.py` makes every route's auth posture explicit: an
+> intentionally-public allowlist (11) + a **labeled auth-debt baseline (199
+> method+path entries)** — routes unauthenticated today that should be gated.
+> The runtime manifest now carries an `authz` split (allowed/debt/unclassified)
+> and `unclassified_public_routes`; `tests/test_p0_route_authz.py` enforces a
+> one-way ratchet (unclassified must be empty → no new unauthenticated route can
+> merge; baseline may only shrink; no stale entries). **Material finding:
+> 210/254 routes are currently unauthenticated** (incl. recommendations, paper,
+> publication, policies, ops, rl). This slice records + regression-locks the gap
+> honestly; *actually* auth-gating the 199 is a follow-up needing a product
+> decision on the beta auth model (whether the FE sends a bearer token on every
+> call). No route behavior changed in this slice.
+>
 > **Slice 2 (2026-07-21, on `main`) — US-P0-01 Repository/runtime inventory.**
 > Added an admin-only machine-readable manifest at `GET /api/v1/ops/runtime-inventory`
 > (`app/services/runtime_inventory.py`, `app/schemas/inventory.py`,
