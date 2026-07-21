@@ -8,6 +8,10 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-21 · US-P0-07 i1 shipped (freshness envelope)
+- **Shipped:** `038e71b` — `app/services/freshness_state.py` + `make_meta(freshness=...)` + `/pricechart` wiring. `meta.freshness` was never populated (silent-fresh leak); now declared. Full suite **1423 passed / 2 skipped**; ruff/mypy clean.
+- **NEXT (autonomous, no approval):** US-P0-07 follow-ups (wire freshness into `/autopilot/dossier`, `/autopilot/desk/*`, `/analysis/single-ticker`, `/recommendations/current`, `/overview`), then **US-P0-04** (secure web session), **US-P0-05** (CSP), then **US-P0-03 bulk gating** (192 debt routes → zero, per decided auth model). Registries `research/finrlx_cpu/*.json` remain dirty by design.
+
 ### Entry — 2026-07-21 · Two directional decisions locked
 - **Decision 1 — Execution mode:** FULL AUTONOMOUS, no more check-ins. Run US-P0-07 → US-P0-04 → US-P0-05 back-to-back, Council-gated, commit+push each, stop only for real emergencies. Do NOT ask the user again.
 - **Decision 2 — Beta auth model:** the FE sends a bearer on EVERY call → **gate everything**. The remaining ~192 `AUTH_DEBT_BASELINE` routes may all be auth-gated (US-P0-03 unparked). Memory: `project_beta_auth_model`.
