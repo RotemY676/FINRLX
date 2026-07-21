@@ -1,5 +1,15 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 5 (2026-07-21, on `main`) — US-P0-08 unified readiness endpoint.**
+> Admin-only `GET /api/v1/ops/readiness` (`app/services/readiness.py`,
+> `app/schemas/readiness.py`, `app/api/v1/ops_readiness.py`) composes market-data
+> freshness, FX freshness, and provider readiness into one report: per-component
+> status (ready/degraded/unavailable) + affected scope, and an overall verdict =
+> worst component. Fail-closed: each evaluator is guarded so a raising component
+> becomes `unavailable`, never silently `ready`. Tests: `test_p0_readiness.py`
+> (admin gate, shape, seed market-data-ready-but-fx-unavailable, injected-failure
+> → unavailable). Model/job/alert components are a follow-up.
+>
 > **Slice 4 (2026-07-21, on `main`) — US-P0-03 enforcement increment 1.**
 > Auth-gated the 5 publication governance mutations (stage/approve/publish/
 > defer/suppress) with `get_current_user` — they change what is published to

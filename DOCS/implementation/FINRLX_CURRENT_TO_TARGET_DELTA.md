@@ -70,7 +70,7 @@ against the exact commit currently checked out.
 | **US-P0-05** CSP/web hardening | **Partially implemented** | `app/core/security_headers.py` exists (`test_mvp5_security_headers.py`); full CSP review out of scope this slice. |
 | **US-P0-06** Zero-fiction audit | **Partially implemented (advanced here)** | Adapter classifies demo/synthetic/unknown sources and fails them closed; no repo-wide static scan yet. |
 | **US-P0-07** Freshness suppression | **Partially implemented (advanced here)** | `price_freshness` reused; stale/degraded/unavailable data blocks packet eligibility with reason codes. |
-| **US-P0-08** Readiness endpoint | **Partially implemented** | `data_health` / `healthz` routes exist (`test_mvp7_healthz.py`); unified readiness-with-scope not verified. |
+| **US-P0-08** Readiness endpoint | **Implemented (data/fx/provider)** | Admin-only `GET /api/v1/ops/readiness` (`readiness.py` service + schema) aggregates market-data freshness, FX freshness, and provider readiness into one overall verdict + affected scope, fail-closed (unevaluable component → `unavailable`). Tests: `test_p0_readiness.py`. Model/job/alert readiness components are a follow-up (schema already supports them). |
 | **US-P0-09** Flag manifest/rollback | **Partially implemented** | Flags surfaced at `/flags`; `decision_packet_v1` added with documented rollback (§8). |
 | **US-P0-10** Desk W1 deltas | **Out of scope this slice** | Tracked under `feature_desk_v2`; untouched. |
 

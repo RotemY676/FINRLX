@@ -28,6 +28,7 @@ from app.api.v1.operator import router as operator_router
 from app.api.v1.ops import router as ops_router
 from app.api.v1.ops_inventory import router as ops_inventory_router
 from app.api.v1.ops_jobs import router as ops_jobs_router
+from app.api.v1.ops_readiness import router as ops_readiness_router
 from app.api.v1.ops_users import router as ops_users_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.paper import router as paper_router
@@ -70,6 +71,7 @@ api_router.include_router(engines_router, tags=["engines"])
 api_router.include_router(regime_router, tags=["regime"])
 api_router.include_router(ops_router, tags=["ops"])
 api_router.include_router(ops_inventory_router, tags=["ops"])
+api_router.include_router(ops_readiness_router, tags=["ops"])
 api_router.include_router(ops_jobs_router, tags=["ops-jobs"])
 api_router.include_router(ops_users_router, tags=["ops-users"])
 api_router.include_router(feedback_router, tags=["feedback"])
