@@ -1,5 +1,23 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 10 (2026-07-21, on `main`) — US-P0-07 wire meta.freshness (increment 1).**
+> Audit finding: `meta.freshness` (FreshnessState) was defined in the response
+> envelope but **never populated** — every response read as implicitly fresh, a
+> silent staleness leak — and freshness was enforced in only 2 places
+> (decision-packets, readiness). Added reusable
+> `app/services/freshness_state.freshness_state_from_latest(latest, now)` — reuses
+> the D6 `classify_lag` thresholds + trading calendar to build a FreshnessState
+> (data_as_of, is_stale, staleness_reason) from the newest served session; `None`
+> data → stale, not fresh. Extended `make_meta(freshness=...)` and wired the
+> canonical live-price surface `/pricechart` to declare the age of what it served
+> (both cache-hit and miss paths). Test: `test_p0_freshness_envelope.py` (builder
+> fresh/stale/none cases; endpoint populates meta.freshness; no-data is stale, not
+> silently fresh; K1 one-price-truth regressions still green). **Follow-up
+> increments** wire the same into the remaining market-data surfaces flagged by
+> the audit: `/pricechart` done; next `/autopilot/dossier`, `/autopilot/desk/*`,
+> `/analysis/single-ticker`, `/recommendations/current`, `/overview`. Verify: 13
+> focused green; full backend suite **1423 passed / 2 skipped**; ruff + mypy clean.
+>
 > **Slice 9 (2026-07-21, on `main`) — US-P0-06 label seeded demo endpoints (increment 3).**
 > The static scan flagged `GET /regime` and `POST /scenario/simulate` +
 > `GET /scenario/baseline` as serving fabricated financial figures (regime

@@ -1,7 +1,7 @@
 """Shared API dependencies."""
 from datetime import UTC, datetime
 
-from app.schemas.common import ResponseMeta
+from app.schemas.common import FreshnessState, ResponseMeta
 
 # US-P0-06 zero-fiction: standardized, machine-parseable label for endpoints that
 # serve seeded/illustrative data rather than a live model output. Demo data must
@@ -10,7 +10,10 @@ DEMO_DATA_WARNING = "DEMO_DATA: seeded illustrative data, not a live model outpu
 
 
 def make_meta(
-    warnings: list[str] | None = None, *, is_demo: bool = False
+    warnings: list[str] | None = None,
+    *,
+    is_demo: bool = False,
+    freshness: FreshnessState | None = None,
 ) -> ResponseMeta:
     ws = list(warnings or [])
     if is_demo and DEMO_DATA_WARNING not in ws:
@@ -19,4 +22,5 @@ def make_meta(
         api_version="v1",
         generated_at=datetime.now(UTC),
         warnings=ws,
+        freshness=freshness,
     )

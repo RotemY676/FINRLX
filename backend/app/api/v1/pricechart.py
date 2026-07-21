@@ -21,12 +21,14 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from datetime import date
 
 from fastapi import APIRouter, Query
 
 from app.api.deps import make_meta
 from app.schemas.common import ApiResponse
 from app.schemas.pricechart import PriceChartData, PricePoint
+from app.services.freshness_state import freshness_state_from_latest
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["pricechart"])
@@ -87,15 +89,24 @@ def _build_chart(ticker: str) -> PriceChartData | None:
     )
 
 
+def _chart_freshness(chart: PriceChartData | None):
+    """US-P0-07: declare the age of what we served (never leave meta.freshness null)."""
+    latest = None
+    if chart is not None and chart.points:
+        latest = date.fromisoformat(chart.points[-1].date)
+    return freshness_state_from_latest(latest)
+
+
 @router.get("/pricechart", response_model=ApiResponse[PriceChartData | None])
 def get_price_chart(ticker: str = Query("NVDA")):
     sym = ticker.upper().strip()
     now = time.time()
     with _lock:
         hit = _cache.get(sym)
-        if hit and now - hit[0] < _CACHE_TTL_S:
-            return ApiResponse(meta=make_meta(), data=hit[1])
-    chart = _build_chart(sym)
-    with _lock:
-        _cache[sym] = (now, chart)
-    return ApiResponse(meta=make_meta(), data=chart)
+        fresh_hit = hit is not None and now - hit[0] < _CACHE_TTL_S
+        chart = hit[1] if fresh_hit else None
+    if not fresh_hit:
+        chart = _build_chart(sym)
+        with _lock:
+            _cache[sym] = (now, chart)
+    return ApiResponse(meta=make_meta(freshness=_chart_freshness(chart)), data=chart)
