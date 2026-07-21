@@ -8,6 +8,18 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-21 · Resumed crashed P0/DecisionPacket task
+- **User request:** Resume the multi-phase FINRLX P0 Truth & Safety + DecisionPacket implementation task (from the two Downloads ZIPs) that was interrupted by a crash; work per governance rules.
+- **Key finding (truth-first):** The crashed session had **already delivered the entire DecisionPacket task (Phases A–F) on `main`** — commits `bb7b9cb`, `1772551`, `eb03555`, `c7fd0dd` (ADR-0001, DELTA+STATUS docs, `decision_packet.py`, `decision_truth.py`, feature-flagged `decision_packet_adapter.py` + API behind `decision_packet_v1`=OFF, P1 tests). Plus US-P0-01/03(i0,i1)/08. All pushed; origin==local.
+- **What was in flight at crash:** US-P0-03 **increment 2** — auth-gating market-data ingestion. Completed this session.
+- **What I did this session:**
+  - Phase A baseline: confirmed repo root, ZIPs live OUTSIDE repo (`~/Downloads/finrl/`), Py3.11.9/Node24, baseline commit `5767a5c` in history, `main` in sync.
+  - Verified + shipped the ingest-authz slice → commit **`28b8bf6`** on `main`.
+  - Ran: 39 focused PASS, full backend suite **1394 passed / 2 skipped**, ruff clean, mypy(app/core) clean.
+  - Excluded `research/finrlx_cpu/*.json` (test-run churn) from the commit — still dirty in tree by design.
+- **State:** Increment 2 shipped & documented (DELTA + STATUS Slice 6). Council G4 logged.
+- **Next action for a fresh session:** Pick the next P0 slice — see "Remaining P0 work" in `PROGRESS.md`. Top candidate: **US-P0-06 zero-fiction static scan**. US-P0-03 remaining debt (192) is blocked on a beta auth-model product decision (does the FE send a bearer on every call?) — ask user.
+
 ### Entry — 2026-07-21 · Governance infrastructure bootstrap
 - **User request:** Build the universal project-rules file + crash-recovery memory file + agent-team + council + workflow + progress-table infrastructure (10 rules), show the structure, then continue development.
 - **What was done:**

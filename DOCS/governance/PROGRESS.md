@@ -21,18 +21,38 @@
 | 0.10 | Commit + push governance layer (Rule 7) | lead | G4 | ✅ | Commit `79f5621` pushed to `main`. |
 | 0.11 | Present structure to user, confirm, resume dev | lead | — | ⏳ | Structure presented; awaiting user go-ahead on next track. |
 
-## Track P0 — Security/Ops hardening (inherited, in flight)
+## Track DPK/P1 — DecisionPacket truth-gate (delivered by crashed session, verified on `main`)
 
-| # | Task | Owner | Gate | Status | Notes |
-|---|---|---|---|---|---|
-| P0-01 | Runtime inventory manifest (admin-only) | — | — | ✅ | On `main` (commit cff56c5). |
-| P0-03 | Route authorization matrix + gov-mutation auth | — | — | ✅ | On `main` (a8633f3, 20483af). |
-| P0-08 | Unified readiness endpoint + jobs component | — | — | ✅ | On `main` (e3ba39a, d1a772d). |
-| P0-?? | Ingest authz (`test_p0_ingest_authz.py` + edits) | — | — | 🟡 | **Uncommitted in working tree.** Predates governance; review & commit separately with user. |
+| # | Task | Gate | Status | Notes |
+|---|---|---|---|---|
+| DPK-baseline | Runtime + truth baseline docs (ADR-0001, DELTA, STATUS) | — | ✅ | `bb7b9cb`. |
+| DPK-contract | Canonical packet schema + `decision_truth.py` policy | — | ✅ | `1772551` (candidate ZIP adapted to repo conventions). |
+| DPK-integrate | Feature-flagged (`decision_packet_v1`, OFF) adapter + API | — | ✅ | `eb03555`. Read-only seam; legacy paths intact. |
+| DPK-tests | Fail-closed evidence policy tests (P1 adapter+API) | — | ✅ | `c7fd0dd`. |
 
-## Backlog / candidate next tracks
+## Track P0 — Security/Ops hardening (inherited + this session)
+
+| # | Task | Gate | Status | Notes |
+|---|---|---|---|---|
+| P0-01 | Runtime inventory manifest (admin-only) | — | ✅ | On `main` (cff56c5). |
+| P0-03 i0 | Route authorization matrix + audit ratchet | — | ✅ | On `main` (a8633f3). |
+| P0-03 i1 | Auth-gate publication governance mutations (5) | — | ✅ | On `main` (20483af). |
+| P0-03 i2 | Auth-gate market-data ingestion (bars/news) | G4 | ✅ | **This session** `28b8bf6`. 39 focused + 1394 full suite green; ruff/mypy clean. Debt 194→192. |
+| P0-08 | Unified readiness endpoint + jobs component | — | ✅ | On `main` (e3ba39a, d1a772d). |
+
+## Remaining P0 work (priority order, from STATUS doc)
+- ⬜ **US-P0-03 continued** — gate remaining auth-debt (192): pipeline/engines/features deferred (heavy test-fixture use); needs beta auth-model decision (does FE send a bearer on every call?).
+- ⬜ **US-P0-06** — zero-fiction *static scan* across production paths (beyond the adapter classifier).
+- ⬜ **US-P0-04** — secure web session (HttpOnly / rotation / CSRF E2E).
+- ⬜ **US-P0-05** — full CSP/web-hardening review.
+- ⬜ **US-P0-07** — freshness suppression coverage audit.
+
+## Backlog / other candidate tracks
 - ⬜ Browser phase (`DOCS/handoff/CLAUDE_CODE_HANDOFF_DESK_W1.md`): e2e matrix, screenshots, gates G-1..G-7, then flip `FEATURE_DESK_V2`.
 - ⬜ Operator items: E1 (rotate PAT — treat as compromised), E7 (torch worker), E8 (Finnhub social tier).
+
+## Carried caveat
+- 🟡 `research/finrlx_cpu/*.json` registries are dirty from a local test run (UUID/timestamp churn) — deliberately **not committed**. Restore or ignore at will.
 
 ---
 _This table is the live view. `SESSION_STATE.md` holds the narrative resume detail._

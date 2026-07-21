@@ -51,3 +51,4 @@ GATE Gx — <stage transition>
 | Date | Gate | Verdict | Note |
 |---|---|---|---|
 | 2026-07-21 | G4 (governance bootstrap → ship) | ADVANCE | Files authored & internally consistent; low-risk docs change. Commit+push authorized. |
+| 2026-07-21 | G4 (US-P0-03 i2 ingest-authz → ship) | ADVANCE | QA: 39 focused + 1394 full-suite PASS (real output). Ruff/mypy PASS. Red Team: strengthens zero-fiction control (blocks anon market-data write), adds negative 401 test + ledger ratchet; no BLOCK. Chair: commit `28b8bf6` pushed. |
