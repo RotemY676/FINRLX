@@ -1,5 +1,24 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 8 (2026-07-21, on `main`) — US-P0-06 synthetic-source fail-closed (increment 2).**
+> Closed a real zero-fiction **leak** the increment-1 scan surfaced. The beta
+> ingests deterministic synthetic bars/news under source "local"; downstream
+> `decision_packet_adapter._classify_source` used a *denylist* of synthetic
+> tokens, so "local" (and any nonempty unknown label) was classified NOT
+> synthetic → fabricated random-walk prices could back an eligible decision.
+> The code's own comment already promised "unknown provenance is treated as
+> non-real", but the implementation only failed closed on an *empty* label.
+> Fix: `_classify_source` is now an **allowlist** — only `yfinance`/`chain`
+> (the two live-fetch branches in `ingest.py`) are real; everything else is
+> `is_synthetic` and fails closed, honoring the P0 rule that no field may
+> silently default to a pass. `is_demo` is retained for the more precise reason
+> code. Test: `test_p0_synthetic_source_failclosed.py` (real providers pass;
+> local/local_deterministic/test/fixture/unknown/empty/None fail closed; demo
+> flagged demo+synthetic; allowlist == ingest's real providers). Verify: 46
+> focused green (incl. all P1 adapter/API/packet tests, no regression); full
+> backend suite **1414 passed / 2 skipped**; ruff + mypy clean.
+> Reversible: revert this commit to restore the denylist.
+>
 > **Slice 7 (2026-07-21, on `main`) — US-P0-06 zero-fiction static scan (increment 1).**
 > Added `app/core/fiction_policy.py`: a pure AST/text scan of the serving paths
 > (`app/api`, `app/services`) that flags fabrication primitives — any

@@ -151,13 +151,15 @@ KNOWN_FICTION_SITES: dict[str, str] = {
     "app/services/ingest.py:64": (
         "_generate_bars: deterministic synthetic OHLCV (seeded random walk from "
         "hardcoded base prices) for the no-provider beta. Output stamped with the "
-        "request `source`; must be classified is_synthetic + failed closed by "
-        "decision_truth before any surfaced decision (linkage: US-P0-06 follow-up)."
+        "request `source`; the non-'yfinance'/'chain' label is classified "
+        "is_synthetic and failed closed by decision_packet_adapter._classify_source "
+        "(enforced: test_p0_synthetic_source_failclosed.py)."
     ),
     "app/services/ingest.py:107": (
         "_generate_news: deterministic templated synthetic news for the "
-        "no-provider beta. Source-stamped; must be treated as synthetic evidence "
-        "and failed closed downstream (linkage: US-P0-06 follow-up)."
+        "no-provider beta. Source-stamped; treated as synthetic evidence and "
+        "failed closed downstream via the source allowlist "
+        "(enforced: test_p0_synthetic_source_failclosed.py)."
     ),
     # (a) NON-SERVING — never reaches a user.
     "app/services/rl_agents.py:67": (

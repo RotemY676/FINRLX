@@ -30,20 +30,21 @@ from app.schemas.decision_packet import (
 from app.services.decision_truth import build_decision_packet
 from app.services.price_freshness import TickerFreshness
 
-# Source tokens that must never back an eligible decision (US-P0-06 zero-fiction).
-# Unknown provenance is treated as non-real and fails closed, rather than being
-# silently promoted to trustworthy market evidence.
+# US-P0-06 zero-fiction: only an explicit ALLOWLIST of real providers may back an
+# eligible decision. Everything else fails closed. A denylist (the previous
+# design) silently promoted unrecognised labels — e.g. the beta generator's
+# "local" — to trustworthy market evidence, which contradicts the stated intent
+# ("unknown provenance is treated as non-real") and the P0 rule that no missing
+# field may silently default to a pass.
+#
+# Real providers map to live fetches in ingest.py: "yfinance" and the on-chain
+# price provider ("chain" == chain_provider.CHAIN_SOURCE). The deterministic beta
+# generator ("local"/"local_deterministic"), fixtures, test seeds, and any
+# unknown or missing label are non-real → synthetic → blocked.
+_REAL_SOURCE_TOKENS = ("yfinance", "chain")
+# Non-real labels that are specifically demos get the more precise DEMO reason
+# code (matched as substrings) instead of the generic synthetic one.
 _DEMO_SOURCE_TOKENS = ("demo", "sample", "example", "placeholder")
-_SYNTHETIC_SOURCE_TOKENS = (
-    "synthetic",
-    "mock",
-    "fixture",
-    "random",
-    "fake",
-    "test",
-    "seed",
-    "unknown",
-)
 
 _FRESHNESS_TO_STATUS = {
     "fresh": MarketDataStatus.FRESH,
@@ -66,13 +67,15 @@ def _aware(value: datetime | None, *, fallback: datetime) -> datetime:
 
 
 def _classify_source(source: str | None) -> tuple[bool, bool]:
-    """Return (is_demo, is_synthetic) for a market-data source label."""
+    """Return (is_demo, is_synthetic) for a market-data source label.
+
+    Fail-closed by allowlist: only an explicit real provider passes. Any other
+    label — the beta "local" generator, fixtures, test seeds, or unknown/missing
+    provenance — is synthetic and cannot back an eligible decision (US-P0-06).
+    """
     token = (source or "").strip().lower()
-    if not token:
-        # No provenance at all → not trustworthy → fail closed as synthetic.
-        return (False, True)
     is_demo = any(t in token for t in _DEMO_SOURCE_TOKENS)
-    is_synthetic = any(t in token for t in _SYNTHETIC_SOURCE_TOKENS)
+    is_synthetic = token not in _REAL_SOURCE_TOKENS
     return (is_demo, is_synthetic)
 
 
