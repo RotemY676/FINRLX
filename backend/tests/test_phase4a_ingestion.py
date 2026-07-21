@@ -4,6 +4,21 @@ Phase 4A.1 addendum: stable seed, news idempotency, failed status visibility.
 """
 import pytest
 
+from app.api.auth_deps import get_current_user
+from app.main import app
+from app.models.auth import User
+
+
+@pytest.fixture(autouse=True)
+def _authenticated_operator():
+    """Ingestion mutations are auth-gated (US-P0-03); inject an operator."""
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id="test-operator", email="operator@test.local", password_hash="x",
+        is_active=True, role="admin",
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
 
 # ── Model / table availability ────────────────────────────────────────
 

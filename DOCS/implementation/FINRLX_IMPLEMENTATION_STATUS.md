@@ -1,5 +1,19 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 6 (2026-07-21, on `main`) — US-P0-03 enforcement increment 2 (market-data ingestion).**
+> Auth-gated `POST /api/v1/ingest/bars` and `POST /api/v1/ingest/news` with
+> `get_current_user`. Injecting bars/news is a zero-fiction control surface —
+> an anonymous caller must never write market data. Both routes removed from the
+> `AUTH_DEBT_BASELINE` ledger (debt 194→192). A new invariant test
+> `test_p0_route_authz.py::test_baseline_entries_are_still_public` forces
+> removal-on-gating so a now-authenticated route can never be left stale in the
+> debt ledger. Tests: `test_p0_ingest_authz.py` (anonymous → 401 for bars+news);
+> operator-override `autouse` fixtures added to `test_phase4a_ingestion.py` and
+> `test_phase4b_features.py` (both post to the now-gated endpoints as setup).
+> Same FE-safe selection pattern as increment 1 (0 anonymous FE references).
+> Verify: focused 39/39 green; full backend suite 1394 passed / 2 skipped;
+> ruff + mypy(app/core) clean.
+>
 > **Slice 5 (2026-07-21, on `main`) — US-P0-08 unified readiness endpoint.**
 > Admin-only `GET /api/v1/ops/readiness` (`app/services/readiness.py`,
 > `app/schemas/readiness.py`, `app/api/v1/ops_readiness.py`) composes market-data

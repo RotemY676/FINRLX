@@ -1,6 +1,21 @@
 """Phase 4B tests: feature layer — definitions, computation, endpoints, truthfulness."""
 import pytest
 
+from app.api.auth_deps import get_current_user
+from app.main import app
+from app.models.auth import User
+
+
+@pytest.fixture(autouse=True)
+def _authenticated_operator():
+    """One setup step posts to the auth-gated /ingest/news (US-P0-03)."""
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id="test-operator", email="operator@test.local", password_hash="x",
+        is_active=True, role="admin",
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
 
 # ── Feature definitions ───────────────────────────────────────────────
 

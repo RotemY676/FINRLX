@@ -193,8 +193,9 @@ AUTH_DEBT_BASELINE: frozenset[str] = frozenset(
         "POST /api/v1/backtests/run",
         "POST /api/v1/engines/run",
         "POST /api/v1/features/compute",
-        "POST /api/v1/ingest/bars",
-        "POST /api/v1/ingest/news",
+        # NOTE: POST /ingest/bars and /ingest/news were auth-gated on 2026-07-21
+        # (US-P0-03 enforcement, increment 2) — controlling market-data injection
+        # is a zero-fiction control. Removed from the baseline (now require auth).
         "POST /api/v1/models/predict",
         "POST /api/v1/models/promotion/review",
         "POST /api/v1/models/promotion/{review_id}/decision",

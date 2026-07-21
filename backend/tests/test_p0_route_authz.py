@@ -67,6 +67,22 @@ def test_policy_has_no_stale_entries():
     assert stale_debt == [], f"stale AUTH_DEBT_BASELINE entries: {stale_debt}"
 
 
+def test_baseline_entries_are_still_public():
+    """Every debt-baseline entry must still be unauthenticated (public).
+
+    Once a route is auth-gated it MUST be removed from AUTH_DEBT_BASELINE — the
+    ledger may not carry a now-authenticated route as if it were open debt. This
+    invariant keeps the debt count honest and forces removal-on-gating. (Added
+    after the council caught a gated route left stale in the baseline.)
+    """
+    public = set(_public_entries())
+    now_authenticated = sorted(AUTH_DEBT_BASELINE - public)
+    assert now_authenticated == [], (
+        "these routes are authenticated but still in AUTH_DEBT_BASELINE (remove them): "
+        + ", ".join(now_authenticated)
+    )
+
+
 def test_debt_only_shrinks():
     """The set of currently-public debt routes must be a subset of the baseline.
 

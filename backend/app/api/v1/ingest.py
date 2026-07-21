@@ -8,10 +8,12 @@ GET  /api/v1/ingest/manifests  — list ingestion manifests
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth_deps import get_current_user
 from app.api.deps import make_meta
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.models.auth import User
 from app.schemas.common import ApiResponse
 from app.schemas.ingestion import (
     IngestBarsRequest,
@@ -33,6 +35,7 @@ async def trigger_bar_ingestion(
     request: Request,
     body: IngestBarsRequest,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     svc = IngestService(db)
     manifest = await svc.ingest_bars(
@@ -58,6 +61,7 @@ async def trigger_news_ingestion(
     request: Request,
     body: IngestNewsRequest,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     svc = IngestService(db)
     manifest = await svc.ingest_news(
