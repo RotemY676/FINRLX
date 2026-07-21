@@ -11,6 +11,7 @@ from app.api.v1.backtests import router as backtests_router
 from app.api.v1.comparison import router as comparison_router
 from app.api.v1.data_health import router as data_health_router
 from app.api.v1.decision import router as decision_router
+from app.api.v1.decision_packets import router as decision_packets_router
 from app.api.v1.engines import router as engines_router
 from app.api.v1.features import router as features_router
 from app.api.v1.feedback import router as feedback_router
@@ -59,6 +60,7 @@ api_router.include_router(autopilot_router, tags=["autopilot"])
 api_router.include_router(price_freshness_router, tags=["prices"])
 api_router.include_router(recommendations_router, tags=["recommendations"])
 api_router.include_router(decision_router, tags=["decision"])
+api_router.include_router(decision_packets_router, tags=["decision"])
 api_router.include_router(comparison_router, tags=["comparison"])
 api_router.include_router(replay_router, tags=["replay"])
 api_router.include_router(backtests_router, tags=["backtests"])

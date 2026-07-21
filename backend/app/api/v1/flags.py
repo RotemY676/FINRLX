@@ -40,5 +40,8 @@ async def flags() -> ApiResponse[dict]:
             # Desk W1 (DEC-7): Unified Research Desk v2, dark until the
             # SPEC-04 exit gate passes in the browser-equipped environment.
             "desk_v2": settings.feature_desk_v2,
+            # EP-1 (US-DPK-01..03): canonical DecisionPacket read-only surface,
+            # dark until the P0 truth/safety foundations are established.
+            "decision_packet_v1": settings.feature_decision_packet_v1,
         },
     )
