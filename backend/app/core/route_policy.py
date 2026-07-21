@@ -209,11 +209,10 @@ AUTH_DEBT_BASELINE: frozenset[str] = frozenset(
         "POST /api/v1/paper/{portfolio_id}/rebalance/{recommendation_id}",
         "POST /api/v1/pipeline/run",
         "POST /api/v1/policies/evaluate",
-        "POST /api/v1/publication/recommendations/{rec_id}/approve",
-        "POST /api/v1/publication/recommendations/{rec_id}/defer",
-        "POST /api/v1/publication/recommendations/{rec_id}/publish",
-        "POST /api/v1/publication/recommendations/{rec_id}/stage",
-        "POST /api/v1/publication/recommendations/{rec_id}/suppress",
+        # NOTE: the 5 publication governance mutations (stage/approve/publish/
+        # defer/suppress) were auth-gated on 2026-07-21 (US-P0-03 enforcement,
+        # slice 1) and intentionally removed from this baseline — they now
+        # require authentication and are no longer public debt.
         "POST /api/v1/rl/benchmarks/compare-policy",
         "POST /api/v1/rl/benchmarks/run",
         "POST /api/v1/rl/environments/{key}/validate",

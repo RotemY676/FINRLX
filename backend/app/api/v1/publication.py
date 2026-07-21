@@ -12,8 +12,10 @@ GET  /api/v1/publication/status
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth_deps import get_current_user
 from app.api.deps import make_meta
 from app.core.database import get_db
+from app.models.auth import User
 from app.schemas.common import ApiResponse
 from app.schemas.publication import (
     PublicationActionRequest,
@@ -78,28 +80,28 @@ async def get_history(rec_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/publication/recommendations/{rec_id}/stage", response_model=ApiResponse[PublicationTransitionResponse])
-async def stage_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db)):
+async def stage_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
     svc = PublicationService(db)
     result = await svc.stage(rec_id, body.actor, body.reason)
     return ApiResponse(meta=make_meta(), data=_to_transition_response(result))
 
 
 @router.post("/publication/recommendations/{rec_id}/approve", response_model=ApiResponse[PublicationTransitionResponse])
-async def approve_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db)):
+async def approve_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
     svc = PublicationService(db)
     result = await svc.approve(rec_id, body.actor, body.reason)
     return ApiResponse(meta=make_meta(), data=_to_transition_response(result))
 
 
 @router.post("/publication/recommendations/{rec_id}/publish", response_model=ApiResponse[PublicationTransitionResponse])
-async def publish_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db)):
+async def publish_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
     svc = PublicationService(db)
     result = await svc.publish(rec_id, body.actor, body.reason)
     return ApiResponse(meta=make_meta(), data=_to_transition_response(result))
 
 
 @router.post("/publication/recommendations/{rec_id}/defer", response_model=ApiResponse[PublicationTransitionResponse])
-async def defer_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db)):
+async def defer_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
     svc = PublicationService(db)
     if not body.reason:
         return ApiResponse(
@@ -114,7 +116,7 @@ async def defer_recommendation(rec_id: str, body: PublicationActionRequest, db: 
 
 
 @router.post("/publication/recommendations/{rec_id}/suppress", response_model=ApiResponse[PublicationTransitionResponse])
-async def suppress_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db)):
+async def suppress_recommendation(rec_id: str, body: PublicationActionRequest, db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
     svc = PublicationService(db)
     if not body.reason:
         return ApiResponse(

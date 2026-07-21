@@ -1,5 +1,17 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 4 (2026-07-21, on `main`) — US-P0-03 enforcement increment 1.**
+> Auth-gated the 5 publication governance mutations (stage/approve/publish/
+> defer/suppress) with `get_current_user` — they change what is published to
+> users and must never be anonymous. Chosen because a frontend-usage analysis
+> showed the core `apiFetch` sends no bearer token, so only routes the FE never
+> calls anonymously are safe to gate; these have 0 FE references. Debt baseline
+> 199→194, required routes 43→48, `unclassified` still 0. Tests:
+> `test_p0_publication_authz.py` (real-token 401/pass, parametrized over all 5)
+> + dependency-override fixtures added to the 2 workflow test files that use
+> publish as setup. Pipeline/engines/features gating deferred (used as setup in
+> ~40 test files each). Next increments follow the same FE-safe pattern.
+>
 > **Slice 3 (2026-07-21, on `main`) — US-P0-03 Route authorization matrix (audit).**
 > `app/core/route_policy.py` makes every route's auth posture explicit: an
 > intentionally-public allowlist (11) + a **labeled auth-debt baseline (199

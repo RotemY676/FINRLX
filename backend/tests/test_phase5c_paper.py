@@ -1,6 +1,21 @@
 """Phase 5C tests: paper portfolio realization."""
 import pytest
 
+from app.api.auth_deps import get_current_user
+from app.main import app
+from app.models.auth import User
+
+
+@pytest.fixture(autouse=True)
+def _authenticated_operator():
+    """The publish setup path is auth-gated (US-P0-03); inject an operator."""
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id="test-operator", email="operator@test.local", password_hash="x",
+        is_active=True, role="admin",
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
 
 async def _ensure_published(client) -> str:
     """Ensure a published recommendation exists. Returns rec_id."""
