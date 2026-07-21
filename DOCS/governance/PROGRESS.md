@@ -18,8 +18,8 @@
 | 0.7 | `WORKFLOW.md` (Rules 7–9 SOP) | lead | — | ✅ | Pipeline + push discipline. |
 | 0.8 | `PROGRESS.md` (this table, Rule 8) | lead | — | ✅ | Live table. |
 | 0.9 | `README.md` (structure map, Rule 10) | lead | — | ✅ | How it all binds. |
-| 0.10 | Commit + push governance layer (Rule 7) | lead | G4 | ⏳ | Doing now. |
-| 0.11 | Present structure to user, confirm, resume dev | lead | — | ⬜ | Awaiting user go-ahead on next track. |
+| 0.10 | Commit + push governance layer (Rule 7) | lead | G4 | ✅ | Commit `79f5621` pushed to `main`. |
+| 0.11 | Present structure to user, confirm, resume dev | lead | — | ⏳ | Structure presented; awaiting user go-ahead on next track. |
 
 ## Track P0 — Security/Ops hardening (inherited, in flight)
 

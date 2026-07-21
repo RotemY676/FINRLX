@@ -13,8 +13,8 @@
 - **What was done:**
   - Created `/CLAUDE.md` (session bootstrap that forces reading the rules first).
   - Created `DOCS/governance/`: `PROJECT_RULES.md`, `SESSION_STATE.md` (this file), `AGENT_TEAM.md`, `COUNCIL.md`, `WORKFLOW.md`, `PROGRESS.md`, `README.md`.
-- **State:** Governance layer authored. Pending: commit + push (Rule 7), then confirm structure with user before resuming feature development.
-- **Next action for a fresh session:** Verify governance files exist and are committed; then ask the user which track to resume (see "Open threads" below).
+- **State:** Governance layer authored, committed (`79f5621`), and pushed to `main`. Structure presented to user. Awaiting user's choice of next development track.
+- **Next action for a fresh session:** Ask the user which track to resume (see "Open threads" below). Do NOT auto-commit the inherited P0 working-tree changes without user review.
 
 ---
 
