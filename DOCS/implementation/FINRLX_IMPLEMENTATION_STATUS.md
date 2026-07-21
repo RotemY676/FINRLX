@@ -1,5 +1,20 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 9 (2026-07-21, on `main`) — US-P0-06 label seeded demo endpoints (increment 3).**
+> The static scan flagged `GET /regime` and `POST /scenario/simulate` +
+> `GET /scenario/baseline` as serving fabricated financial figures (regime
+> label/confidence/sector tilts; scenario expected-return deltas from hardcoded
+> baselines) with no machine-readable demo label — only a docstring. Added an
+> additive, envelope-level label: `make_meta(is_demo=True)` prepends a
+> standardized `DEMO_DATA:` entry (constant `app/api/deps.DEMO_DATA_WARNING`) to
+> `meta.warnings`. No schema change, no FE break; scenario's domain-level
+> `data.warnings` are untouched. This satisfies "demo data must be explicitly
+> labeled" at the API contract. A fuller treatment (gate behind a demo flag or
+> replace with real models, and render a UX badge) is a product/UX decision for
+> later, not blocked by this. Test: `test_p0_demo_endpoints_labeled.py`. Verify:
+> 23 focused green (incl. sprint2/4/5 regressions); full suite **1418 passed /
+> 2 skipped**; ruff + mypy clean. Reversible.
+>
 > **Slice 8 (2026-07-21, on `main`) — US-P0-06 synthetic-source fail-closed (increment 2).**
 > Closed a real zero-fiction **leak** the increment-1 scan surfaced. The beta
 > ingests deterministic synthetic bars/news under source "local"; downstream

@@ -26,10 +26,10 @@ router = APIRouter()
 
 @router.get("/regime", response_model=ApiResponse[RegimeSnapshot])
 async def get_regime():
-    """Return current regime classification. Seeded deterministic data."""
+    """Return current regime classification. Seeded deterministic demo data."""
     now = datetime.now(UTC)
     return ApiResponse(
-        meta=make_meta(),
+        meta=make_meta(is_demo=True),
         data=RegimeSnapshot(
             regime_label="Risk-on · late-cycle",
             regime_confidence=0.78,

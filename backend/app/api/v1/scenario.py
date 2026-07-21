@@ -123,10 +123,12 @@ def _simulate(params: ScenarioParams) -> ScenarioResult:
 @router.post("/scenario/simulate", response_model=ApiResponse[ScenarioResult])
 async def simulate_scenario(params: ScenarioParams):
     result = _simulate(params)
-    return ApiResponse(meta=make_meta(warnings=result.warnings), data=result)
+    return ApiResponse(
+        meta=make_meta(warnings=result.warnings, is_demo=True), data=result
+    )
 
 
 @router.get("/scenario/baseline", response_model=ApiResponse[ScenarioParams])
 async def get_baseline():
     """Return the baseline scenario parameters."""
-    return ApiResponse(meta=make_meta(), data=BASELINE)
+    return ApiResponse(meta=make_meta(is_demo=True), data=BASELINE)
