@@ -1,5 +1,17 @@
 # FINRLX — Implementation Status: DecisionPacket truth-gate scaffolding
 
+> **Slice 2 (2026-07-21, on `main`) — US-P0-01 Repository/runtime inventory.**
+> Added an admin-only machine-readable manifest at `GET /api/v1/ops/runtime-inventory`
+> (`app/services/runtime_inventory.py`, `app/schemas/inventory.py`,
+> `app/api/v1/ops_inventory.py`) enumerating routes with their real authorization
+> level (derived from the dependency graph), feature flags with live values,
+> provider **presence** (booleans only — never secrets or the DB URL), registered
+> schema contracts, and runtime pins (app/pipeline/python versions, DB dialect,
+> Railway commit SHA when present). Restricted to the established `admin` role
+> (401 anon / 403 non-admin / 200 admin). Tests: `tests/test_p0_runtime_inventory.py`
+> (5) incl. an explicit no-secret-leakage assertion. Merged and deployed directly on
+> `main` per owner request; feature-flag posture unchanged. Slice 1 detail follows.
+
 - **Date**: 2026-07-21
 - **Base commit**: `5767a5c8a56ed5db16616add7544d1b3453a8379` (`main`)
 - **Branch**: `feature/p0-truth-safety-foundation`

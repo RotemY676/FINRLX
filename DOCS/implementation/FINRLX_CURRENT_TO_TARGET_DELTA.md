@@ -63,7 +63,7 @@ against the exact commit currently checked out.
 
 | Story | Status | Evidence / note |
 |---|---|---|
-| **US-P0-01** Repository/runtime inventory | **Partially implemented** | This delta + intake inventory captured; not yet a machine-readable manifest artifact. |
+| **US-P0-01** Repository/runtime inventory | **Implemented** | Machine-readable manifest at admin-only `GET /api/v1/ops/runtime-inventory` (`runtime_inventory.py` + `inventory.py` schema): routes+auth level, flags, provider presence, schema contracts, runtime pins. Tests: `test_p0_runtime_inventory.py`. |
 | **US-P0-02** Test baseline | **Verified complete (this slice)** | Full suite green pre- and post-change; focused truth suite recorded above. |
 | **US-P0-03** Route authorization matrix | **Missing** | No repo-wide endpoint auth matrix exists; new packet route adds ownership + negative tests as a first cell. |
 | **US-P0-04** Secure web session | **Requires runtime verification** | JWT bearer present; HttpOnly server session / rotation E2E not verified here. |
