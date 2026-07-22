@@ -43,13 +43,17 @@
 | P0-06 i3 | Label seeded demo endpoints (`/regime`,`/scenario`) | G4 | ✅ | **This session** `ec6e944`. `DEMO_DATA:` in `meta.warnings`. 1418 suite green. |
 | P0-07 i1 | Wire `meta.freshness` envelope + `/pricechart` | G4 | ✅ | **This session** `038e71b`. Was never populated (silent-fresh leak). 1423 suite green. |
 | P0-07 i2 | Freshness fan-out: `/overview`, `/recommendations/current`, `/autopilot/dossier`, `/autopilot/desk/*` | G4 | ✅ | **2026-07-22.** +2 builders (`from_datetime`, `from_dossier`, fails closed). Desk-status ETag now folds in staleness. 22 focused + **1440 full suite** green. |
+| P0-04 | Secure web session — rotation hardening + replay detection | G4 | 🟡 | **2026-07-22.** Fixed latent bug: `replaced_by_id` never persisted (flush-time id) → rotation chain was unlinked. Added replay detection (revokes descendant chain), chain-scoped + cycle-safe. 1443 suite green. **Caveat:** HttpOnly cookie migration deliberately NOT done — contradicts locked Decision 2 (bearer on every call). |
 | DEPLOY-01 | `/version` deploy-verification probe (frontend) | G4 | ✅ | **2026-07-22.** Reports live commit/branch/repo from `RAILWAY_GIT_*`. Makes "is the newest push live?" answerable — previously only 200s were observable. |
 | P0-08 | Unified readiness endpoint + jobs component | — | ✅ | On `main` (e3ba39a, d1a772d). |
 
 ## Remaining P0 work (priority order) — MODE: full autonomous, no check-ins
 - ✅ **US-P0-07** — freshness envelope wired across every surface that serves market data: `/pricechart` (i1), plus `/overview`, `/recommendations/current`, `/autopilot/dossier`, `/autopilot/desk/{ticker}/status` and `/autopilot/desk/{ticker}/{section}` (i2).
   - 🟡 **Scope correction:** `/analysis/single-ticker` was on the i1 follow-up list but **cannot carry `meta.freshness`** — it returns a raw `HTMLResponse`, not the `ApiResponse` envelope, so there is no `meta` to populate. Declaring freshness there needs a different mechanism (in-document banner or a response header); logged, not silently dropped.
-- ⬜ **US-P0-04** — secure web session (HttpOnly / rotation / CSRF E2E).
+- 🟡 **US-P0-04** — secure web session. **Rotation + CSRF done**; HttpOnly deliberately deferred.
+  - Rotation: hardened with replay detection (a replayed token burns its descendant chain) **and** a latent bug fixed — `replaced_by_id` had never been persisted, so the chain existed only in intent.
+  - CSRF: structurally N/A for a bearer-token API (no ambient credentials to ride). The only cookie, Google OAuth `state`, already has HttpOnly + SameSite=Lax + state matching.
+  - **HttpOnly cookie session: NOT done, by decision.** It contradicts locked Decision 2 (FE sends a bearer on every call). Revisit only if that product decision is reopened.
 - ⬜ **US-P0-05** — full CSP/web-hardening review.
 - ⬜ **US-P0-03 continued (UNPARKED)** — beta auth-model decided: **FE sends bearer on every call → gate everything**. Bulk auth-gate the remaining 192 `AUTH_DEBT_BASELINE` routes toward zero debt (add operator-override fixtures where tests call anonymously). Memory: `project_beta_auth_model`.
 - ✅ **US-P0-06** — zero-fiction: static scan + fail-closed synthetic sources + demo labels (i1–i3 done). Follow-up only: demo-flag gating / real regime model (product decision).

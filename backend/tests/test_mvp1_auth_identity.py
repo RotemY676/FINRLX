@@ -352,3 +352,102 @@ async def test_wrong_typ_claim_is_rejected(client):
     )
     r = await client.get("/api/v1/auth/me", headers=_bearer(bad_typ))
     assert r.status_code == 401
+
+
+# ---------- US-P0-04: refresh-token replay kills the whole chain ------------
+#
+# Rotation alone is not enough. If a rotated (already revoked) token is
+# presented again, it leaked — but the attacker or the victim still holds the
+# live child issued by the legitimate rotation, so simply 401-ing the replayed
+# request leaves a working session in the thief's hands. Replay must burn the
+# whole descendant chain and force a fresh login.
+
+
+@pytest.mark.asyncio
+async def test_replaying_a_rotated_token_revokes_the_live_descendant(client):
+    email = _u("replay-chain")
+    r0 = (await _signup(client, email)).json()["tokens"]["refresh_token"]
+
+    r1 = (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": r0}
+    )).json()["refresh_token"]
+    r2_res = await client.post("/api/v1/auth/refresh", json={"refresh_token": r1})
+    assert r2_res.status_code == 200, r2_res.text
+    r2 = r2_res.json()["refresh_token"]
+
+    # Sanity: the newest token is live before the replay.
+    assert r2 not in (r0, r1)
+
+    # Attacker replays the oldest, long-rotated token.
+    replayed = await client.post("/api/v1/auth/refresh", json={"refresh_token": r0})
+    assert replayed.status_code == 401
+
+    # The live descendant must now be dead too — this is the point of the story.
+    after = await client.post("/api/v1/auth/refresh", json={"refresh_token": r2})
+    assert after.status_code == 401, (
+        "replay detection must revoke the descendant chain, not just the "
+        "replayed token — otherwise the stolen session survives"
+    )
+
+
+@pytest.mark.asyncio
+async def test_replay_does_not_touch_other_sessions_of_the_same_user(client):
+    """Revocation is chain-scoped: a second device must not be logged out."""
+    email = _u("replay-scope")
+    await _signup(client, email)
+
+    # Two independent sessions (separate logins => separate chains).
+    chain_a = (await _login(client, email)).json()["tokens"]["refresh_token"]
+    chain_b = (await _login(client, email)).json()["tokens"]["refresh_token"]
+
+    rotated_a = (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": chain_a}
+    )).json()["refresh_token"]
+
+    # Replay chain A's parent -> A dies.
+    assert (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": chain_a}
+    )).status_code == 401
+    assert (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": rotated_a}
+    )).status_code == 401
+
+    # Chain B is a different session and must survive.
+    still_alive = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": chain_b}
+    )
+    assert still_alive.status_code == 200, (
+        "replay on one chain must not log the user out of unrelated sessions"
+    )
+
+
+@pytest.mark.asyncio
+async def test_replay_revocation_terminates_on_a_cyclic_chain(client):
+    """A corrupt/crafted cycle must not hang the endpoint."""
+    from sqlalchemy import select
+
+    email = _u("replay-cycle")
+    r0 = (await _signup(client, email)).json()["tokens"]["refresh_token"]
+    r1 = (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": r0}
+    )).json()["refresh_token"]
+
+    # Point the child back at its parent, creating parent -> child -> parent.
+    async with AsyncSessionLocal() as db:
+        parent = (await db.execute(
+            select(RefreshToken).where(
+                RefreshToken.token_hash == hash_refresh_token(r0)
+            )
+        )).scalar_one()
+        child = (await db.execute(
+            select(RefreshToken).where(
+                RefreshToken.token_hash == hash_refresh_token(r1)
+            )
+        )).scalar_one()
+        child.replaced_by_id = parent.id
+        await db.commit()
+
+    # Must return promptly rather than looping forever.
+    assert (await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": r0}
+    )).status_code == 401

@@ -12,7 +12,10 @@ Security notes:
 - Email comparison is lower-cased to prevent case-based bypass
 - Generic error messages on auth failures (no username enumeration)
 - Email allowlist enforced when settings.require_email_allowlist=True
+- US-P0-04: replaying an already-rotated refresh token revokes the whole
+  descendant chain (OAuth 2.0 Security BCP §4.14.2 replay detection)
 """
+import logging
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -43,6 +46,8 @@ from app.schemas.auth import (
     TokenPair,
     UserPublic,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -88,6 +93,12 @@ async def _issue_token_pair(
 
     The refresh_row is returned by reference so callers (e.g. /auth/refresh)
     can link parent->child without a second SELECT (which was race-prone).
+
+    The flush below is load-bearing: `RefreshToken.id` is a Python-side column
+    default (`default=gen_uuid`) applied at INSERT, so before flushing the
+    attribute is still None. Without it, `parent.replaced_by_id = child.id`
+    silently persisted NULL and the rotation chain was never actually linked —
+    which US-P0-04 replay detection needs to walk.
     """
     access_token, access_expires = issue_access_token(user_id=user.id, role=user.role)
     refresh_plain, refresh_hashed = generate_refresh_token_pair()
@@ -99,12 +110,45 @@ async def _issue_token_pair(
         ip_address=(request.client.host if request.client else None),
     )
     db.add(refresh_row)
+    await db.flush()  # populates refresh_row.id — see docstring
     pair = TokenPair(
         access_token=access_token,
         refresh_token=refresh_plain,
         access_token_expires_at=access_expires,
     )
     return pair, refresh_row
+
+
+async def _revoke_descendants(
+    db: AsyncSession, start: RefreshToken, now: datetime
+) -> int:
+    """Revoke every token descended from ``start`` via the rotation chain.
+
+    US-P0-04. Rotation already revoked the parent on each refresh, so a client
+    presenting an *already revoked* token is replaying one that should have
+    been discarded — the signature of a stolen token. Rejecting that single
+    request is not enough: whoever rotated it legitimately still holds a live
+    child, so the attacker (or the victim) keeps a working session.
+
+    Walking `replaced_by_id` forward and revoking the chain kills both sides,
+    forcing a fresh login. The `seen` set guards against a cyclic chain
+    (corruption or a crafted row) turning this into an infinite loop.
+    """
+    revoked = 0
+    seen = {start.id}
+    cursor = start.replaced_by_id
+    while cursor and cursor not in seen:
+        seen.add(cursor)
+        row = (await db.execute(
+            select(RefreshToken).where(RefreshToken.id == cursor)
+        )).scalar_one_or_none()
+        if row is None:
+            break
+        if row.revoked_at is None:
+            row.revoked_at = now
+            revoked += 1
+        cursor = row.replaced_by_id
+    return revoked
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
@@ -194,6 +238,15 @@ async def refresh(
 
     now = datetime.now(UTC)
     if refresh_row.revoked_at is not None:
+        # US-P0-04 replay detection: a revoked token being presented again means
+        # it leaked. Kill the whole chain descended from it, not just this call.
+        revoked = await _revoke_descendants(db, refresh_row, now)
+        await db.commit()
+        logger.warning(
+            "refresh token replay detected for user %s; revoked %d descendant token(s)",
+            refresh_row.user_id,
+            revoked,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
     # SQLite strips tz info on round-trip; treat naive timestamps as UTC.
     expires_at = refresh_row.expires_at
