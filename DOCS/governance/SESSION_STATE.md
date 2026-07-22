@@ -8,17 +8,25 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
-### Entry — 2026-07-22 · Git remote / Railway deploy chain verified + repaired
-- **User request:** verify which GitHub the repo points at; connect to Railway CLI and point the FINRL-X project at the new git address; ensure deploys flow from the new git to the existing Railway.
-- **Finding (truth-first):** two remotes existed — `origin` = `github.com/rotemyoeli/FINRLX` (live) and `github` = `github.com/RotemY676/FINRLX` (**404, repository not found**). Local `main` tracked the dead `github/main`, so a plain `git push` on `main` would have failed. Nothing was unpushed (local == `origin/main` == `b4f900c`).
-- **Railway needed NO change:** project `FINRL-X` (`3f8432e2-11eb-4377-aabf-d5180058bc35`, workspace "rotemyoeli's Projects", env `production`) — both git-backed services already have `source.repo = rotemyoeli/FINRLX`, branch `main`:
-  - `FinRL-X` (frontend) `35d09d3f…` — root `/frontend`, `/frontend/railway.toml`, domain `frontend-production-7e8b1.up.railway.app`
-  - `backend` `509b0240…` — root `/backend`, `/backend/railway.toml`, domain `backend-production-aab8.up.railway.app`
-  - `postgres` `9c298164…` — image-based (`postgres-ssl:18`), no repo.
-- **Repair applied (local git config only, nothing committed):** `git branch --set-upstream-to=origin/main main` + `git remote remove github`. Sole remote is now `origin`.
-- **Verified live:** latest Railway deploy on both services = commit `b4f900c` / branch `main` / repo `rotemyoeli/FINRLX`, status **SUCCESS** (2026-07-22 12:52 UTC) — proving push→auto-deploy works. `GET /healthz` → **200**, frontend `GET /` → **200**.
-- **Standing rule from here:** deploy path is `git push origin main` → Railway auto-deploys both services. No `railway up` needed; do not re-add a second remote.
-- **NEXT:** unchanged — resume US-P0-07 follow-ups (see entry below).
+### Entry — 2026-07-22 · Migrated the deploy chain to the NEW GitHub repo (RotemY676/FINRLX)
+- **User request:** verify which GitHub the repo points at; connect to Railway CLI and point the FINRL-X project at the **new** git address; ensure deploys flow new-git → existing Railway.
+- **⚠️ Correction to my first pass in this session (recorded for truth):** I initially concluded `RotemY676/FINRLX` did not exist, because `git ls-remote` returned `Repository not found`. That was a **404 masking an authorization failure** — GitHub hides repos the credential can't access. The repo is real. Acting on that wrong conclusion I removed the remote pointing at it, repointed `main` at the old repo, and pushed `b7887f5` to the **old** repo. All three were reversed. **Lesson: never read a GitHub 404 as non-existence without an anonymous re-check.**
+- **The two repos:**
+  - **NEW / canonical:** `github.com/RotemY676/FINRLX` — created 2026-07-22 15:54:15 UTC, **public**, not a fork, full 374-commit history, `main` @ `b4f900c`.
+  - **OLD / retired:** `github.com/rotemyoeli/FINRLX` — private, `main` @ `b7887f5`.
+- **Railway repointed via GraphQL `serviceConnect`** (the CLI has *no* command for source repo; the CLI OAuth token in `~/.railway/config.json` → `user.accessToken` works against `https://backboard.railway.com/graphql/v2`, even though the `githubRepos` query returns Not Authorized). Project `FINRL-X` `3f8432e2-…`, env `production` `f8e70246-…`:
+  - `FinRL-X` (frontend) `35d09d3f-…` → `RotemY676/FINRLX` @ `main`, root `/frontend`, `frontend-production-7e8b1.up.railway.app`
+  - `backend` `509b0240-…` → `RotemY676/FINRLX` @ `main`, root `/backend`, `backend-production-aab8.up.railway.app`, health `/healthz`
+  - `postgres` `9c298164-…` — image-based, untouched.
+  - **`rootDirectory` survived the reconnect** on both (verified `/frontend`, `/backend`) — this was the main breakage risk.
+- **Local git remotes now:** `origin` = **RotemY676/FINRLX** (main tracks `origin/main`), `old-rotemyoeli` = the retired private repo (kept temporarily as a safety net).
+- **🔴 OPEN / BLOCKED — needs the user, cannot be done from this account:**
+  1. **Push access.** `gh`/git are authenticated as `rotemyoeli`; pushing to `RotemY676/FINRLX` returns `403 Permission … denied to rotemyoeli`. User agreed to **add `rotemyoeli` as a collaborator** with write access. Until then **nothing can be pushed to the new repo.**
+  2. **Local is ahead 1** — commit `b7887f5` (governance docs) exists only in the OLD repo and must be pushed to the new one once access lands.
+  3. **Visibility.** New repo is **public** with the full 374-commit history of a private platform. User chose **make it private**; requires admin on `RotemY676` (a collaborator cannot). Any credential that ever appeared in history should be treated as exposed and rotated.
+  4. **Auto-deploy on push to the new repo is NOT yet proven** — the deploys observed were triggered by `serviceConnect`, not by a push webhook. Confirm with the first real push once access exists.
+- **Standing rule from here:** deploy path is `git push origin main` (→ `RotemY676/FINRLX`) → Railway auto-deploys both services. Never `railway up` (uploads the local tree, bypasses git). Do not push to `old-rotemyoeli`.
+- **NEXT:** unblock the 4 items above, then resume US-P0-07 follow-ups (see entry below).
 
 ### Entry — 2026-07-21 · US-P0-07 i1 shipped (freshness envelope)
 - **Shipped:** `038e71b` — `app/services/freshness_state.py` + `make_meta(freshness=...)` + `/pricechart` wiring. `meta.freshness` was never populated (silent-fresh leak); now declared. Full suite **1423 passed / 2 skipped**; ruff/mypy clean.
