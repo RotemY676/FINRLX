@@ -1,10 +1,14 @@
 name: CI
 
+# Minutes budget (private repo, 2,000 free Actions min/month): CI runs on PRs to
+# main and on manual dispatch — NOT on every push to main. Frequent direct pushes
+# used to trigger a run each, which exhausted the free tier. The heavy Playwright
+# e2e job (chromium install + browser run + trace artifacts) was removed from CI;
+# run it locally with `npm run e2e:ci` when touching visible flows.
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  workflow_dispatch: {}
 
 # Cancel earlier runs of the same branch — devs push frequently in MVP.
 concurrency:
@@ -75,19 +79,3 @@ jobs:
 
       - name: Next.js build
         run: npm run build
-
-      - name: Install Playwright chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Playwright E2E (Chromium)
-        run: npm run e2e:ci
-
-      - name: Upload Playwright artifacts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-trace
-          path: |
-            frontend/test-results/
-            frontend/playwright-report/
-          retention-days: 7
