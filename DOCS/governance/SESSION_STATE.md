@@ -8,6 +8,18 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-22 · Git remote / Railway deploy chain verified + repaired
+- **User request:** verify which GitHub the repo points at; connect to Railway CLI and point the FINRL-X project at the new git address; ensure deploys flow from the new git to the existing Railway.
+- **Finding (truth-first):** two remotes existed — `origin` = `github.com/rotemyoeli/FINRLX` (live) and `github` = `github.com/RotemY676/FINRLX` (**404, repository not found**). Local `main` tracked the dead `github/main`, so a plain `git push` on `main` would have failed. Nothing was unpushed (local == `origin/main` == `b4f900c`).
+- **Railway needed NO change:** project `FINRL-X` (`3f8432e2-11eb-4377-aabf-d5180058bc35`, workspace "rotemyoeli's Projects", env `production`) — both git-backed services already have `source.repo = rotemyoeli/FINRLX`, branch `main`:
+  - `FinRL-X` (frontend) `35d09d3f…` — root `/frontend`, `/frontend/railway.toml`, domain `frontend-production-7e8b1.up.railway.app`
+  - `backend` `509b0240…` — root `/backend`, `/backend/railway.toml`, domain `backend-production-aab8.up.railway.app`
+  - `postgres` `9c298164…` — image-based (`postgres-ssl:18`), no repo.
+- **Repair applied (local git config only, nothing committed):** `git branch --set-upstream-to=origin/main main` + `git remote remove github`. Sole remote is now `origin`.
+- **Verified live:** latest Railway deploy on both services = commit `b4f900c` / branch `main` / repo `rotemyoeli/FINRLX`, status **SUCCESS** (2026-07-22 12:52 UTC) — proving push→auto-deploy works. `GET /healthz` → **200**, frontend `GET /` → **200**.
+- **Standing rule from here:** deploy path is `git push origin main` → Railway auto-deploys both services. No `railway up` needed; do not re-add a second remote.
+- **NEXT:** unchanged — resume US-P0-07 follow-ups (see entry below).
+
 ### Entry — 2026-07-21 · US-P0-07 i1 shipped (freshness envelope)
 - **Shipped:** `038e71b` — `app/services/freshness_state.py` + `make_meta(freshness=...)` + `/pricechart` wiring. `meta.freshness` was never populated (silent-fresh leak); now declared. Full suite **1423 passed / 2 skipped**; ruff/mypy clean.
 - **NEXT (autonomous, no approval):** US-P0-07 follow-ups (wire freshness into `/autopilot/dossier`, `/autopilot/desk/*`, `/analysis/single-ticker`, `/recommendations/current`, `/overview`), then **US-P0-04** (secure web session), **US-P0-05** (CSP), then **US-P0-03 bulk gating** (192 debt routes → zero, per decided auth model). Registries `research/finrlx_cpu/*.json` remain dirty by design.
