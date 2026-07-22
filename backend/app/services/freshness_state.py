@@ -11,7 +11,9 @@ last point on a price chart). `None` (no data) is treated as stale, not fresh.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, date, datetime
+from typing import Any
 
 from app.schemas.common import FreshnessState
 from app.services.price_freshness import classify_lag
@@ -43,3 +45,42 @@ def freshness_state_from_latest(
     return FreshnessState(
         data_as_of=data_as_of, is_stale=is_stale, staleness_reason=reason
     )
+
+
+def freshness_state_from_datetime(
+    moment: datetime | None, now: datetime | None = None
+) -> FreshnessState:
+    """FreshnessState for a surface whose newest data carries a timestamp.
+
+    Used by surfaces that persist `data_as_of` as a datetime (recommendations)
+    rather than a session date. `None` stays stale — the no-data path must
+    never read as silently fresh.
+    """
+    return freshness_state_from_latest(moment.date() if moment else None, now=now)
+
+
+def freshness_state_from_dossier(
+    dossier: Mapping[str, Any] | None, now: datetime | None = None
+) -> FreshnessState:
+    """FreshnessState for an autopilot dossier payload.
+
+    The dossier already carries a domain freshness block
+    (``{"latest_bar": "YYYY-MM-DD", ...}``) describing the newest ingested bar,
+    but the *envelope* never declared staleness. This reads that block and
+    fails closed: a missing/absent/unparseable ``latest_bar`` is stale, not
+    fresh, so a malformed payload can never be served as current.
+    """
+    latest: date | None = None
+    raw = (dossier or {}).get("freshness") if isinstance(dossier, Mapping) else None
+    if isinstance(raw, Mapping):
+        value = raw.get("latest_bar")
+        if isinstance(value, date) and not isinstance(value, datetime):
+            latest = value
+        elif isinstance(value, datetime):
+            latest = value.date()
+        elif isinstance(value, str):
+            try:
+                latest = date.fromisoformat(value)
+            except ValueError:
+                latest = None
+    return freshness_state_from_latest(latest, now=now)

@@ -14,6 +14,7 @@ from app.models.recommendation import Recommendation, RecommendationWeight
 from app.models.reference import Asset
 from app.schemas.common import ApiResponse
 from app.schemas.recommendation import ConfidenceTriplet, RecommendationDetail, WeightEntry
+from app.services.freshness_state import freshness_state_from_datetime
 
 router = APIRouter()
 
@@ -96,7 +97,13 @@ async def get_current_recommendation(db: AsyncSession = Depends(get_db)):
                         "A newer pipeline-generated draft exists but is not published yet."
                     )
         detail = await _build_recommendation_detail(published, db)
-        return ApiResponse(meta=make_meta(warnings=warnings if warnings else None), data=detail)
+        return ApiResponse(
+            meta=make_meta(
+                warnings=warnings if warnings else None,
+                freshness=freshness_state_from_datetime(published.data_as_of),
+            ),
+            data=detail,
+        )
 
     if latest_draft:
         # No published, but draft exists — return it with warning
@@ -104,10 +111,20 @@ async def get_current_recommendation(db: AsyncSession = Depends(get_db)):
             "No published recommendation exists; returning latest pipeline-generated draft."
         )
         detail = await _build_recommendation_detail(latest_draft, db)
-        return ApiResponse(meta=make_meta(warnings=warnings), data=detail)
+        return ApiResponse(
+            meta=make_meta(
+                warnings=warnings,
+                freshness=freshness_state_from_datetime(latest_draft.data_as_of),
+            ),
+            data=detail,
+        )
 
+    # US-P0-07: nothing served -> explicitly stale, never silently fresh.
     return ApiResponse(
-        meta=make_meta(warnings=["No published recommendation found"]),
+        meta=make_meta(
+            warnings=["No published recommendation found"],
+            freshness=freshness_state_from_datetime(None),
+        ),
         data=None,
     )
 

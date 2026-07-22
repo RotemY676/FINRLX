@@ -13,6 +13,7 @@ from app.models.recommendation import Recommendation, RecommendationWeight
 from app.schemas.common import ApiResponse
 from app.schemas.overview import HealthSummary, OverviewResponse
 from app.schemas.recommendation import ConfidenceTriplet, RecommendationSummary
+from app.services.freshness_state import freshness_state_from_datetime
 
 router = APIRouter()
 
@@ -106,7 +107,12 @@ async def get_overview(db: AsyncSession = Depends(get_db)):
         last_published_at=rec.published_at if rec else None,
     )
 
+    # US-P0-07: declare the age of the recommendation we served. No rec (or a
+    # rec with no data_as_of) is stale, never silently fresh.
     return ApiResponse(
-        meta=make_meta(warnings=meta_warnings if meta_warnings else None),
+        meta=make_meta(
+            warnings=meta_warnings if meta_warnings else None,
+            freshness=freshness_state_from_datetime(rec.data_as_of if rec else None),
+        ),
         data=overview,
     )

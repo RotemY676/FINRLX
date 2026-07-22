@@ -42,10 +42,13 @@
 | P0-06 i2 | Fail-closed on synthetic ingest sources (allowlist) | G4 | ✅ | **This session** `52dda91`. Fixed a real fail-open leak: "local" beta data now blocked. 1414 suite green. |
 | P0-06 i3 | Label seeded demo endpoints (`/regime`,`/scenario`) | G4 | ✅ | **This session** `ec6e944`. `DEMO_DATA:` in `meta.warnings`. 1418 suite green. |
 | P0-07 i1 | Wire `meta.freshness` envelope + `/pricechart` | G4 | ✅ | **This session** `038e71b`. Was never populated (silent-fresh leak). 1423 suite green. |
+| P0-07 i2 | Freshness fan-out: `/overview`, `/recommendations/current`, `/autopilot/dossier`, `/autopilot/desk/*` | G4 | ✅ | **2026-07-22.** +2 builders (`from_datetime`, `from_dossier`, fails closed). Desk-status ETag now folds in staleness. 22 focused + **1440 full suite** green. |
+| DEPLOY-01 | `/version` deploy-verification probe (frontend) | G4 | ✅ | **2026-07-22.** Reports live commit/branch/repo from `RAILWAY_GIT_*`. Makes "is the newest push live?" answerable — previously only 200s were observable. |
 | P0-08 | Unified readiness endpoint + jobs component | — | ✅ | On `main` (e3ba39a, d1a772d). |
 
 ## Remaining P0 work (priority order) — MODE: full autonomous, no check-ins
-- ⏳ **US-P0-07** — freshness envelope wired (i1 `/pricechart` ✅); follow-ups: dossier/desk/analysis/recommendations/overview surfaces.
+- ✅ **US-P0-07** — freshness envelope wired across every surface that serves market data: `/pricechart` (i1), plus `/overview`, `/recommendations/current`, `/autopilot/dossier`, `/autopilot/desk/{ticker}/status` and `/autopilot/desk/{ticker}/{section}` (i2).
+  - 🟡 **Scope correction:** `/analysis/single-ticker` was on the i1 follow-up list but **cannot carry `meta.freshness`** — it returns a raw `HTMLResponse`, not the `ApiResponse` envelope, so there is no `meta` to populate. Declaring freshness there needs a different mechanism (in-document banner or a response header); logged, not silently dropped.
 - ⬜ **US-P0-04** — secure web session (HttpOnly / rotation / CSRF E2E).
 - ⬜ **US-P0-05** — full CSP/web-hardening review.
 - ⬜ **US-P0-03 continued (UNPARKED)** — beta auth-model decided: **FE sends bearer on every call → gate everything**. Bulk auth-gate the remaining 192 `AUTH_DEBT_BASELINE` routes toward zero debt (add operator-override fixtures where tests call anonymously). Memory: `project_beta_auth_model`.

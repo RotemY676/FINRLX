@@ -27,6 +27,7 @@ from app.services.autopilot_store import (
 from app.services.desk_elevation import elevate
 from app.services.desk_methods import method_block
 from app.services.desk_status import RateLimiter, compute_desk_status
+from app.services.freshness_state import freshness_state_from_dossier
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -73,7 +74,16 @@ async def autopilot_dossier(
     elapsed_ms = int((time.time() - t0) * 1000)
     logger.info("autopilot dossier %s: %d ms (cache=%s)",
                 dossier["ticker"], elapsed_ms, dossier.get("served_from_cache"))
-    return {"meta": {"duration_ms": elapsed_ms}, "data": dossier}
+    # US-P0-07: the dossier's own freshness block describes the newest ingested
+    # bar; the envelope must also DECLARE whether that is stale (a cached
+    # dossier can be served long after its bars went out of date).
+    return {
+        "meta": {
+            "duration_ms": elapsed_ms,
+            "freshness": freshness_state_from_dossier(dossier).model_dump(mode="json"),
+        },
+        "data": dossier,
+    }
 
 
 @router.get(
@@ -179,10 +189,18 @@ async def autopilot_desk_status(
         )
     alerts = await _open_ticker_alerts(db, dossier["ticker"])
     body = compute_desk_status(dossier, alerts_unseen=len(alerts))
-    etag = f'W/"{body["fingerprint"]}"'
+    # US-P0-07: declare the age of the persisted dossier the dials are read from.
+    freshness = freshness_state_from_dossier(dossier)
+    # The staleness flag is folded into the ETag deliberately: a dossier that
+    # goes stale while its content is unchanged would otherwise keep answering
+    # 304, leaving the client showing a "fresh" reading indefinitely.
+    etag = f'W/"{body["fingerprint"]}-{"stale" if freshness.is_stale else "fresh"}"'
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})
-    return JSONResponse(content={"data": body}, headers={"ETag": etag})
+    return JSONResponse(
+        content={"meta": {"freshness": freshness.model_dump(mode="json")}, "data": body},
+        headers={"ETag": etag},
+    )
 
 
 @router.get(
@@ -228,8 +246,12 @@ async def autopilot_desk_section(
         # LEAP A6: surface S8 material-change alerts for this ticker so the
         # desk can show them live; evidence-linked, read-only.
         payload["alerts"] = await _open_ticker_alerts(db, dossier["ticker"])
-    return {"data": {"ticker": dossier["ticker"], "section": section,
-                     "generated_at": dossier["generated_at"], "payload": payload}}
+    # US-P0-07: every streamed section declares the age of the dossier it slices.
+    return {
+        "meta": {"freshness": freshness_state_from_dossier(dossier).model_dump(mode="json")},
+        "data": {"ticker": dossier["ticker"], "section": section,
+                 "generated_at": dossier["generated_at"], "payload": payload},
+    }
 
 
 async def _open_ticker_alerts(db: AsyncSession, ticker: str) -> list[dict]:
