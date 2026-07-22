@@ -26,6 +26,7 @@ On **every new session** (and whenever the plugin/IDE restarts), before touching
 10. This whole infrastructure is file-based and tightly managed (see `README.md`).
 
 11. **Autonomous execution** (granted 2026-07-21): the Council approves all stage transitions; do **not** stop for user approval until the whole dev process is done — except the emergency stop-conditions in `COUNCIL.md`.
+12. **One repo only** (set 2026-07-22): the project works exclusively against `github.com/RotemY676/FINRLX` (`origin`). `rotemyoeli/FINRLX` is retired — never push to it or re-add it. Deploy = `git push origin main` → Railway `FINRL-X`; never `railway up`.
 
 ## Non-negotiables (from user memory)
 

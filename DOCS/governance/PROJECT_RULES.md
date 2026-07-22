@@ -54,6 +54,14 @@ This entire governance system is built at the file / Markdown level. Its structu
 ## Rule 11 — Autonomous, Council-governed execution (granted 2026-07-21)
 The **Council owns all stage-transition approvals**. No per-stage approval from the user is required. Once a development process is underway, **do not stop** until the entire process is complete — running each slice `research → implement → verify → Council gate → commit+push → next` continuously. Prefer a safe, reversible default over pausing. The **only** permitted stops are the emergency stop-conditions in `COUNCIL.md` ("Emergency stop-conditions"). This rule does not weaken truth-first (Rule elsewhere / user memory): the Council still may not advance on unverified or overstated claims.
 
+## Rule 12 — One repo only: `RotemY676/FINRLX` (set 2026-07-22)
+The project works **exclusively** against `https://github.com/RotemY676/FINRLX`. This is the single canonical remote and must be the only remote configured (`origin`).
+
+- The previous repo `rotemyoeli/FINRLX` is **retired**. Do not push to it, do not re-add it as a remote, do not treat it as a source of truth. It was removed from the local remote set on 2026-07-22.
+- Railway project `FINRL-X` deploys both git-backed services (`FinRL-X` frontend, `backend`) from this repo @ `main`. Deploying = `git push origin main`. **Never `railway up`** — it uploads the local working tree and bypasses git entirely.
+- Repointing a Railway service's source repo has **no CLI command**. Use the GraphQL `serviceConnect` mutation against `https://backboard.railway.com/graphql/v2` with the CLI's `user.accessToken` from `~/.railway/config.json`. Verify `rootDirectory` survived the reconnect.
+- **Never interpret a GitHub `404 / Repository not found` as proof a repo does not exist.** GitHub returns 404 to mask repos the current credential cannot access. Re-check anonymously (`git -c credential.helper= ls-remote <url>`) before concluding anything.
+
 ---
 
 ### Precedence

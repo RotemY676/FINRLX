@@ -19,7 +19,8 @@
   - `backend` `509b0240-…` → `RotemY676/FINRLX` @ `main`, root `/backend`, `backend-production-aab8.up.railway.app`, health `/healthz`
   - `postgres` `9c298164-…` — image-based, untouched.
   - **`rootDirectory` survived the reconnect** on both (verified `/frontend`, `/backend`) — this was the main breakage risk.
-- **Local git remotes now:** `origin` = **RotemY676/FINRLX** (main tracks `origin/main`), `old-rotemyoeli` = the retired private repo (kept temporarily as a safety net).
+- **Exclusivity locked (user instruction, 2026-07-22):** the project now works **only** against `RotemY676/FINRLX`. Codified as **Rule 12** in `PROJECT_RULES.md` + the `CLAUDE.md` summary. The `old-rotemyoeli` remote was **removed**; `origin` = `RotemY676/FINRLX` is the sole remote.
+- **Before removing the old remote I checked its 6 branches:** `main` + 4 feature branches (`desk/w1-core`, `leap/F0-bootstrap`, `leap/L0-program-plan`, `leap/S7b-pro-migration`) were all already **merged into main**. One was not: `railway/fix-deploy-d8676d` (`899ce31`, a `railway-app[bot]` ESLint fix from 2026-05-01, 4 admin files) — preserved as local branch **`archive/railway-fix-deploy-d8676d`** so nothing is lost. It is stale (main is ~289 files past it, frontend builds green) — drop it unless a reason surfaces.
 - **🔴 OPEN / BLOCKED — needs the user, cannot be done from this account:**
   1. **Push access.** `gh`/git are authenticated as `rotemyoeli`; pushing to `RotemY676/FINRLX` returns `403 Permission … denied to rotemyoeli`. User agreed to **add `rotemyoeli` as a collaborator** with write access. Until then **nothing can be pushed to the new repo.**
   2. **Local is ahead 1** — commit `b7887f5` (governance docs) exists only in the OLD repo and must be pushed to the new one once access lands.
