@@ -27,6 +27,7 @@
   - **Fix:** `deploymentTriggerCreate(input: {projectId, environmentId, serviceId, provider:"github", repository:"RotemY676/FINRLX", branch:"main"})` — one per git-backed service. Created `886d94e4…` (FinRL-X) and `60bfaa09…` (backend); both verified present.
   - `rootDirectory` was deliberately **omitted** from the triggers to preserve the previous behaviour (every push to `main` rebuilds both services, including docs-only commits). Set it per-trigger if you later want path-filtered builds.
   - **Lesson for any future Railway repoint: `serviceConnect` alone is NOT enough — always verify `repoTriggers` is non-empty and prove auto-deploy with a real push.**
+- **✅ CHAIN PROVEN END-TO-END (2026-07-22 19:25 local).** Push of `11f6247` to `RotemY676/FINRLX` triggered a webhook deploy on both services **within seconds** (no manual action): `BUILDING → SUCCESS@11f6247` on both, settled in ~90s. `GET /healthz` → **200**, frontend `GET /` → **200**, both serving `11f6247`. Sole remote is `origin` = `RotemY676/FINRLX`; local `main` == `origin/main`. **The migration is complete and verified.**
 - **Standing rule from here:** deploy path is `git push origin main` (→ `RotemY676/FINRLX`) → Railway auto-deploys both services. Never `railway up` (uploads the local tree, bypasses git). Do not push to `old-rotemyoeli`.
 - **NEXT:** unblock the 4 items above, then resume US-P0-07 follow-ups (see entry below).
 
