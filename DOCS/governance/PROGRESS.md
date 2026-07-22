@@ -54,7 +54,10 @@
   - Rotation: hardened with replay detection (a replayed token burns its descendant chain) **and** a latent bug fixed — `replaced_by_id` had never been persisted, so the chain existed only in intent.
   - CSRF: structurally N/A for a bearer-token API (no ambient credentials to ride). The only cookie, Google OAuth `state`, already has HttpOnly + SameSite=Lax + state matching.
   - **HttpOnly cookie session: NOT done, by decision.** It contradicts locked Decision 2 (FE sends a bearer on every call). Revisit only if that product decision is reopened.
-- ⬜ **US-P0-05** — full CSP/web-hardening review.
+- 🟡 **US-P0-05** — CSP / web hardening. **Frontend now sends a CSP + 6 defense-in-depth headers** (`frontend/next.config.js` `headers()`), pinned by `src/__tests__/security-headers.test.ts`.
+  - **Audit finding:** the live frontend was serving **zero** security headers while `security_headers.py` claimed it set its own CSP. A documented control that did not exist; comment corrected.
+  - **Known limitation (tested, not hidden):** `script-src` still allows `'unsafe-inline'`/`'unsafe-eval'` — the root layout injects an inline theme script and the Next runtime needs eval. Nonce-based hardening via middleware is the follow-up. Everything structural (`frame-ancestors`, `base-uri`, `object-src`, `form-action`, `default-src`, `connect-src`) is enforced.
+  - **Trap for whoever touches this next:** `headers()` is evaluated at **build** time into `routes-manifest.json`; `next start` never re-reads it. A build without `NEXT_PUBLIC_API_BASE_URL` therefore emits `connect-src 'self'` and blocks every API call. The origin is pinned with the same fallback `services/api.ts` uses — keep the two in sync.
 - ⬜ **US-P0-03 continued (UNPARKED)** — beta auth-model decided: **FE sends bearer on every call → gate everything**. Bulk auth-gate the remaining 192 `AUTH_DEBT_BASELINE` routes toward zero debt (add operator-override fixtures where tests call anonymously). Memory: `project_beta_auth_model`.
 - ✅ **US-P0-06** — zero-fiction: static scan + fail-closed synthetic sources + demo labels (i1–i3 done). Follow-up only: demo-flag gating / real regime model (product decision).
 

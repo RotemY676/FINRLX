@@ -6,8 +6,14 @@ that scanners look for (clickjacking, MIME sniffing, downgrade, referrer
 leakage).
 
 Notes:
-- CSP is intentionally NOT set here because this is a JSON API. The
-  frontend (Next.js) sets its own CSP via next.config.js / meta tags.
+- CSP is intentionally NOT set here because this is a JSON API; a browser
+  never renders these responses as a document.
+- US-P0-05 correction (2026-07-22): this note previously asserted that "the
+  frontend (Next.js) sets its own CSP via next.config.js / meta tags". That
+  was not true — the live frontend was measured serving *zero* security
+  headers. The claim documented a control that did not exist. The frontend
+  now really does set them, in `frontend/next.config.js` (`headers()`);
+  if that ever regresses, this comment is wrong again.
 - HSTS is only sent over HTTPS — sending it over HTTP is meaningless and
   some browsers warn about it. We add it unconditionally because Railway
   terminates TLS upstream; the browser sees HTTPS.

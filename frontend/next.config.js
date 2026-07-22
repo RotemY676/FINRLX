@@ -1,5 +1,83 @@
+/**
+ * US-P0-05 — web hardening.
+ *
+ * Audit finding (2026-07-22): the backend sends seven security headers, and
+ * `app/core/security_headers.py` states that "the frontend (Next.js) sets its
+ * own CSP via next.config.js / meta tags". It did not. The live browser-facing
+ * app was measured serving *zero* security headers — no CSP, no
+ * X-Frame-Options, no HSTS. The documented control did not exist.
+ *
+ * Known limitation, deliberate: script-src keeps 'unsafe-inline'/'unsafe-eval'.
+ * The root layout injects an inline theme script and Next's runtime needs eval,
+ * so a nonce-based policy requires middleware plumbing. Removing them is the
+ * follow-up; shipping the structural directives now already blocks framing,
+ * base-tag hijacking, plugin content, form exfiltration to foreign origins, and
+ * script/connect traffic to origins we never talk to.
+ */
+/*
+ * `headers()` is evaluated at BUILD time and baked into routes-manifest.json —
+ * `next start` never re-reads it. Verified: building without
+ * NEXT_PUBLIC_API_BASE_URL and then starting *with* it still emitted
+ * `connect-src 'self'`, which would have blocked every browser call to the
+ * API and taken the app down. So this must not depend on the variable being
+ * present at build time. The fallback is the same literal `src/services/api.ts`
+ * already uses for exactly this reason; the two must stay in sync.
+ */
+const API_FALLBACK = "https://backend-production-aab8.up.railway.app";
+
+const API_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_API_BASE_URL || API_FALLBACK).origin;
+  } catch {
+    return API_FALLBACK;
+  }
+})();
+
+const SENTRY_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin;
+  } catch {
+    return "";
+  }
+})();
+
+const CONNECT_SRC = ["'self'", API_ORIGIN, SENTRY_ORIGIN].filter(Boolean).join(" ");
+
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `connect-src ${CONNECT_SRC}`,
+  "manifest-src 'self'",
+  "worker-src 'self' blob:",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const SECURITY_HEADERS = [
+  { key: "Content-Security-Policy", value: CSP },
+  // frame-ancestors covers modern browsers; this covers the rest.
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  {
+    key: "Permissions-Policy",
+    value: "geolocation=(), microphone=(), camera=(), payment=()",
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   // LEAP S7b (D33): manual surfaces live under /pro; legacy URLs redirect
   // permanently so bookmarks and old links keep working.
   async redirects() {
