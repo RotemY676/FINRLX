@@ -68,7 +68,7 @@ GATED_GROUPS = (
     "models", "paper", "ops", "universes",
     "policies", "backtests", "integrations", "publication",
     "ml-ops", "actions", "research", "replay", "risk",
-    "engines", "features", "pipeline",
+    "engines", "features", "pipeline", "scenario", "ingest",
 )
 
 # Surfaces the frontend still calls WITHOUT a bearer today. Gating these would
@@ -105,6 +105,24 @@ def test_gated_groups_are_out_of_the_debt_baseline():
     pattern = re.compile(r"/api/v1/(" + "|".join(GATED_GROUPS) + r")\b")
     leftovers = sorted(e for e in AUTH_DEBT_BASELINE if pattern.search(e))
     assert leftovers == [], f"still recorded as auth debt: {leftovers}"
+
+
+def test_no_remaining_debt_route_mutates_state():
+    """The invariant the bulk gating bought.
+
+    Whatever is still unauthenticated must be read-only. Every mutating route
+    — anything that trains a model, moves a portfolio, resolves an incident,
+    edits a universe or ingests market data — is now gated. If a POST / PUT /
+    PATCH / DELETE ever reappears in the baseline, an unauthenticated caller
+    can change server state and this fails.
+    """
+    mutating = sorted(
+        e for e in AUTH_DEBT_BASELINE
+        if e.split(" ", 1)[0] in {"POST", "PUT", "PATCH", "DELETE"}
+    )
+    assert mutating == [], (
+        "unauthenticated routes that can change state: " + ", ".join(mutating)
+    )
 
 
 def test_frontend_anonymous_surfaces_are_still_recorded_as_debt():

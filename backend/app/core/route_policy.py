@@ -53,8 +53,6 @@ AUTH_DEBT_BASELINE: frozenset[str] = frozenset(
         "GET /api/v1/autopilot/desk/{ticker}/{section}",
         "GET /api/v1/autopilot/dossier",
         "GET /api/v1/comparison/current",
-        "GET /api/v1/ingest/manifests",
-        "GET /api/v1/ingest/status",
         "GET /api/v1/news",
         "GET /api/v1/overview",
         "GET /api/v1/pricechart",
@@ -63,7 +61,6 @@ AUTH_DEBT_BASELINE: frozenset[str] = frozenset(
         "GET /api/v1/recommendations/{recommendation_id}",
         "GET /api/v1/recommendations/{recommendation_id}/stages",
         "GET /api/v1/regime",
-        "GET /api/v1/scenario/baseline",
         # NOTE: POST /ingest/bars and /ingest/news were auth-gated on 2026-07-21
         # (US-P0-03 enforcement, increment 2) — controlling market-data injection
         # is a zero-fiction control. Removed from the baseline (now require auth).
@@ -71,7 +68,6 @@ AUTH_DEBT_BASELINE: frozenset[str] = frozenset(
         # defer/suppress) were auth-gated on 2026-07-21 (US-P0-03 enforcement,
         # slice 1) and intentionally removed from this baseline — they now
         # require authentication and are no longer public debt.
-        "POST /api/v1/scenario/simulate",
     }
 )
 
