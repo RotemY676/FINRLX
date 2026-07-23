@@ -33,7 +33,6 @@ from threading import Lock
 from typing import Callable
 
 from app.services.freshness_state import freshness_state_from_latest
-from app.services.uncertainty import uncertainty_block
 from app.services.single_ticker_analysis import (
     Bars,
     RebalanceState,
@@ -50,6 +49,7 @@ from app.services.single_ticker_analysis import (
     run_strategy,
     sma,
 )
+from app.services.uncertainty import uncertainty_block
 
 logger = logging.getLogger(__name__)
 
