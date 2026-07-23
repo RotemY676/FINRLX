@@ -14,6 +14,8 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "https://backend-production-aab8.up.railway.app";
 
+import { getAccessToken } from "./auth";
+
 function buildApiUrl(path: string): string {
   if (!path) {
     throw new Error("API path is missing");
@@ -349,6 +351,33 @@ export interface PaperPortfolioData {
 
 // Fetch functions
 
+/**
+ * Attach the session bearer when one exists.
+ *
+ * US-P0-03: the beta auth model is "the FE sends a bearer on every call", and
+ * the backend is being gated on that basis — but this shared client sent no
+ * Authorization header at all. Only two feature-specific wrappers (saved
+ * views, research documents) injected one by hand. That mismatch is the reason
+ * 192 routes had to stay unauthenticated: gating them would have 401'd the
+ * whole Pro surface.
+ *
+ * Adding the header here is safe in both directions: a logged-out visitor
+ * sends nothing and still reaches the genuinely public research routes, while
+ * a logged-in operator now authenticates everywhere instead of only on two
+ * endpoints. Caller-supplied headers still win, so the explicit wrappers and
+ * any deliberate anonymous call keep their current behaviour.
+ */
+function withSessionAuth(headers: HeadersInit | undefined): Record<string, string> {
+  const merged: Record<string, string> = {
+    Accept: "application/json",
+    ...((headers as Record<string, string>) || {}),
+  };
+  if (merged.Authorization) return merged; // explicit caller wins
+  const token = getAccessToken();
+  if (token) merged.Authorization = `Bearer ${token}`;
+  return merged;
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit
@@ -357,10 +386,7 @@ export async function apiFetch<T>(
 
   const res = await fetch(url, {
     ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.headers || {}),
-    },
+    headers: withSessionAuth(init?.headers),
   });
 
   if (!res.ok) {
@@ -2158,11 +2184,12 @@ export async function fetchNews(refresh = false): Promise<ApiResponse<NewsBundle
 }
 
 // ── Phase B3 — Saved views ──
-// These endpoints require an authenticated session. Bearer is injected
-// explicitly via the auth helper. The shared apiFetch is anonymous by
-// design — changing it project-wide is out of B3's scope, so we wrap here.
-
-import { getAccessToken } from "./auth";
+// These endpoints require an authenticated session. The explicit wrapper below
+// predates US-P0-03: apiFetch used to be anonymous by design, so B3 injected
+// the bearer by hand. apiFetch now attaches it for every call, making the
+// wrapper redundant — it is kept because caller-supplied headers still take
+// precedence, so the behaviour is unchanged and removing it is a separate,
+// verifiable cleanup rather than a drive-by edit.
 
 export interface SavedView {
   id: string;

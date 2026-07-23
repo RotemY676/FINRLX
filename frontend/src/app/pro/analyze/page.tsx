@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { getAccessToken } from "@/services/auth";
+
 /**
  * Single-ticker deep analysis wizard.
  *
@@ -55,7 +57,14 @@ export default function AnalyzePage() {
     setMeta(null);
     try {
       const url = `${API_BASE}/api/v1/analysis/single-ticker?ticker=${encodeURIComponent(sym)}`;
-      const resp = await fetch(url);
+      // Raw fetch (the response is an HTML document, not the ApiResponse
+      // envelope apiFetch expects), so the session bearer is attached by hand.
+      // US-P0-03 gates this route: it runs a 7-strategy walk-forward backtest
+      // and costs 5-10s of real compute per call.
+      const token = getAccessToken();
+      const resp = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       const durationMs = parseInt(
         resp.headers.get("x-analysis-duration-ms") || "0",
         10,

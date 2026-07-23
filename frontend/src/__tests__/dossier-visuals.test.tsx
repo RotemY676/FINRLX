@@ -8,6 +8,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { featureValue } from "@/components/simple/DossierView";
 import {
   CAUTIOUS_AT,
   CONSTRUCTIVE_AT,
@@ -16,6 +17,29 @@ import {
   PriceArea,
   SentimentSplit,
 } from "@/components/simple/DossierVisuals";
+
+describe("featureValue (signal cell shape)", () => {
+  // Regression guard for a live bug: the backend ships {value, status} per
+  // signal, the UI assumed bare numbers, so the populated-signal count was
+  // always zero and every dossier claimed "waiting on price history" while
+  // holding a full set of signals. Verified against production before the fix.
+  it("reads the {value,status} shape the backend actually sends", () => {
+    expect(featureValue({ value: 55.2, status: "ok" })).toBe(55.2);
+    expect(featureValue({ value: -0.002071, status: "ok" })).toBe(-0.002071);
+  });
+
+  it("still reads the legacy flat-number shape", () => {
+    // Persisted dossiers predating the wrapper must not crash the card.
+    expect(featureValue(42)).toBe(42);
+  });
+
+  it("treats a genuinely absent value as absent", () => {
+    expect(featureValue({ value: null, status: "insufficient_history" })).toBeNull();
+    expect(featureValue(null)).toBeNull();
+    expect(featureValue(undefined)).toBeNull();
+    expect(featureValue({ value: NaN, status: "ok" })).toBeNull();
+  });
+});
 
 const engines = {
   technical_momentum: { score: 0.62, confidence: 0.8, stance: "buy", risk_level: "Low" },

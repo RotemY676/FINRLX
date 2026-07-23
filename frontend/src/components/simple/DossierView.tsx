@@ -36,7 +36,8 @@ export interface DossierPayload {
   sections: {
     technical: {
       available: boolean;
-      features: Record<string, number | null>;
+      /** `{value, status}` per signal — see FeatureCell. */
+      features: Record<string, FeatureCell>;
       regime: { label: string; detail: string; kind: string };
       composite: { stance: string; composite_score: number; avg_confidence: number };
       /**
@@ -192,6 +193,24 @@ const FEATURE_READS: Array<{ key: string; label: string }> = [
   { key: "drawdown_20d", label: "20d drawdown" },
 ];
 
+/**
+ * A signal as the backend actually ships it.
+ *
+ * `autopilot._flatten_features` emits `{value, status}` per key — `status` is
+ * "ok" or a reason the value is absent. The older flat-number shape never
+ * existed in production; the frontend type claimed it did.
+ */
+export type FeatureCell = { value: number | null; status?: string } | number | null;
+
+/** The finite number a signal carries, or null when it genuinely has none. */
+export function featureValue(cell: FeatureCell | undefined): number | null {
+  if (cell === null || cell === undefined) return null;
+  // Tolerate the flat shape too: older persisted dossiers may predate the
+  // {value,status} wrapper, and a hard cast would crash on them.
+  const raw = typeof cell === "number" ? cell : cell.value;
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-line bg-surface p-4">
@@ -210,15 +229,24 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
   const techStance = toSimpleStance(tech.composite.stance);
   const featureRows = FEATURE_READS.map((f) => ({
     label: f.label,
-    value: tech.features[f.key],
-  })).filter((r) => r.value !== null && r.value !== undefined);
+    value: featureValue(tech.features[f.key]),
+  })).filter((r) => r.value !== null);
 
   // Operation Credibility K1 — empty-state doctrine: a wall of dashes may
   // never render. When (nearly) no signals carry values, the tables are
   // replaced by ONE explanatory state that names the cause and the fix path.
+  //
+  // BUGFIX 2026-07-23: this counted `typeof v === "number"`, but the backend
+  // ships `{value, status}` objects (`autopilot._flatten_features`), so the
+  // count was ALWAYS zero and every dossier — including ones with all eight
+  // signals populated and `status: "ok"` — rendered the "waiting on price
+  // history" state. Verified against production: 0 numeric / 8 object values.
+  // The empty-state doctrine exists to stop the UI implying data it lacks;
+  // inverted like this it made the UI deny data it had, which is the same
+  // honesty failure pointing the other way.
   const signalValues = Object.values(tech.features ?? {});
   const populatedCount = signalValues.filter(
-    (v: unknown) => typeof v === "number" && Number.isFinite(v),
+    (v) => featureValue(v) !== null,
   ).length;
   const signalsEmpty = signalValues.length > 0 && populatedCount === 0;
 
@@ -267,18 +295,27 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
         {signalsOpen && !signalsEmpty && (
           <table className="mt-2 w-full text-xs">
             <tbody>
-              {Object.entries(tech.features).map(([k, v]) => (
-                <tr key={k} className="border-t border-line">
-                  <td className="py-0.5 text-ink-2">{k}</td>
-                  <td className="py-0.5 text-right font-mono">
-                    {typeof v === "number" ? (
-                      v.toFixed(4)
-                    ) : (
-                      <span className="text-ink-4">insufficient history</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {Object.entries(tech.features).map(([k, cell]) => {
+                const v = featureValue(cell);
+                // The backend states WHY a value is absent; show its own word
+                // rather than assuming "insufficient history" for every gap.
+                const status =
+                  typeof cell === "object" && cell !== null ? cell.status : undefined;
+                return (
+                  <tr key={k} className="border-t border-line">
+                    <td className="py-0.5 text-ink-2">{k}</td>
+                    <td className="py-0.5 text-right font-mono">
+                      {v !== null ? (
+                        v.toFixed(4)
+                      ) : (
+                        <span className="text-ink-4">
+                          {status && status !== "ok" ? status : "insufficient history"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -16,7 +16,7 @@ import re
 
 import pytest
 
-from app.core.route_policy import AUTH_DEBT_BASELINE
+from app.core.route_policy import AUTH_DEBT_BASELINE, PUBLIC_ALLOWLIST
 
 GATED = [
     # models — training, prediction, validation, promotion decisions
@@ -125,19 +125,33 @@ def test_no_remaining_debt_route_mutates_state():
     )
 
 
-def test_frontend_anonymous_surfaces_are_still_recorded_as_debt():
-    """These must not be gated until the client sends a bearer.
+def test_the_anonymous_research_product_is_explicitly_allowlisted():
+    """The six public routes are a reviewed decision, not leftover debt.
 
-    The beta auth model says "the FE sends a bearer on every call", but that is
-    not yet true for these routes — the Simple Mode front door and the desk
-    fetch them with no Authorization header. Gating them would take the public
-    product down, so they remain recorded debt rather than being quietly
-    gated or quietly moved to the public allowlist. This test fails if someone
-    gates them without doing the client work first.
+    Product decision 2026-07-23: a logged-out visitor can research any ticker.
+    These six carry that flow. They must sit in PUBLIC_ALLOWLIST — where the
+    rationale is written down and adding to it is a deliberate act — and not
+    drift back into the debt set, which would misreport a decision as a defect.
     """
-    missing = [p for p in FE_ANONYMOUS_TODAY
-               if not any(p in e for e in AUTH_DEBT_BASELINE)]
-    assert missing == [], (
-        "these are called anonymously by the frontend but are no longer "
-        f"recorded as debt — gating them breaks the live product: {missing}"
+    for path in FE_ANONYMOUS_TODAY:
+        assert any(path in e for e in PUBLIC_ALLOWLIST), (
+            f"{path} carries the anonymous research flow but is not in "
+            "PUBLIC_ALLOWLIST — gating it breaks the live product"
+        )
+        assert not any(path in e for e in AUTH_DEBT_BASELINE), (
+            f"{path} is an accepted public route; it should not also be "
+            "recorded as debt"
+        )
+
+
+def test_the_auth_debt_is_cleared():
+    """US-P0-03 exit condition.
+
+    192 routes were recorded as debt on 2026-07-21. This asserts the set is now
+    empty — 186 gated, 6 reviewed and moved to the allowlist. With the baseline
+    empty the ratchet bites harder than before: any new unauthenticated route is
+    unclassified and fails the audit outright.
+    """
+    assert sorted(AUTH_DEBT_BASELINE) == [], (
+        "auth debt is not empty: " + ", ".join(sorted(AUTH_DEBT_BASELINE))
     )

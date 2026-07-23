@@ -18,18 +18,30 @@ const DEFAULTS: ScenarioParamsData = {
   policy_constraints_on: true,
 };
 
+/** Machine-parseable prefix the backend puts on seeded/illustrative payloads. */
+export const DEMO_DATA_PREFIX = "DEMO_DATA:";
+
 export function ScenarioCard() {
   const [params, setParams] = useState<ScenarioParamsData>({ ...DEFAULTS });
   const [result, setResult] = useState<ScenarioResultData | null>(null);
+  // US-P0-06 kept the demo label in meta.warnings; this card previously did
+  // `setResult(res.data)` and dropped meta entirely, so the label never
+  // reached a user. The card rendered `result.warnings` — the data-level list,
+  // which for this endpoint contains fabricated statistical claims like
+  // "exceeds historical 1σ range" — while the one honest warning was
+  // discarded. Keeping meta is what makes the disclosure real.
+  const [metaWarnings, setMetaWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const isModified = JSON.stringify(params) !== JSON.stringify(DEFAULTS);
+  const demoNotice = metaWarnings.find((w) => w.startsWith(DEMO_DATA_PREFIX));
 
   const runSimulation = useCallback(async (newParams: ScenarioParamsData) => {
     setLoading(true);
     try {
       const res = await simulateScenario(newParams);
       setResult(res.data);
+      setMetaWarnings(res.meta?.warnings ?? []);
     } catch {
       // silently fail
     } finally {
@@ -50,6 +62,21 @@ export function ScenarioCard() {
 
   return (
     <section className="rounded-lg border border-line bg-surface p-pad shadow-sm">
+      {/* Zero-fiction: this endpoint returns seeded illustrative values, not a
+          pipeline run. The label must be visible next to the numbers it
+          qualifies — not buried in a payload field — because the figures below
+          are otherwise indistinguishable from computed output. */}
+      {demoNotice && (
+        <p
+          data-testid="scenario-demo-notice"
+          role="note"
+          className="mb-3 rounded-lg border border-caution bg-caution-soft px-3 py-2 text-[12px] text-caution-soft-ink"
+        >
+          <strong>Illustrative only.</strong> These figures are seeded example
+          values, not a run of the analysis pipeline — do not read them as a
+          computed result for your portfolio.
+        </p>
+      )}
       <div className="flex items-center gap-2 mb-4">
         <Icon name="filter" size={14} className="text-primary" />
         <h3 className="text-[13px] font-semibold text-ink">Scenario controls</h3>

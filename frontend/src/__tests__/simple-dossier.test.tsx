@@ -44,7 +44,15 @@ const DOSSIER: DossierPayload = {
   sections: {
     technical: {
       available: true,
-      features: { rsi_14: 55.2, macd_hist_12_26_9: 0.12, drawdown_20d: -0.02 },
+      // The shape the backend ACTUALLY ships: `_flatten_features` emits
+      // {value, status} per key. This fixture previously used flat numbers,
+      // which is why the suite stayed green while every real dossier rendered
+      // the "waiting on price history" empty state.
+      features: {
+        rsi_14: { value: 55.2, status: "ok" },
+        macd_hist_12_26_9: { value: 0.12, status: "ok" },
+        drawdown_20d: { value: -0.02, status: "ok" },
+      },
       regime: { label: "uptrend", detail: "", kind: "research overlay" },
       composite: { stance: "buy", composite_score: 0.4, avg_confidence: 0.6 },
     },
