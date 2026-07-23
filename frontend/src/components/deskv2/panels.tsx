@@ -9,7 +9,7 @@
 import { tokens } from "@/design/deskTokens";
 import { deskCopy } from "@/lib/deskCopy";
 
-import { CollapseCard, EngineDial, GatedCard, StatusFetch } from "./core";
+import { CollapseCard, EngineStatusRail, GatedCard, StatusFetch } from "./core";
 
 // ── CMP-2 VerdictBand ───────────────────────────────────────────────────────
 
@@ -84,12 +84,13 @@ export function VerdictBand({ head, statusFetch, onStanceClick }: {
         {cov?.gated?.length ? ` (gated: ${cov.gated.join(", ")})` : ""}
       </button>
 
-      <div data-testid="dial-row"
-           style={{ display: "flex", gap: tokens.space(2), marginLeft: "auto" }}>
-        {statusFetch.kind === "ready" &&
-          statusFetch.status.sections.map((s) => (
-            <EngineDial key={s.id} status={s} />
-          ))}
+      {/* The lane row now owns a full-width slot rather than being squeezed
+          to the right of the price: expanding a lane opens an explanation
+          panel underneath it, which needs the width. */}
+      <div style={{ marginLeft: "auto", minWidth: 0, flex: "1 1 320px" }}>
+        {statusFetch.kind === "ready" && (
+          <EngineStatusRail sections={statusFetch.status.sections} />
+        )}
         {statusFetch.kind === "unavailable" && (
           <span data-testid="status-unavailable"
                 style={{ fontSize: tokens.type.scale.xs,

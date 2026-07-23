@@ -74,67 +74,191 @@ export function assertNever(x: never): never {
   throw new Error(`unreachable state: ${String(x)}`);
 }
 
-// ── CMP-3 EngineDial ────────────────────────────────────────────────────────
+// ── CMP-3 EngineDial + EngineStatusRail ─────────────────────────────────────
+//
+// The original dial was a 30px quarter-arc whose only affordance was a `title`
+// tooltip: invisible on touch, unreadable at a glance, and it never said what
+// the lane measured or why it was in that state. It is replaced by a lane tile
+// that is a real button — expanding it reveals the reasoning.
+//
+// Kept deliberately from the original contract:
+//   * the closed DialState enum with assertNever (an unknown state is a
+//     compile-time error, never a runtime guess — SPEC-02 R3-T1);
+//   * state conveyed by shape + text, never colour alone (NFR-4);
+//   * `data-testid="dial-<id>"`, `data-state` and the aria-label built from
+//     deskCopy.dialAria, so existing behaviour contracts still hold.
+// Styling moves to the site's own tokens (globals.css) so the desk stops
+// looking like a separate product.
 
-/** Quarter-arc dial. State is conveyed by fill + tick + text label —
- *  never color alone (NFR-4). */
-export function EngineDial({ status }: { status: SectionStatus }) {
-  const label = deskCopy.engines[status.id] ?? status.id;
-  const { state } = status;
-  let arc: React.ReactNode;
-  let stateText: string;
+/** Ring geometry per state. Shape differs, so colour is never the only cue. */
+function DialGlyph({ state, active }: { state: DialState; active: boolean }) {
+  const R = 13;
+  const C = 2 * Math.PI * R;
+  let stroke: string;
+  let dash: string | undefined;
+  let arc: React.ReactNode = null;
+
   switch (state) {
     case "live":
-      arc = (
-        <path d="M -12 0 A 12 12 0 1 1 12 0" fill={tokens.color.accent} />
-      );
-      stateText = "live";
+      // Full ring — complete coverage.
+      stroke = "var(--pos)";
       break;
     case "degraded":
+      // Three-quarter ring with a visible gap: coverage is incomplete.
+      stroke = "var(--caution)";
+      dash = `${C * 0.72} ${C}`;
       arc = (
-        <path
-          d="M -12 0 A 12 12 0 0 1 0 -12"
-          fill={tokens.color.semantic.cautious}
-        />
+        <line x1="0" y1={-R - 4} x2="0" y2={-R + 4}
+          stroke="var(--caution)" strokeWidth="2.5" strokeLinecap="round" />
       );
-      stateText = "degraded";
       break;
     case "unavailable":
-      arc = null; // hollow
-      stateText = "unavailable";
+      // Dashed hollow ring + slash: nothing to report.
+      stroke = "var(--ink-4)";
+      dash = "3 4";
+      arc = (
+        <line x1={-9} y1={9} x2={9} y2={-9}
+          stroke="var(--ink-4)" strokeWidth="2" strokeLinecap="round" />
+      );
       break;
     default:
       return assertNever(state);
   }
+
   return (
-    <div
-      role="img"
-      aria-label={deskCopy.dialAria(label, stateText, status.reason)}
+    <svg width="34" height="34" viewBox="-17 -17 34 34" aria-hidden="true"
+      className="shrink-0">
+      <circle r={R} fill="none" stroke="var(--line)" strokeWidth="3" />
+      <circle
+        r={R}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={dash}
+        transform="rotate(-90)"
+        className={active && state === "live" ? "desk-dial-live" : undefined}
+      />
+      {arc}
+    </svg>
+  );
+}
+
+export function EngineDial({
+  status,
+  expanded = false,
+  onToggle,
+}: {
+  status: SectionStatus;
+  expanded?: boolean;
+  onToggle?: (id: string) => void;
+}) {
+  const label = deskCopy.engines[status.id] ?? status.id;
+  const { state } = status;
+  const stateCopy = deskCopy.dialState[state];
+  const stateText = stateCopy?.label ?? state;
+
+  return (
+    <button
+      type="button"
       data-testid={`dial-${status.id}`}
       data-state={state}
-      title={status.reason}
-      style={{ display: "inline-flex", flexDirection: "column",
-               alignItems: "center", gap: "2px" }}
+      aria-label={deskCopy.dialAria(label, stateText, status.reason)}
+      aria-expanded={expanded}
+      aria-controls={`dial-detail-${status.id}`}
+      onClick={() => onToggle?.(status.id)}
+      className={[
+        "inline-flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-1.5",
+        "text-left transition-colors",
+        expanded
+          ? "border-line-strong bg-surface-2"
+          : "border-transparent hover:border-line hover:bg-surface-2",
+      ].join(" ")}
     >
-      <svg width="30" height="30" viewBox="-15 -15 30 30" aria-hidden="true">
-        <circle
-          r="12"
-          fill="none"
-          stroke={state === "unavailable"
-            ? tokens.color.neutral.n400 : tokens.color.accent}
-          strokeWidth="3"
-        />
-        {arc}
-        {state === "degraded" && (
-          <line x1="0" y1="-15" x2="0" y2="-9"
-                stroke={tokens.color.semantic.cautious} strokeWidth="3" />
-        )}
-      </svg>
-      <span style={{ fontSize: tokens.type.scale.xs,
-                     color: tokens.color.neutral.n600 }}>
-        {label}
+      <DialGlyph state={state} active={!expanded} />
+      <span className="flex flex-col leading-tight">
+        <span className="text-xs font-medium text-ink">{label}</span>
+        {/* NFR-4: the state is spelled out, not implied by the ring colour. */}
+        <span className="text-[10px] text-ink-2">{stateText}</span>
       </span>
-      <span className="sr-only">{stateText}{status.reason ? ` — ${status.reason}` : ""}</span>
+    </button>
+  );
+}
+
+/**
+ * The lane row plus one expanded explanation panel.
+ *
+ * Only one lane opens at a time: the row lives in a sticky header, and
+ * stacking six open panels there would push the actual desk off-screen.
+ */
+export function EngineStatusRail({ sections }: { sections: SectionStatus[] }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = sections.find((s) => s.id === openId) ?? null;
+
+  return (
+    <div className="w-full" data-testid="engine-status-rail">
+      <div data-testid="dial-row" className="flex flex-wrap items-center gap-1">
+        {sections.map((s) => (
+          <EngineDial
+            key={s.id}
+            status={s}
+            expanded={openId === s.id}
+            onToggle={(id) => setOpenId((cur) => (cur === id ? null : id))}
+          />
+        ))}
+      </div>
+
+      {open && (
+        <div
+          id={`dial-detail-${open.id}`}
+          data-testid={`dial-detail-${open.id}`}
+          className="mt-2 rounded-lg border border-line bg-surface p-3 text-sm"
+        >
+          <div className="mb-1 flex flex-wrap items-baseline gap-2">
+            <strong className="text-ink">
+              {deskCopy.engines[open.id] ?? open.id}
+            </strong>
+            <span className="rounded-full border border-line px-2 py-0.5 text-[11px] text-ink-2">
+              {deskCopy.dialState[open.state]?.label ?? open.state}
+            </span>
+          </div>
+
+          {deskCopy.engineWhat[open.id] && (
+            <p className="text-ink-2">{deskCopy.engineWhat[open.id]}</p>
+          )}
+
+          <p className="mt-2 font-medium text-ink">{deskCopy.rail.whyTitle}</p>
+          <p className="text-ink-2">
+            {deskCopy.dialState[open.state]?.meaning ?? ""}
+          </p>
+
+          {/* Server honesty renders verbatim — the client never rewrites it. */}
+          <p className="mt-2 font-medium text-ink">{deskCopy.rail.reasonTitle}</p>
+          <p className="text-ink-2">{open.reason ?? deskCopy.rail.noReason}</p>
+
+          {open.detail_code && deskCopy.detailCode[open.detail_code] && (
+            <p className="mt-2 rounded border border-line bg-surface-2 p-2 text-ink-2">
+              <span className="font-mono text-[11px] text-ink">{open.detail_code}</span>
+              {" — "}
+              {deskCopy.detailCode[open.detail_code]}
+            </p>
+          )}
+
+          <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-ink-4">
+            {open.scope && <span>{deskCopy.rail.scopeTitle}: {open.scope}</span>}
+            {open.freshness_bar && (
+              <span>{deskCopy.rail.freshnessTitle}: {open.freshness_bar}</span>
+            )}
+          </div>
+
+          <a
+            href={`#panel-${open.id}`}
+            className="mt-2 inline-flex min-h-11 items-center text-sm text-primary underline"
+          >
+            {deskCopy.rail.jump}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -247,3 +247,16 @@ body {
   background-size: 8px 2px;
   animation: pipeline-flow 1s linear infinite;
 }
+
+/* Desk engine dial — a slow breath on the "live" ring so a healthy lane reads
+   as active at a glance. Deliberately subtle: six of these sit in a sticky
+   header, and anything faster becomes noise next to the numbers.
+   The global prefers-reduced-motion block above neutralises it. */
+@keyframes desk-dial-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.desk-dial-live {
+  animation: desk-dial-breathe 2.8s ease-in-out infinite;
+}
