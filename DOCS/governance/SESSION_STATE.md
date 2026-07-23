@@ -18,7 +18,9 @@
 - **Model-lab dashboard** (`/pro/models`, flag `model_lab`, default OFF): compares every model on the real tournament, shows the RL lane honestly (merged / rejected / not-yet-trained), and renders one verdict from `model_decision.py` — **a passive winner reads as "no active edge", never constructive**; uncertainty and split-consistency gate the strength; hard "not advice" disclaimer always shown.
 - **Also fixed en route:** the flagship tournament was scoring every candidate 0.0 (key mismatch `sharpe` vs `sharpe_ratio`) — its own gate, already shipped (`4661af8`).
 - **Evidence:** 4 tournament-scoring + 8 model-decision + leak-regression tests; frontend 150 vitest + 4 model-lab; tsc clean; next build OK. Full backend suite running.
-- **NEXT:** commit the artifact + dashboard, deploy, verify live, and (operator) run E7 on a schedule for durable RL across tickers.
+- **✅ VERIFIED LIVE IN PRODUCTION (8673de5c):** `GET /api/v1/autopilot/dossier?ticker=AAPL` returns `rl: artifact_merged`, 10 candidates, **A2C (FinRL ensemble) winning at score 1.69** (val 2.227) over Buy & Hold (0.78), `verdict: constructive`, `rl_participated: True`. RL is genuinely populated on real data end-to-end.
+- **🐛 One more local/prod gap fixed en route:** the first ship had the artifact in `research/artifacts/`, which is a **sibling of the backend build context** (`COPY . .` from `/backend`) and therefore absent from the container — production read `queued` while local merged. `ARTIFACT_DIR` moved inside the backend package (`app/rl_artifacts/`); publishing an artifact = copying it there. Same local/prod class as the earlier `/version` vs `/healthz` catch.
+- **NEXT (operator):** run the E7 research worker on a schedule to keep RL populated across tickers and refreshed as the walk-forward windows advance; verify the `model_lab` flag in a browser before flipping it ON.
 
 
 ### Entry — 2026-07-23 · User request: RL model-comparison dashboard — and a flagship bug found while speccing it
