@@ -68,6 +68,38 @@
   - **Remaining 125 by group:** `models` 15, `paper` 14, `ops` 12, `universes` 10, `engines` 9, `backtests` 6, `policies` 6, `features` 5, `pipeline` 5, then a long tail. `engines`/`features`/`pipeline` carry heavy test-fixture use — expect the most churn there.
 - ✅ **US-P0-06** — zero-fiction: static scan + fail-closed synthetic sources + demo labels (i1–i3 done). Follow-up only: demo-flag gating / real regime model (product decision).
 
+## 🗺️ Road to product — remaining phases (authored 2026-07-23)
+
+**Where the project actually is.** MVP-0…MVP-8 closed 2026-05-20; the post-MVP A/B tracks
+(Universe, Ops, Policy, Integrations, Risk, News, Saved views) and the UX track are shipped
+and their flags are ON. Verified this session: C1 (F821) clean, C6 done (FastAPI 0.118,
+Next 15, React 19). So "MVP" in the original sense is behind us — what separates today from
+a product a stranger can rely on is **three features still dark behind flags**, **four P0
+residuals**, and **launch operations**.
+
+**Three flags still OFF** — this is the honest definition of remaining scope:
+`feature_desk_v2`, `feature_decision_packet_v1`, `feature_operator_console`.
+
+| # | Phase | Scope | Blocked by | Exit condition |
+|---|---|---|---|---|
+| **0** | **Decisions** | D1 FE-bearer vs public-allowlist · D2 HttpOnly vs bearer session | **User** | Both answered; P0-03 + P0-04 can close |
+| **1** | **Desk v2 → prod** | Gates G-1…G-7 (e2e · 84 frames · axe+keyboard · Lighthouse · zero-fiction+drawer · ten-ticker prod reality · rollback rehearsal) | none | `FEATURE_DESK_V2=true` in prod |
+| **2** | **P0 residuals** | P0-05 nonce CSP (drop `unsafe-inline`) · P0-06 demo-flag gating / real regime model · P0-07 freshness on `/analysis/single-ticker` (header or in-doc banner) | P0-06 needs a product call | P0 track fully ✅, no 🟡 |
+| **3** | **EP-1 DecisionPacket** | DPK-02 snapshot manifest → DPK-04 immutable persistence → DPK-05 ETag/history API → DPK-06 generated TS client → DPK-07 cross-surface equality | DPK-02 first (unblocks 04) | `decision_packet_v1=true`; a packet can reach `ready_for_review` honestly |
+| **4** | **Operator console** | Wire + verify the console behind `feature_operator_console` | Phase 1 patterns | flag ON |
+| **5** | **Launch ops** | Sentry + PostHog DSNs · CI re-enable (billing) · E1 rotate PAT (treat as compromised) · E7 torch research worker · E8 Finnhub social tier · beta invites | E1/E7/E8 need user (secrets/paid) | Beta cohort onboarded |
+
+**Sequencing rationale.** Phase 1 first: the Desk is the product's main surface, its work is
+already done, and only the gate run stands between it and users. Phase 3 is the largest and
+most valuable — DecisionPacket is the contract the whole "truth-first" thesis rests on, and
+it stays dark until it can be honest, so it is deliberately *after* the P0 residuals rather
+than before. Phase 5 is last because it costs money and secrets, not engineering.
+
+**Honest note on Phase 3.** No calibrated forecast, reproducible backtest, prospective
+validation or risk frame exists upstream yet, so **no packet can currently reach
+`ready_for_review` — by design, not a bug**. Phase 3 is not "turn on the flag"; it is
+building the evidence chain that makes the flag meaningful.
+
 ## Backlog / other candidate tracks
 - ⬜ Browser phase (`DOCS/handoff/CLAUDE_CODE_HANDOFF_DESK_W1.md`): e2e matrix, screenshots, gates G-1..G-7, then flip `FEATURE_DESK_V2`.
 - ⬜ Operator items: E1 (rotate PAT — treat as compromised), E7 (torch worker), E8 (Finnhub social tier).
