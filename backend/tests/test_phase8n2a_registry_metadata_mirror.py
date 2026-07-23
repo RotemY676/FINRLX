@@ -14,11 +14,11 @@ from app.models.research_registry_metadata import ResearchRegistryMetadata
 from tests.conftest import test_session_factory as AsyncSessionLocal
 
 
-@pytest.fixture
-async def client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
+# US-P0-03: this module used to shadow conftest's `client` with an
+# unauthenticated one. Now that the RL surface is auth-gated at the router
+# level that shadow produced 401s, so it is removed and the shared
+# (bearer-carrying) fixture is used instead. Keeping a local anonymous client
+# here would only re-test the gate, which test_p0_rl_authz.py already does.
 
 
 async def _count_mirror_rows() -> int:

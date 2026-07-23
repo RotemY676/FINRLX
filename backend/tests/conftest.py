@@ -186,8 +186,73 @@ async def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 
+# ── US-P0-03: the default client carries an operator bearer ─────────────────
+#
+# The beta auth model is "the FE sends a bearer on every call", so routes are
+# being gated in bulk toward zero auth debt. The suite has ~400 call sites that
+# were written against open routes; rewriting them all would be enormous churn
+# for no extra coverage, so the shared `client` now authenticates by default.
+#
+# This does NOT weaken the negative tests:
+#   * httpx gives per-request headers precedence over client defaults, so a
+#     test passing an explicitly bad/forged token still exercises the reject
+#     path unchanged;
+#   * `anon_client` below is the deliberate no-credentials client for tests
+#     that assert a route refuses anonymous access.
+#
+# The declared policy (route_policy.PUBLIC_ALLOWLIST / AUTH_DEBT_BASELINE) is
+# what test_p0_route_authz.py ratchets on, and it is unaffected by this fixture.
+
+TEST_OPERATOR_EMAIL = "operator@test.local"
+_test_operator_token: str | None = None
+
+
+async def _ensure_test_operator() -> str:
+    """Create (once) an active operator user and return a bearer token for it."""
+    global _test_operator_token
+    if _test_operator_token:
+        return _test_operator_token
+
+    from sqlalchemy import select
+
+    from app.core.auth import hash_password, issue_access_token
+    from app.models.auth import User
+
+    async with test_session_factory() as db:
+        user = (await db.execute(
+            select(User).where(User.email == TEST_OPERATOR_EMAIL)
+        )).scalar_one_or_none()
+        if user is None:
+            user = User(
+                email=TEST_OPERATOR_EMAIL,
+                password_hash=hash_password("test-operator-not-a-real-secret"),
+                is_active=True,
+                role="admin",
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        token, _ = issue_access_token(user_id=user.id, role=user.role)
+
+    _test_operator_token = token
+    return token
+
+
 @pytest.fixture
 async def client():
+    token = await _ensure_test_operator()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as ac:
+        yield ac
+
+
+@pytest.fixture
+async def anon_client():
+    """No credentials at all — for asserting a route refuses anonymous access."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

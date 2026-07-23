@@ -120,9 +120,9 @@ async def _ensure_templates_seeded() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_templates_requires_auth(client):
+async def test_get_templates_requires_auth(anon_client):
     await _ensure_templates_seeded()
-    r = await client.get("/api/v1/templates")
+    r = await anon_client.get("/api/v1/templates")
     assert r.status_code == 401
 
 

@@ -1,6 +1,7 @@
 """Central API router. All v1 routes are registered here."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.auth_deps import get_current_user
 from app.api.v1.actions import router as actions_router
 from app.api.v1.analysis import router as analysis_router
 from app.api.v1.assets import router as assets_router
@@ -101,10 +102,19 @@ api_router.include_router(research_fundamentals_router, tags=["research-fundamen
 api_router.include_router(research_documents_router, tags=["research-documents"])
 api_router.include_router(research_edgar_router, tags=["research-edgar"])
 api_router.include_router(templates_router, tags=["templates"])
-api_router.include_router(rl_router, tags=["rl"])
-api_router.include_router(rl_training_router, tags=["rl-training"])
-api_router.include_router(rl_benchmark_router, tags=["rl-benchmark"])
-api_router.include_router(rl_finrlx_router, tags=["rl-finrlx"])
+# US-P0-03 batch 1 — the RL surface is auth-gated at the router level.
+#
+# 67 of the 192 debt routes lived here: training runs, artifact import,
+# dataset export and the experiment registry. They mutate models and consume
+# real compute, so anonymous access was the single largest hole in the audit.
+# Gating on include_router covers every route in each module at once and
+# cannot be forgotten when a new endpoint is added to them later — the failure
+# mode of per-endpoint dependencies.
+_AUTHED = [Depends(get_current_user)]
+api_router.include_router(rl_router, tags=["rl"], dependencies=_AUTHED)
+api_router.include_router(rl_training_router, tags=["rl-training"], dependencies=_AUTHED)
+api_router.include_router(rl_benchmark_router, tags=["rl-benchmark"], dependencies=_AUTHED)
+api_router.include_router(rl_finrlx_router, tags=["rl-finrlx"], dependencies=_AUTHED)
 api_router.include_router(health_router, tags=["health"])
 api_router.include_router(auth_router)
 api_router.include_router(flags_router, tags=["flags"])

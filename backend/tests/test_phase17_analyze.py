@@ -74,14 +74,14 @@ async def _upload_document(client, token, ticker: str = "NVDA") -> str:
 
 
 @pytest.mark.asyncio
-async def test_analyze_requires_auth(client, monkeypatch, tmp_path):
+async def test_analyze_requires_auth(anon_client, monkeypatch, tmp_path):
     from app.core import config as config_mod
     monkeypatch.setattr(config_mod.settings, "documents_storage_path", str(tmp_path))
     # Sign up just to create a document, then call analyze without auth.
-    _, token = await _signup_user(client)
-    doc_id = await _upload_document(client, token)
+    _, token = await _signup_user(anon_client)
+    doc_id = await _upload_document(anon_client, token)
 
-    r = await client.post(
+    r = await anon_client.post(
         f"/api/v1/research/documents/{doc_id}/analyze",
         json={"prompt": "What is the revenue?"},
     )

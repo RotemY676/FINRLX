@@ -138,9 +138,9 @@ def test_extraction_on_real_pdf_returns_string():
 
 
 @pytest.mark.asyncio
-async def test_upload_requires_auth(client):
+async def test_upload_requires_auth(anon_client):
     pdf = _make_pdf_bytes()
-    r = await client.post(
+    r = await anon_client.post(
         "/api/v1/research/documents",
         files={"file": ("test.pdf", pdf, "application/pdf")},
         data={"ticker": "NVDA"},

@@ -435,8 +435,8 @@ def _bearer(token: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_post_insights_requires_auth(client):
-    r = await client.post("/api/v1/research/NVDA/insights")
+async def test_post_insights_requires_auth(anon_client):
+    r = await anon_client.post("/api/v1/research/NVDA/insights")
     assert r.status_code == 401
 
 

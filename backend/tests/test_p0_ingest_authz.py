@@ -13,6 +13,6 @@ import pytest
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("kind", "body"), [("bars", {"source": "local"}), ("news", {"source": "local"})])
-async def test_ingestion_rejects_anonymous(client, kind, body):
-    r = await client.post(f"/api/v1/ingest/{kind}", json=body)
+async def test_ingestion_rejects_anonymous(anon_client, kind, body):
+    r = await anon_client.post(f"/api/v1/ingest/{kind}", json=body)
     assert r.status_code == 401, f"/ingest/{kind} must require auth, got {r.status_code}"

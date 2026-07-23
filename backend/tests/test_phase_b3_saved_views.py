@@ -151,6 +151,6 @@ async def test_patch_another_users_view_returns_404_not_403(client):
 
 
 @pytest.mark.asyncio
-async def test_unauthenticated_request_rejected(client):
-    r = await client.get("/api/v1/saved-views")
+async def test_unauthenticated_request_rejected(anon_client):
+    r = await anon_client.get("/api/v1/saved-views")
     assert r.status_code in (401, 403)

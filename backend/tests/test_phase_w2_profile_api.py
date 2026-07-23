@@ -188,9 +188,9 @@ def test_score_answers_rejects_invalid_enum():
 
 
 @pytest.mark.asyncio
-async def test_get_questions_requires_auth(client):
+async def test_get_questions_requires_auth(anon_client):
     await _ensure_questions_seeded()
-    r = await client.get("/api/v1/profile/questions")
+    r = await anon_client.get("/api/v1/profile/questions")
     assert r.status_code == 401
 
 

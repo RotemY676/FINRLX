@@ -33,8 +33,8 @@ async def _token() -> dict[str, str]:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("action", MUTATIONS)
-async def test_publication_mutation_rejects_anonymous(client, action):
-    r = await client.post(
+async def test_publication_mutation_rejects_anonymous(anon_client, action):
+    r = await anon_client.post(
         f"/api/v1/publication/recommendations/{_uid()}/{action}",
         json={"actor": "anon", "reason": "x"},
     )

@@ -43,8 +43,8 @@ async def _signup(client, *, role: str = "user") -> tuple[str, str, str]:
 
 
 @pytest.mark.asyncio
-async def test_submit_feedback_requires_auth(client):
-    r = await client.post(
+async def test_submit_feedback_requires_auth(anon_client):
+    r = await anon_client.post(
         "/api/v1/feedback", json={"message": "anonymous attempt"},
     )
     assert r.status_code == 401

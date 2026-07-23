@@ -29,9 +29,9 @@ async def _headers(role: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_requires_admin(client):
-    assert (await client.get(READINESS_PATH)).status_code == 401
-    assert (await client.get(READINESS_PATH, headers=await _headers("user"))).status_code == 403
+async def test_requires_admin(anon_client):
+    assert (await anon_client.get(READINESS_PATH)).status_code == 401
+    assert (await anon_client.get(READINESS_PATH, headers=await _headers("user"))).status_code == 403
 
 
 @pytest.mark.asyncio

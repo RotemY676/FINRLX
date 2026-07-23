@@ -27,8 +27,8 @@ async def _make_user(role: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_requires_authentication(client):
-    r = await client.get(INVENTORY_PATH)
+async def test_requires_authentication(anon_client):
+    r = await anon_client.get(INVENTORY_PATH)
     assert r.status_code == 401, r.text
 
 

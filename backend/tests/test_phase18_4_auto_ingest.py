@@ -293,8 +293,8 @@ def _bearer(token: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_endpoint_requires_auth(client):
-    r = await client.post("/api/v1/research/NVDA/auto-ingest")
+async def test_endpoint_requires_auth(anon_client):
+    r = await anon_client.post("/api/v1/research/NVDA/auto-ingest")
     assert r.status_code == 401
 
 

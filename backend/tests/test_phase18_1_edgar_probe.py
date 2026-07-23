@@ -101,8 +101,8 @@ def _edgar_test_env(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_probe_requires_auth(client):
-    r = await client.get("/api/v1/research/edgar/probe?ticker=NVDA")
+async def test_probe_requires_auth(anon_client):
+    r = await anon_client.get("/api/v1/research/edgar/probe?ticker=NVDA")
     assert r.status_code == 401
 
 

@@ -206,8 +206,8 @@ async def test_run_single_job_unknown_key_raises():
 
 
 @pytest.mark.asyncio
-async def test_ops_jobs_list_requires_auth(client):
-    r = await client.get("/api/v1/ops/jobs")
+async def test_ops_jobs_list_requires_auth(anon_client):
+    r = await anon_client.get("/api/v1/ops/jobs")
     assert r.status_code == 401
 
 

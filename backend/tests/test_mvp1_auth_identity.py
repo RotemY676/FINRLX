@@ -171,8 +171,8 @@ async def test_login_generic_error_does_not_leak_user_existence(client):
 
 
 @pytest.mark.asyncio
-async def test_me_rejects_missing_bearer(client):
-    r = await client.get("/api/v1/auth/me")
+async def test_me_rejects_missing_bearer(anon_client):
+    r = await anon_client.get("/api/v1/auth/me")
     assert r.status_code == 401
 
 
