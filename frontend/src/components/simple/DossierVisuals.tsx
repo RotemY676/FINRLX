@@ -126,6 +126,48 @@ function arcPath(cx: number, cy: number, r: number, fromDeg: number, toDeg: numb
 /** score (-1..1) → dial angle (0..180) */
 const scoreToDeg = (s: number) => ((clamp(s, -1, 1) + 1) / 2) * 180;
 
+/** Distance from the score to the nearest category boundary it has not crossed. */
+export function nearestBoundary(score: number): { edge: number; gap: number; toward: string } | null {
+  if (!Number.isFinite(score)) return null;
+  const candidates = [
+    { edge: CAUTIOUS_AT, toward: score > CAUTIOUS_AT ? "cautious" : "neutral" },
+    { edge: CONSTRUCTIVE_AT, toward: score < CONSTRUCTIVE_AT ? "constructive" : "neutral" },
+  ];
+  let best = candidates[0];
+  let bestGap = Math.abs(score - best.edge);
+  for (const c of candidates.slice(1)) {
+    const gap = Math.abs(score - c.edge);
+    if (gap < bestGap) {
+      best = c;
+      bestGap = gap;
+    }
+  }
+  return { edge: best.edge, gap: bestGap, toward: best.toward };
+}
+
+/** How close the reading is to changing category — subtraction, not inference. */
+export function ThresholdProximity({ score }: { score: number }) {
+  const near = nearestBoundary(score);
+  if (!near) return null;
+  // Deliberately not phrased as movement ("close to constructive") — that would
+  // imply drift the system has not measured. It states a distance.
+  const unstable = near.gap < 0.05;
+  return (
+    <p
+      data-testid="threshold-proximity"
+      className={
+        unstable
+          ? "mt-2 rounded border border-caution bg-caution-soft px-2 py-1 text-xs text-caution-soft-ink"
+          : "mt-2 text-xs text-ink-2"
+      }
+    >
+      {near.gap.toFixed(2)} from the {near.edge > 0 ? "+" : ""}
+      {near.edge} boundary with <strong>{near.toward}</strong>.
+      {unstable && " At this distance the label is sensitive to small revisions."}
+    </p>
+  );
+}
+
 export function EnsembleDial({
   score,
   confidence,
@@ -227,6 +269,11 @@ export function EnsembleDial({
             />
           </div>
         </div>
+        {/* How far this reading sits from changing category. A score of 0.29
+            and one of 0.85 both render as the same word; only the distance
+            distinguishes a reading that is one revision away from one that is
+            settled. Pure subtraction on two real numbers. */}
+        <ThresholdProximity score={score} />
         <p className="mt-2 text-xs text-ink-4">
           Zones mark the engine&apos;s own thresholds ({CAUTIOUS_AT} / +{CONSTRUCTIVE_AT}).
           Research overlay, not a prediction.
@@ -259,6 +306,7 @@ const ENGINE_LABELS: Record<string, string> = {
 export function EngineVotes({ engines }: { engines: Record<string, EngineOutput> }) {
   const reduced = useReducedMotion();
   const [t, setRef] = useEnterProgress(reduced, 850);
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const rows = useMemo(
     () => Object.entries(engines ?? {}).filter(([, v]) => v && typeof v.score === "number"),
     [engines],
@@ -281,12 +329,23 @@ export function EngineVotes({ engines }: { engines: Record<string, EngineOutput>
           const s = clamp(e.score, -1, 1) * t;
           const halfPct = Math.abs(s) * 50;
           const conf = clamp(e.confidence ?? 0, 0, 1);
+          const drivers = e.drivers ?? [];
+          const caveats = e.caveats ?? [];
+          const hasWhy = drivers.length > 0 || caveats.length > 0;
+          const open = openKey === key;
           return (
             <li key={key}>
               <div className="mb-1 flex flex-wrap items-baseline gap-x-2 text-xs">
                 <span className="font-medium text-ink">{ENGINE_LABELS[key] ?? key}</span>
                 <span className="text-ink-2">{simple}</span>
                 {e.risk_level && <span className="text-ink-4">risk: {e.risk_level}</span>}
+                {/* Caveat count is visible BEFORE expanding: a limitation the
+                    reader has to click to discover is a limitation hidden. */}
+                {caveats.length > 0 && (
+                  <span className="rounded bg-caution-soft px-1.5 text-[10px] text-caution-soft-ink">
+                    {caveats.length} caveat{caveats.length > 1 ? "s" : ""}
+                  </span>
+                )}
                 <span className="ml-auto font-mono text-ink">{e.score.toFixed(2)}</span>
               </div>
               <div className="relative h-5 w-full rounded bg-surface-2">
@@ -313,6 +372,49 @@ export function EngineVotes({ engines }: { engines: Record<string, EngineOutput>
                   title={`confidence ${Math.round(conf * 100)}%`}
                 />
               </div>
+
+              {/* The engine's own reasoning. Both fields have always been in
+                  the payload and rendered nowhere, so a reader could see three
+                  lanes disagree with no material for adjudicating between them.
+                  Server strings render verbatim — the client never rewrites
+                  server honesty. */}
+              {hasWhy && (
+                <>
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls={`engine-why-${key}`}
+                    onClick={() => setOpenKey((cur) => (cur === key ? null : key))}
+                    className="mt-1 inline-flex min-h-11 items-center text-xs text-primary underline"
+                  >
+                    {open ? "Hide reasoning" : "Why this vote"}
+                  </button>
+                  {open && (
+                    <div
+                      id={`engine-why-${key}`}
+                      data-testid={`engine-why-${key}`}
+                      className="mt-1 rounded border border-line bg-surface-2 p-2 text-xs"
+                    >
+                      {drivers.length > 0 && (
+                        <>
+                          <p className="font-medium text-ink">Drivers</p>
+                          <ul className="mb-1 list-disc pl-4 text-ink-2">
+                            {drivers.map((d) => <li key={d}>{d}</li>)}
+                          </ul>
+                        </>
+                      )}
+                      {caveats.length > 0 && (
+                        <div className="border-l-2 border-caution pl-2">
+                          <p className="font-medium text-ink">Caveats</p>
+                          <ul className="list-disc pl-4 text-ink-2">
+                            {caveats.map((c) => <li key={c}>{c}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </li>
           );
         })}

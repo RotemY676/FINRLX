@@ -82,6 +82,13 @@ export interface TournamentPayload {
     divergence: number;
     penalty: number;
     score: number;
+    /**
+     * Validation Sharpe per walk-forward split. Shipped by the backend since
+     * the tournament was written and rendered nowhere — so a model scoring
+     * 0.4/0.4/0.5 and one scoring −0.6/0.1/1.8 displayed identically despite
+     * warranting opposite levels of trust.
+     */
+    per_split_val_sharpe?: number[];
   }>;
   winner:
     | (TournamentPayload["candidates"][number] & { rationale: string })
@@ -365,6 +372,59 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
 
 /* ── TournamentScoreboard ──────────────────────────────────────────────── */
 
+/**
+ * Per-split validation Sharpe for the winning candidate.
+ *
+ * A mean hides the difference between a model that won every split and one
+ * carried by a single lucky window — and those demand opposite levels of
+ * trust. The count is arithmetic ("won 2 of 3"), never an inference about
+ * whether the model is good.
+ */
+export function SplitConsistency({ splits }: { splits?: number[] }) {
+  if (!splits || splits.length < 2) return null;
+  const positive = splits.filter((s) => s > 0).length;
+  const max = Math.max(...splits.map(Math.abs), 0.001);
+  return (
+    <div className="mt-2" data-testid="split-consistency">
+      <p className="mb-1 text-xs text-ink-2">
+        Positive in <strong className="text-ink">{positive} of {splits.length}</strong>{" "}
+        validation splits
+        {positive === splits.length
+          ? " — consistent across every window."
+          : positive === 0
+            ? " — negative in every window."
+            : " — the average is not evenly earned."}
+      </p>
+      <div className="flex gap-1">
+        {splits.map((s, i) => {
+          const up = s > 0;
+          return (
+            <div
+              key={i}
+              className="flex-1 rounded border border-line bg-surface-2 px-1 py-0.5 text-center"
+              title={`split ${i + 1}: validation Sharpe ${s.toFixed(2)}`}
+              aria-label={`split ${i + 1}, validation Sharpe ${s.toFixed(2)}`}
+            >
+              {/* Sign is carried by the glyph and the printed number, not by
+                  colour alone. */}
+              <div className="text-[10px] text-ink-4">{up ? "▲" : s < 0 ? "▼" : "–"}</div>
+              <div
+                className="mx-auto rounded-sm"
+                style={{
+                  height: 4,
+                  width: `${Math.max(8, (Math.abs(s) / max) * 100)}%`,
+                  background: up ? "var(--pos)" : s < 0 ? "var(--breach)" : "var(--ink-4)",
+                }}
+              />
+              <div className="font-mono text-[10px] text-ink">{s.toFixed(2)}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function TournamentScoreboard({ tournament }: { tournament: TournamentPayload }) {
   const [open, setOpen] = useState(false);
   const winner = tournament.winner;
@@ -387,6 +447,7 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
         {tournament.candidates.length} candidates after walk-forward validation with
         overfitting penalties.
       </p>
+      <SplitConsistency splits={winner.per_split_val_sharpe} />
       <button
         type="button"
         className="mt-2 text-sm text-primary underline"
