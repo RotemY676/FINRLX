@@ -113,3 +113,6 @@ frontend/playwright-report/
 
 # Per-user Claude Code settings (personal permissions, env, hooks)
 .claude/settings.local.json
+
+# Test-run artifact: document uploads land here during pytest.
+backend/_finrlx_documents/
