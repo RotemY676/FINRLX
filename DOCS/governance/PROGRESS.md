@@ -68,6 +68,35 @@
   - **Remaining 125 by group:** `models` 15, `paper` 14, `ops` 12, `universes` 10, `engines` 9, `backtests` 6, `policies` 6, `features` 5, `pipeline` 5, then a long tail. `engines`/`features`/`pipeline` carry heavy test-fixture use — expect the most churn there.
 - ✅ **US-P0-06** — zero-fiction: static scan + fail-closed synthetic sources + demo labels (i1–i3 done). Follow-up only: demo-flag gating / real regime model (product decision).
 
+## 📍 Phases 1–8 execution status (2026-07-23)
+
+| # | Phase | Status | Evidence |
+|---|---|---|---|
+| 1 | Truth exposures | ✅ | `/regime` rebuilt on real bars; scenario disclosure renders; fiction scanner gained the `demo-route` detector |
+| 2 | Dead indicators wired | ✅ | live: `rsi_14 62.539`, `macd_hist 1.599`, `turbulence 0.211`, all with percentile |
+| 3 | RL producer + blend weights | ✅ | import fixed, `episode_returns()` added, fail-closed synthetic guard, weights actually applied |
+| 4 | Uncertainty legible | ✅ | split-consistency, threshold proximity, drivers/caveats |
+| 5 | Desk v2 gate G-1 | 🟡 | **10/10 e2e green** + found and fixed a real AA contrast failure. G-2/G-4/G-6/G-7 still open — see below |
+| 6 | Uncertainty moves the bar | ✅ | `uncertainty.py`; band widens with weak evidence, never narrows (swept by test) |
+| 7 | Forward track record | ✅ | capture wired into dossier persist; withholds a rate below 20 directional observations |
+| 8 | EP-1 DPK-02 | 🟡 | content-addressed snapshots + honest lineage kinds. **DPK-04/05/06/07 open** |
+
+**Suite:** backend **1593 passed / 6 skipped / 0 failed** · frontend **146 + 10 e2e** · ruff + mypy clean.
+
+### What is NOT done, and why
+
+- **`FEATURE_DESK_V2` stays OFF.** SPEC-04 requires G-1…G-7 in one run. G-2 needs 84 frames
+  reviewed against three reference standards — that is a **human visual judgment** the spec
+  exists to force. G-4 (Lighthouse), G-6 (ten-ticker production reality with data-health green)
+  and G-7 (a real Railway flag flip + rollback rehearsal) also need an operator. Flipping the
+  flag on G-1 alone would bypass the gate the spec was written to impose.
+- **EP-1 cannot complete on engineering alone.** No calibrated forecast, reproducible backtest or
+  prospective validation exists upstream, so **no packet can reach `ready_for_review`** — by
+  design. Phase 7 started accumulating the only input that fixes this, and it accrues in
+  wall-clock time, not in commits.
+- **RL still produces no artifact.** The producer can now *start*; running it needs the research
+  container (torch/SB3 are deliberately not backend deps). That is operator item **E7**.
+
 ## 🗺️ Road to product — remaining phases (authored 2026-07-23)
 
 **Where the project actually is.** MVP-0…MVP-8 closed 2026-05-20; the post-MVP A/B tracks
