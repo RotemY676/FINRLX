@@ -260,3 +260,13 @@ body {
 .desk-dial-live {
   animation: desk-dial-breathe 2.8s ease-in-out infinite;
 }
+
+/* Brief ring on a panel just jumped to from a lane's "Go to this panel". The
+   panels use inline token styles, so this targets the transient attribute the
+   scroll handler sets. Neutralised by the reduced-motion block above. */
+[data-jumped="true"] {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: var(--r-lg);
+  transition: outline-color 1.4s ease-out;
+}

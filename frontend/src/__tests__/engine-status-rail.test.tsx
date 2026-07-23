@@ -7,7 +7,7 @@
  * cannot quietly regress back into an ornament.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { EngineStatusRail } from "@/components/deskv2/core";
 import { deskCopy } from "@/lib/deskCopy";
@@ -117,11 +117,63 @@ describe("EngineStatusRail", () => {
     expect(label).toContain("RL leg queued (E7)");
   });
 
-  it("offers a route into the matching panel", () => {
+  it("scrolls to the correctly-mapped panel — the dial id is not the panel id", () => {
+    // The dial ids are the closed SECTION_IDS (technical/tournament/…) but the
+    // DeskV2 panels are lettered (A..F). The old link targeted #panel-technical,
+    // which does not exist, so "Go to this panel" did nothing. technical -> A.
+    const panelA = document.createElement("section");
+    panelA.id = "panel-A";
+    const scrollSpy = vi.fn();
+    panelA.scrollIntoView = scrollSpy;
+    document.body.appendChild(panelA);
+
     render(<EngineStatusRail sections={SECTIONS} />);
     fireEvent.click(screen.getByTestId("dial-technical"));
-    const link = screen.getByText(deskCopy.rail.jump);
-    expect(link.getAttribute("href")).toBe("#panel-technical");
+    fireEvent.click(screen.getByTestId("jump-technical"));
+
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    document.body.removeChild(panelA);
+  });
+
+  it("tournament jumps to panel B, not a non-existent #panel-tournament", () => {
+    const panelB = document.createElement("section");
+    panelB.id = "panel-B";
+    const scrollSpy = vi.fn();
+    panelB.scrollIntoView = scrollSpy;
+    document.body.appendChild(panelB);
+
+    render(<EngineStatusRail sections={SECTIONS} />);
+    fireEvent.click(screen.getByTestId("dial-tournament"));
+    fireEvent.click(screen.getByTestId("jump-tournament"));
+
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    document.body.removeChild(panelB);
+  });
+
+  it("does not throw when the target panel is not in the DOM", () => {
+    render(<EngineStatusRail sections={SECTIONS} />);
+    fireEvent.click(screen.getByTestId("dial-social"));
+    // No panel-C mounted; clicking must be a safe no-op, not a crash.
+    expect(() => fireEvent.click(screen.getByTestId("jump-social"))).not.toThrow();
+  });
+
+  it("surfaces a non-degrading note on a LIVE dial (rl_note / scored_note)", () => {
+    render(
+      <EngineStatusRail
+        sections={[
+          { id: "tournament", state: "live", rl_note: "RL leg queued (E7)" },
+          { id: "social", state: "live", scored_note: "mentions-only fallback (E8)" },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("dial-tournament"));
+    expect(screen.getByTestId("dial-detail-tournament").textContent).toContain(
+      "RL leg queued (E7)",
+    );
+    fireEvent.click(screen.getByTestId("dial-social"));
+    expect(screen.getByTestId("dial-detail-social").textContent).toContain(
+      "mentions-only fallback (E8)",
+    );
   });
 
   it("explains every code in the closed DetailCode enum", () => {

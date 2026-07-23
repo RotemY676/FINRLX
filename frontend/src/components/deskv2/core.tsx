@@ -23,6 +23,40 @@ export interface SectionStatus {
   detail_code?: DetailCode;
   scope?: string;
   freshness_bar?: string;
+  // Non-degrading notes on a LIVE dial: an optional/gated enhancement is
+  // absent but the lane itself is working (e.g. RL leg queued, mentions-only
+  // sentiment). Backend added these when it stopped degrading working lanes.
+  rl_note?: string;
+  scored_note?: string;
+}
+
+// Which DeskV2 panel each lane's "Go to this panel" jumps to. The dial ids are
+// the closed SECTION_IDS (technical/tournament/news/social/fundamentals/sector)
+// but the panels are lettered (A..F), so a naive `#panel-<id>` anchor targeted
+// nothing and the link did nothing. This maps the two vocabularies.
+const PANEL_FOR: Record<string, string> = {
+  technical: "A",
+  tournament: "B",
+  news: "C",
+  social: "C",
+  fundamentals: "E",
+  sector: "F",
+};
+
+function scrollToPanel(sectionId: string) {
+  if (typeof document === "undefined") return;
+  const candidates = [PANEL_FOR[sectionId], sectionId].filter(Boolean);
+  let el: HTMLElement | null = null;
+  for (const id of candidates) {
+    el = document.getElementById(`panel-${id}`);
+    if (el) break;
+  }
+  if (!el) return;
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  // Brief highlight so the reader sees where they landed.
+  el.setAttribute("data-jumped", "true");
+  window.setTimeout(() => el?.removeAttribute("data-jumped"), 1500);
 }
 export interface DeskStatus {
   fingerprint: string;
@@ -234,7 +268,11 @@ export function EngineStatusRail({ sections }: { sections: SectionStatus[] }) {
 
           {/* Server honesty renders verbatim — the client never rewrites it. */}
           <p className="mt-2 font-medium text-ink">{deskCopy.rail.reasonTitle}</p>
-          <p className="text-ink-2">{open.reason ?? deskCopy.rail.noReason}</p>
+          {/* A live lane has no failure reason; surface its note instead so the
+              useful context (e.g. "RL leg queued (E7)") is not lost. */}
+          <p className="text-ink-2">
+            {open.reason ?? open.rl_note ?? open.scored_note ?? deskCopy.rail.noReason}
+          </p>
 
           {open.detail_code && deskCopy.detailCode[open.detail_code] && (
             <p className="mt-2 rounded border border-line bg-surface-2 p-2 text-ink-2">
@@ -251,12 +289,14 @@ export function EngineStatusRail({ sections }: { sections: SectionStatus[] }) {
             )}
           </div>
 
-          <a
-            href={`#panel-${open.id}`}
+          <button
+            type="button"
+            data-testid={`jump-${open.id}`}
+            onClick={() => scrollToPanel(open.id)}
             className="mt-2 inline-flex min-h-11 items-center text-sm text-primary underline"
           >
             {deskCopy.rail.jump}
-          </a>
+          </button>
         </div>
       )}
     </div>

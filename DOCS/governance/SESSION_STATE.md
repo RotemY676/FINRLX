@@ -8,6 +8,17 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-23 · Desk dial honesty — three lanes were reporting "degraded" while working
+- **User report (with screenshot):** the NVDA desk "Model: degraded" dial looked wrong / uninformative. Asked to fix it and to use agents/skills to check.
+- **Root bug:** `desk_status._tournament` returned `degraded` whenever the optional RL leg was `queued_for_research_run`, even with a real validated winner → a fully-working tournament rendered as "Model: degraded" for nearly every ticker (almost none has a pre-trained RL artifact).
+- **Agent audit (Rule 5, per the request):** a `general-purpose` agent reviewed all six lanes and found **two more instances of the same class** — each **verified by me against a real NVDA dossier before accepting** (truth-first; don't take the agent at face value):
+  - `_social` marked mentions-only as `degraded E8_GATED` → permanently degraded for every free-tier user, though the mentions/buzz lane works fine (scored sentiment is the gated E8 add-on).
+  - `_technical` counted nulls across the whole matrix including 2 structural news passthrough rows (`news_sentiment_7d`, `news_count_7d`), so `PARTIAL_NULLS=3` really tolerated only 1 missing technical signal → degraded healthy short-history tickers.
+  - `_news` thin-coverage check read a `news_count_7d` key the producer never emits → dead in production (verified: real counts are `{positive,neutral,negative}`).
+- **Fix (unified on `_sector`'s live-with-a-note pattern):** a lane that produced its core result is LIVE; a gated/optional enhancement's absence (RL E7, scored-sentiment E8) is a NOTE (`rl_note`/`scored_note`), not a degradation. `_news` now counts from real `items_7d` so genuine thin coverage still degrades honestly. `_technical` counts technical signals only.
+- **Verified live-shape:** all six NVDA lanes now read `live`. 30 desk tests rewritten/added (the old ones pinned the wrong behaviour and used fixtures that diverged from the real producer). **Full suite 1608 passed / 7 skipped / 0 failed**; ruff clean. Shipped `4bc70094`; production verification in flight.
+
+
 ### Entry — 2026-07-23 · First real RL artifact produced + model-lab dashboard
 - **User request:** produce a real RL artifact first so RL is genuinely populated, then build the honest model-comparison dashboard as a new tab.
 - **The RL path genuinely never ran — three impedance mismatches fixed:** (1) export dumped `RebalanceState.__dict__`, which the env cannot read (needs `engine_score`/`realized_return`) → every row hit the synthetic fallback → fail-closed rejection; (2) val windows are ~16 states but the env floored `_max_steps` at 20 → ran past real data into synthetic; (3) DDPG needs a continuous action space this discrete env does not provide → it now skips honestly with a recorded reason instead of crashing. Export rewritten to emit real `{engine_score, realized_return}` rows.
