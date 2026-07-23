@@ -22,13 +22,16 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-from datetime import UTC, datetime
+import logging
+from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.autopilot import AutopilotDossier
 from app.services.autopilot import CONFIG_VERSION, build_dossier, validate_ticker
+
+logger = logging.getLogger(__name__)
 
 COMPARISON_MAX_TICKERS = 4
 
@@ -64,7 +67,49 @@ async def persist_dossier(db: AsyncSession, dossier: dict) -> AutopilotDossier:
         row.generated_at = datetime.now(UTC)
         row.payload_json = payload
     await db.flush()
+    await _capture_stance_observation(db, dossier)
     return row
+
+
+async def _capture_stance_observation(db: AsyncSession, dossier: dict) -> None:
+    """Record the served stance for forward scoring (phase 7).
+
+    A forward-scored track record is the one asset that cannot be bought back
+    later — it accrues only in wall-clock time — so capture runs from the first
+    dossier, long before the reporting surface is useful.
+
+    Deliberately best-effort: a failure here must never break the read path.
+    A missing observation costs one data point; a 500 on the dossier costs the
+    user their research.
+    """
+    from app.services.track_record import record_stance
+
+    try:
+        summary = dossier.get("summary") or {}
+        freshness = dossier.get("freshness") or {}
+        latest_bar = freshness.get("latest_bar")
+        close = summary.get("latest_close")
+        stance = summary.get("stance")
+        score = summary.get("composite_score")
+        # Every field must be genuinely present — a synthesised observation
+        # would poison the only honest record the product has.
+        if not (latest_bar and stance and isinstance(close, int | float)
+                and isinstance(score, int | float)):
+            return
+        await record_stance(
+            db,
+            ticker=dossier["ticker"],
+            stance=stance,
+            composite_score=float(score),
+            observed_bar_date=date.fromisoformat(latest_bar),
+            observed_close=float(close),
+            avg_confidence=summary.get("avg_confidence"),
+            uncertainty_tier=(summary.get("uncertainty") or {}).get("tier"),
+            config_version=dossier.get("config_version"),
+        )
+    except Exception:  # noqa: BLE001 — capture must never break serving
+        logger.warning("stance observation capture failed for %s",
+                       dossier.get("ticker"), exc_info=True)
 
 
 async def load_persisted(db: AsyncSession, ticker: str) -> dict | None:
