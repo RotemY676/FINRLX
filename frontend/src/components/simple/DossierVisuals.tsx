@@ -168,14 +168,94 @@ export function ThresholdProximity({ score }: { score: number }) {
   );
 }
 
+export interface UncertaintyBlock {
+  tier: string;
+  multiplier: number;
+  thresholds: {
+    base: { constructive_at: number; cautious_at: number };
+    adjusted: { constructive_at: number; cautious_at: number };
+  };
+  stance_under_uncertainty: string;
+  reasons: string[];
+}
+
+const TIER_LABEL: Record<string, string> = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+  very_high: "very high",
+};
+
+/**
+ * Uncertainty that moved the bar, and what that changed.
+ *
+ * A confidence number alone tells a reader nothing they can act on. This shows
+ * the widened threshold and, when the reading no longer clears it, says so —
+ * that divergence is the finding, so it is stated rather than applied
+ * invisibly.
+ */
+export function UncertaintyBand({
+  block,
+  stance,
+}: {
+  block?: UncertaintyBlock;
+  stance: string;
+}) {
+  if (!block) return null;
+  const simple = toSimpleStance(stance);
+  const differs = block.stance_under_uncertainty !== simple;
+  const widened = block.multiplier > 1;
+  return (
+    <div
+      data-testid="uncertainty-band"
+      className={`mt-2 rounded-lg border p-2 text-xs ${
+        differs ? "border-caution bg-caution-soft text-caution-soft-ink" : "border-line bg-surface-2 text-ink-2"
+      }`}
+    >
+      <p>
+        <span className="font-medium">Uncertainty: {TIER_LABEL[block.tier] ?? block.tier}</span>
+        {widened && (
+          <>
+            {" — the bar for a non-neutral reading widens to "}
+            <span className="font-mono">
+              +{block.thresholds.adjusted.constructive_at} /{" "}
+              {block.thresholds.adjusted.cautious_at}
+            </span>
+            {" from "}
+            <span className="font-mono">
+              +{block.thresholds.base.constructive_at} /{" "}
+              {block.thresholds.base.cautious_at}
+            </span>
+            .
+          </>
+        )}
+        {!widened && " — the engine's own thresholds apply unchanged."}
+      </p>
+      {differs && (
+        <p className="mt-1 font-medium">
+          At this level of uncertainty the reading is{" "}
+          <strong>{block.stance_under_uncertainty}</strong>, not {simple}.
+        </p>
+      )}
+      {block.reasons.length > 0 && (
+        <ul className="mt-1 list-disc pl-4">
+          {block.reasons.map((r) => <li key={r}>{r}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function EnsembleDial({
   score,
   confidence,
   stance,
+  uncertainty,
 }: {
   score: number;
   confidence: number;
   stance: string;
+  uncertainty?: UncertaintyBlock;
 }) {
   const reduced = useReducedMotion();
   const [t, setRef] = useEnterProgress(reduced);
@@ -274,6 +354,7 @@ export function EnsembleDial({
             distinguishes a reading that is one revision away from one that is
             settled. Pure subtraction on two real numbers. */}
         <ThresholdProximity score={score} />
+        <UncertaintyBand block={uncertainty} stance={stance} />
         <p className="mt-2 text-xs text-ink-4">
           Zones mark the engine&apos;s own thresholds ({CAUTIOUS_AT} / +{CONSTRUCTIVE_AT}).
           Research overlay, not a prediction.

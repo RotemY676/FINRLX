@@ -32,6 +32,8 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Callable
 
+from app.services.freshness_state import freshness_state_from_latest
+from app.services.uncertainty import uncertainty_block
 from app.services.single_ticker_analysis import (
     Bars,
     RebalanceState,
@@ -590,6 +592,20 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
             "avg_confidence": composite["avg_confidence"],
             "regime": regime["label"],
             "stance_kind": "research stance from the FINRLX engine ensemble — not advice",
+            # Phase 6: uncertainty that moves the threshold rather than
+            # annotating the answer. Reported alongside the engine stance, not
+            # substituted for it — when the two differ, that difference is the
+            # finding and the reader should see it stated.
+            "uncertainty": uncertainty_block(
+                composite_score=composite["composite_score"],
+                avg_confidence=composite["avg_confidence"],
+                engine_scores=[
+                    e.get("score") for e in engine_outputs.values()
+                    if isinstance(e, dict) and isinstance(e.get("score"), int | float)
+                ],
+                sessions=len(bars.dates),
+                is_stale=freshness_state_from_latest(latest).is_stale,
+            ),
         },
         "sections": {
             "technical": {

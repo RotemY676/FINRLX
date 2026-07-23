@@ -88,6 +88,56 @@ describe("ThresholdProximity via EnsembleDial", () => {
   });
 });
 
+describe("UncertaintyBand", () => {
+  const base = { constructive_at: 0.3, cautious_at: -0.25 };
+
+  it("says the thresholds are unchanged at low uncertainty", () => {
+    render(
+      <EnsembleDial
+        score={0.5}
+        confidence={0.8}
+        stance="buy"
+        uncertainty={{
+          tier: "low",
+          multiplier: 1,
+          thresholds: { base, adjusted: base },
+          stance_under_uncertainty: "constructive",
+          reasons: ["all uncertainty inputs within normal range"],
+        }}
+      />,
+    );
+    expect(screen.getByTestId("uncertainty-band").textContent).toContain("unchanged");
+  });
+
+  it("shows the widened bar and what it changed", () => {
+    render(
+      <EnsembleDial
+        score={0.32}
+        confidence={0.2}
+        stance="buy"
+        uncertainty={{
+          tier: "very_high",
+          multiplier: 2.5,
+          thresholds: { base, adjusted: { constructive_at: 0.75, cautious_at: -0.625 } },
+          stance_under_uncertainty: "neutral",
+          reasons: ["ensemble confidence 0.20 is very low", "engines disagree sharply"],
+        }}
+      />,
+    );
+    const band = screen.getByTestId("uncertainty-band");
+    expect(band.textContent).toContain("very high");
+    expect(band.textContent).toContain("0.75");
+    // The divergence IS the finding — it must be stated, not implied.
+    expect(band.textContent).toContain("neutral, not constructive");
+    expect(band.textContent).toContain("engines disagree sharply");
+  });
+
+  it("renders nothing when the backend sent no uncertainty block", () => {
+    render(<EnsembleDial score={0.5} confidence={0.8} stance="buy" />);
+    expect(screen.queryByTestId("uncertainty-band")).toBeNull();
+  });
+});
+
 describe("EngineVotes reasoning", () => {
   const engines = {
     technical_momentum: {

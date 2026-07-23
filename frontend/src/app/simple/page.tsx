@@ -230,6 +230,7 @@ export default function SimpleModePage() {
               score={state.dossier.summary.composite_score}
               confidence={state.dossier.summary.avg_confidence}
               stance={state.dossier.summary.stance}
+              uncertainty={state.dossier.summary.uncertainty}
             />
             {state.dossier.sections.technical.engines && (
               <EngineVotes engines={state.dossier.sections.technical.engines} />

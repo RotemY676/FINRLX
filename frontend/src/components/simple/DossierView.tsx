@@ -9,7 +9,11 @@
 
 import { useState } from "react";
 
-import { SentimentSplit, type EngineOutput } from "@/components/simple/DossierVisuals";
+import {
+  SentimentSplit,
+  type EngineOutput,
+  type UncertaintyBlock,
+} from "@/components/simple/DossierVisuals";
 import { track } from "@/lib/analytics";
 import {
   STANCE_HOVER_LABEL,
@@ -32,6 +36,8 @@ export interface DossierPayload {
     avg_confidence: number;
     regime: string;
     stance_kind: string;
+    /** Phase 6: the tier, the widened thresholds, and what they change. */
+    uncertainty?: UncertaintyBlock;
   };
   sections: {
     technical: {
