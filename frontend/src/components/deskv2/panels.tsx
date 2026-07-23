@@ -67,14 +67,18 @@ export function VerdictBand({ head, statusFetch, onStanceClick }: {
         </div>
       </div>
 
+      {/* Colours come from globals.css, not deskTokens. The desk palette is a
+          separate hardcoded set of hex values that never received the WCAG
+          tuning the main tokens did — accent #0e7c7b on accentSubtle #e0ebee
+          measured 4.12:1, below the 4.5:1 AA floor, and gate G-3 caught it.
+          --primary-soft / --primary-soft-ink is the tuned pair, and it also
+          gives the desk a working dark mode. min-h-11 is the 44pt floor. */}
       <button
         data-testid="stance-chip"
         onClick={onStanceClick}
-        style={{ border: tokens.border.hairline,
-                 borderRadius: tokens.radius.chip,
-                 padding: "6px 14px", background: tokens.color.accentSubtle }}
+        className="inline-flex min-h-11 items-center rounded-lg border border-line bg-primary-soft px-3.5 py-1.5"
       >
-        <strong style={{ color: tokens.color.accent }}>
+        <strong className="text-primary-soft-ink">
           {stance.state ?? "no stance yet"}
         </strong>
         {" · "}
