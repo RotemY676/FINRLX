@@ -19,6 +19,36 @@ chosen and records the standing roster.
 5. **Record the chosen team** in the task's plan and in `SESSION_STATE.md`. State *why* each was picked.
 6. **Right-size parallelism** — independent scouts/builders run concurrently; dependent steps run in sequence.
 
+## Per-task team records
+
+### 2026-07-23 — capability survey + phases 1–8
+
+**Rule 5 compliance note, recorded honestly:** the selection step was run *explicitly* only
+for the capability survey, where the user asked for it directly. For phases 1–8 I worked
+solo and did not perform or record a team-selection step. Rule 5 makes that step mandatory
+per task, not per request-that-mentions-agents. Recorded here after the fact rather than
+left absent; the fix going forward is to run step 1–6 above at the start of each phase.
+
+**Survey (three agents, run in parallel — the sub-workstreams were independent):**
+
+| Sub-workstream | Agent | Why this one |
+|---|---|---|
+| FinRL/FinRLX capability audit | `general-purpose` | Needed to read installed packages, vendored code and the serving paths together, then judge exploitation — an `Explore` scout could locate but not assess. |
+| Market/competitor comparison | `general-purpose` (web research) | External-source requirement of Rule 9; needed WebSearch/WebFetch plus verification markers. |
+| UX/UI innovation | `general-purpose` (repo-grounded) | Deliberately grounded in the real components and payload first, so proposals could not be generic. |
+
+**Council rounds (5, as requested):** QA verification of claims against code → Red Team on
+truth exposures → Skeptic on contradictory claims → Surveyor on source quality → Chair
+synthesis. Every critical finding was re-verified by me against the code **and** production
+before being reported; two agent claims were corrected in the process (engine count, and
+the framing of the CSP/font constraint).
+
+**Skills that were relevant and NOT used — worth naming, since Rule 5 exists to prevent this:**
+`finrlx-visual-qa-accessibility-gate` (would have fitted the Desk G-3 axe work),
+`backtest-hygiene-gate` (phase 3 RL scoring), `recommendation-object-provenance`
+(phase 8 DPK-02), `feature-flag-kill-switch` (phase 5 flag decision). The work was done
+correctly without them, but the roster exists so that judgement is not the only safeguard.
+
 ## Standing roster — project-local skills (`.claude/skills/`)
 
 These FINRLX skills are the first-choice tools; map tasks to them before reaching for generic ones:
