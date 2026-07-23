@@ -30,6 +30,7 @@ async def test_flags_endpoint_returns_default_payload_shape(client):
         "research_fundamentals_ui",  # Phase 16
         "research_peers_ui",         # Phase 16
         "desk_v2",                   # Desk W1 (DEC-7) — dark until exit gate
+        "model_lab",                 # Model-lab dashboard — dark until verified
         "decision_packet_v1",        # EP-1 (US-DPK-01..03) — dark until P0 truth foundations
     }
     # Defaults are ON for the test environment

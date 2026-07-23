@@ -33,6 +33,7 @@ from threading import Lock
 from typing import Callable
 
 from app.services.freshness_state import freshness_state_from_latest
+from app.services.model_decision import verdict_block
 from app.services.single_ticker_analysis import (
     Bars,
     RebalanceState,
@@ -542,6 +543,23 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
     done(s)
 
     s = stage("dossier — assembly")
+    # Phase 6 uncertainty (used by the summary AND the model-lab verdict below,
+    # so it is computed once here rather than twice).
+    _uncertainty = uncertainty_block(
+        composite_score=composite["composite_score"],
+        avg_confidence=composite["avg_confidence"],
+        engine_scores=[
+            e.get("score") for e in engine_outputs.values()
+            if isinstance(e, dict) and isinstance(e.get("score"), int | float)
+        ],
+        sessions=len(bars.dates),
+        is_stale=freshness_state_from_latest(latest).is_stale,
+    )
+    # Model-lab final verdict: one honest research read of the real tournament.
+    # A passive winner is reported as "no active edge", never constructive.
+    tournament["verdict"] = verdict_block(
+        tournament, uncertainty_tier=_uncertainty.get("tier")
+    )
     price_series = [
         {"date": d.isoformat(), "close": round(c, 4)}
         for d, c in zip(bars.dates, bars.closes, strict=False)
@@ -603,16 +621,7 @@ def build_dossier(ticker: str, *, history_days: int = HISTORY_DAYS_DEFAULT) -> d
             # annotating the answer. Reported alongside the engine stance, not
             # substituted for it — when the two differ, that difference is the
             # finding and the reader should see it stated.
-            "uncertainty": uncertainty_block(
-                composite_score=composite["composite_score"],
-                avg_confidence=composite["avg_confidence"],
-                engine_scores=[
-                    e.get("score") for e in engine_outputs.values()
-                    if isinstance(e, dict) and isinstance(e.get("score"), int | float)
-                ],
-                sessions=len(bars.dates),
-                is_stale=freshness_state_from_latest(latest).is_stale,
-            ),
+            "uncertainty": _uncertainty,
         },
         "sections": {
             "technical": {

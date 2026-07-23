@@ -1,0 +1,67 @@
+{
+  "schema_version": "e6-1",
+  "ticker": "AAPL",
+  "generated_at": "2026-07-23T18:40:10Z",
+  "recipe": "icaif2020-ensemble",
+  "splits": [
+    [
+      47,
+      63
+    ],
+    [
+      63,
+      79
+    ],
+    [
+      79,
+      95
+    ]
+  ],
+  "agents": {
+    "rl_ppo": {
+      "train_sharpe": 0.8341,
+      "val_sharpe": 1.5955,
+      "per_split_val_sharpe": [
+        2.9749,
+        -0.4686,
+        2.2801
+      ],
+      "name": "PPO (FinRL ensemble)"
+    },
+    "rl_a2c": {
+      "train_sharpe": 1.5915,
+      "val_sharpe": 2.2265,
+      "per_split_val_sharpe": [
+        2.9749,
+        1.1639,
+        2.5407
+      ],
+      "name": "A2C (FinRL ensemble)"
+    }
+  },
+  "skipped_agents": {
+    "rl_ddpg": "AssertionError: The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(3) was provided"
+  },
+  "selection_history": [
+    {
+      "period": "split-1",
+      "selected": "rl_ppo",
+      "val_sharpe": 2.9749,
+      "turbulence_gate": false
+    },
+    {
+      "period": "split-2",
+      "selected": "rl_a2c",
+      "val_sharpe": 1.1639,
+      "turbulence_gate": false
+    },
+    {
+      "period": "split-3",
+      "selected": "rl_a2c",
+      "val_sharpe": 2.5407,
+      "turbulence_gate": false
+    }
+  ],
+  "turbulence_events": [],
+  "trained_on_latest_bar": "2026-07-23"
+}

@@ -38,7 +38,13 @@ class OfflinePortfolioEnv(gym.Env):
         self.action_space = spaces.Discrete(3)
 
         self._step_idx = 0
-        self._max_steps = max(len(self.dataset), 20)
+        # Step exactly through the real rows when there are any. The previous
+        # `max(len, 20)` floor meant a validation window shorter than 20 states
+        # (they are ~18) ran past the real data into the synthetic generator,
+        # which the fail-closed guard then rejected — so no real artifact could
+        # ever be produced. Only the genuinely-empty case keeps the 20-step
+        # demo floor.
+        self._max_steps = len(self.dataset) if self.dataset else 20
         self._prev_action = 0
         self._portfolio_value = 1.0
         self._total_reward = 0.0
@@ -56,6 +62,10 @@ class OfflinePortfolioEnv(gym.Env):
         self._used_synthetic = False
 
     def reset(self, *, seed=None, options=None):
+        # Seed the Gymnasium base RNG so the env passes env_checker and SB3's
+        # seeding contract; also reseed our own generator for the synthetic
+        # fallback path.
+        super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
         self._step_idx = 0
@@ -109,10 +119,39 @@ class OfflinePortfolioEnv(gym.Env):
         }
 
     def _get_obs(self) -> np.ndarray:
-        row = self._get_row(self._step_idx)
+        # After the final step, step_idx == len(dataset); reading a row there
+        # would trip the synthetic fallback and falsely flag an otherwise-real
+        # episode. The terminal observation is never used for a reward
+        # (done=True), so reuse the last real row instead of fabricating one.
+        idx = self._step_idx
+        if self.dataset:
+            idx = min(idx, len(self.dataset) - 1)
+        row = self._get_row(idx)
+
+        # NO LOOK-AHEAD. step() rewards on row[idx].realized_return — the
+        # FORWARD return from this state. It must never enter the observation,
+        # or the agent sees its own answer: the first version did exactly that
+        # (Sharpe 4+, a trivial leak, not an edge). The observation at decision
+        # time t may contain only information known BEFORE that return is
+        # realised:
+        #   - engine_score at t: the composite is computed from data up to t.
+        #   - the return realised INTO t (the previous row's forward return).
+        #   - trailing volatility from prior returns only.
+        #   - the previous action.
         engine_score = np.clip(row.get("engine_score", 0.0), -1, 1)
-        lagged_return = np.clip(row.get("realized_return", 0.0) * 10, -1, 1)
-        volatility = np.clip(abs(row.get("realized_return", 0.0)) * 5, 0, 1)
+
+        prev_ret = 0.0
+        if self.dataset and idx > 0:
+            prev_ret = self.dataset[idx - 1].get("realized_return", 0.0)
+        lagged_return = np.clip(prev_ret * 10, -1, 1)
+
+        trailing = [
+            self.dataset[j].get("realized_return", 0.0)
+            for j in range(max(0, idx - 5), idx)
+        ] if self.dataset else []
+        vol = float(np.std(trailing)) if len(trailing) >= 2 else 0.0
+        volatility = np.clip(vol * 10, 0, 1)
+
         prev_action_enc = (self._prev_action - 1.0) / 1.0  # maps 0,1,2 -> -1,0,1
 
         return np.array(

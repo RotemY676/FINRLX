@@ -40,6 +40,8 @@ export interface FeatureFlags {
   // Desk W1 (DEC-7) — Unified Research Desk v2; dark until the SPEC-04
   // exit gate passes in the browser-equipped environment.
   desk_v2: boolean;
+  // Model-lab dashboard tab — walk-forward model comparison + RL lane + verdict.
+  model_lab: boolean;
 }
 
 interface FeatureFlagsContextValue {
@@ -62,6 +64,7 @@ const FAIL_CLOSED: FeatureFlags = {
   research_fundamentals_ui: false,
   research_peers_ui: false,
   desk_v2: false,
+  model_lab: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
@@ -97,6 +100,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
             research_fundamentals_ui: Boolean(data.research_fundamentals_ui),
             research_peers_ui: Boolean(data.research_peers_ui),
             desk_v2: Boolean(data.desk_v2),
+            model_lab: Boolean(data.model_lab),
           });
         }
       })

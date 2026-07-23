@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # Desk W1 (SPEC-01 DEC-7): the Unified Research Desk v2 ships dark.
     # Default OFF; flipped only after the W1 exit gate (SPEC-04 G-1..G-7).
     feature_desk_v2: bool = False
+    # Model-lab dashboard: a dedicated tab comparing the walk-forward model
+    # tournament (heuristic/ML + RL agents where an artifact exists) and
+    # producing one honest research verdict. Default OFF until verified.
+    feature_model_lab: bool = False
     # SPEC-05 EP-1 / US-DPK-01..03: the canonical DecisionPacket read-only
     # projection + truth gate. Ships dark. Rollback = drop back to the legacy
     # recommendation read while retaining any new records. Enabling this flag

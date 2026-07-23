@@ -116,3 +116,7 @@ frontend/playwright-report/
 
 # Test-run artifact: document uploads land here during pytest.
 backend/_finrlx_documents/
+
+# Research RL stack — local only, never committed (torch is 290MB)
+research/finrlx_cpu/.venv-research/
+research/finrlx_cpu/*_states.json

@@ -60,51 +60,69 @@ def sharpe(returns: list[float]) -> float:
     return (mean / math.sqrt(var)) * math.sqrt(52)
 
 
-def train_and_score(states: list[dict], splits: list[list[int]]) -> dict:  # pragma: no cover
+def _score_one_agent(Algo, states: list[dict], splits: list[list[int]],
+                     timesteps: int) -> dict:
+    """Train + walk-forward score a single SB3 algo. Raises on any problem."""
+    from env import OfflinePortfolioEnv
+
+    per_split_val, per_split_train = [], []
+    for train_end, val_end in splits:
+        env = OfflinePortfolioEnv(states[:train_end])
+        model = Algo("MlpPolicy", env, verbose=0, seed=1337)
+        model.learn(total_timesteps=timesteps)
+        per_split_train.append(sharpe(env.episode_returns()))
+        val_env = OfflinePortfolioEnv(states[train_end:val_end])
+        obs, _ = val_env.reset()
+        done = False
+        while not done:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, _, done, _, _ = val_env.step(action)
+        # Fail closed: a Sharpe computed over synthetic rows is not evidence and
+        # must not reach the tournament as a competing candidate.
+        if val_env.used_synthetic() or env.used_synthetic():
+            raise ValueError(
+                f"episode fell back to synthetic rows for split "
+                f"({train_end},{val_end}) — export a longer real state series."
+            )
+        per_split_val.append(sharpe(val_env.episode_returns()))
+    return {
+        "train_sharpe": round(sum(per_split_train) / len(per_split_train), 4),
+        "val_sharpe": round(sum(per_split_val) / len(per_split_val), 4),
+        "per_split_val_sharpe": [round(v, 4) for v in per_split_val],
+    }
+
+
+def train_and_score(states: list[dict], splits: list[list[int]],
+                    timesteps: int = 20_000) -> dict:  # pragma: no cover
     """Worker-only: train each agent per split's train window, evaluate on the
-    validation window via the shared TradingEnv, return E.6 agent blocks."""
+    validation window, return the E.6 agent blocks plus any honest skips.
+
+    A skipped agent (e.g. DDPG, which needs a continuous action space this
+    discrete env does not provide) is recorded with a reason, not silently
+    dropped and not crashed over — an incomplete-but-honest ensemble is better
+    than a fabricated-complete one.
+    """
     _require_stack()
     from stable_baselines3 import A2C, DDPG, PPO
 
     # The environment is OfflinePortfolioEnv. This module imported `TradingEnv`
-    # — a name that exists nowhere in the repository — so `train_and_score` had
-    # never executed: it raised ImportError on the first call, which is why
-    # `research/artifacts/` was never created and the Desk's RL leg reported
-    # "queued for research run" indefinitely. The queue had no worker attached.
-    from env import OfflinePortfolioEnv
-
+    # — a name defined nowhere — so train_and_score raised ImportError on its
+    # first call and had never run, which is why research/artifacts/ was never
+    # created and the Desk's RL leg reported "queued" indefinitely.
     algos = {"rl_ppo": PPO, "rl_a2c": A2C, "rl_ddpg": DDPG}
     out: dict[str, dict] = {}
+    skipped: dict[str, str] = {}
     for key, Algo in algos.items():
-        per_split_val, per_split_train = [], []
-        for train_end, val_end in splits:
-            env = OfflinePortfolioEnv(states[:train_end])
-            model = Algo("MlpPolicy", env, verbose=0, seed=1337)
-            model.learn(total_timesteps=20_000)
-            per_split_train.append(sharpe(env.episode_returns()))
-            val_env = OfflinePortfolioEnv(states[train_end:val_end])
-            obs, _ = val_env.reset()
-            done = False
-            while not done:
-                action, _ = model.predict(obs, deterministic=True)
-                obs, _, done, _, _ = val_env.step(action)
-            # Fail closed: the env pads short windows from a synthetic
-            # generator. A Sharpe computed over invented rows is not evidence
-            # and must not reach the tournament as a competing candidate.
-            if val_env.used_synthetic() or env.used_synthetic():
-                raise ValueError(
-                    f"{key}: episode fell back to synthetic rows for split "
-                    f"({train_end},{val_end}) — refusing to score it. Export a "
-                    "longer real state series before running the ensemble."
-                )
-            per_split_val.append(sharpe(val_env.episode_returns()))
-        out[key] = {
-            "name": f"{key.split('_')[1].upper()} (FinRL ensemble)",
-            "train_sharpe": round(sum(per_split_train) / len(per_split_train), 4),
-            "val_sharpe": round(sum(per_split_val) / len(per_split_val), 4),
-            "per_split_val_sharpe": [round(v, 4) for v in per_split_val],
-        }
-    return out
+        try:
+            block = _score_one_agent(Algo, states, splits, timesteps)
+        except Exception as exc:  # noqa: BLE001 — record, don't crash the run
+            skipped[key] = f"{type(exc).__name__}: {exc}"
+            continue
+        block["name"] = f"{key.split('_')[1].upper()} (FinRL ensemble)"
+        out[key] = block
+    if not out:
+        raise RuntimeError(f"no agent trained successfully; skips: {skipped}")
+    return {"agents": out, "skipped": skipped}
 
 
 def quarterly_selection(agents: dict, splits: list[list[int]]) -> list[dict]:
@@ -135,7 +153,8 @@ def main() -> None:  # pragma: no cover — worker entrypoint
 
     payload = json.loads(pathlib.Path(args.states_json).read_text())
     states, splits = payload["states"], payload["splits"]
-    agents = train_and_score(states, splits)
+    result = train_and_score(states, splits)
+    agents, skipped = result["agents"], result["skipped"]
     artifact = {
         "schema_version": SCHEMA_VERSION,
         "ticker": args.ticker.upper(),
@@ -143,8 +162,10 @@ def main() -> None:  # pragma: no cover — worker entrypoint
         "recipe": RECIPE,
         "splits": splits,
         "agents": agents,
+        "skipped_agents": skipped,
         "selection_history": quarterly_selection(agents, splits),
         "turbulence_events": payload.get("turbulence_events", []),
+        "trained_on_latest_bar": payload.get("latest_bar"),
     }
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -104,6 +104,34 @@ def test_synthetic_fallback_is_flagged_so_it_can_be_rejected():
 
 
 @needs_gym
+def test_the_observation_does_not_leak_the_forward_return():
+    """No look-ahead: the reward's own return must not appear in the obs.
+
+    The first artifact scored PPO/A2C at Sharpe 4+, because the observation
+    carried row[idx].realized_return — the exact forward return step() rewards
+    on. The agent saw its answer. The obs at decision time may only contain
+    information known BEFORE that return is realised.
+    """
+    mod = _load_env_module()
+    # Rows where the forward return is large and perfectly predictable IF you
+    # can see it, but uninformative from the past alone.
+    rows = [{"engine_score": 0.0, "realized_return": (0.5 if i % 2 else -0.5),
+             "date": f"d{i}", "price": 100.0} for i in range(30)]
+    env = mod.OfflinePortfolioEnv(rows)
+    obs, _ = env.reset()
+    # The initial observation is at idx 0: its lagged return must be 0 (no prior
+    # step), NOT row[0].realized_return (+0.5).
+    assert abs(float(obs[1])) < 1e-6, "obs leaked the current forward return"
+
+    obs, _, _, _, _ = env.step(1)
+    # After one step, idx=1: the lagged return is row[0]'s (+0.5 -> clipped),
+    # i.e. the return realised INTO this state, never row[1]'s future return.
+    prior = rows[0]["realized_return"]
+    import numpy as np
+    assert float(obs[1]) == np.clip(prior * 10, -1, 1)
+
+
+@needs_gym
 def test_a_fully_real_episode_is_not_flagged_synthetic():
     mod = _load_env_module()
     env = mod.OfflinePortfolioEnv(_rows(40))
