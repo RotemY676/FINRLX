@@ -18,10 +18,35 @@ def _is_demo_labeled(meta: dict) -> bool:
 
 
 @pytest.mark.asyncio
-async def test_regime_is_labeled_demo(client):
+async def test_regime_is_no_longer_demo_it_is_computed(client):
+    """`/regime` was rebuilt on real bars 2026-07-23 — it must not be demo.
+
+    It previously returned a hardcoded "Risk-on · late-cycle" with an invented
+    confidence, invented alternative-regime probabilities, factor sigmas and
+    sector tilts. Labelling that as demo was the *mitigation*; computing it is
+    the fix. This asserts the fix stands and the label is gone with it, so a
+    regression back to seeded data fails here rather than quietly re-earning
+    the demo tag.
+    """
     r = await client.get("/api/v1/regime")
+    # 503 is legitimate: no benchmark history is a refusal, not a guess.
+    if r.status_code == 503:
+        pytest.skip("benchmark history unavailable in this environment")
     assert r.status_code == 200
-    assert _is_demo_labeled(r.json()["meta"]), "regime must carry the DEMO_DATA label"
+    body = r.json()
+    assert not _is_demo_labeled(body["meta"]), "regime is computed; it must not be demo-labeled"
+
+    data = body["data"]
+    # The label comes from the same rule the dossier uses.
+    assert data["regime_label"] in {"uptrend", "downtrend", "neutral", "risk-off"}
+    assert data["benchmark"] == "SPY"
+    assert data["regime_kind"] and "not a prediction" in data["regime_kind"]
+    # What the system cannot model must be empty AND named, not fabricated.
+    assert data["regime_confidence"] is None
+    assert data["alternatives"] == []
+    assert data["signal_posture"] == []
+    assert data["sector_tilts"] == []
+    assert any("regime_confidence" in u for u in data["unavailable"])
 
 
 @pytest.mark.asyncio

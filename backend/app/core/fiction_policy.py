@@ -86,6 +86,31 @@ def _attr_chain(node: ast.AST) -> list[str]:
     return parts
 
 
+def _is_demo_meta_call(node: ast.Call) -> bool:
+    """True for ``make_meta(..., is_demo=True)`` — a route serving seeded data.
+
+    Added 2026-07-23 after a review found the scanner's blind spot: it detects
+    ``random()`` and fiction-admitting TODOs, but is completely blind to a route
+    that returns *hardcoded fabricated constants*. `/scenario/simulate` shipped
+    invented baselines and sensitivity coefficients for months; it was correctly
+    marked ``is_demo=True`` by US-P0-06, and that label reached no user because
+    the card dropped ``meta``.
+
+    Labelling demo data is necessary but not sufficient — the label has to be
+    rendered. Enumerating these sites forces each one to record *where* its
+    user-visible disclosure lives, so "labelled" can no longer be mistaken for
+    "disclosed".
+    """
+    if _attr_chain(node.func)[-1:] != ["make_meta"]:
+        return False
+    return any(
+        kw.arg == "is_demo"
+        and isinstance(kw.value, ast.Constant)
+        and kw.value.value is True
+        for kw in node.keywords
+    )
+
+
 def _is_random_call(node: ast.Call) -> bool:
     """True if the call target's attribute chain contains a ``random`` segment.
 
@@ -115,11 +140,17 @@ def scan_fiction_risks(base: Path | None = None) -> list[FictionFinding]:
             tree = None
         if tree is not None:
             for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and _is_random_call(node):
-                    ln = node.lineno
-                    snippet = lines[ln - 1].strip() if 0 < ln <= len(lines) else ""
+                if not isinstance(node, ast.Call):
+                    continue
+                ln = node.lineno
+                snippet = lines[ln - 1].strip() if 0 < ln <= len(lines) else ""
+                if _is_random_call(node):
                     findings.append(
                         FictionFinding(f"{rel}:{ln}", "random", snippet)
+                    )
+                elif _is_demo_meta_call(node):
+                    findings.append(
+                        FictionFinding(f"{rel}:{ln}", "demo-route", snippet)
                     )
 
         # Text pass — fiction-admitting TODO markers.
@@ -147,6 +178,25 @@ def scan_fiction_risks(base: Path | None = None) -> list[FictionFinding]:
 #       decision. Proving that ingest→DataTruth linkage end-to-end is tracked as
 #       the US-P0-06 follow-up increment; it is NOT asserted to be complete here.
 KNOWN_FICTION_SITES: dict[str, str] = {
+    # (c) DEMO-ROUTE — a serving route returning seeded illustrative values.
+    #     Acceptance REQUIRES naming the user-visible disclosure. A label in
+    #     meta.warnings that no surface renders is not a disclosure: that is
+    #     exactly how /scenario/simulate served invented baselines (4.2% weight,
+    #     0.74 confidence, 6.4% return) plus invented sensitivity coefficients
+    #     on the production /decision page, correctly labelled and completely
+    #     unannounced, because ScenarioCard did `setResult(res.data)` and
+    #     dropped meta.
+    "app/api/v1/scenario.py:127": (
+        "POST /scenario/simulate: response is computed from hardcoded BASELINE_* "
+        "constants and invented sensitivity coefficients, not a pipeline run. "
+        "DISCLOSURE: ScenarioCard renders a visible 'Illustrative only' notice "
+        "driven by the DEMO_DATA meta warning (test: scenario-card-demo-notice). "
+        "REMOVE THIS ENTRY when the endpoint is rebuilt on the real engine."
+    ),
+    "app/api/v1/scenario.py:134": (
+        "GET /scenario/baseline: the seeded baseline the simulate endpoint "
+        "perturbs. Same disclosure path and same removal condition as :127."
+    ),
     # (b) LABELED-SYNTHETIC-SOURCE — beta market-data generators.
     "app/services/ingest.py:64": (
         "_generate_bars: deterministic synthetic OHLCV (seeded random walk from "

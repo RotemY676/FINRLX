@@ -3,9 +3,11 @@
 GET /api/v1/regime — current regime snapshot
 GET /api/v1/activity — recent activity feed
 """
-from datetime import UTC, datetime
+import asyncio
+import logging
+from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,42 +19,98 @@ from app.schemas.regime import (
     ActivityEvent,
     ActivityFeedResponse,
     RegimeSnapshot,
-    SectorTilt,
-    SignalPosture,
 )
+from app.services.freshness_state import freshness_state_from_latest
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
+# The market-level view is the benchmark's own regime under the identical rule
+# the per-ticker dossier uses, so the two can never disagree by construction.
+REGIME_BENCHMARK = "SPY"
+REGIME_HISTORY_DAYS = 420
+
+# Named so a consumer can see exactly what is missing instead of inferring it
+# from empty lists. These require models the system does not have.
+_UNAVAILABLE = [
+    "regime_confidence: no calibrated regime classifier exists",
+    "alternatives: no probability model over alternative regimes exists",
+    "signal_posture: no factor-exposure model exists",
+    "sector_tilts: no sector-attribution model exists",
+]
+
+
 @router.get("/regime", response_model=ApiResponse[RegimeSnapshot])
 async def get_regime():
-    """Return current regime classification. Seeded deterministic demo data."""
-    now = datetime.now(UTC)
+    """Current regime for the benchmark, computed from real bars.
+
+    Rebuilt 2026-07-23 (zero-fiction). The previous implementation returned a
+    hardcoded label with an invented confidence, invented alternative-regime
+    probabilities, invented factor sigmas and invented sector tilts. It was
+    marked `is_demo=True`, but no consumer rendered that flag, so fabricated
+    numbers reached the operator surface looking computed.
+
+    Everything returned here is derived: the label from `autopilot.regime_label`
+    (the same rule the dossier uses), and the switch date / persistence from
+    `desk_payload.regime_band_series`, which replays that rule session by
+    session. What cannot be computed is named in `unavailable`, not filled in.
+    """
+    from app.services.autopilot import regime_label
+    from app.services.desk_payload import regime_band_series
+    from app.services.single_ticker_analysis import fetch_history
+
+    try:
+        bars = await asyncio.to_thread(
+            fetch_history, REGIME_BENCHMARK, REGIME_HISTORY_DAYS
+        )
+    except Exception as exc:  # noqa: BLE001 — provider boundary
+        logger.warning("regime: benchmark history unavailable: %s", exc)
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Regime needs {REGIME_BENCHMARK} history and the price source "
+                "is unavailable. No regime is reported rather than a guess."
+            ),
+        ) from exc
+
+    if not bars.closes:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No {REGIME_BENCHMARK} bars available to classify a regime.",
+        )
+
+    rule = regime_label(bars)
+    bands = regime_band_series(bars)
+    latest = bars.dates[-1]
+
+    last_switch: str | None = None
+    persistence: int | None = None
+    # A single band means the rule never flipped inside the observed window —
+    # the switch happened before it, so the date is unknown, not the window start.
+    if len(bands) >= 2:
+        last_switch = bands[-1]["start"]
+        persistence = (latest - date.fromisoformat(last_switch)).days
+
     return ApiResponse(
-        meta=make_meta(is_demo=True),
+        meta=make_meta(
+            freshness=freshness_state_from_latest(latest),
+            warnings=[
+                f"Regime is the {REGIME_BENCHMARK} benchmark's rule-based label, "
+                "not a market-wide model output."
+            ],
+        ),
         data=RegimeSnapshot(
-            regime_label="Risk-on · late-cycle",
-            regime_confidence=0.78,
-            persistence_days=41,
-            last_switch_date="2026-03-14",
-            alternatives=[
-                {"label": "risk-off", "prob": 0.14},
-                {"label": "rotation", "prob": 0.08},
-            ],
-            signal_posture=[
-                SignalPosture(factor="Momentum", direction="overweight", sigma=2.4),
-                SignalPosture(factor="Quality", direction="overweight", sigma=1.1),
-                SignalPosture(factor="Value", direction="neutral", sigma=0.0),
-                SignalPosture(factor="Low-vol", direction="underweight", sigma=-1.8),
-            ],
-            sector_tilts=[
-                SectorTilt(sector="Semis", tilt_pct=3.2),
-                SectorTilt(sector="Software", tilt_pct=2.1),
-                SectorTilt(sector="Financials", tilt_pct=0.4),
-                SectorTilt(sector="Energy", tilt_pct=-1.6),
-                SectorTilt(sector="Utilities", tilt_pct=-2.4),
-            ],
-            as_of=now,
+            regime_label=rule["label"],
+            regime_detail=rule["detail"],
+            regime_kind=rule["kind"],
+            benchmark=REGIME_BENCHMARK,
+            persistence_days=persistence,
+            last_switch_date=last_switch,
+            sessions_observed=len(bars.closes),
+            unavailable=_UNAVAILABLE,
+            as_of=datetime(latest.year, latest.month, latest.day, tzinfo=UTC),
         ),
     )
 

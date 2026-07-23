@@ -19,13 +19,29 @@ class SectorTilt(BaseModel):
 
 
 class RegimeSnapshot(BaseModel):
-    regime_label: str  # "Risk-on · late-cycle"
-    regime_confidence: float
-    persistence_days: int
-    last_switch_date: str
-    alternatives: list[dict] = Field(default_factory=list)  # [{label, prob}]
+    """The benchmark's regime under the same rule the dossier uses.
+
+    Zero-fiction note (2026-07-23): this used to return a hardcoded
+    "Risk-on · late-cycle" with `regime_confidence=0.78`, alternative-regime
+    probabilities, factor sigmas and sector tilts — none of which the system
+    has a model to produce. Those fields are now optional and are left empty,
+    with `unavailable` naming what is missing and why, rather than filled with
+    invented numbers.
+    """
+
+    regime_label: str
+    regime_detail: str | None = None
+    regime_kind: str | None = None
+    benchmark: str | None = None
+    persistence_days: int | None = None
+    last_switch_date: str | None = None
+    sessions_observed: int | None = None
+    # No model produces these. They stay empty rather than fabricated.
+    regime_confidence: float | None = None
+    alternatives: list[dict] = Field(default_factory=list)
     signal_posture: list[SignalPosture] = Field(default_factory=list)
     sector_tilts: list[SectorTilt] = Field(default_factory=list)
+    unavailable: list[str] = Field(default_factory=list)
     as_of: datetime
 
 

@@ -23,6 +23,11 @@ from __future__ import annotations
 from bisect import bisect_left
 from datetime import date
 
+from app.services.features import (
+    _compute_macd_hist,
+    _compute_rsi_wilder,
+    _compute_turbulence,
+)
 from app.services.single_ticker_analysis import (
     Bars,
     _compute_drawdown,
@@ -142,6 +147,18 @@ _MATRIX_SPECS = [
      "recent realized risk"),
     ("drawdown_20d", "20-day drawdown", lambda c, v: _compute_drawdown(c, 20)[0],
      "distance from the recent peak"),
+    # Added 2026-07-23 alongside wiring these three into DEFAULT_DEFINITIONS.
+    # Listing them here is what gives them percentile + sparkline treatment;
+    # without it they would fall through to the bare-value tail below and lose
+    # the "unusual vs its own history" framing that makes them decision-useful.
+    # `desk_elevation` already ranks on these keys, and the Desk's risk section
+    # filters for "turbulence" — both were operating on rows that never existed.
+    ("rsi_14", "RSI (14)", lambda c, v: _compute_rsi_wilder(c)[0],
+     "overbought / oversold pressure"),
+    ("macd_hist_12_26_9", "MACD histogram", lambda c, v: _compute_macd_hist(c)[0],
+     "trend acceleration"),
+    ("turbulence_20d", "Turbulence (20d)", lambda c, v: _compute_turbulence(c)[0],
+     "how unusual today is versus the last month"),
 ]
 
 

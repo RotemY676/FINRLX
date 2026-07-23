@@ -48,6 +48,24 @@ DEFAULT_DEFINITIONS = [
     {"key": "news_count_7d", "name": "7-Day News Count", "category": "sentiment",
      "description": "Number of news events in last 7 calendar days",
      "lookback_days": 7, "input_kind": "news", "output_type": "int"},
+    # Wired 2026-07-23. `_compute_macd_hist`, `_compute_rsi_wilder` and
+    # `_compute_turbulence` were implemented and dispatched below, but their
+    # keys were absent from this list — so no FeatureDefinition row existed and
+    # the dispatch never fired. Three indicators were computed by dead code
+    # while `desk_elevation` ranked over them and the dossier UI labelled rows
+    # for them. Adding the definitions is the whole fix.
+    {"key": "macd_hist_12_26_9", "name": "MACD Histogram (12/26/9)", "category": "momentum",
+     "description": "MACD line (EMA12 − EMA26) minus its EMA9 signal, at the latest bar",
+     "lookback_days": 35, "input_kind": "bars", "output_type": "float"},
+    {"key": "rsi_14", "name": "RSI (14, Wilder)", "category": "momentum",
+     "description": "Wilder-smoothed relative strength index over 14 days, 0-100",
+     "lookback_days": 15, "input_kind": "bars", "output_type": "float"},
+    {"key": "turbulence_20d", "name": "Turbulence (20d)", "category": "volatility",
+     "description": (
+         "Squared z-score of the latest daily return against the trailing "
+         "20-day return distribution — how unusual today is for this asset"
+     ),
+     "lookback_days": 20, "input_kind": "bars", "output_type": "float"},
 ]
 
 

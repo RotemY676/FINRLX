@@ -115,6 +115,22 @@ def compute_features(
     feats["drawdown_20d"] = _compute_drawdown(closes, 20)
     feats["relative_volume_20d"] = _compute_relative_volume(volumes, 20)
 
+    # Wired 2026-07-23. These three were implemented in `features.py` and
+    # reachable from nothing: `desk_elevation` ranks on their keys, the Desk's
+    # risk section filters for "turbulence", and the dossier UI labels rows for
+    # RSI and MACD — all against rows no producer emitted. Imported rather than
+    # duplicated so there is one definition of each indicator; `features.py`
+    # imports only models, so there is no cycle.
+    from app.services.features import (
+        _compute_macd_hist,
+        _compute_rsi_wilder,
+        _compute_turbulence,
+    )
+
+    feats["rsi_14"] = _compute_rsi_wilder(closes)
+    feats["macd_hist_12_26_9"] = _compute_macd_hist(closes)
+    feats["turbulence_20d"] = _compute_turbulence(closes)
+
     if news_scores:
         avg = sum(news_scores) / len(news_scores)
         feats["news_sentiment_7d"] = (round(avg, 4), "ok")
