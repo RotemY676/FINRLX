@@ -49,29 +49,62 @@ def _technical(dossier: dict) -> dict:
         return _dial("technical", "unavailable",
                      reason="signal matrix missing from dossier",
                      detail_code="SOURCE_DOWN")
-    nulls = sum(1 for r in matrix if r.get("value") is None)
-    if nulls >= PARTIAL_NULLS:
+    # Count nulls only among the TECHNICAL signals. The matrix also carries
+    # news passthrough rows (news_sentiment_7d, news_count_7d) which the desk
+    # block deliberately never populates (it builds features with no news), so
+    # a healthy dossier always has 2 null news rows. Counting those pre-consumed
+    # 2 of the 3-null tolerance, degrading any ticker missing a single technical
+    # signal (e.g. return_60d on short history). Fixed 2026-07-23.
+    tech_nulls = sum(
+        1 for r in matrix
+        if r.get("value") is None and not str(r.get("key", "")).startswith("news_")
+    )
+    if tech_nulls >= PARTIAL_NULLS:
         return _dial("technical", "degraded",
-                     reason=f"{nulls} signals unpopulated \u2014 data-depth limitation",
+                     reason=f"{tech_nulls} technical signals unpopulated \u2014 data-depth limitation",
                      detail_code="PARTIAL_DATA")
     fresh = dossier.get("freshness") or {}
     return _dial("technical", "live", freshness_bar=fresh.get("latest_bar"))
 
 
 def _tournament(dossier: dict) -> dict:
+    """Dial state for the model tournament.
+
+    The dial reflects the TOURNAMENT's own health — did the walk-forward
+    validation produce a validated winner? — and nothing else. The RL leg
+    (PPO/A2C/DDPG) is an OPTIONAL enhancement with its own "RL research lab"
+    section; whether an RL artifact is trained for this ticker is tracked there.
+
+    Fixed 2026-07-23: this used to return "degraded" whenever the RL leg was
+    `queued_for_research_run`, so a fully-working tournament (8 real candidates,
+    real walk-forward validation, a validated winner) rendered as "Model:
+    degraded" for every ticker without a pre-trained RL artifact — i.e. almost
+    all of them. That made a healthy lane look broken. The RL-queued status is
+    now a non-degrading note, surfaced on a LIVE dial, so the reader still sees
+    that RL is not yet trained without the tournament being misreported as
+    impaired.
+    """
     mi = (dossier.get("sections") or {}).get("model_insight") or {}
-    rl = mi.get("rl") or {}
-    if rl.get("status") == "queued_for_research_run":
-        return _dial("tournament", "degraded",
-                     reason="RL leg queued (E7)", detail_code="E7_GATED")
-    if rl.get("status") == "insufficient_history":
-        return _dial("tournament", "degraded",
-                     reason="insufficient history for RL candidates",
-                     detail_code="PARTIAL_DATA")
+
+    # No validated winner -> the tournament genuinely could not complete.
     if not mi.get("winner") and not mi.get("selected"):
+        if mi.get("status") == "insufficient_history":
+            return _dial("tournament", "unavailable",
+                         reason="insufficient history to validate candidates",
+                         detail_code="PARTIAL_DATA")
         return _dial("tournament", "unavailable",
                      reason="tournament results missing",
                      detail_code="SOURCE_DOWN")
+
+    # A validated winner exists -> the model selection is working = LIVE.
+    # Carry the RL-leg status as a note only; it never degrades the dial.
+    rl_status = (mi.get("rl") or {}).get("status")
+    if rl_status and rl_status != "artifact_merged":
+        note = (
+            "RL leg queued (E7)" if rl_status == "queued_for_research_run"
+            else f"RL leg: {rl_status.replace('_', ' ')}"
+        )
+        return _dial("tournament", "live", rl_note=note)
     return _dial("tournament", "live")
 
 
@@ -81,9 +114,16 @@ def _news(dossier: dict) -> dict:
         return _dial("news", "unavailable",
                      reason=ns.get("note") or "news source unavailable",
                      detail_code="SOURCE_DOWN")
-    counts = ns.get("counts") or {}
-    n7 = counts.get("news_count_7d", counts.get("count_7d"))
-    if isinstance(n7, int) and n7 <= THIN_NEWS_7D:
+    # Count from the actual 7-day items. The old code read
+    # counts.get("news_count_7d"), but the producer keys `counts` by sentiment
+    # label (positive/neutral/negative) and never emits news_count_7d, so the
+    # thin-coverage check was dead \u2014 it never fired in production. items_7d is
+    # the real list and is always present. Thin news coverage is a genuine
+    # quality limitation of the lane (few articles = less reliable sentiment),
+    # so this remains an honest `degraded`, unlike a gated enhancement. Fixed
+    # 2026-07-23.
+    n7 = len(ns.get("items_7d") or [])
+    if n7 <= THIN_NEWS_7D:
         return _dial("news", "degraded",
                      reason=f"7-day news count: {n7} \u2014 thin coverage",
                      detail_code="THIN_COVERAGE")
@@ -91,21 +131,27 @@ def _news(dossier: dict) -> dict:
 
 
 def _social(dossier: dict) -> dict:
+    """Dial state for the social lane.
+
+    Fixed 2026-07-23 (same honesty class as the tournament fix): the social
+    lane's CORE function is buzz/mentions/rank, which the keyless ApeWisdom
+    source provides on every deployment. The *scored* sentiment lane is the
+    gated E8 enhancement (needs the paid Finnhub tier). Marking the whole lane
+    "degraded" whenever scoring is absent meant the social dial was permanently
+    degraded for every free-tier user, while a fully-functional mentions lane
+    was rendered as impaired. Mentions-only is now LIVE with a note; only a
+    genuinely absent lane is unavailable.
+    """
     ns = (dossier.get("sections") or {}).get("news_sentiment") or {}
     lane = ns.get("social") or {}
     if lane.get("available") is False:
-        reason = str(lane.get("reason") or "")
-        if "premium" in reason:
-            return _dial("social", "degraded",
-                         reason="scored lane needs Finnhub tier (E8)",
-                         detail_code="E8_GATED")
         return _dial("social", "unavailable",
                      reason=lane.get("reason") or "social lane unavailable",
                      detail_code="SOURCE_DOWN")
     if lane.get("label") == MENTIONS_LABEL or lane.get("scored") is False:
-        return _dial("social", "degraded",
-                     reason="mentions-only fallback (E8)",
-                     detail_code="E8_GATED")
+        # A real mentions/buzz result; the scored-sentiment enhancement (E8) is
+        # absent but that is a note, not a degradation of the working lane.
+        return _dial("social", "live", scored_note="mentions-only fallback (E8)")
     return _dial("social", "live")
 
 

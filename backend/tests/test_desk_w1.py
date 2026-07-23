@@ -41,7 +41,9 @@ def _dossier_full():
                           "regime": {"label": "uptrend"}},
             "news_sentiment": {
                 "available": True,
-                "counts": {"news_count_7d": 9},
+                "counts": {"positive": 5, "neutral": 2, "negative": 2},
+                # Real producer shape: the 7-day items are the count source.
+                "items_7d": [{"title": f"n{i}"} for i in range(9)],
                 "social": {"available": True, "scored": True,
                            "source": "finnhub_social"},
                 "divergence": {"status": "computed", "sign_disagreement": False},
@@ -100,42 +102,86 @@ def test_status_fingerprint_stable_for_same_dossier():
     assert changed != a
 
 
-def test_status_e7_gated_tournament_degraded():
-    """FX-E7 — DEC-5/US-2.1 AC-4: honest gating, exact detail_code."""
+def test_status_rl_queued_does_not_degrade_a_working_tournament():
+    """A completed tournament is LIVE even when the optional RL leg is queued.
+
+    Fixed 2026-07-23: this used to assert `degraded` + E7_GATED, which made a
+    fully-working model tournament render as "Model: degraded" for every ticker
+    without a pre-trained RL artifact. The RL leg is an optional enhancement
+    tracked in its own section; its absence is a note, not a degradation.
+    """
     d = _mutate(_dossier_full(),
                 ["sections", "model_insight", "rl", "status"],
                 "queued_for_research_run")
     s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
-    assert s["tournament"]["state"] == "degraded"
-    assert s["tournament"]["detail_code"] == "E7_GATED"
-    assert "E7" in s["tournament"]["reason"]
+    assert s["tournament"]["state"] == "live", (
+        "a validated winner means the tournament is working — RL queued must not degrade it"
+    )
+    assert s["tournament"].get("rl_note") == "RL leg queued (E7)"
 
 
-def test_status_e8_fallback_social_degraded():
-    """FX-E8 — mentions-only fallback => degraded E8_GATED (US-3.4 AC-1)."""
+def test_status_tournament_unavailable_only_when_no_winner():
+    """The tournament dial degrades/unavailable only when it truly could not run."""
+    d = _mutate(_dossier_full(), ["sections", "model_insight", "winner"], None)
+    d = _mutate(d, ["sections", "model_insight", "selected"], None)
+    s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
+    assert s["tournament"]["state"] == "unavailable"
+
+
+def test_status_social_mentions_only_is_live_not_degraded():
+    """Mentions-only is a real result; scored sentiment (E8) is an optional add-on.
+
+    Fixed 2026-07-23: this used to pin mentions-only => degraded E8_GATED, which
+    left the social dial permanently degraded for every free-tier user while a
+    fully-working mentions/buzz lane rendered as impaired — the same honesty bug
+    as the tournament dial. The scored-sentiment absence is now a note on a LIVE
+    dial.
+    """
     d = _mutate(_dossier_full(),
                 ["sections", "news_sentiment", "social"],
-                {"available": True, "label": "mentions only, unscored"})
+                {"available": True, "scored": False, "label": "mentions only, unscored"})
     s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
-    assert s["social"]["state"] == "degraded"
-    assert s["social"]["detail_code"] == "E8_GATED"
+    assert s["social"]["state"] == "live"
+    assert s["social"].get("scored_note") == "mentions-only fallback (E8)"
 
-    d2 = _mutate(_dossier_full(),
-                 ["sections", "news_sentiment", "social"],
-                 {"available": False, "reason": "premium_flag_off"})
-    s2 = {x["id"]: x for x in compute_desk_status(d2)["sections"]}
-    assert s2["social"]["detail_code"] == "E8_GATED"
+
+def test_status_social_unavailable_only_when_the_lane_is_absent():
+    d = _mutate(_dossier_full(),
+                ["sections", "news_sentiment", "social"],
+                {"available": False, "reason": "no social source reachable"})
+    s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
+    assert s["social"]["state"] == "unavailable"
+    assert s["social"]["detail_code"] == "SOURCE_DOWN"
 
 
 def test_status_thin_news_coverage():
-    """FX-THIN — ≤3 items/7d => THIN_COVERAGE with rendered count."""
+    """FX-THIN — ≤3 items/7d => THIN_COVERAGE with rendered count.
+
+    Counted from items_7d (the real producer shape), not a news_count_7d key
+    the producer never emits — the old fixture masked that the check was dead
+    in production.
+    """
     d = _mutate(_dossier_full(),
-                ["sections", "news_sentiment", "counts"],
-                {"news_count_7d": 3})
+                ["sections", "news_sentiment", "items_7d"],
+                [{"title": "a"}, {"title": "b"}, {"title": "c"}])
     s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
     assert s["news"]["state"] == "degraded"
     assert s["news"]["detail_code"] == "THIN_COVERAGE"
     assert "3" in s["news"]["reason"]
+
+
+def test_status_technical_live_when_only_news_passthrough_rows_are_null():
+    """Production shape: the matrix carries 2 null news rows on every healthy
+    dossier; they must not count toward the technical null tolerance."""
+    d = _dossier_full()
+    d["sections"]["desk"]["signal_matrix"] = [
+        _row("return_5d", 0.6), _row("return_20d", 0.5), _row("rsi_14", 0.4),
+        _row("news_sentiment_7d", None), _row("news_count_7d", None),
+    ]
+    s = {x["id"]: x for x in compute_desk_status(d)["sections"]}
+    assert s["technical"]["state"] == "live", (
+        "2 null news passthrough rows must not degrade a healthy technical lane"
+    )
 
 
 def test_status_partial_signal_nulls():
