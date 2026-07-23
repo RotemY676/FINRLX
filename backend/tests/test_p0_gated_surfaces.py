@@ -52,12 +52,23 @@ GATED = [
     ("get", "/api/v1/research/fundamentals/_status"),
     ("post", "/api/v1/actions/defer"),
     ("post", "/api/v1/backtests/run"),
+    # ── batch 4: compute surfaces ──
+    ("get", "/api/v1/engines/status"),
+    ("get", "/api/v1/engines/definitions"),
+    ("get", "/api/v1/features/status"),
+    ("get", "/api/v1/features/latest"),
+    ("get", "/api/v1/pipeline/status"),
+    ("get", "/api/v1/pipeline/runs"),
+    ("post", "/api/v1/engines/run"),
+    ("post", "/api/v1/features/compute"),
+    ("post", "/api/v1/pipeline/run"),
 ]
 
 GATED_GROUPS = (
     "models", "paper", "ops", "universes",
     "policies", "backtests", "integrations", "publication",
     "ml-ops", "actions", "research", "replay", "risk",
+    "engines", "features", "pipeline",
 )
 
 # Surfaces the frontend still calls WITHOUT a bearer today. Gating these would

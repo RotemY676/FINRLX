@@ -19,6 +19,7 @@ whole probe out.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -127,6 +128,15 @@ def _envelope(results: list[CheckResult]) -> dict[str, Any]:
     return {
         "status": overall,
         "version": settings.app_version,
+        # Which commit is actually serving. The frontend answers this at
+        # /version; without the same on the backend there is no way to tell a
+        # deployed backend change from one still in flight — the two services
+        # deploy independently and the backend lags the frontend. That gap
+        # produced a false "not gated" reading during US-P0-03: gated routes
+        # answered 200 because the backend was still on the previous build,
+        # and the frontend's /version had already flipped. None when running
+        # outside Railway (local dev).
+        "commit": os.getenv("RAILWAY_GIT_COMMIT_SHA"),
         "checks": [
             {
                 "name": r.name,
