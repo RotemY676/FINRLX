@@ -133,7 +133,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <DisclaimerModal />
-      <div className="flex flex-col h-screen overflow-hidden">
+      {/* h-dvh, not h-screen: iOS Safari sizes `vh` against the largest
+          viewport, so a 100vh column with overflow-hidden pushes its last row
+          under the address bar where it can never be scrolled to. */}
+      <div className="flex flex-col h-dvh overflow-hidden">
         {/* Skip-to-content: visually hidden until focused, then floats above the
             TopBar. First focusable element on the page so keyboard users can
             jump past the brand/nav and land directly on page content. */}

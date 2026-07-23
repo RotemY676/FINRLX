@@ -107,7 +107,7 @@ export function WizardLayout({
 
 const layoutStyles: Record<string, CSSProperties> = {
   wrap: {
-    minHeight: "100vh",
+    minHeight: "100dvh",
     background: "var(--bg, #0a0a0a)",
     color: "var(--fg, #e9e9ee)",
     paddingTop: 36,

@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 
+import { SentimentSplit, type EngineOutput } from "@/components/simple/DossierVisuals";
 import { track } from "@/lib/analytics";
 import {
   STANCE_HOVER_LABEL,
@@ -38,6 +39,14 @@ export interface DossierPayload {
       features: Record<string, number | null>;
       regime: { label: string; detail: string; kind: string };
       composite: { stance: string; composite_score: number; avg_confidence: number };
+      /**
+       * Per-engine votes. The backend has always sent these
+       * (`autopilot.py` -> sections.technical.engines) but the UI never
+       * declared or rendered them, so the reader saw a verdict with no way
+       * to see how it was reached. Optional: dossiers persisted before this
+       * was surfaced may omit it, and consumers must degrade quietly.
+       */
+      engines?: Record<string, EngineOutput>;
     };
     news_sentiment: {
       available: boolean;
@@ -278,10 +287,8 @@ export function VerdictCards({ dossier }: { dossier: DossierPayload }) {
       <Card title="News & sentiment">
         {news.available ? (
           <>
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {Object.entries(news.counts).map(([label, n]) => (
-                <Chip key={label}>{`7d ${label}: ${n}`}</Chip>
-              ))}
+            <div className="mb-3">
+              <SentimentSplit counts={news.counts} />
             </div>
             <ul className="space-y-2 text-sm">
               {news.items_7d.slice(0, 4).map((item) => (
@@ -392,61 +399,16 @@ export function TournamentScoreboard({ tournament }: { tournament: TournamentPay
 }
 
 /* ── Price chart ───────────────────────────────────────────────────────────
-   Honesty note: the dossier payload carries the CURRENT regime label, not
-   per-period band data, so this chart draws no historical regime shading
-   (fake bands would be invented data). Band series = DEBT-S5-2 (backend
-   addition). The svg carries a <title> per the F3 accessibility lesson. */
+   Superseded by `PriceArea` in DossierVisuals.tsx, which renders the same
+   real close series with its actual extremes marked and no smoothing (the
+   recharts `type="monotone"` curve interpolated prices between sessions that
+   never traded). Removed rather than left dual-maintained; recharts is still
+   used by the Pro surfaces.
 
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-export function DossierPriceChart({ dossier }: { dossier: DossierPayload }) {
-  const data = dossier.price_series;
-  if (!data || data.length < 2) return null;
-  return (
-    <div className="rounded-lg border border-line bg-surface p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-2">
-        Price · {data.length} sessions
-      </h3>
-      <div className="h-56 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-            <title>{`${dossier.ticker} closing prices, ${data.length} sessions through ${dossier.freshness.latest_bar}`}</title>
-            <XAxis dataKey="date" hide />
-            <YAxis
-              domain={["auto", "auto"]}
-              width={56}
-              tick={{ fontSize: 11 }}
-              stroke="var(--ink-4)"
-            />
-            <Tooltip
-              formatter={(value: number | string) => [String(value), "close"]}
-              labelStyle={{ color: "var(--ink-2)" }}
-            />
-            <Line
-              type="monotone"
-              dataKey="close"
-              stroke="var(--primary)"
-              strokeWidth={1.5}
-              dot={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <p className="mt-1 text-xs text-ink-4">
-        Current regime: {dossier.summary.regime} (rule-based research overlay, not a
-        prediction).
-      </p>
-    </div>
-  );
-}
+   The honesty note that lived here still applies and now lives with the
+   replacement: the payload carries the CURRENT regime label only, not
+   per-period bands, so no historical regime shading is drawn. Band series
+   remains DEBT-S5-2 (backend addition). */
 
 /* ── Disclaimers ───────────────────────────────────────────────────────── */
 

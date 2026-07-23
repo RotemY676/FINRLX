@@ -179,7 +179,7 @@ export function NotificationsPanel() {
           // footer + provenance footer can still push the whole panel past
           // a short viewport. Cap the outer panel at viewport height minus
           // TopBar + gutter and let it scroll inside the rounded container.
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-96 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-5rem)] bg-surface border border-line rounded-xl shadow-lg overflow-y-auto"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-96 max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] bg-surface border border-line rounded-xl shadow-lg overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-line">

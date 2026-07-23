@@ -19,11 +19,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   DegradedBanner,
   DisclaimerStrip,
-  DossierPriceChart,
   SummaryBar,
   VerdictCards,
   type DossierPayload,
 } from "@/components/simple/DossierView";
+import {
+  EngineVotes,
+  EnsembleDial,
+  PriceArea,
+} from "@/components/simple/DossierVisuals";
 import { track } from "@/lib/analytics";
 
 const API_BASE =
@@ -219,8 +223,24 @@ export default function SimpleModePage() {
         <>
           <SummaryBar dossier={state.dossier} />
           <DegradedBanner dossier={state.dossier} />
+          {/* The reading, then the votes behind it, then the price it is
+              read from — the dial alone hides a split ensemble. */}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            <EnsembleDial
+              score={state.dossier.summary.composite_score}
+              confidence={state.dossier.summary.avg_confidence}
+              stance={state.dossier.summary.stance}
+            />
+            {state.dossier.sections.technical.engines && (
+              <EngineVotes engines={state.dossier.sections.technical.engines} />
+            )}
+          </div>
+          <PriceArea
+            series={state.dossier.price_series}
+            latestBar={state.dossier.freshness.latest_bar}
+            ticker={state.dossier.ticker}
+          />
           <VerdictCards dossier={state.dossier} />
-          <DossierPriceChart dossier={state.dossier} />
           <DisclaimerStrip disclaimers={state.dossier.disclaimers} />
           <button
             type="button"

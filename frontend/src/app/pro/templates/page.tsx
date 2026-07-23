@@ -217,7 +217,7 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 const styles: Record<string, CSSProperties> = {
   wrap: {
-    minHeight: "100vh",
+    minHeight: "100dvh",
     background: "var(--bg, #0a0a0a)",
     color: "var(--fg, #e9e9ee)",
     padding: "36px 16px 60px",

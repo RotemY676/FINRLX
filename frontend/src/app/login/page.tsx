@@ -129,7 +129,7 @@ function GoogleGlyph() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  wrap: { minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "var(--bg, #0a0a0a)" },
+  wrap: { minHeight: "100dvh", display: "grid", placeItems: "center", padding: 24, background: "var(--bg, #0a0a0a)" },
   card: { width: "100%", maxWidth: 380, padding: 32, background: "var(--card, #131316)", border: "1px solid var(--border, #2a2a30)", borderRadius: 12, color: "var(--fg, #e9e9ee)" },
   h1: { margin: 0, fontSize: 24, fontWeight: 600 },
   sub: { margin: "6px 0 20px", fontSize: 13, opacity: 0.7 },

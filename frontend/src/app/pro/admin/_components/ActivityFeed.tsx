@@ -308,7 +308,7 @@ export function ActivityFeed() {
             animate={{ x: 0 }}
             exit={{ x: 320 }}
             transition={{ type: "spring", stiffness: 400, damping: 34 }}
-            className="fixed top-0 right-0 z-30 h-screen w-[320px] glass border-l border-line/30 flex flex-col"
+            className="fixed top-0 right-0 z-30 h-dvh w-[320px] glass border-l border-line/30 flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-3 border-b border-line/20">
