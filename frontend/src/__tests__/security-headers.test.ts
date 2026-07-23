@@ -8,6 +8,9 @@
  * It reads next.config.js the way Next does, so a regression (someone drops
  * `headers()`, or widens the policy) fails here rather than silently in prod.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import nextConfig from "../../next.config.js";
@@ -86,6 +89,19 @@ describe("frontend security headers", () => {
     } finally {
       if (saved !== undefined) process.env.NEXT_PUBLIC_API_BASE_URL = saved;
       vi.resetModules();
+    }
+  });
+
+  it("allows the font origins globals.css actually depends on", async () => {
+    // Regression guard: the first CSP omitted these and silently broke every
+    // custom font in production. The page still returned 200 in fallback
+    // fonts, so only a font-specific assertion catches it. If globals.css
+    // stops importing Google Fonts (e.g. moves to next/font), delete this.
+    const globals = readFileSync(join(__dirname, "..", "app", "globals.css"), "utf8");
+    const d = csp((await headerMap())["Content-Security-Policy"]);
+    if (globals.includes("fonts.googleapis.com")) {
+      expect(d["style-src"]).toContain("https://fonts.googleapis.com");
+      expect(d["font-src"]).toContain("https://fonts.gstatic.com");
     }
   });
 

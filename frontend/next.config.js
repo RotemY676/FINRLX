@@ -50,8 +50,18 @@ const CSP = [
   "frame-ancestors 'none'",
   "form-action 'self'",
   "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
+  /*
+   * globals.css line 1 does `@import url("https://fonts.googleapis.com/...")`
+   * for Inter Tight / Fraunces / JetBrains Mono, and that stylesheet then
+   * pulls the actual woff2 files from fonts.gstatic.com. The first CSP shipped
+   * without these two origins and silently killed every custom font in
+   * production — the page still returned 200 and still rendered, just in
+   * fallback system fonts, so a status-code check did not catch it.
+   * Self-hosting via next/font would remove the dependency entirely; until
+   * then these two origins are load-bearing. Keep in sync with globals.css.
+   */
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   `connect-src ${CONNECT_SRC}`,
   "manifest-src 'self'",
