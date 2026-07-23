@@ -45,6 +45,15 @@ class OfflinePortfolioEnv(gym.Env):
         self._peak_value = 1.0
         self._max_drawdown = 0.0
         self._turnover_count = 0
+        # Per-step portfolio returns for the episode. `ensemble_runner` scores
+        # agents on the Sharpe of this series, so it must be the realised
+        # return actually achieved (return x exposure), not the raw asset
+        # return and not the shaped reward — the turnover penalty is a training
+        # signal, not something the portfolio experienced.
+        self._episode_returns: list[float] = []
+        # True once any step fell back to synthetic rows. An artifact built on
+        # a synthetic episode must never be scored as a real result.
+        self._used_synthetic = False
 
     def reset(self, *, seed=None, options=None):
         if seed is not None:
@@ -56,6 +65,8 @@ class OfflinePortfolioEnv(gym.Env):
         self._peak_value = 1.0
         self._max_drawdown = 0.0
         self._turnover_count = 0
+        self._episode_returns = []
+        self._used_synthetic = False
         return self._get_obs(), {}
 
     def step(self, action: int):
@@ -82,6 +93,7 @@ class OfflinePortfolioEnv(gym.Env):
         self._total_reward += reward
 
         # Portfolio tracking
+        self._episode_returns.append(float(realized_return * exposure))
         self._portfolio_value *= (1.0 + realized_return * exposure)
         self._peak_value = max(self._peak_value, self._portfolio_value)
         dd = (self._peak_value - self._portfolio_value) / self._peak_value if self._peak_value > 0 else 0.0
@@ -111,11 +123,31 @@ class OfflinePortfolioEnv(gym.Env):
     def _get_row(self, idx: int) -> dict:
         if self.dataset and 0 <= idx < len(self.dataset):
             return self.dataset[idx]
-        # Synthetic fallback
+        # Synthetic fallback. Flagged so any artifact derived from this episode
+        # can be rejected upstream rather than scored as a real result.
+        self._used_synthetic = True
         return {
             "engine_score": float(self.rng.uniform(-0.3, 0.7)),
             "realized_return": float(self.rng.uniform(-0.03, 0.03)),
         }
+
+    def episode_returns(self) -> list[float]:
+        """Per-step realised portfolio returns for the episode just run.
+
+        `ensemble_runner.train_and_score` scores agents on the Sharpe of this
+        series. It previously called this method on a class that did not exist
+        (`TradingEnv`), so the ensemble producer had never run — see
+        `used_synthetic()` for the companion guard.
+        """
+        return list(self._episode_returns)
+
+    def used_synthetic(self) -> bool:
+        """True if any step in this episode came from the synthetic fallback.
+
+        An agent scored on synthetic rows has learned nothing about the market,
+        so its Sharpe must never enter the tournament as evidence.
+        """
+        return self._used_synthetic
 
     def get_metrics(self) -> dict:
         return {
@@ -124,4 +156,5 @@ class OfflinePortfolioEnv(gym.Env):
             "max_drawdown": round(self._max_drawdown, 6),
             "turnover_count": self._turnover_count,
             "steps": self._step_idx,
+            "used_synthetic": self._used_synthetic,
         }

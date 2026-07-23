@@ -47,6 +47,36 @@ DEFAULT_AGENTS = [
 ]
 
 
+def blended_score(asset: dict, blend_weights: dict[str, float]) -> float:
+    """Weighted blend of an asset's per-engine scores.
+
+    BUGFIX 2026-07-23: `_score_weighted_agent_fn` accepted `blend_weights` and
+    never referenced it — every "trained" policy snapshot was byte-identical to
+    the untrained heuristic baseline, while `evaluate_policy` reported
+    `used_policy_weights: True`. The weights were unusable because the state
+    builder collapsed per-engine scores into one average before the agent ran;
+    `rl_environment.build_state` now carries `engine_scores` per asset, so a
+    blend is finally possible.
+
+    Falls back to the equal-weighted `engine_score` when per-engine detail is
+    absent (older persisted states), so the weights are applied when they can
+    be and never faked when they cannot.
+    """
+    per_engine = asset.get("engine_scores") or {}
+    if not blend_weights or not per_engine:
+        return float(asset.get("engine_score", 0.5))
+    total_w = sum(w for k, w in blend_weights.items() if k in per_engine)
+    if total_w <= 0:
+        return float(asset.get("engine_score", 0.5))
+    return sum(per_engine[k] * w for k, w in blend_weights.items() if k in per_engine) / total_w
+
+
+def agent_uses_blend_weights(state: dict, blend_weights: dict[str, float]) -> bool:
+    """True when the weights actually influence the output for this state."""
+    assets = state.get("assets") or []
+    return bool(blend_weights) and any(a.get("engine_scores") for a in assets)
+
+
 def _score_weighted_agent_fn(blend_weights: dict[str, float]):
     """Create an agent function from trained blend weights."""
     def agent(state: dict, policy_constraints: dict) -> dict:
@@ -59,7 +89,7 @@ def _score_weighted_agent_fn(blend_weights: dict[str, float]):
 
         raw = {}
         for a in assets:
-            raw[a["ticker"]] = max(a.get("engine_score", 0.5), 0.001)
+            raw[a["ticker"]] = max(blended_score(a, blend_weights), 0.001)
         total_raw = sum(raw.values()) or 1.0
 
         weights = {}
@@ -126,7 +156,10 @@ class RLTrainingService:
             id=gen_uuid(), agent_key=agent_key, environment_key=canonical_key,
             status="running",
             train_start_date=train_start_date, train_end_date=train_end_date,
-            config=config or {"method": "grid_search", "metric": "total_reward"},
+            # Honest label 2026-07-23: no search runs here. `best_weights` below is
+        # a fixed prior, not the argmax of anything, so calling this method
+        # "grid_search" claimed modelling effort that never happened.
+        config=config or {"method": "fixed_prior_calibration", "metric": "total_reward"},
         )
         self.db.add(run)
 
@@ -137,9 +170,11 @@ class RLTrainingService:
         baseline_reward = (sim_run.metrics or {}).get("total_reward", 0)
         baseline_return = (sim_run.metrics or {}).get("total_return", 0)
 
-        # The "training" is: record the heuristic policy as the best found
-        # A real grid search would iterate blend weight combos, but with
-        # limited data we just calibrate the single best policy = heuristic
+        # A FIXED PRIOR, not a search result. No combination of blend weights
+        # is evaluated anywhere in this method; these three numbers are a
+        # hand-set starting point. They are now at least *applied* — the state
+        # carries per-engine scores and `blended_score` uses them — but nothing
+        # here justifies calling them "best".
         best_weights = {"technical_momentum": 0.40, "risk_quality": 0.35, "news_sentiment": 0.25}
         best_reward = baseline_reward
 
@@ -176,7 +211,9 @@ class RLTrainingService:
         run.metrics = {
             "total_reward": best_reward,
             "total_return": baseline_return,
-            "best_blend_weights": best_weights,
+            # Named for what it is: the prior that was applied, not a winner.
+            "applied_blend_weights": best_weights,
+            "weights_are_searched": False,
             "baseline_simulation_id": sim_run.id,
             "policy_snapshot_id": snapshot.id,
         }
@@ -216,7 +253,19 @@ class RLTrainingService:
             agent_fn = _score_weighted_agent_fn(blend_weights)
             temp_key = f"_eval_policy_{policy_snapshot_id[:8]}"
             AGENTS[temp_key] = agent_fn
-            used_policy_weights = True
+            # `used_policy_weights` used to be set True unconditionally here,
+            # while the agent ignored the weights entirely. It is now only true
+            # when the state actually carries the per-engine scores the blend
+            # needs — otherwise the agent falls back to the equal-weighted
+            # score and saying otherwise would be a false claim.
+            probe_state = await env_svc.build_state(eval_start_date)
+            used_policy_weights = agent_uses_blend_weights(probe_state, blend_weights)
+            if not used_policy_weights:
+                fallback_warning = (
+                    "Policy weights could not be applied: the evaluation state "
+                    "carries no per-engine scores, so the agent used the "
+                    "equal-weighted engine score."
+                )
             try:
                 sim = await env_svc.run_offline_simulation(
                     snapshot.environment_key, eval_start_date, eval_end_date, temp_key,

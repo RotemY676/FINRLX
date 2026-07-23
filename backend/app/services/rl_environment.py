@@ -157,6 +157,13 @@ class RLEnvironmentService:
                 .where(EngineDefinition.is_active == True)  # noqa: E712
                 .where(EngineDefinition.category != "ml")
             )).scalars().all()
+            # Per-engine scores are kept alongside the average. The state
+            # schema has always declared an `engine_scores` field and the
+            # builder never emitted one, so every consumer saw a single
+            # equal-weighted number. That collapse is why blend weights could
+            # not be applied by any downstream agent: the per-engine
+            # information was already gone before the agent ran.
+            engine_scores: dict[str, float] = {}
             avg_score = 0.0
             score_count = 0
             for ek in det_keys:
@@ -172,6 +179,7 @@ class RLEnvironmentService:
                         .where(SignalOutput.asset_id == m.id)
                     )).scalar()
                     if out is not None:
+                        engine_scores[ek] = round(float(out), 4)
                         avg_score += out
                         score_count += 1
             if score_count > 0:
@@ -182,6 +190,7 @@ class RLEnvironmentService:
                 "ticker": m.ticker,
                 "price": price,
                 "engine_score": round(avg_score, 4),
+                "engine_scores": engine_scores,
             })
 
         constraints = await self._get_policy_constraints()

@@ -66,23 +66,37 @@ def train_and_score(states: list[dict], splits: list[list[int]]) -> dict:  # pra
     _require_stack()
     from stable_baselines3 import A2C, DDPG, PPO
 
-    from env import TradingEnv  # research container's environment
+    # The environment is OfflinePortfolioEnv. This module imported `TradingEnv`
+    # — a name that exists nowhere in the repository — so `train_and_score` had
+    # never executed: it raised ImportError on the first call, which is why
+    # `research/artifacts/` was never created and the Desk's RL leg reported
+    # "queued for research run" indefinitely. The queue had no worker attached.
+    from env import OfflinePortfolioEnv
 
     algos = {"rl_ppo": PPO, "rl_a2c": A2C, "rl_ddpg": DDPG}
     out: dict[str, dict] = {}
     for key, Algo in algos.items():
         per_split_val, per_split_train = [], []
         for train_end, val_end in splits:
-            env = TradingEnv(states[:train_end])
+            env = OfflinePortfolioEnv(states[:train_end])
             model = Algo("MlpPolicy", env, verbose=0, seed=1337)
             model.learn(total_timesteps=20_000)
             per_split_train.append(sharpe(env.episode_returns()))
-            val_env = TradingEnv(states[train_end:val_end])
+            val_env = OfflinePortfolioEnv(states[train_end:val_end])
             obs, _ = val_env.reset()
             done = False
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, _, done, _, _ = val_env.step(action)
+            # Fail closed: the env pads short windows from a synthetic
+            # generator. A Sharpe computed over invented rows is not evidence
+            # and must not reach the tournament as a competing candidate.
+            if val_env.used_synthetic() or env.used_synthetic():
+                raise ValueError(
+                    f"{key}: episode fell back to synthetic rows for split "
+                    f"({train_end},{val_end}) — refusing to score it. Export a "
+                    "longer real state series before running the ensemble."
+                )
             per_split_val.append(sharpe(val_env.episode_returns()))
         out[key] = {
             "name": f"{key.split('_')[1].upper()} (FinRL ensemble)",
