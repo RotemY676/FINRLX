@@ -40,7 +40,19 @@ import pathlib
 
 logger = logging.getLogger(__name__)
 
+# Published artifacts must live INSIDE the backend build context. The backend
+# image is built from /backend (COPY . .), so the sibling research/artifacts/
+# directory does NOT reach production — an artifact placed only there loads
+# locally and returns None in the container (verified: RL read
+# queued_for_research_run in prod while merging locally). Publishing an artifact
+# = copying it here, into the image.
 ARTIFACT_DIR = (
+    pathlib.Path(__file__).resolve().parents[1] / "rl_artifacts" / "finrl_ensemble"
+)
+# Local-dev fallback: where the research runner writes before publishing. Only
+# consulted when the published dir has no artifact for the ticker, so it can
+# never override a published one.
+_RESEARCH_SCRATCH_DIR = (
     pathlib.Path(__file__).resolve().parents[3] / "research" / "artifacts" / "finrl_ensemble"
 )
 SCHEMA_VERSION = "e6-1"
@@ -50,7 +62,13 @@ REQUIRED_AGENT_FIELDS = ("name", "train_sharpe", "val_sharpe", "per_split_val_sh
 def load_artifact(ticker: str) -> dict | None:
     path = ARTIFACT_DIR / f"{ticker.upper()}.json"
     if not path.exists():
-        return None
+        # Local dev only: the research runner's scratch output. Never overrides
+        # a published artifact because the published dir is checked first.
+        scratch = _RESEARCH_SCRATCH_DIR / f"{ticker.upper()}.json"
+        if scratch.exists():
+            path = scratch
+        else:
+            return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
