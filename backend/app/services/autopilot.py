@@ -99,7 +99,14 @@ def _sharpe_of(states: list[RebalanceState], decide: Callable[[RebalanceState], 
         return 0.0
     sdef = StrategyDef("tmp", "tmp", "tmp", "#000", "", decide)
     metrics = run_strategy(states, sdef).get("metrics", {})
-    s = metrics.get("sharpe")
+    # BUGFIX 2026-07-23: run_strategy emits the Sharpe under "sharpe_ratio", not
+    # "sharpe". This read `metrics.get("sharpe")` -> always None -> every
+    # candidate scored val_sharpe 0.0 across every split, so the tournament's
+    # "winner" was never validated — it was whichever candidate the tie-break
+    # happened to surface (all rows collapsed to -deflation_penalty). The
+    # walk-forward model selection, the product's stated moat, had been inert.
+    # Verified live: 8/8 candidates at 0.0 on 515 fresh bars before this fix.
+    s = metrics.get("sharpe_ratio")
     if s is None or (isinstance(s, float) and (math.isnan(s) or math.isinf(s))):
         return 0.0
     return float(s)

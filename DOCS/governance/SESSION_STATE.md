@@ -8,6 +8,17 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-23 · User request: RL model-comparison dashboard — and a flagship bug found while speccing it
+- **User request:** a new dedicated tab — an abstracted dashboard for selecting RL models, comparing their results, and giving a final invest/don't-invest recommendation. Must work on **real data**, show the comparison, and produce a final recommendation from the models.
+- **🔴 HARD TRUTH-FIRST CONSTRAINT stated to the user up front:** RL output (PPO/A2C/DDPG) does not exist and cannot be fabricated — `finrl` isn't installed, no torch/SB3 in the serving path (by design), `research/artifacts/` is empty, `load_artifact()` always returns None, and the RL leg reports `queued_for_research_run` honestly. A dashboard cannot show RL numbers "on real data" today; producing a real artifact needs the research container (operator item E7). I will not invent RL results.
+- **🔴 THIRD LIVE TRUTH DEFECT, found while verifying what real comparison data exists (this is bigger than the dashboard):** the autopilot **model tournament** — the product's flagship walk-forward model selection — was returning **all-zero validation Sharpes** for every candidate, in production *and* on 515 fresh local bars. Root cause: `_sharpe_of` read `metrics.get("sharpe")` but `run_strategy` emits `sharpe_ratio`; the lookup was always None→0.0. So every candidate collapsed to `-deflation_penalty` and the "winner" was an arbitrary tie-break, never validated. **Fixed** (`autopilot.py:_sharpe_of`). After the fix the field spreads +0.79…−2.60 with real per-split variation; the phase-4 split-consistency strip (which had shown `[0,0,0]` for every model) now shows real data. Regression: `test_p1_tournament_scoring.py` (4 tests) + 53 passing across all tournament suites.
+- **Plan for the dashboard (honest, buildable), pending the build:**
+  - Built on the **real tournament** that now works on any ticker live (heuristic + ML candidates, walk-forward validated, deflation-penalised, with a real winner and a real recommendation).
+  - The **RL lane** (PPO/A2C/DDPG) is shown **honestly gated** — "not yet trained for this ticker / queued for the research worker" — until a real artifact exists. Never faked. If E7 is run to produce artifacts, they join the same tournament under the same protocol (`finrl_ensemble` already does this) and appear for those tickers.
+  - Separate tab, feature-flagged, default OFF until verified end-to-end.
+- **NEXT:** commit the tournament fix (its own gate, above), then spec + build the dashboard on the now-real data.
+
+
 ### Entry — 2026-07-23 · Phases 5–8 shipped (recorded late — Rule 3 lapse, see below)
 > **Rule 3 compliance note:** these four phases were built, gated and pushed without this
 > file being updated per stage. The work is in `main` and in the commit messages; the lapse
