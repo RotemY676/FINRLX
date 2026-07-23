@@ -197,6 +197,16 @@ class RiskFrame(ContractModel):
 class DecisionLineage(ContractModel):
     data_snapshot_id: str | None = None
     feature_snapshot_id: str | None = None
+    # US-DPK-02: what KIND of identifier the two ids above actually are.
+    # Without this a consumer cannot tell a content hash — which makes lineage
+    # verifiable, because the same data reproduces it — from a surrogate key,
+    # which only asserts that some data existed. The legacy pipeline supplies
+    # one of each, and presenting them identically overstated the weaker one.
+    #   "content_hash"  — reproducible from the data itself
+    #   "surrogate_id"  — a row id; proves existence, not content
+    #   "unavailable"   — no identifier of either kind
+    data_snapshot_kind: Literal["content_hash", "surrogate_id", "unavailable"] = "unavailable"
+    feature_snapshot_kind: Literal["content_hash", "surrogate_id", "unavailable"] = "unavailable"
     signal_run_id: str | None = None
     model_version: str | None = None
     policy_version_id: str | None = None

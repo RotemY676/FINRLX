@@ -142,9 +142,17 @@ def _build_data_truth(
 def _build_lineage(rec: Recommendation) -> DecisionLineage:
     signal_run_ids = rec.source_signal_run_ids or []
     first_signal_run = signal_run_ids[0] if isinstance(signal_run_ids, list) and signal_run_ids else None
+    # US-DPK-02: the two ids are not the same kind of evidence and must not be
+    # presented as though they were. `input_hash` is a SHA-256 over the
+    # canonical signal rows (provenance.compute_input_hash), so it is
+    # reproducible from the data. `source_feature_set_id` is a row id — it
+    # proves a feature set existed, not which values it held. Declaring the
+    # kind is what stops the weaker one from reading as the stronger one.
     return DecisionLineage(
         data_snapshot_id=rec.input_hash,
+        data_snapshot_kind="content_hash" if rec.input_hash else "unavailable",
         feature_snapshot_id=rec.source_feature_set_id,
+        feature_snapshot_kind="surrogate_id" if rec.source_feature_set_id else "unavailable",
         signal_run_id=first_signal_run,
         model_version=rec.pipeline_version,
         policy_version_id=rec.policy_version_id,
