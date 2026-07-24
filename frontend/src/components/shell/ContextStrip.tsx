@@ -37,7 +37,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Icon } from "@/components/icons/Icon";
-import { useScope } from "@/contexts/ScopeContext";
+import { useScope, regimeDotClass } from "@/contexts/ScopeContext";
 import { resolveCrumb } from "./crumbMap";
 
 interface ContextStripProps {
@@ -64,15 +64,11 @@ export function ContextStrip({
   // also shrinks slightly so the row reads as collapsed, not just shorter.
   const heightClass = scrolled ? "h-8" : "h-12";
 
-  // Regime confidence drives the chip-dot color: pos > caution > breach.
-  // Same semantics as the legacy TopBar so the analyst's muscle memory
-  // does not break across the v2/v3 toggle.
-  const regimeDot =
-    scope.regimeConfidence > 0.7
-      ? "bg-pos"
-      : scope.regimeConfidence > 0.4
-        ? "bg-caution"
-        : "bg-breach";
+  // The chip dot mirrors the regime label (uptrend→pos, downtrend→caution,
+  // risk-off→breach, neutral/unknown→grey). Colour is redundant with the label
+  // text; no confidence number backs it (the system computes none), so we never
+  // paint a confidence we don't have.
+  const regimeDot = regimeDotClass(scope.regime, scope.regimeKnown);
 
   return (
     <nav

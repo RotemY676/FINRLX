@@ -542,13 +542,23 @@ export interface SectorTilt {
 }
 
 export interface RegimeData {
+  // The benchmark's rule-based regime. Rebuilt zero-fiction 2026-07-23: label is
+  // one of "uptrend" | "downtrend" | "risk-off" | "neutral" (SPY, same rule the
+  // dossier uses). regime_confidence/alternatives/signal_posture/sector_tilts are
+  // no model output — the backend leaves them null/empty and names the gap in
+  // `unavailable`. Kept optional so a stale field never reads as a computed value.
   regime_label: string;
-  regime_confidence: number;
-  persistence_days: number;
-  last_switch_date: string;
-  alternatives: Array<{ label: string; prob: number }>;
-  signal_posture: SignalPosture[];
-  sector_tilts: SectorTilt[];
+  regime_detail?: string | null;
+  regime_kind?: string | null;
+  benchmark?: string | null;
+  persistence_days?: number | null;
+  last_switch_date?: string | null;
+  sessions_observed?: number | null;
+  regime_confidence?: number | null;
+  alternatives?: Array<{ label: string; prob: number }>;
+  signal_posture?: SignalPosture[];
+  sector_tilts?: SectorTilt[];
+  unavailable?: string[];
   as_of: string;
 }
 

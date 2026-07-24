@@ -147,7 +147,14 @@ export function Sidebar({
   const { user } = useAuth();
   const isSignedIn = Boolean(user);
 
+  // Workspace counts are operator/tenant state (an authed endpoint). Only fetch
+  // when signed in — a logged-out desk visitor would otherwise 401 on every
+  // poll. Badges simply stay empty (counts === null) until sign-in.
   useEffect(() => {
+    if (!isSignedIn) {
+      setCounts(null);
+      return;
+    }
     fetchWorkspaceCounts()
       .then((res) => setCounts(res.data))
       .catch(() => {});
@@ -159,7 +166,7 @@ export function Sidebar({
         .catch(() => {});
     }, 60_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isSignedIn]);
 
   // Saved views (Phase B3) — DB-backed, fetched once when the user is
   // signed in. If the auth context refreshes (e.g. after login), we re-fetch.

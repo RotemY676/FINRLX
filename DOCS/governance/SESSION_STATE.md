@@ -8,6 +8,18 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-24 · Logged-out desk chrome: 401 storm + fabricated "Risk-on" pill
+- **User report (with console + screenshots):** on the anonymous `/pro/desk/NVDA`, three endpoints 401'd — `/api/v1/workspace-counts`, `/api/v1/overview`, `/api/v1/regime` — while the top strip still showed a confident **"Regime Risk-on"**. (The six lanes all read `live` — the prior desk-dial fix held.)
+- **Two defects, one class (dishonest-when-unauthed):**
+  - **Fiction:** the rebuilt zero-fiction `/regime` only ever emits `uptrend/downtrend/risk-off/neutral` — it **never** produces "Risk-on". That label was a **hardcoded frontend default** (`ScopeContext`) shown *after* the 401, i.e. a fabricated market reading on a logged-out surface. The frontend `RegimeData` type was also **stale** — still declared `regime_confidence`/`alternatives`/`sector_tilts` that the backend moved into `unavailable`, so the strip dot ran off an always-`null`→0 confidence and read red for every ticker.
+  - **Auth posture:** the Pro shell chrome fired three authed endpoints with no session token.
+- **Fix — split by data class, not blanket:**
+  - Backend: `GET /api/v1/regime` is public SPY-derived market context (no `user`, no `db`, zero tenant state) → moved to `PUBLIC_ALLOWLIST` with rationale. Its sibling `GET /api/v1/activity` reads the operator audit trail, so it keeps a **function-level** `Depends(get_current_user)` in `api/v1/regime.py`; the router include drops `_AUTHED`. Verified via the dependency-graph ratchet that `/activity` stays classified authenticated and `/regime` is the only newly-public route.
+  - Frontend: `/overview` + `/workspace-counts` fetch **only when signed in** (`ScopeContext` gates on `useAuth`; `Sidebar` mirrors its saved-views guard); notifications no longer compose logged-out. The regime pill shows an honest **"—"** with a neutral-grey dot when unknown, and maps the dot colour from the real label (`regimeDotClass`), never a confidence we don't compute. `RegimeData` type corrected to the real contract.
+- **Evidence:** backend 11 authz+inventory + 8 fiction/demo PASS; frontend **156 vitest PASS** (added `scope-regime.test.ts`, 3 tests pinning the honesty mapping) + `tsc --noEmit` clean + `next build` exit 0. Council G4 ADVANCE logged.
+- **NEXT:** commit + push; verify live once both services land on the new commit (backend deploys independently and lags — check `/healthz` commit before probing `/regime` anonymously).
+
+
 ### Entry — 2026-07-23 · Desk dial honesty — three lanes were reporting "degraded" while working
 - **User report (with screenshot):** the NVDA desk "Model: degraded" dial looked wrong / uninformative. Asked to fix it and to use agents/skills to check.
 - **Root bug:** `desk_status._tournament` returned `degraded` whenever the optional RL leg was `queued_for_research_run`, even with a real validated winner → a fully-working tournament rendered as "Model: degraded" for nearly every ticker (almost none has a pre-trained RL artifact).

@@ -78,7 +78,12 @@ api_router.include_router(replay_router, tags=["replay"], dependencies=_AUTHED)
 api_router.include_router(backtests_router, tags=["backtests"], dependencies=_AUTHED)
 api_router.include_router(paper_router, tags=["paper"], dependencies=_AUTHED)
 api_router.include_router(engines_router, tags=["engines"], dependencies=_AUTHED)
-api_router.include_router(regime_router, tags=["regime"], dependencies=_AUTHED)
+# regime_router is split, not blanket-gated: GET /regime is public market
+# context (SPY's own rule-based regime, zero tenant state) and joins the
+# anonymous-research allowlist; GET /activity reads the operator audit trail and
+# carries its own Depends(get_current_user) in regime.py. Do NOT add _AUTHED
+# here — it would re-gate /regime and break the anonymous desk chrome.
+api_router.include_router(regime_router, tags=["regime"])
 api_router.include_router(ops_router, tags=["ops"], dependencies=_AUTHED)
 api_router.include_router(ops_inventory_router, tags=["ops"])
 api_router.include_router(ops_readiness_router, tags=["ops"])

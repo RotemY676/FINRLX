@@ -11,8 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth_deps import get_current_user
 from app.api.deps import make_meta
 from app.core.database import get_db
+from app.models.auth import User
 from app.models.ops import AuditEvent
 from app.schemas.common import ApiResponse
 from app.schemas.regime import (
@@ -116,8 +118,16 @@ async def get_regime():
 
 
 @router.get("/activity", response_model=ApiResponse[ActivityFeedResponse])
-async def get_activity(db: AsyncSession = Depends(get_db)):
-    """Return recent activity feed from audit events."""
+async def get_activity(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Return recent activity feed from audit events.
+
+    Gated at the function level (not the router): this reads the operator audit
+    trail — tenant/operator state — so it stays authenticated even though its
+    sibling ``/regime`` is intentionally public market context. See router.py.
+    """
     events_result = await db.execute(
         select(AuditEvent).order_by(AuditEvent.occurred_at.desc()).limit(20)
     )

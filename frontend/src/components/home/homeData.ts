@@ -218,8 +218,10 @@ function buildRegime(raw: RawSources): RegimeStatus | null {
   if (!raw.regime) return null;
   return {
     label: raw.regime.regime_label,
-    confidence: raw.regime.regime_confidence,
-    persistenceDays: raw.regime.persistence_days,
+    // These are optional on the wire (the backend computes no confidence model);
+    // coalesce undefined → null so the "unavailable" state renders honestly.
+    confidence: raw.regime.regime_confidence ?? null,
+    persistenceDays: raw.regime.persistence_days ?? null,
     asOf: raw.regime.as_of,
   };
 }
@@ -525,7 +527,9 @@ function buildShadowResearch(raw: RawSources): ShadowResearchSummary {
 
 function buildSectorTilts(raw: RawSources): SectorTiltRow[] {
   if (!raw.regime) return [];
-  return raw.regime.sector_tilts.slice(0, 6).map((s) => ({
+  // sector_tilts is optional (no sector-attribution model produces it); the
+  // backend ships [] and older shapes may omit it entirely.
+  return (raw.regime.sector_tilts ?? []).slice(0, 6).map((s) => ({
     sector: s.sector,
     tiltPct: s.tilt_pct,
   }));

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icons/Icon";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useScope } from "@/contexts/ScopeContext";
+import { useScope, regimeDotClass } from "@/contexts/ScopeContext";
 import { UserMenu } from "@/components/shell/UserMenu";
 import { NotificationsPanel } from "@/components/shell/NotificationsPanel";
 import { BrandMark } from "@/components/shell/BrandMark";
@@ -170,7 +170,7 @@ export function TopBar({
           half-faded look. */}
       <div className="hidden lg:flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-2 text-ink-2 text-body-sm">
-          <span className={`w-1.5 h-1.5 rounded-full ${scope.regimeConfidence > 0.7 ? "bg-pos" : scope.regimeConfidence > 0.4 ? "bg-caution" : "bg-breach"}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${regimeDotClass(scope.regime, scope.regimeKnown)}`} />
           Regime <b className="text-ink font-semibold ml-0.5">{scope.isLoading ? "…" : scope.regime}</b>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-2 text-ink-2 text-body-sm">

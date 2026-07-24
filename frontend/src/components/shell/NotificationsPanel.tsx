@@ -72,7 +72,9 @@ export function NotificationsPanel() {
   }, [user?.email]);
 
   useEffect(() => {
-    if (!open) return;
+    // Notifications compose from authed surfaces (overview/ops). Don't fetch
+    // them logged out — it only yields 401s and an empty panel anyway.
+    if (!open || !user) return;
     let cancelled = false;
     composeNotifications().then((res) => {
       if (cancelled) return;
@@ -82,7 +84,7 @@ export function NotificationsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, user]);
 
   // Outside-click + Esc to close.
   useEffect(() => {

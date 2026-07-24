@@ -56,6 +56,17 @@ PUBLIC_ALLOWLIST: frozenset[str] = frozenset(
         "GET /api/v1/autopilot/desk/{ticker}/{section}",
         "GET /api/v1/assets",
         "GET /api/v1/prices/freshness",
+        # ── Public market context (reviewed + accepted 2026-07-24) ──
+        # GET /regime is the SPY benchmark's own rule-based regime label,
+        # computed from public bars via the identical rule the dossier uses. It
+        # takes no user and no db, and returns no tenant state — it is the same
+        # class of read-only public market context as the desk it decorates.
+        # Added because the anonymous Analyst Desk chrome reads it; keeping it
+        # gated made a logged-out desk emit a 401 and fall back to a hardcoded
+        # "Risk-on" pill (a fabricated label — zero-fiction violation). Its
+        # sibling GET /activity (operator audit trail) stays authenticated via a
+        # function-level dependency in api/v1/regime.py.
+        "GET /api/v1/regime",
     }
 )
 
