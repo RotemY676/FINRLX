@@ -62,8 +62,12 @@ class Settings(BaseSettings):
     feature_desk_v2: bool = False
     # Model-lab dashboard: a dedicated tab comparing the walk-forward model
     # tournament (heuristic/ML + RL agents where an artifact exists) and
-    # producing one honest research verdict. Default OFF until verified.
-    feature_model_lab: bool = False
+    # producing one honest research verdict. Enabled 2026-07-24 after live
+    # browser verification: its only data source is the PUBLIC /autopilot/dossier
+    # (model_insight), which serves the real merged tournament (AAPL → A2C 1.69),
+    # so the tab renders genuine data with no auth required. Override per-env with
+    # FEATURE_MODEL_LAB if a deployment needs it dark.
+    feature_model_lab: bool = True
     # SPEC-05 EP-1 / US-DPK-01..03: the canonical DecisionPacket read-only
     # projection + truth gate. Ships dark. Rollback = drop back to the legacy
     # recommendation read while retaining any new records. Enabling this flag
