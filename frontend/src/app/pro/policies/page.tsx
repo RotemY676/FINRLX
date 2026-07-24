@@ -14,12 +14,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { PolicyRuleCard } from "@/components/policies/PolicyRuleCard";
 import { HelpLink } from "@/components/help/HelpLink";
 
 export default function PoliciesPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [rules, setRules] = useState<PolicyRule[]>([]);
   const [breaches, setBreaches] = useState<PolicyBreach[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,11 @@ export default function PoliciesPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
-    if (flagsLoading || !flags.policy_ui) return;
+    if (flagsLoading || authLoading || !flags.policy_ui) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     Promise.all([fetchPolicyRules(), fetchPolicyBreaches()])
       .then(([rRes, bRes]) => {
         setRules(rRes.data);
@@ -39,7 +44,7 @@ export default function PoliciesPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [flagsLoading, flags.policy_ui]);
+  }, [flagsLoading, flags.policy_ui, authLoading, user]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, PolicyRule[]>();
@@ -69,7 +74,8 @@ export default function PoliciesPage() {
     setRules((prev) => prev.map((r) => (r.key === updated.key ? updated : r)));
   };
 
-  if (flagsLoading || loading) return <PageLoading label="Loading policies..." />;
+  if (flagsLoading || authLoading || loading) return <PageLoading label="Loading policies..." />;
+  if (!user) return <SignInRequired feature="the policy editor" />;
   if (!flags.policy_ui) {
     return (
       <PageError

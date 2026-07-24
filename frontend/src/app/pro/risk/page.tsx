@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { fetchCurrentRisk, RiskBundle } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
@@ -20,17 +22,21 @@ function signedPct(v: number, digits = 1): string {
 
 export default function RiskPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RiskBundle | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (flagsLoading || !flags.risk_ui) return;
+    if (flagsLoading || authLoading || !flags.risk_ui) return;
+    if (!user) return;
     fetchCurrentRisk()
       .then((res) => setData(res.data))
       .catch((e) => setError(e.message));
-  }, [flagsLoading, flags.risk_ui]);
+  }, [flagsLoading, flags.risk_ui, authLoading, user]);
 
-  if (flagsLoading || data === undefined) return <PageLoading label="Loading risk..." />;
+  if (flagsLoading || authLoading) return <PageLoading label="Loading risk..." />;
+  if (!user) return <SignInRequired feature="the risk workspace" />;
+  if (data === undefined) return <PageLoading label="Loading risk..." />;
   if (!flags.risk_ui) {
     return (
       <PageError

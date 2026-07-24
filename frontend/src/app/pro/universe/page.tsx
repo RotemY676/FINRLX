@@ -17,6 +17,8 @@ import {
   UniverseReadiness,
 } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { PageLoading, InlineLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { UniverseList } from "@/components/universe/UniverseList";
@@ -34,6 +36,7 @@ type DialogState =
 
 export default function UniversePage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [universes, setUniverses] = useState<UniverseListItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<UniverseDetail | null>(null);
@@ -116,7 +119,11 @@ export default function UniversePage() {
   }, [selectedId]);
 
   useEffect(() => {
-    if (flagsLoading || !flags.universe_ui) return;
+    if (flagsLoading || authLoading || !flags.universe_ui) return;
+    if (!user) {
+      setListLoading(false);
+      return;
+    }
     fetchUniverses()
       .then((res) => {
         setUniverses(res.data);
@@ -126,7 +133,7 @@ export default function UniversePage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setListLoading(false));
-  }, [flags.universe_ui, flagsLoading]);
+  }, [flags.universe_ui, flagsLoading, authLoading, user]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -188,7 +195,8 @@ export default function UniversePage() {
     }
   }, [detail, reloadList]);
 
-  if (flagsLoading || listLoading) return <PageLoading label="Loading universes..." />;
+  if (flagsLoading || authLoading || listLoading) return <PageLoading label="Loading universes..." />;
+  if (!user) return <SignInRequired feature="the universe workspace" />;
   if (!flags.universe_ui) {
     return (
       <PageError

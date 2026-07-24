@@ -20,16 +20,19 @@ import { RiskOverlayStage } from "@/components/decision/RiskOverlayStage";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { ScenarioCard } from "@/components/decision/ScenarioCard";
 import { PriceChartCard } from "@/components/charts/PriceChartCard";
 import { HelpLink } from "@/components/help/HelpLink";
 import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
 import { buildDecisionContext } from "@/lib/operator/contextBuilder";
 import { track } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DELTA_STYLE: Record<string, string> = { pos: "text-pos", neg: "text-breach", neutral: "text-ink-3", flat: "text-ink-4" };
 
 export default function DecisionPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [rec, setRec] = useState<RecommendationDetail | null>(null);
   const [stages, setStages] = useState<DecisionStagesData | null>(null);
   const [evidence, setEvidence] = useState<EvidenceNarrativeData | null>(null);
@@ -40,6 +43,11 @@ export default function DecisionPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     fetchCurrentRecommendation()
       .then(async (res) => {
         setRec(res.data);
@@ -57,9 +65,10 @@ export default function DecisionPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) return <PageLoading label="Loading decision workspace..." />;
+  if (authLoading || loading) return <PageLoading label="Loading decision workspace..." />;
+  if (!user) return <SignInRequired feature="the decision workspace" />;
   if (error) return <PageError title="Decision Workspace Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!rec) return <PageEmpty title="No Published Recommendation" message="Run the seed script to create one." />;
 

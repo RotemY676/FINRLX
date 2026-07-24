@@ -14,8 +14,10 @@ import { usePaneContext } from "@/components/shell/ContextPane";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { SourceBadge } from "@/components/recommendation/SourceBadge";
 import { HelpLink } from "@/components/help/HelpLink";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STANCE_STYLE: Record<string, string> = {
   buy: "text-pos-soft-ink bg-pos-soft", sell: "text-breach-soft-ink bg-breach-soft",
@@ -25,6 +27,7 @@ const STANCE_STYLE: Record<string, string> = {
 };
 
 export default function ComparisonPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<ComparisonData | null>(null);
   const [engines, setEngines] = useState<EngineComparisonData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +35,19 @@ export default function ComparisonPage() {
   const { openPane } = usePaneContext();
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     Promise.all([fetchCurrentComparison(), fetchEngineComparison()])
       .then(([comp, eng]) => { setData(comp.data); setEngines(eng.data); })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) return <PageLoading label="Loading comparison..." />;
+  if (authLoading || loading) return <PageLoading label="Loading comparison..." />;
+  if (!user) return <SignInRequired feature="engine comparison" />;
   if (error) return <PageError title="Comparison Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!data) return <PageEmpty title="No Recommendation to Compare" message="Publish a recommendation first." />;
 

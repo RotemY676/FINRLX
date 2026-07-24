@@ -8,6 +8,15 @@
 
 ## 🔴 RESUME HERE (most recent first)
 
+### Entry — 2026-07-24 · Live end-to-end audit + logged-out UX fixed + model_lab enabled
+- **User:** "run the live site and check it start to finish — almost nothing I developed appears." Ran a **real Chromium (Playwright) walk** of all 21 live routes (`frontend/scripts/live-audit.mjs`), logged out, capturing rendered text + console/network errors.
+- **Root finding:** the user browses **logged out**, and US-P0-03 gated the operator/decision product behind auth → most `/pro` pages showed 401 error states. What renders logged-out: the **Desk** (all six panels — `desk_v2` ON in prod) and `/pro/analyze`. The RL dashboard was built but **`model_lab` was OFF**.
+- **Fix 1 — enabled `model_lab`** (`feature_model_lab` default → True, `0d8be0f5`). Verified live: `/flags` now `model_lab:true`, `/pro/models` renders "Model lab". Its data is the **public** `/autopilot/dossier` model_insight (real: AAPL → A2C 1.69), so it shows genuine data with no auth.
+- **Fix 2 — logged-out UX:** ten authed pages (`backtests, comparison, decision, news, universe, ops, policies, integrations, risk`, + `research` as a public launcher) rendered "…Error"/"Connection Error" on a 401. Now each guards its fetch on `useAuth` and renders a shared **`SignInRequired`** prompt with a real `/login` CTA; the guard also stops the console 401 storm. Added `ApiError`/`isAuthError` to tell a 401 from a real failure. Frontend **161 vitest PASS** + tsc + build clean. (`this commit`)
+- **🟡 Open boundary:** production **signup is invite-only**, so the **authenticated** operator surfaces could NOT be verified from here — that half needs the operator to log in (or authorize a seeded account). Not claimed as verified.
+- **NEXT:** push; after deploy re-run the anon audit to confirm the ex-error pages now read "Sign in to continue". Then, if the user wants, verify the authed experience once given access.
+
+
 ### Entry — 2026-07-24 · Logged-out desk chrome: 401 storm + fabricated "Risk-on" pill
 - **User report (with console + screenshots):** on the anonymous `/pro/desk/NVDA`, three endpoints 401'd — `/api/v1/workspace-counts`, `/api/v1/overview`, `/api/v1/regime` — while the top strip still showed a confident **"Regime Risk-on"**. (The six lanes all read `live` — the prior desk-dial fix held.)
 - **Two defects, one class (dishonest-when-unauthed):**

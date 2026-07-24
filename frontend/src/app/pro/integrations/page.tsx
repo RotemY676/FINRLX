@@ -9,6 +9,8 @@ import {
   IntegrationHealth,
 } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { Icon } from "@/components/icons/Icon";
@@ -75,13 +77,18 @@ function IntegrationCard({ integration }: { integration: Integration }) {
 
 export default function IntegrationsPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<Integration[]>([]);
   const [health, setHealth] = useState<IntegrationHealth | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (flagsLoading || !flags.integrations_ui) return;
+    if (flagsLoading || authLoading || !flags.integrations_ui) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     Promise.all([fetchIntegrations(), fetchIntegrationHealth()])
       .then(([iRes, hRes]) => {
         setItems(iRes.data);
@@ -89,7 +96,7 @@ export default function IntegrationsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [flagsLoading, flags.integrations_ui]);
+  }, [flagsLoading, flags.integrations_ui, authLoading, user]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, Integration[]>();
@@ -102,7 +109,8 @@ export default function IntegrationsPage() {
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [items]);
 
-  if (flagsLoading || loading) return <PageLoading label="Loading integrations..." />;
+  if (flagsLoading || authLoading || loading) return <PageLoading label="Loading integrations..." />;
+  if (!user) return <SignInRequired feature="integrations" />;
   if (!flags.integrations_ui) {
     return (
       <PageError

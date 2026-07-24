@@ -378,6 +378,26 @@ function withSessionAuth(headers: HeadersInit | undefined): Record<string, strin
   return merged;
 }
 
+/**
+ * Error carrying the HTTP status so callers can distinguish an auth failure
+ * (401 — show a sign-in prompt) from a genuine backend/connection error. It is
+ * still a plain Error subclass, so existing `.catch(err => err.message)` code
+ * keeps working unchanged.
+ */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/** True when an error is an auth failure (401) — i.e. "you're not signed in". */
+export function isAuthError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401;
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit
@@ -391,7 +411,8 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const responseBody = await res.text().catch(() => "");
-    throw new Error(
+    throw new ApiError(
+      res.status,
       `API error: ${res.status} ${res.statusText} for ${url}${
         responseBody ? ` — ${responseBody}` : ""
       }`

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { fetchOps, OpsData } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { OpsKpiStrip } from "@/components/ops/OpsKpiStrip";
@@ -14,23 +16,29 @@ import { OpsAuditLog } from "@/components/ops/OpsAuditLog";
 
 export default function OpsPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<OpsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    if (flagsLoading || !flags.ops_ui) return;
+    if (flagsLoading || authLoading || !flags.ops_ui) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetchOps()
       .then((res) => setData(res.data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [flagsLoading, flags.ops_ui]);
+  }, [flagsLoading, flags.ops_ui, authLoading, user]);
 
   useEffect(load, [load]);
 
-  if (flagsLoading || loading) return <PageLoading label="Loading Ops..." />;
+  if (flagsLoading || authLoading || loading) return <PageLoading label="Loading Ops..." />;
+  if (!user) return <SignInRequired feature="the ops command center" />;
   if (!flags.ops_ui) {
     return (
       <PageError

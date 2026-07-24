@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 
 import { fetchUniverses, UniverseListItem } from "@/services/api";
 import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageError } from "@/components/feedback/PageError";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { Icon } from "@/components/icons/Icon";
@@ -33,23 +34,25 @@ function normalizeTicker(input: string): string | null {
 export default function ResearchHubPage() {
   const router = useRouter();
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [universes, setUniverses] = useState<UniverseListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tickerInput, setTickerInput] = useState("");
   const [tickerError, setTickerError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (flagsLoading) return;
-    if (!flags.universe_ui) {
-      // Universe is gated off — still allow free-form ticker entry,
-      // skip the universe list.
+    if (flagsLoading || authLoading) return;
+    // The universe list is authed; free-form ticker entry (the hub's real job)
+    // is not. Logged out — or with universe gated off — skip the list rather
+    // than 401, and keep the launcher usable.
+    if (!user || !flags.universe_ui) {
       setUniverses([]);
       return;
     }
     fetchUniverses()
       .then((res) => setUniverses(res.data))
       .catch((e) => setError(e.message));
-  }, [flags.universe_ui, flagsLoading]);
+  }, [flags.universe_ui, flagsLoading, authLoading, user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

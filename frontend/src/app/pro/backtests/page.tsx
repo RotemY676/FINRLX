@@ -13,7 +13,9 @@ import { fmtDate } from "@/lib/format";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { HelpLink } from "@/components/help/HelpLink";
+import { useAuth } from "@/contexts/AuthContext";
 
 function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -30,12 +32,20 @@ function pct(v: number | null): string {
 }
 
 export default function BacktestsPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [list, setList] = useState<BacktestListData | null>(null);
   const [detail, setDetail] = useState<BacktestDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Don't fire the authed fetch for a logged-out visitor — it only 401s and
+    // shows a false "error". Render the sign-in prompt instead (see below).
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     fetchBacktestList()
       .then(async (res) => {
         setList(res.data);
@@ -46,9 +56,10 @@ export default function BacktestsPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) return <PageLoading label="Loading backtests..." />;
+  if (authLoading || loading) return <PageLoading label="Loading backtests..." />;
+  if (!user) return <SignInRequired feature="backtests" />;
   if (error) return <PageError title="Backtest Error" message={error} hint="Ensure the backend is running and seeded." />;
   if (!list || list.total === 0) return <PageEmpty title="No Backtests" message="No backtest experiments available. Run the seed script to create demo data." />;
 

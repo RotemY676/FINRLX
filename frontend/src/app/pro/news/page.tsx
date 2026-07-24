@@ -7,8 +7,10 @@ import { useFeatureFlags } from "@/contexts/FeatureFlagsContext";
 import { PageLoading } from "@/components/feedback/PageLoading";
 import { PageError } from "@/components/feedback/PageError";
 import { PageEmpty } from "@/components/feedback/PageEmpty";
+import { SignInRequired } from "@/components/feedback/SignInRequired";
 import { CopyLLMContextButton } from "@/components/operator/CopyLLMContextButton";
 import { buildNewsContext } from "@/lib/operator/contextBuilder";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SENTIMENT_STYLE: Record<string, string> = {
   positive: "bg-pos-soft text-pos-soft-ink",
@@ -24,6 +26,7 @@ type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 
 export default function NewsPage() {
   const { flags, isLoading: flagsLoading } = useFeatureFlags();
+  const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<NewsBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +34,11 @@ export default function NewsPage() {
   const [filter, setFilter] = useState<SentimentFilter>("all");
 
   const load = (force = false) => {
-    if (flagsLoading || !flags.news_ui) return;
+    if (flagsLoading || authLoading || !flags.news_ui) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     if (force) setRefreshing(true);
     else setLoading(true);
     fetchNews(force)
@@ -43,9 +50,10 @@ export default function NewsPage() {
       });
   };
 
-  useEffect(load, [flagsLoading, flags.news_ui]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [flagsLoading, flags.news_ui, authLoading, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (flagsLoading || loading) return <PageLoading label="Loading news..." />;
+  if (flagsLoading || authLoading || loading) return <PageLoading label="Loading news..." />;
+  if (!user) return <SignInRequired feature="news intelligence" />;
   if (!flags.news_ui) {
     return (
       <PageError
